@@ -6,13 +6,13 @@ export function MoxieLogo({ className, showWord = true }: { className?: string; 
   if (!showWord) {
     return (
       <div className={cn("flex items-center", className)}>
-        <img src={mark} alt="Moxie" className="h-7 w-auto" />
+        <img src={mark} alt="Moxie" className="h-8 w-auto" />
       </div>
     );
   }
   return (
     <div className={cn("flex items-center", className)}>
-      <img src={logo} alt="Moxie" className="h-8 w-auto" />
+      <img src={logo} alt="Moxie" className="h-7 w-auto" />
     </div>
   );
 }
