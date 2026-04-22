@@ -38,6 +38,12 @@ export default {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          soft: "hsl(var(--accent-soft))",
+        },
+        brand: {
+          coral: "hsl(var(--brand-coral))",
+          ink: "hsl(var(--brand-ink))",
+          cream: "hsl(var(--brand-cream))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
