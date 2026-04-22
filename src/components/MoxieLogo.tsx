@@ -1,13 +1,18 @@
 import { cn } from "@/lib/utils";
+import logo from "@/assets/moxie-logo.png";
 
 export function MoxieLogo({ className, showWord = true }: { className?: string; showWord?: boolean }) {
-  return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <div className="relative h-7 w-7 rounded-lg bg-foreground flex items-center justify-center">
-        <div className="h-2.5 w-2.5 rounded-full bg-accent" />
-        <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-accent/80" />
+  if (!showWord) {
+    // Icon-only: show just the M mark portion
+    return (
+      <div className={cn("flex items-center", className)}>
+        <img src={logo} alt="Moxie" className="h-7 w-auto object-contain object-left" style={{ clipPath: "inset(0 70% 0 0)", marginRight: "-70%" }} />
       </div>
-      {showWord && <span className="font-display text-2xl text-foreground leading-none">moxie</span>}
+    );
+  }
+  return (
+    <div className={cn("flex items-center", className)}>
+      <img src={logo} alt="Moxie" className="h-8 w-auto" />
     </div>
   );
 }
