@@ -60,9 +60,9 @@ export default function Index() {
       <section id="platform" className="py-28">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16 max-w-3xl mx-auto">
-            <div className="text-sm font-semibold text-accent mb-4">The platform</div>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-5 leading-[1.1]">Everything you need. <span className="text-muted-foreground">One place.</span></h2>
-            <p className="text-muted-foreground text-lg leading-relaxed">Strategy, content, calendar, analytics — all wired to one source of truth about your business.</p>
+            <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">The platform</div>
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-[-0.04em] mb-6 leading-[1.02]">Everything you need. <span className="text-muted-foreground">One place.</span></h2>
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed font-light">Strategy, content, calendar, analytics — all wired to one source of truth about your business.</p>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {[
@@ -89,8 +89,8 @@ export default function Index() {
       <section id="how" className="py-28 bg-muted/40 border-y border-border">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16 max-w-3xl mx-auto">
-            <div className="text-sm font-semibold text-accent mb-4">How it works</div>
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1]">Scattered to strategic <span className="text-gradient-coral">in 45 minutes.</span></h2>
+            <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">How it works</div>
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-[-0.04em] leading-[1.02]">Scattered to strategic <span className="text-gradient-coral">in 45 minutes.</span></h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {[
@@ -114,9 +114,9 @@ export default function Index() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="text-sm font-semibold text-accent mb-4">Why MOXIE</div>
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6 leading-[1.1]">You became a coach to help people. <span className="text-muted-foreground">Not to run a tool stack.</span></h2>
-              <p className="text-muted-foreground leading-relaxed text-lg">ConvertKit, Buffer, Kajabi, Calendly, Dubsado, GA. 20 hours a week. The "messy middle" deserves better than Frankenstein stacks or enterprise bloat.</p>
+              <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">Why MOXIE</div>
+              <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-[-0.04em] mb-6 leading-[1.02]">You became a coach to help people. <span className="text-muted-foreground">Not to run a tool stack.</span></h2>
+              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed font-light">ConvertKit, Buffer, Kajabi, Calendly, Dubsado, GA. 20 hours a week. The "messy middle" deserves better than Frankenstein stacks or enterprise bloat.</p>
             </div>
             <Card className="p-8 border-border rounded-2xl bg-card">
               <div className="space-y-4">
