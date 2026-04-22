@@ -18,9 +18,15 @@ export function MarketingPage({ eyebrow, title, subtitle, children }: MarketingP
       <SiteHeader />
       <section className="border-b border-border">
         <div className="max-w-5xl mx-auto px-6 py-24 text-center">
-          <div className="text-sm font-semibold text-accent mb-4">{eyebrow}</div>
-          <h1 className="text-5xl md:text-7xl font-bold leading-[1.05] tracking-[-0.035em] mb-6 text-foreground">{title}</h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">{subtitle}</p>
+          <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">
+            {eyebrow}
+          </div>
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.02] tracking-[-0.04em] mb-6 text-foreground">
+            {title}
+          </h1>
+          <p className="text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light">
+            {subtitle}
+          </p>
         </div>
       </section>
       <main className="flex-1 max-w-6xl mx-auto px-6 py-20 w-full">{children}</main>
