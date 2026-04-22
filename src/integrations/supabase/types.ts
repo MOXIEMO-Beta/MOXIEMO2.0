@@ -14,7 +14,132 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      discovery_sessions: {
+        Row: {
+          answers: Json
+          completed_at: string | null
+          current_question: number
+          current_section: number
+          id: string
+          messages: Json
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string | null
+          current_question?: number
+          current_section?: number
+          id?: string
+          messages?: Json
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string | null
+          current_question?: number
+          current_section?: number
+          id?: string
+          messages?: Json
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          business_name: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      strategies: {
+        Row: {
+          anti_positioning: string | null
+          business_goal: string | null
+          content_pillars: Json | null
+          created_at: string
+          id: string
+          ideal_client: string | null
+          pain_point: string | null
+          positioning_statement: string | null
+          posting_frequency: string | null
+          primary_channel: string | null
+          raw_foundation: Json | null
+          success_definition: string | null
+          time_capacity: string | null
+          transformation: string | null
+          updated_at: string
+          user_id: string
+          voice_attributes: Json | null
+        }
+        Insert: {
+          anti_positioning?: string | null
+          business_goal?: string | null
+          content_pillars?: Json | null
+          created_at?: string
+          id?: string
+          ideal_client?: string | null
+          pain_point?: string | null
+          positioning_statement?: string | null
+          posting_frequency?: string | null
+          primary_channel?: string | null
+          raw_foundation?: Json | null
+          success_definition?: string | null
+          time_capacity?: string | null
+          transformation?: string | null
+          updated_at?: string
+          user_id: string
+          voice_attributes?: Json | null
+        }
+        Update: {
+          anti_positioning?: string | null
+          business_goal?: string | null
+          content_pillars?: Json | null
+          created_at?: string
+          id?: string
+          ideal_client?: string | null
+          pain_point?: string | null
+          positioning_statement?: string | null
+          posting_frequency?: string | null
+          primary_channel?: string | null
+          raw_foundation?: Json | null
+          success_definition?: string | null
+          time_capacity?: string | null
+          transformation?: string | null
+          updated_at?: string
+          user_id?: string
+          voice_attributes?: Json | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
