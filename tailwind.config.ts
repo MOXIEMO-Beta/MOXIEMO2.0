@@ -42,8 +42,10 @@ export default {
         },
         brand: {
           coral: "hsl(var(--brand-coral))",
+          "coral-soft": "hsl(var(--brand-coral-soft))",
           ink: "hsl(var(--brand-ink))",
-          cream: "hsl(var(--brand-cream))",
+          "ink-light": "hsl(var(--brand-ink-light))",
+          "ink-deep": "hsl(var(--brand-ink-deep))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",

@@ -6,6 +6,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Auth from "./pages/Auth.tsx";
+import Platform from "./pages/marketing/Platform.tsx";
+import Solutions from "./pages/marketing/Solutions.tsx";
+import WhyMoxie from "./pages/marketing/WhyMoxie.tsx";
+import Pricing from "./pages/marketing/Pricing.tsx";
+import Community from "./pages/marketing/Community.tsx";
+import About from "./pages/marketing/About.tsx";
 import AppLayout from "./layouts/AppLayout.tsx";
 import Dashboard from "./pages/app/Dashboard.tsx";
 import Discovery from "./pages/app/Discovery.tsx";
@@ -29,6 +35,12 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/platform" element={<Platform />} />
+            <Route path="/solutions" element={<Solutions />} />
+            <Route path="/why-moxie" element={<WhyMoxie />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/community" element={<Community />} />
+            <Route path="/about" element={<About />} />
             <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="discovery" element={<Discovery />} />
