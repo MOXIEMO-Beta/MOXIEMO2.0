@@ -196,10 +196,11 @@ function drawSectionTitle(ctx: Ctx, title: string) {
  */
 function drawDisplayTitle(ctx: Ctx, title: string) {
   ensureSpace(ctx, 80);
+  resetText(ctx.pdf);
   ctx.pdf.setFont("times", "bold");
   ctx.pdf.setFontSize(30);
   ctx.pdf.setTextColor(...COLORS.ink);
-  const lines = ctx.pdf.splitTextToSize(title, ctx.contentW);
+  const lines = ctx.pdf.splitTextToSize(safe(title), ctx.contentW);
   const lineH = 30 * 1.15;
   for (const ln of lines) {
     ctx.pdf.text(ln, ctx.margin, ctx.y + 24);
@@ -211,12 +212,14 @@ function drawDisplayTitle(ctx: Ctx, title: string) {
 function drawEyebrow(ctx: Ctx, text: string) {
   // Sage-green uppercase mini eyebrow for sub-section labels.
   keepTogether(ctx, 60);
+  resetText(ctx.pdf);
   ctx.pdf.setFont("helvetica", "bold");
   ctx.pdf.setFontSize(8.5);
-  ctx.pdf.setCharSpace(1.4);
   ctx.pdf.setTextColor(...COLORS.sage);
-  ctx.pdf.text(text.toUpperCase(), ctx.margin, ctx.y);
-  ctx.pdf.setCharSpace(0);
+  // Simulate tracking by inserting a thin space between letters, which
+  // avoids jsPDF's setCharSpace state leaking into subsequent draws.
+  const tracked = safe(text).toUpperCase().split("").join("\u2009");
+  ctx.pdf.text(tracked, ctx.margin, ctx.y);
   ctx.y += SPACING.afterEyebrow + 6;
 }
 
@@ -224,10 +227,11 @@ function drawLabel(ctx: Ctx, text: string) {
   // Serif sub-headline, matching "This includes:" / "The Core Opportunity"
   // style from the reference.
   keepTogether(ctx, 40);
+  resetText(ctx.pdf);
   ctx.pdf.setFont("times", "bold");
   ctx.pdf.setFontSize(14);
   ctx.pdf.setTextColor(...COLORS.ink);
-  ctx.pdf.text(text, ctx.margin, ctx.y);
+  ctx.pdf.text(safe(text), ctx.margin, ctx.y);
   ctx.y += SPACING.afterLabel + 10;
 }
 
@@ -237,19 +241,21 @@ function drawText(ctx: Ctx, text: string, opts: { size?: number; color?: readonl
   const color = opts.color ?? COLORS.body;
   const indent = opts.indent ?? 0;
   const lineGap = opts.lineGap ?? SPACING.afterParagraph;
+  resetText(ctx.pdf);
   ctx.pdf.setFont("helvetica", opts.bold ? "bold" : opts.italic ? "italic" : "normal");
   ctx.pdf.setFontSize(size);
   ctx.pdf.setTextColor(...color);
   const maxW = ctx.contentW - indent;
-  const lines = ctx.pdf.splitTextToSize(String(text), maxW);
+  const lines = ctx.pdf.splitTextToSize(safe(text), maxW);
   const lineH = size * SPACING.lineHeightRatio;
   // Keep the first 2 lines together with the previous element so single-line
   // labels don't get stranded above a page break.
   keepTogether(ctx, Math.min(lines.length, 2) * lineH);
   for (const line of lines) {
     if (ctx.y + lineH > ctx.pageH - ctx.margin) {
-      newPage(ctx, ctx.sectionTitle + " (cont.)");
+      newPage(ctx, contTitle(ctx.sectionTitle));
       // Reset font after page break (header changes it).
+      resetText(ctx.pdf);
       ctx.pdf.setFont("helvetica", opts.bold ? "bold" : opts.italic ? "italic" : "normal");
       ctx.pdf.setFontSize(size);
       ctx.pdf.setTextColor(...color);
@@ -275,24 +281,26 @@ function drawBullets(ctx: Ctx, items: any[], opts: { bullet?: string } = {}) {
   const lineH = size * SPACING.lineHeightRatio;
   const indent = SPACING.bulletIndent;
   for (const it of items) {
-    const text = typeof it === "string" ? it : it?.text || it?.task || it?.name || JSON.stringify(it);
+    const text = typeof it === "string" ? it : it?.text || it?.task || it?.name || valueToString(it);
+    resetText(ctx.pdf);
     ctx.pdf.setFont("helvetica", "normal");
     ctx.pdf.setFontSize(size);
     ctx.pdf.setTextColor(...COLORS.body);
-    const lines = ctx.pdf.splitTextToSize(String(text), ctx.contentW - indent);
+    const lines = ctx.pdf.splitTextToSize(safe(text), ctx.contentW - indent);
     // Keep the bullet's first 2 lines together; long bullets can wrap onto the
     // next page but won't be split immediately after the marker.
     keepTogether(ctx, Math.min(lines.length, 2) * lineH);
     for (let i = 0; i < lines.length; i++) {
       if (ctx.y + lineH > ctx.pageH - ctx.margin) {
-        newPage(ctx, ctx.sectionTitle + " (cont.)");
+        newPage(ctx, contTitle(ctx.sectionTitle));
+        resetText(ctx.pdf);
         ctx.pdf.setFont("helvetica", "normal");
         ctx.pdf.setFontSize(size);
         ctx.pdf.setTextColor(...COLORS.body);
       }
       if (i === 0) {
         ctx.pdf.setTextColor(...COLORS.accent);
-        ctx.pdf.text(bullet, ctx.margin + 2, ctx.y);
+        ctx.pdf.text(safe(bullet), ctx.margin + 2, ctx.y);
         ctx.pdf.setTextColor(...COLORS.body);
       }
       ctx.pdf.text(lines[i], ctx.margin + indent, ctx.y);
@@ -309,9 +317,10 @@ function drawCallout(ctx: Ctx, text: string) {
   const padX = 16;
   const padY = 14;
   const lineH = size * 1.4;
+  resetText(ctx.pdf);
   ctx.pdf.setFont("helvetica", "italic");
   ctx.pdf.setFontSize(size);
-  const lines = ctx.pdf.splitTextToSize(String(text), ctx.contentW - padX * 2);
+  const lines = ctx.pdf.splitTextToSize(safe(text), ctx.contentW - padX * 2);
   const available = ctx.pageH - ctx.margin - ctx.y;
   const fullH = lines.length * lineH + padY * 2;
 
@@ -326,13 +335,13 @@ function drawCallout(ctx: Ctx, text: string) {
       const h = chunk.length * lineH + padY * 2;
       drawCalloutBox(ctx, chunk, h, padX, padY, lineH);
       i += fit;
-      if (i < lines.length) newPage(ctx, ctx.sectionTitle + " (cont.)");
+      if (i < lines.length) newPage(ctx, contTitle(ctx.sectionTitle));
     }
     return;
   }
 
   // Normal case: keep the whole callout on one page.
-  if (fullH + 8 > available) newPage(ctx, ctx.sectionTitle + " (cont.)");
+  if (fullH + 8 > available) newPage(ctx, contTitle(ctx.sectionTitle));
   drawCalloutBox(ctx, lines, fullH, padX, padY, lineH);
 }
 
