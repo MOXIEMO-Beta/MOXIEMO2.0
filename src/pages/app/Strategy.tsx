@@ -79,10 +79,7 @@ function StrategyHeader() {
     setExporting(true);
     try {
       await exportStrategyPdf({
-        sections: [
-          { id: "strategy-export-overview", title: "Overview" },
-          { id: "strategy-export-voice", title: "Voice & Brand" },
-        ],
+        strategy,
         fileName: `moxie-strategy-${new Date().toISOString().slice(0, 10)}.pdf`,
       });
     } finally {
