@@ -1,22 +1,31 @@
 import jsPDF from "jspdf";
 import { toast } from "sonner";
-import logoUrl from "@/assets/moxie-logo.png";
+import logoUrl from "@/assets/moxie-logo-full.png";
 
 /**
  * Data-driven PDF export. Reads directly from the strategy object so every
  * section is included regardless of which tab is currently mounted.
+ *
+ * Visual language mirrors the editorial Studio SB / MOXIE brand audit
+ * reference: cream paper background, large serif display headlines,
+ * pill-shaped eyebrow tags, sage-green bordered callout cards, gold accents.
  */
 
 type StrategyLike = any;
 
 const COLORS = {
-  ink: [20, 20, 20] as const,
-  body: [55, 55, 55] as const,
-  muted: [120, 120, 120] as const,
-  rule: [220, 215, 205] as const,
-  accent: [196, 156, 76] as const, // gold-ish
-  cream: [245, 240, 230] as const,
-  softCream: [250, 247, 240] as const,
+  // Editorial palette inspired by the Studio SB reference.
+  ink: [22, 28, 38] as const,        // near-black navy for headlines
+  body: [45, 52, 64] as const,       // body copy
+  muted: [120, 124, 130] as const,
+  rule: [214, 208, 192] as const,
+  accent: [196, 156, 76] as const,   // gold rule
+  sage: [110, 130, 95] as const,     // sage-green left border on cards
+  sageSoft: [232, 236, 224] as const,
+  coral: [240, 130, 120] as const,   // confidential banner
+  coralSoft: [248, 200, 195] as const,
+  cream: [244, 240, 226] as const,   // page background
+  softCream: [250, 247, 235] as const,
   white: [255, 255, 255] as const,
 };
 
@@ -44,6 +53,7 @@ interface Ctx {
   y: number;
   brand: string;
   sectionTitle: string;
+  sectionNumber: number;
 }
 
 function newPage(ctx: Ctx, sectionTitle?: string) {
