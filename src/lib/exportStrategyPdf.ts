@@ -711,6 +711,7 @@ export async function exportStrategyPdf(opts: {
       y: margin,
       brand: brandName,
       sectionTitle: "Overview",
+      sectionNumber: 1,
     };
 
     await renderCover(ctx, strategy, companyName);
@@ -721,15 +722,17 @@ export async function exportStrategyPdf(opts: {
     renderMetrics(ctx, strategy);
     renderActionPlan(ctx, strategy);
 
-    // Footer page numbers (skip cover)
+    // Footer (skip cover) — page number on the right, brand on the left.
     const total = pdf.getNumberOfPages();
     for (let p = 2; p <= total; p++) {
       pdf.setPage(p);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
-      pdf.setTextColor(140, 140, 140);
-      pdf.text(`${p - 1} / ${total - 1}`, pageW - margin, pageH - 18, { align: "right" });
-      pdf.text(brandName.toUpperCase(), margin, pageH - 18);
+      pdf.setCharSpace(1.2);
+      pdf.setTextColor(...COLORS.muted);
+      pdf.text(`${p - 1} / ${total - 1}`, pageW - margin, pageH - 22, { align: "right" });
+      pdf.text(brandName.toUpperCase() + " · STRATEGIC REPORT", margin, pageH - 22);
+      pdf.setCharSpace(0);
     }
 
     pdf.save(fileName);
