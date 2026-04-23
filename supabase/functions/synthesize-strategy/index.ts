@@ -4,21 +4,8 @@ const corsHeaders = {
 };
 
 const SYSTEM = `You are MOXIE's strategy synthesizer. Read a discovery conversation transcript and extract a complete marketing strategy.
-Return ONLY a JSON object (no prose) matching this schema:
-{
-  "positioning_statement": string (1-2 sentences, sharp and specific),
-  "ideal_client": string,
-  "pain_point": string,
-  "transformation": string,
-  "voice_attributes": string[] (4-6 short adjectives like "direct", "warm", "no-fluff"),
-  "anti_positioning": string,
-  "content_pillars": [{"name": string, "description": string}] (3-5 pillars),
-  "primary_channel": string,
-  "posting_frequency": string,
-  "success_definition": string,
-  "business_goal": string,
-  "time_capacity": string
-}`;
+You will save BOTH a base strategy AND an expanded "enhanced_foundation" object that deepens the output (Sprint 1: positioning breakdown, brand archetype, core values, competitive positioning, detailed voice guidelines).
+Be specific and grounded in the transcript — never generic. Every example, value, and word should feel derived from what the user actually said.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
