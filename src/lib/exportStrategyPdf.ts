@@ -1006,10 +1006,10 @@ function renderActionPlan(ctx: Ctx, s: StrategyLike) {
       .map((k) => {
         const item = r[k];
         if (!item?.task) return null;
-        return { label: `${k}${item.time ? ` (${item.time})` : ""}`, value: item.task, sub: undefined };
+        return { k: `${k}${item.time ? ` (${item.time})` : ""}`, v: item.task };
       })
-      .filter(Boolean) as { label: string; value: string }[];
-    if (items.length) drawMetricGrid(ctx, items, 2);
+      .filter(Boolean) as { k: string; v: string }[];
+    if (items.length) drawKVCard(ctx, "Cadence", items);
     if (r.totalTimePerWeek) drawTextCard(ctx, "Total time per week", r.totalTimePerWeek);
     if (r.comparison) drawTextCard(ctx, "Comparison", r.comparison);
   }
