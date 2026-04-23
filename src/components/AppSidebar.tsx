@@ -54,7 +54,7 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild className="h-10 rounded-lg">
                   <NavLink to="/app/discovery">
                     <Sparkles className="h-[18px] w-[18px] text-accent" />
-                    {!collapsed && <span className="text-sm font-medium">AI Discovery</span>}
+                    {!collapsed && <span className="text-sm font-medium">MOXIE Discovery</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>

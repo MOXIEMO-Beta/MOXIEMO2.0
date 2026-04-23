@@ -195,7 +195,7 @@ export default function Discovery() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <Sparkles className="h-4 w-4 text-accent" />
-            <span className="text-sm font-medium">AI Discovery</span>
+            <span className="text-sm font-medium">MOXIE Discovery</span>
             <span className="text-xs text-muted-foreground">Section {currentSection} of 5 — {SECTIONS[currentSection - 1]}</span>
           </div>
           <div className="flex items-center gap-3">

@@ -817,7 +817,7 @@ export default function Strategy() {
       <div className="px-6 lg:px-10 py-16 max-w-3xl mx-auto text-center">
         <div className="h-16 w-16 rounded-2xl bg-foreground mx-auto mb-6 flex items-center justify-center"><Compass className="h-7 w-7 text-accent" /></div>
         <h1 className="font-display text-4xl mb-3">No strategy yet</h1>
-        <p className="text-muted-foreground mb-8">Run AI Discovery to extract your positioning, voice, and content foundation.</p>
+        <p className="text-muted-foreground mb-8">Run MOXIE Discovery to extract your positioning, voice, and content foundation.</p>
         <Button asChild className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
           <Link to="/app/discovery"><Sparkles className="mr-2 h-4 w-4 text-accent" /> Begin discovery</Link>
         </Button>
