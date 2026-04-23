@@ -6,13 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loader2, CheckCircle2, AlertCircle, Zap } from "lucide-react";
+import { toast } from "sonner";
 import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
 import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
 import { RefineSectionDialog } from "@/components/strategy/RefineSectionDialog";
 import { exportStrategyPdf } from "@/lib/exportStrategyPdf";
+import { ContentTab } from "@/components/strategy/tabs/ContentTab";
+import { ChannelsTab } from "@/components/strategy/tabs/ChannelsTab";
+import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
+import { ActionPlanTab } from "@/components/strategy/tabs/ActionPlanTab";
 
 const TAB_PLACEHOLDER = (label: string) => (
   <Card className="p-10 border-dashed border-border bg-background text-center">
