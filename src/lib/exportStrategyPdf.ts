@@ -58,22 +58,41 @@ interface Ctx {
 
 function newPage(ctx: Ctx, sectionTitle?: string) {
   ctx.pdf.addPage();
-  ctx.y = ctx.margin + 60;
   if (sectionTitle) ctx.sectionTitle = sectionTitle;
+  paintBackground(ctx);
   drawHeader(ctx);
+  ctx.y = ctx.margin + 84;
+}
+
+function paintBackground(ctx: Ctx) {
+  ctx.pdf.setFillColor(...COLORS.cream);
+  ctx.pdf.rect(0, 0, ctx.pageW, ctx.pageH, "F");
 }
 
 function drawHeader(ctx: Ctx) {
-  const { pdf, pageW, margin, brand, sectionTitle } = ctx;
-  pdf.setFillColor(...COLORS.cream);
-  pdf.rect(0, 0, pageW, 48, "F");
-  pdf.setTextColor(...COLORS.ink);
+  // Pill-shaped eyebrow tag at the top, matching the "02 | BRAND POSITIONING
+  // AUDIT" style from the reference. The body section title is rendered
+  // separately by drawDisplayTitle so the header stays minimal.
+  const { pdf, margin, brand, sectionTitle, sectionNumber } = ctx;
+  const label = `${String(sectionNumber).padStart(2, "0")} | ${(brand + " · " + sectionTitle).toUpperCase()}`;
+  drawPillTag(pdf, margin, margin + 24, label);
+}
+
+function drawPillTag(pdf: jsPDF, x: number, y: number, label: string) {
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(9);
-  pdf.text(brand.toUpperCase() + " · STRATEGY", margin, 20);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(13);
-  pdf.text(sectionTitle, margin, 38);
+  pdf.setFontSize(8);
+  pdf.setCharSpace(1.2);
+  const padX = 10;
+  const padY = 6;
+  const textW = pdf.getTextWidth(label);
+  const w = textW + padX * 2;
+  const h = 18;
+  pdf.setDrawColor(...COLORS.muted);
+  pdf.setLineWidth(0.6);
+  pdf.roundedRect(x, y - h + padY, w, h, 4, 4, "S");
+  pdf.setTextColor(...COLORS.muted);
+  pdf.text(label, x + padX, y);
+  pdf.setCharSpace(0);
 }
 
 function ensureSpace(ctx: Ctx, needed: number) {
