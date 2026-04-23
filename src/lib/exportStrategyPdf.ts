@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { toast } from "sonner";
+import logoUrl from "@/assets/moxie-logo.png";
 
 /**
  * Data-driven PDF export. Reads directly from the strategy object so every
