@@ -5,9 +5,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MoxieLogo } from "@/components/MoxieLogo";
-import { ArrowUp, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowUp, Sparkles, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -170,6 +174,17 @@ export default function Discovery() {
     }
   }
 
+  async function restart() {
+    if (!user || !sessionId) return;
+    setCompleted(false);
+    setMessages([]);
+    await supabase
+      .from("discovery_sessions")
+      .update({ messages: [] as any, status: "in_progress", completed_at: null })
+      .eq("id", sessionId);
+    await streamReply([], sessionId);
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)]">
       {/* Top progress */}
@@ -180,7 +195,28 @@ export default function Discovery() {
             <span className="text-sm font-medium">AI Discovery</span>
             <span className="text-xs text-muted-foreground">Section {currentSection} of 5 — {SECTIONS[currentSection - 1]}</span>
           </div>
-          <span className="text-xs font-medium text-muted-foreground">{answered}/14 answered</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-medium text-muted-foreground">{answered}/14 answered</span>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5">
+                  <RotateCcw className="h-3 w-3" /> Restart
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Restart discovery?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This clears your current conversation and starts a fresh discovery using the latest MOXIE coaching flow. Your existing strategy (if any) won't be deleted until you complete and synthesize a new one.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={restart}>Restart discovery</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
         <div className="h-1 w-full rounded-full bg-muted overflow-hidden">
           <div className="h-full bg-accent transition-all duration-500" style={{ width: `${progress}%` }} />
