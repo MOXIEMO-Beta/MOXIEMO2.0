@@ -77,7 +77,7 @@ export function StrategyEditorProvider({
     if (keys.length === 0) return;
     dirtyRef.current = {};
     setStatus("saving");
-    const { error } = await supabase.from("strategies").update(patch).eq("user_id", userId);
+    const { error } = await supabase.from("strategies").update(patch as never).eq("user_id", userId);
     if (error) {
       // Re-merge so we retry next save
       dirtyRef.current = { ...patch, ...dirtyRef.current };
