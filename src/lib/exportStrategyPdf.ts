@@ -305,8 +305,9 @@ function asArray(v: any): any[] {
 // ---------- Section renderers ----------
 
 function renderOverview(ctx: Ctx, s: StrategyLike) {
-  ctx.sectionTitle = "Overview";
-  newPage(ctx, "Overview");
+  ctx.sectionNumber = 1;
+  newPage(ctx, "Strategic Overview");
+  drawDisplayTitle(ctx, "Strategic Overview");
 
   if (s.positioning_statement) {
     drawEyebrow(ctx, "Positioning statement");
@@ -380,7 +381,9 @@ function renderOverview(ctx: Ctx, s: StrategyLike) {
 }
 
 function renderVoice(ctx: Ctx, s: StrategyLike) {
+  ctx.sectionNumber = 2;
   newPage(ctx, "Voice & Brand");
+  drawDisplayTitle(ctx, "Voice & Brand Identity");
   const ef = s.enhanced_foundation || {};
   const v = ef.voiceGuidelines || {};
 
@@ -434,7 +437,9 @@ function renderContent(ctx: Ctx, s: StrategyLike) {
   const calendar = ef.contentCalendar || [];
   if (!themes.length && !calendar.length && !(s.content_pillars?.length)) return;
 
-  newPage(ctx, "Content");
+  ctx.sectionNumber = 3;
+  newPage(ctx, "Content Strategy");
+  drawDisplayTitle(ctx, "Content Strategy & Calendar");
 
   if (s.content_pillars?.length) {
     drawEyebrow(ctx, "Content pillars");
@@ -473,7 +478,9 @@ function renderChannels(ctx: Ctx, s: StrategyLike) {
   const cs = ef.channelStrategy;
   if (!cs) return;
 
+  ctx.sectionNumber = 4;
   newPage(ctx, "Channels");
+  drawDisplayTitle(ctx, "Channel Strategy");
 
   (["primary", "secondary", "tertiary"] as const).forEach((tier) => {
     const ch = cs[tier];
@@ -516,7 +523,9 @@ function renderMetrics(ctx: Ctx, s: StrategyLike) {
   const sm = ef.successMetrics;
   if (!sm) return;
 
-  newPage(ctx, "Metrics");
+  ctx.sectionNumber = 5;
+  newPage(ctx, "Success Metrics");
+  drawDisplayTitle(ctx, "Success Metrics");
 
   if (sm.primary) {
     drawEyebrow(ctx, "Primary goal");
@@ -560,7 +569,9 @@ function renderActionPlan(ctx: Ctx, s: StrategyLike) {
   const plan = ef.actionPlan;
   if (!plan) return;
 
+  ctx.sectionNumber = 6;
   newPage(ctx, "Action Plan");
+  drawDisplayTitle(ctx, "Your 4-Week Action Plan");
   const completion = (s.task_completion || {}) as Record<string, boolean>;
 
   ([plan.week1, plan.week2, plan.week3, plan.week4]).forEach((w, i) => {
