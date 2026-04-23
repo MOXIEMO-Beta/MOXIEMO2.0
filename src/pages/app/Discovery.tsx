@@ -182,6 +182,9 @@ export default function Discovery() {
       .from("discovery_sessions")
       .update({ messages: [] as any, status: "in_progress", completed_at: null })
       .eq("id", sessionId);
+    toast.success("New discovery session started", {
+      description: `Session ${sessionId.slice(0, 8)} · 3-attempt coaching flow active`,
+    });
     await streamReply([], sessionId);
   }
 
