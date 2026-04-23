@@ -41,6 +41,7 @@ function SaveStatusIndicator() {
 
 function StrategyHeader() {
   const { editing, setEditing, status, saveNow, strategy, setEnhanced } = useStrategyEditor();
+  const { user } = useAuth();
   const [exporting, setExporting] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -78,8 +79,18 @@ function StrategyHeader() {
     if (editing) await saveNow();
     setExporting(true);
     try {
+      let companyName: string | undefined;
+      if (user) {
+        const { data } = await supabase
+          .from("profiles")
+          .select("business_name, full_name")
+          .eq("id", user.id)
+          .maybeSingle();
+        companyName = data?.business_name || data?.full_name || undefined;
+      }
       await exportStrategyPdf({
         strategy,
+        companyName,
         fileName: `moxie-strategy-${new Date().toISOString().slice(0, 10)}.pdf`,
       });
     } finally {

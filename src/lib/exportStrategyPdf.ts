@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import { toast } from "sonner";
+import logoUrl from "@/assets/moxie-logo.png";
 
 /**
  * Data-driven PDF export. Reads directly from the strategy object so every
@@ -537,45 +538,108 @@ function renderActionPlan(ctx: Ctx, s: StrategyLike) {
   }
 }
 
-function renderCover(ctx: Ctx, s: StrategyLike) {
-  const { pdf, pageW, pageH, margin, brand } = ctx;
-  pdf.setFillColor(20, 20, 20);
+async function loadLogo(): Promise<{ dataUrl: string; w: number; h: number } | null> {
+  try {
+    const res = await fetch(logoUrl);
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+    const dims: { w: number; h: number } = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+    return { dataUrl, ...dims };
+  } catch (e) {
+    console.warn("Logo load failed", e);
+    return null;
+  }
+}
+
+async function renderCover(ctx: Ctx, _s: StrategyLike, companyName?: string) {
+  const { pdf, pageW, pageH, margin } = ctx;
+
+  // Beige background
+  pdf.setFillColor(...COLORS.cream);
   pdf.rect(0, 0, pageW, pageH, "F");
 
-  pdf.setTextColor(...COLORS.accent);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(11);
-  pdf.text(brand.toUpperCase(), margin, margin + 24);
-
-  pdf.setTextColor(...COLORS.white);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(44);
-  pdf.text("Marketing", margin, pageH / 2 - 30);
-  pdf.text("foundation", margin, pageH / 2 + 18);
-
-  if (s.positioning_statement) {
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(12);
-    pdf.setTextColor(200, 200, 200);
-    const lines = pdf.splitTextToSize(s.positioning_statement, pageW - margin * 2);
-    let y = pageH / 2 + 60;
-    for (const ln of lines.slice(0, 4)) { pdf.text(ln, margin, y); y += 16; }
+  // Logo (top-left, generous)
+  const logo = await loadLogo();
+  if (logo) {
+    const targetH = 36;
+    const targetW = (logo.w / logo.h) * targetH;
+    pdf.addImage(logo.dataUrl, "PNG", margin, margin + 8, targetW, targetH);
   }
 
-  pdf.setFont("helvetica", "normal");
+  // Thin gold rule below logo
+  pdf.setDrawColor(...COLORS.accent);
+  pdf.setLineWidth(1);
+  pdf.line(margin, margin + 64, margin + 80, margin + 64);
+
+  // Eyebrow
+  pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
-  pdf.setTextColor(180, 180, 180);
-  pdf.text(new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }), margin, pageH - margin);
+  pdf.setCharSpace(2);
+  pdf.setTextColor(...COLORS.accent);
+  pdf.text("STRATEGIC REPORT", margin, pageH / 2 - 80);
+  pdf.setCharSpace(0);
+
+  // Title — large display
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(46);
+  pdf.setTextColor(...COLORS.ink);
+  pdf.text("Chief MOXIE", margin, pageH / 2 - 30);
+  pdf.text("Officer", margin, pageH / 2 + 16);
+
+  // Subtitle
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(20);
+  pdf.setTextColor(...COLORS.body);
+  pdf.text("Strategic Report", margin, pageH / 2 + 48);
+
+  // Created for + date — bottom-left block
+  const blockY = pageH - margin - 70;
+  pdf.setDrawColor(...COLORS.accent);
+  pdf.setLineWidth(0.75);
+  pdf.line(margin, blockY - 20, margin + 60, blockY - 20);
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.setCharSpace(1.5);
+  pdf.setTextColor(...COLORS.muted);
+  pdf.text("CREATED FOR", margin, blockY);
+  pdf.setCharSpace(0);
+
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(18);
+  pdf.setTextColor(...COLORS.ink);
+  const company = (companyName && companyName.trim()) || "Your business";
+  pdf.text(company, margin, blockY + 22);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(11);
+  pdf.setTextColor(...COLORS.muted);
+  pdf.text(
+    new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }),
+    margin,
+    blockY + 44
+  );
 }
 
 export async function exportStrategyPdf(opts: {
   strategy?: StrategyLike;
   fileName?: string;
   brandName?: string;
+  companyName?: string;
   // Legacy/no-op — kept for backwards compat with existing callers.
   sections?: { id: string; title: string }[];
 }) {
-  const { strategy, fileName = "moxie-strategy.pdf", brandName = "MOXIE" } = opts;
+  const { strategy, fileName = "moxie-strategy.pdf", brandName = "MOXIE", companyName } = opts;
 
   if (!strategy) {
     toast.error("Nothing to export yet");
@@ -596,7 +660,7 @@ export async function exportStrategyPdf(opts: {
       sectionTitle: "Overview",
     };
 
-    renderCover(ctx, strategy);
+    await renderCover(ctx, strategy, companyName);
     renderOverview(ctx, strategy);
     renderVoice(ctx, strategy);
     renderContent(ctx, strategy);
