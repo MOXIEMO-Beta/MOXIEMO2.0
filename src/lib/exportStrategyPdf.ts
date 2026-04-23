@@ -64,6 +64,63 @@ function newPage(ctx: Ctx, sectionTitle?: string) {
   ctx.y = ctx.margin + 84;
 }
 
+/**
+ * Append " (cont.)" to a section title, but never stack multiple suffixes.
+ */
+function contTitle(title: string): string {
+  return /\(cont\.\)$/i.test(title) ? title : `${title} (cont.)`;
+}
+
+/**
+ * jsPDF retains state like charSpace across operations; reset before any
+ * text we don't want tracked. Built-in PDF fonts also lack many Unicode
+ * glyphs (emoji, smart symbols) — strip those rather than render tofu.
+ */
+function resetText(pdf: jsPDF) {
+  pdf.setCharSpace(0);
+}
+
+function safe(text: any): string {
+  if (text == null) return "";
+  // Replace fancy quotes/dashes/ellipses with ASCII equivalents and strip
+  // characters outside the WinAnsi range (emoji, etc) so jsPDF's standard
+  // fonts don't render garbage.
+  return String(text)
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    .replace(/[\u2013\u2014]/g, "—")
+    .replace(/\u2026/g, "...")
+    .replace(/[^\x09\x0A\x0D\x20-\xFF]/g, "");
+}
+
+/** Convert camelCase / snake_case keys to nicely capitalised labels. */
+function humanize(key: string): string {
+  return String(key)
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (c) => c.toUpperCase());
+}
+
+/** Render any value (object, array, primitive) into a readable string. */
+function valueToString(v: any): string {
+  if (v == null) return "";
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return String(v);
+  if (Array.isArray(v)) {
+    // Array of primitives → comma list. Array of objects → newline-joined entries.
+    if (v.every((x) => typeof x !== "object" || x == null)) return v.filter(Boolean).join(", ");
+    return v.map((x) => valueToString(x)).filter(Boolean).join(" · ");
+  }
+  if (typeof v === "object") {
+    return Object.entries(v)
+      .filter(([, val]) => val != null && val !== "")
+      .map(([k, val]) => `${humanize(k)}: ${valueToString(val)}`)
+      .join(" · ");
+  }
+  return "";
+}
+
 function paintBackground(ctx: Ctx) {
   ctx.pdf.setFillColor(...COLORS.cream);
   ctx.pdf.rect(0, 0, ctx.pageW, ctx.pageH, "F");
@@ -81,7 +138,10 @@ function drawHeader(ctx: Ctx) {
 function drawPillTag(pdf: jsPDF, x: number, y: number, label: string) {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(8);
-  pdf.setCharSpace(1.2);
+  // Letter spacing is handled visually via the uppercased label only —
+  // jsPDF's setCharSpace can leak into later draws on some platforms, so
+  // we avoid it entirely outside this function.
+  resetText(pdf);
   const padX = 10;
   const padY = 6;
   const textW = pdf.getTextWidth(label);
@@ -92,12 +152,11 @@ function drawPillTag(pdf: jsPDF, x: number, y: number, label: string) {
   pdf.roundedRect(x, y - h + padY, w, h, 4, 4, "S");
   pdf.setTextColor(...COLORS.muted);
   pdf.text(label, x + padX, y);
-  pdf.setCharSpace(0);
 }
 
 function ensureSpace(ctx: Ctx, needed: number) {
   if (ctx.y + needed > ctx.pageH - ctx.margin) {
-    newPage(ctx, ctx.sectionTitle + " (cont.)");
+    newPage(ctx, contTitle(ctx.sectionTitle));
   }
 }
 
@@ -108,7 +167,7 @@ function ensureSpace(ctx: Ctx, needed: number) {
  */
 function keepTogether(ctx: Ctx, needed: number) {
   if (ctx.y + needed > ctx.pageH - ctx.margin) {
-    newPage(ctx, ctx.sectionTitle + " (cont.)");
+    newPage(ctx, contTitle(ctx.sectionTitle));
   }
 }
 
@@ -137,10 +196,11 @@ function drawSectionTitle(ctx: Ctx, title: string) {
  */
 function drawDisplayTitle(ctx: Ctx, title: string) {
   ensureSpace(ctx, 80);
+  resetText(ctx.pdf);
   ctx.pdf.setFont("times", "bold");
   ctx.pdf.setFontSize(30);
   ctx.pdf.setTextColor(...COLORS.ink);
-  const lines = ctx.pdf.splitTextToSize(title, ctx.contentW);
+  const lines = ctx.pdf.splitTextToSize(safe(title), ctx.contentW);
   const lineH = 30 * 1.15;
   for (const ln of lines) {
     ctx.pdf.text(ln, ctx.margin, ctx.y + 24);
@@ -152,12 +212,14 @@ function drawDisplayTitle(ctx: Ctx, title: string) {
 function drawEyebrow(ctx: Ctx, text: string) {
   // Sage-green uppercase mini eyebrow for sub-section labels.
   keepTogether(ctx, 60);
+  resetText(ctx.pdf);
   ctx.pdf.setFont("helvetica", "bold");
   ctx.pdf.setFontSize(8.5);
-  ctx.pdf.setCharSpace(1.4);
   ctx.pdf.setTextColor(...COLORS.sage);
-  ctx.pdf.text(text.toUpperCase(), ctx.margin, ctx.y);
-  ctx.pdf.setCharSpace(0);
+  // Simulate tracking by inserting a thin space between letters, which
+  // avoids jsPDF's setCharSpace state leaking into subsequent draws.
+  const tracked = safe(text).toUpperCase().split("").join("\u2009");
+  ctx.pdf.text(tracked, ctx.margin, ctx.y);
   ctx.y += SPACING.afterEyebrow + 6;
 }
 
@@ -165,10 +227,11 @@ function drawLabel(ctx: Ctx, text: string) {
   // Serif sub-headline, matching "This includes:" / "The Core Opportunity"
   // style from the reference.
   keepTogether(ctx, 40);
+  resetText(ctx.pdf);
   ctx.pdf.setFont("times", "bold");
   ctx.pdf.setFontSize(14);
   ctx.pdf.setTextColor(...COLORS.ink);
-  ctx.pdf.text(text, ctx.margin, ctx.y);
+  ctx.pdf.text(safe(text), ctx.margin, ctx.y);
   ctx.y += SPACING.afterLabel + 10;
 }
 
@@ -178,19 +241,21 @@ function drawText(ctx: Ctx, text: string, opts: { size?: number; color?: readonl
   const color = opts.color ?? COLORS.body;
   const indent = opts.indent ?? 0;
   const lineGap = opts.lineGap ?? SPACING.afterParagraph;
+  resetText(ctx.pdf);
   ctx.pdf.setFont("helvetica", opts.bold ? "bold" : opts.italic ? "italic" : "normal");
   ctx.pdf.setFontSize(size);
   ctx.pdf.setTextColor(...color);
   const maxW = ctx.contentW - indent;
-  const lines = ctx.pdf.splitTextToSize(String(text), maxW);
+  const lines = ctx.pdf.splitTextToSize(safe(text), maxW);
   const lineH = size * SPACING.lineHeightRatio;
   // Keep the first 2 lines together with the previous element so single-line
   // labels don't get stranded above a page break.
   keepTogether(ctx, Math.min(lines.length, 2) * lineH);
   for (const line of lines) {
     if (ctx.y + lineH > ctx.pageH - ctx.margin) {
-      newPage(ctx, ctx.sectionTitle + " (cont.)");
+      newPage(ctx, contTitle(ctx.sectionTitle));
       // Reset font after page break (header changes it).
+      resetText(ctx.pdf);
       ctx.pdf.setFont("helvetica", opts.bold ? "bold" : opts.italic ? "italic" : "normal");
       ctx.pdf.setFontSize(size);
       ctx.pdf.setTextColor(...color);
@@ -216,24 +281,26 @@ function drawBullets(ctx: Ctx, items: any[], opts: { bullet?: string } = {}) {
   const lineH = size * SPACING.lineHeightRatio;
   const indent = SPACING.bulletIndent;
   for (const it of items) {
-    const text = typeof it === "string" ? it : it?.text || it?.task || it?.name || JSON.stringify(it);
+    const text = typeof it === "string" ? it : it?.text || it?.task || it?.name || valueToString(it);
+    resetText(ctx.pdf);
     ctx.pdf.setFont("helvetica", "normal");
     ctx.pdf.setFontSize(size);
     ctx.pdf.setTextColor(...COLORS.body);
-    const lines = ctx.pdf.splitTextToSize(String(text), ctx.contentW - indent);
+    const lines = ctx.pdf.splitTextToSize(safe(text), ctx.contentW - indent);
     // Keep the bullet's first 2 lines together; long bullets can wrap onto the
     // next page but won't be split immediately after the marker.
     keepTogether(ctx, Math.min(lines.length, 2) * lineH);
     for (let i = 0; i < lines.length; i++) {
       if (ctx.y + lineH > ctx.pageH - ctx.margin) {
-        newPage(ctx, ctx.sectionTitle + " (cont.)");
+        newPage(ctx, contTitle(ctx.sectionTitle));
+        resetText(ctx.pdf);
         ctx.pdf.setFont("helvetica", "normal");
         ctx.pdf.setFontSize(size);
         ctx.pdf.setTextColor(...COLORS.body);
       }
       if (i === 0) {
         ctx.pdf.setTextColor(...COLORS.accent);
-        ctx.pdf.text(bullet, ctx.margin + 2, ctx.y);
+        ctx.pdf.text(safe(bullet), ctx.margin + 2, ctx.y);
         ctx.pdf.setTextColor(...COLORS.body);
       }
       ctx.pdf.text(lines[i], ctx.margin + indent, ctx.y);
@@ -250,9 +317,10 @@ function drawCallout(ctx: Ctx, text: string) {
   const padX = 16;
   const padY = 14;
   const lineH = size * 1.4;
+  resetText(ctx.pdf);
   ctx.pdf.setFont("helvetica", "italic");
   ctx.pdf.setFontSize(size);
-  const lines = ctx.pdf.splitTextToSize(String(text), ctx.contentW - padX * 2);
+  const lines = ctx.pdf.splitTextToSize(safe(text), ctx.contentW - padX * 2);
   const available = ctx.pageH - ctx.margin - ctx.y;
   const fullH = lines.length * lineH + padY * 2;
 
@@ -267,13 +335,13 @@ function drawCallout(ctx: Ctx, text: string) {
       const h = chunk.length * lineH + padY * 2;
       drawCalloutBox(ctx, chunk, h, padX, padY, lineH);
       i += fit;
-      if (i < lines.length) newPage(ctx, ctx.sectionTitle + " (cont.)");
+      if (i < lines.length) newPage(ctx, contTitle(ctx.sectionTitle));
     }
     return;
   }
 
   // Normal case: keep the whole callout on one page.
-  if (fullH + 8 > available) newPage(ctx, ctx.sectionTitle + " (cont.)");
+  if (fullH + 8 > available) newPage(ctx, contTitle(ctx.sectionTitle));
   drawCalloutBox(ctx, lines, fullH, padX, padY, lineH);
 }
 
@@ -342,14 +410,15 @@ function renderOverview(ctx: Ctx, s: StrategyLike) {
   if (a) {
     drawHr(ctx);
     drawEyebrow(ctx, "Brand archetype");
-    drawText(ctx, [a.icon, a.name].filter(Boolean).join("  "), { size: 18, bold: true, color: COLORS.ink, lineGap: 4 });
+    // Skip the emoji icon — built-in PDF fonts can't render it.
+    drawText(ctx, a.name || "", { size: 18, bold: true, color: COLORS.ink, lineGap: 4 });
     if (a.secondary) drawText(ctx, `Secondary: ${a.secondary}`, { size: 9, color: COLORS.muted, lineGap: 8 });
     if (a.description) drawText(ctx, a.description, { size: 11 });
     if (a.exampleBrands?.length) drawKeyValue(ctx, "Brands", asArray(a.exampleBrands).join(", "));
     if (a.coreValues?.length) drawKeyValue(ctx, "Values", asArray(a.coreValues).join(", "));
     if (a.contentApproach) drawKeyValue(ctx, "Content approach", a.contentApproach);
     if (a.whyThisFits?.length) { drawLabel(ctx, "Why this fits you"); drawBullets(ctx, a.whyThisFits); }
-    if (a.howToApply?.length) { drawLabel(ctx, "How to use this"); drawBullets(ctx, a.howToApply, { bullet: "→" }); }
+    if (a.howToApply?.length) { drawLabel(ctx, "How to use this"); drawBullets(ctx, a.howToApply, { bullet: ">" }); }
   }
 
   drawHr(ctx);
@@ -366,8 +435,8 @@ function renderOverview(ctx: Ctx, s: StrategyLike) {
       drawText(ctx, `${String(i + 1).padStart(2, "0")}  ${v.name || "Value"}`, { size: 13, bold: true, color: COLORS.ink, lineGap: 4 });
       if (v.decisionFilter) drawCallout(ctx, `Decision filter: ${v.decisionFilter}`);
       if (v.description) drawText(ctx, v.description, { color: COLORS.body });
-      if (v.yesExamples?.length) { drawText(ctx, "Yes:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, v.yesExamples, { bullet: "✓" }); }
-      if (v.noExamples?.length) { drawText(ctx, "No:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, v.noExamples, { bullet: "✗" }); }
+      if (v.yesExamples?.length) { drawText(ctx, "Yes:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, v.yesExamples, { bullet: "+" }); }
+      if (v.noExamples?.length) { drawText(ctx, "No:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, v.noExamples, { bullet: "x" }); }
       ctx.y += 4;
     });
   }
@@ -396,7 +465,16 @@ function renderVoice(ctx: Ctx, s: StrategyLike) {
     drawLabel(ctx, "Sentence structure");
     if (typeof v.sentenceStructure === "string") drawText(ctx, v.sentenceStructure);
     else {
-      Object.entries(v.sentenceStructure).forEach(([k, val]) => drawKeyValue(ctx, k, String(val)));
+      Object.entries(v.sentenceStructure).forEach(([k, val]) => {
+        // Rules / examples are often arrays — render arrays as bulleted lists
+        // instead of comma-joined strings so each rule reads cleanly.
+        if (Array.isArray(val)) {
+          drawText(ctx, humanize(k).toUpperCase(), { bold: true, size: 8.5, color: COLORS.muted, lineGap: 2 });
+          drawBullets(ctx, val);
+        } else {
+          drawKeyValue(ctx, humanize(k), valueToString(val));
+        }
+      });
     }
   }
 
@@ -408,7 +486,9 @@ function renderVoice(ctx: Ctx, s: StrategyLike) {
 
   if (v.toneByPlatform) {
     drawLabel(ctx, "Tone by platform");
-    Object.entries(v.toneByPlatform).forEach(([p, t]: any) => drawKeyValue(ctx, p, typeof t === "string" ? t : t?.tone || JSON.stringify(t)));
+    Object.entries(v.toneByPlatform).forEach(([p, t]: any) =>
+      drawKeyValue(ctx, humanize(p), typeof t === "string" ? t : (t?.tone || valueToString(t)))
+    );
   }
 
   if (v.examples?.length) {
@@ -422,8 +502,9 @@ function renderVoice(ctx: Ctx, s: StrategyLike) {
   if (v.neverSoundLike?.length) {
     drawLabel(ctx, "Never sound like");
     v.neverSoundLike.forEach((n: any) => {
-      drawText(ctx, `✗ ${n.example || n}`, { color: COLORS.body, lineGap: 1 });
-      if (n.why) drawText(ctx, `   Why: ${n.why}`, { size: 9, color: COLORS.muted });
+      const example = typeof n === "string" ? n : (n.example || "");
+      if (example) drawText(ctx, `x  ${example}`, { color: COLORS.body, lineGap: 2 });
+      if (n.why) drawText(ctx, `Why: ${n.why}`, { size: 9, color: COLORS.muted, indent: SPACING.bulletIndent });
     });
   } else if (s.anti_positioning) {
     drawLabel(ctx, "Anti-positioning");
@@ -450,13 +531,28 @@ function renderContent(ctx: Ctx, s: StrategyLike) {
     drawEyebrow(ctx, "Quarterly themes");
     themes.forEach((t: any, i: number) => {
       drawText(ctx, `${t.quarter || `Q${i + 1}`} · ${t.theme || ""}`, { size: 13, bold: true, color: COLORS.ink, lineGap: 3 });
-      if (t.description) drawText(ctx, t.description);
-      if (t.contentTopics?.length) { drawText(ctx, "Topics:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, t.contentTopics); }
+      if (t.overview) drawText(ctx, t.overview);
+      if (t.strategicRationale) {
+        drawText(ctx, "Why this quarter", { bold: true, size: 8.5, color: COLORS.muted, lineGap: 2 });
+        drawText(ctx, t.strategicRationale);
+      }
+      if (t.contentTopics?.length) {
+        drawText(ctx, "Topics — 12 weeks", { bold: true, size: 8.5, color: COLORS.muted, lineGap: 2 });
+        t.contentTopics.forEach((c: any) => {
+          const week = c.week ? `Week ${String(c.week).padStart(2, "0")} — ` : "";
+          const topic = c.topic || c.keyMessage || "";
+          drawText(ctx, `${week}${topic}`, { color: COLORS.ink, bold: true, size: 10, lineGap: 1 });
+          const meta = [c.angle, c.contentType].filter(Boolean).join(" · ");
+          if (meta) drawText(ctx, meta, { size: 9, color: COLORS.muted, lineGap: 2 });
+          if (c.keyMessage && c.topic) drawText(ctx, c.keyMessage, { size: 9.5, lineGap: 6 });
+        });
+      }
       if (t.contentMix) {
         drawText(ctx, "Content mix:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 });
-        Object.entries(t.contentMix).forEach(([k, v]) => drawKeyValue(ctx, k, String(v)));
+        Object.entries(t.contentMix).filter(([, v]) => v).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), valueToString(v)));
       }
-      if (t.successMetrics?.length) { drawText(ctx, "Success metrics:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, t.successMetrics); }
+      if (t.successMetric) drawKeyValue(ctx, "Success metric", t.successMetric);
+      if (t.cta) drawKeyValue(ctx, "Call to action", t.cta);
       ctx.y += 4;
     });
   }
@@ -465,10 +561,18 @@ function renderContent(ctx: Ctx, s: StrategyLike) {
     drawHr(ctx);
     drawEyebrow(ctx, "30-day content calendar");
     calendar.slice(0, 60).forEach((item: any) => {
-      const head = [item.day && `Day ${item.day}`, item.platform, item.format].filter(Boolean).join(" · ");
-      drawText(ctx, head, { bold: true, size: 10, color: COLORS.ink, lineGap: 1 });
-      if (item.title || item.topic) drawText(ctx, item.title || item.topic, { size: 10 });
-      if (item.notes) drawText(ctx, item.notes, { size: 9, color: COLORS.muted, lineGap: 6 });
+      const head = [
+        item.day && (item.date ? `${item.day} · ${item.date}` : item.day),
+        item.platform,
+        item.format || item.contentType,
+      ].filter(Boolean).join("  ·  ");
+      if (head) drawText(ctx, head, { bold: true, size: 9.5, color: COLORS.ink, lineGap: 2 });
+      const topic = item.topic || item.title || item.keyMessage;
+      if (topic) drawText(ctx, topic, { size: 10.5, lineGap: 2 });
+      const meta = [item.theme, item.angle].filter(Boolean).join(" · ");
+      if (meta) drawText(ctx, meta, { size: 9, color: COLORS.muted, lineGap: 2 });
+      if (item.notes) drawText(ctx, item.notes, { size: 9, color: COLORS.muted, lineGap: 8 });
+      else ctx.y += 6;
     });
   }
 }
@@ -487,33 +591,61 @@ function renderChannels(ctx: Ctx, s: StrategyLike) {
     if (!ch || typeof ch === "string") return;
     drawEyebrow(ctx, `${tier} channel`);
     drawText(ctx, ch.platform || tier, { size: 14, bold: true, color: COLORS.ink, lineGap: 3 });
-    if (ch.rationale) drawText(ctx, ch.rationale, { italic: true, color: COLORS.body });
+    if (ch.rationale) {
+      // Rationale can be a string OR an array of bullet points.
+      if (Array.isArray(ch.rationale)) drawBullets(ctx, ch.rationale);
+      else drawText(ctx, String(ch.rationale), { italic: true, color: COLORS.body });
+    }
 
     if (ch.contentStrategy && typeof ch.contentStrategy === "object") {
       drawLabel(ctx, "Content strategy");
       Object.entries(ch.contentStrategy).forEach(([k, v]) => {
-        if (Array.isArray(v)) drawKeyValue(ctx, k, v.join(", "));
-        else if (v) drawKeyValue(ctx, k, String(v));
+        if (v == null || v === "") return;
+        if (Array.isArray(v)) {
+          if (v.every((x) => typeof x === "string")) drawKeyValue(ctx, humanize(k), v.join(", "));
+          else { drawText(ctx, humanize(k).toUpperCase(), { bold: true, size: 8.5, color: COLORS.muted, lineGap: 2 }); drawBullets(ctx, v); }
+        } else if (typeof v === "object") {
+          drawKeyValue(ctx, humanize(k), valueToString(v));
+        } else {
+          drawKeyValue(ctx, humanize(k), String(v));
+        }
       });
     }
-    if (ch.postingSchedule && typeof ch.postingSchedule === "object") {
+    if (ch.postingSchedule) {
       drawLabel(ctx, "Posting schedule");
-      Object.entries(ch.postingSchedule).forEach(([k, v]) => drawKeyValue(ctx, k, String(v)));
+      if (Array.isArray(ch.postingSchedule)) {
+        ch.postingSchedule.forEach((s: any) => {
+          const head = [s.day, s.time].filter(Boolean).join(" · ");
+          drawText(ctx, head || "Scheduled", { bold: true, size: 9.5, color: COLORS.ink, lineGap: 2 });
+          if (s.type) drawText(ctx, s.type, { size: 10, lineGap: 1 });
+          if (s.example) drawText(ctx, s.example, { italic: true, size: 9, color: COLORS.muted, lineGap: 6 });
+        });
+      } else {
+        Object.entries(ch.postingSchedule).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), valueToString(v)));
+      }
     }
     if (ch.successMetrics) {
       drawLabel(ctx, "Success metrics");
       if (Array.isArray(ch.successMetrics)) drawBullets(ctx, ch.successMetrics);
-      else Object.entries(ch.successMetrics).forEach(([k, v]) => drawKeyValue(ctx, k, String(v)));
+      else Object.entries(ch.successMetrics).filter(([, v]) => v).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), valueToString(v)));
     }
     if (ch.timeAllocation) {
-      drawKeyValue(ctx, "Time allocation", typeof ch.timeAllocation === "string" ? ch.timeAllocation : JSON.stringify(ch.timeAllocation));
+      drawLabel(ctx, "Time allocation");
+      if (typeof ch.timeAllocation === "string") {
+        drawText(ctx, ch.timeAllocation);
+      } else {
+        if (ch.timeAllocation.total) drawKeyValue(ctx, "Total", String(ch.timeAllocation.total));
+        if (ch.timeAllocation.breakdown) {
+          Object.entries(ch.timeAllocation.breakdown).filter(([, v]) => v).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), valueToString(v)));
+        }
+      }
     }
     drawHr(ctx);
   });
 
   if (cs.timeSavings || cs.comparison) {
     drawEyebrow(ctx, "Time savings with MOXIE");
-    if (cs.timeSavings) drawText(ctx, typeof cs.timeSavings === "string" ? cs.timeSavings : JSON.stringify(cs.timeSavings));
+    if (cs.timeSavings) drawText(ctx, typeof cs.timeSavings === "string" ? cs.timeSavings : valueToString(cs.timeSavings));
     if (cs.comparison) drawText(ctx, cs.comparison, { italic: true, color: COLORS.muted });
   }
 }
@@ -555,12 +687,12 @@ function renderMetrics(ctx: Ctx, s: StrategyLike) {
 
   if (sm.businessGoals) {
     drawEyebrow(ctx, "Business goals");
-    Object.entries(sm.businessGoals).forEach(([k, v]) => drawKeyValue(ctx, k, typeof v === "string" ? v : JSON.stringify(v)));
+    Object.entries(sm.businessGoals).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), typeof v === "string" ? v : valueToString(v)));
   }
 
   if (sm.brandHealth) {
     drawEyebrow(ctx, "Brand health");
-    Object.entries(sm.brandHealth).forEach(([k, v]: any) => drawKeyValue(ctx, k, typeof v === "object" ? `${v.score ?? ""} ${v.note ? `— ${v.note}` : ""}` : String(v)));
+    Object.entries(sm.brandHealth).forEach(([k, v]: any) => drawKeyValue(ctx, humanize(k), typeof v === "object" ? `${v.score ?? ""}${v.note ? ` — ${v.note}` : ""}` : String(v)));
   }
 }
 
@@ -580,7 +712,7 @@ function renderActionPlan(ctx: Ctx, s: StrategyLike) {
     if (w.title) drawText(ctx, w.title, { size: 13, bold: true, color: COLORS.ink, lineGap: 6 });
     const tasks = w.tasks || [];
     tasks.forEach((t: any) => {
-      const mark = completion[t.id] ? "☑" : "☐";
+      const mark = completion[t.id] ? "[x]" : "[ ]";
       const time = t.estimatedTime ? `  (${t.estimatedTime})` : "";
       drawText(ctx, `${mark}  ${t.task}${time}`, { color: COLORS.body, lineGap: 2 });
     });
@@ -645,21 +777,21 @@ async function renderCover(ctx: Ctx, _s: StrategyLike, companyName?: string) {
   pdf.setFontSize(40);
   pdf.setTextColor(...COLORS.ink);
   const titleY = pageH * 0.42;
-  pdf.text("Chief MOXIE Officer", margin, titleY);
-  pdf.text("Strategic Report", margin, titleY + 48);
+  pdf.text(safe("Chief MOXIE Officer"), margin, titleY);
+  pdf.text(safe("Strategic Report"), margin, titleY + 48);
 
   // "Prepared for" lockup
   const company = (companyName && companyName.trim()) || "Your business";
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(14);
   pdf.setTextColor(...COLORS.ink);
-  pdf.text(`Prepared for ${company}`, margin, titleY + 96);
+  pdf.text(safe(`Prepared for ${company}`), margin, titleY + 96);
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(12);
   pdf.setTextColor(...COLORS.body);
   pdf.text(
-    `Prepared by MOXIE · ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`,
+    safe(`Prepared by MOXIE  ·  ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`),
     margin,
     titleY + 118
   );
@@ -674,14 +806,12 @@ async function renderCover(ctx: Ctx, _s: StrategyLike, companyName?: string) {
   pdf.line(margin, bannerY, margin, bannerY + bannerH);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
-  pdf.setCharSpace(1.2);
   pdf.setTextColor(...COLORS.ink);
   pdf.text(
-    `CONFIDENTIAL — Prepared exclusively for ${company.toUpperCase()}. Not for distribution.`,
+    safe(`CONFIDENTIAL  —  Prepared exclusively for ${company.toUpperCase()}.  Not for distribution.`),
     margin + 16,
     bannerY + bannerH / 2 + 4
   );
-  pdf.setCharSpace(0);
 }
 
 export async function exportStrategyPdf(opts: {
@@ -728,11 +858,9 @@ export async function exportStrategyPdf(opts: {
       pdf.setPage(p);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
-      pdf.setCharSpace(1.2);
       pdf.setTextColor(...COLORS.muted);
       pdf.text(`${p - 1} / ${total - 1}`, pageW - margin, pageH - 22, { align: "right" });
-      pdf.text(brandName.toUpperCase() + " · STRATEGIC REPORT", margin, pageH - 22);
-      pdf.setCharSpace(0);
+      pdf.text(safe(brandName.toUpperCase() + "  ·  STRATEGIC REPORT"), margin, pageH - 22);
     }
 
     pdf.save(fileName);
