@@ -806,14 +806,12 @@ async function renderCover(ctx: Ctx, _s: StrategyLike, companyName?: string) {
   pdf.line(margin, bannerY, margin, bannerY + bannerH);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
-  pdf.setCharSpace(1.2);
   pdf.setTextColor(...COLORS.ink);
   pdf.text(
-    `CONFIDENTIAL — Prepared exclusively for ${company.toUpperCase()}. Not for distribution.`,
+    safe(`CONFIDENTIAL  —  Prepared exclusively for ${company.toUpperCase()}.  Not for distribution.`),
     margin + 16,
     bannerY + bannerH / 2 + 4
   );
-  pdf.setCharSpace(0);
 }
 
 export async function exportStrategyPdf(opts: {
@@ -860,11 +858,9 @@ export async function exportStrategyPdf(opts: {
       pdf.setPage(p);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
-      pdf.setCharSpace(1.2);
       pdf.setTextColor(...COLORS.muted);
       pdf.text(`${p - 1} / ${total - 1}`, pageW - margin, pageH - 22, { align: "right" });
-      pdf.text(brandName.toUpperCase() + " · STRATEGIC REPORT", margin, pageH - 22);
-      pdf.setCharSpace(0);
+      pdf.text(safe(brandName.toUpperCase() + "  ·  STRATEGIC REPORT"), margin, pageH - 22);
     }
 
     pdf.save(fileName);
