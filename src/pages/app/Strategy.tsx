@@ -10,6 +10,7 @@ import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loa
 import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
 import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
+import { exportStrategyPdf } from "@/lib/exportStrategyPdf";
 
 const TAB_PLACEHOLDER = (label: string) => (
   <Card className="p-10 border-dashed border-border bg-background text-center">
@@ -32,7 +33,25 @@ function SaveStatusIndicator() {
 }
 
 function StrategyHeader() {
-  const { editing, setEditing, status, saveNow } = useStrategyEditor();
+  const { editing, setEditing, status, saveNow, strategy } = useStrategyEditor();
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    if (editing) await saveNow();
+    setExporting(true);
+    try {
+      await exportStrategyPdf({
+        sections: [
+          { id: "strategy-export-overview", title: "Overview" },
+          { id: "strategy-export-voice", title: "Voice & Brand" },
+        ],
+        fileName: `moxie-strategy-${new Date().toISOString().slice(0, 10)}.pdf`,
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
       <div>
@@ -54,7 +73,9 @@ function StrategyHeader() {
             <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
           </Button>
         )}
-        <Button variant="outline" size="sm" className="rounded-lg"><Download className="mr-2 h-3.5 w-3.5" /> PDF</Button>
+        <Button variant="outline" size="sm" className="rounded-lg" onClick={handleExport} disabled={exporting || !strategy}>
+          {exporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />} PDF
+        </Button>
         <Button variant="outline" size="sm" className="rounded-lg"><Share2 className="mr-2 h-3.5 w-3.5" /> Share</Button>
       </div>
     </div>
