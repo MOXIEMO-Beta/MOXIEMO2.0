@@ -8,7 +8,7 @@ const SYSTEM = `You are MOXIE's execution-plan synthesizer. You will be given th
 Generate a complete EXECUTION PLAN that includes:
 1. Quarterly content themes (3 quarters, 12 weekly topics each, derived from the user's content pillars)
 2. A 30-day rolling content calendar (use today's date as the start date; respect posting frequency)
-3. A multi-channel strategy (primary + 1-2 secondary channels with rationale, schedule, time allocation, target metrics)
+3. A multi-channel strategy. channelStrategy.primary, .secondary, and .tertiary MUST each be a structured OBJECT (never a plain string) containing: platform (just the channel name like "LinkedIn"), rationale (3-5 short bullet strings), contentStrategy {frequency, types[], tone}, postingSchedule[] {day, time, type, example}, successMetrics {engagementRate, profileViews, connectionRequests, discoveryCallInquiries}, timeAllocation {total, breakdown {contentCreation, engagement, dmConversations}}.
 4. Success metrics dashboard (parse the user's success metric into weekly/monthly targets, project lead source breakdown, content performance targets, brand health initial state)
 5. A 4-week quick-start action plan (Foundation → Launch → Engagement → Optimization, 4-5 tasks each with realistic estimated times) plus an ongoing weekly routine
 
