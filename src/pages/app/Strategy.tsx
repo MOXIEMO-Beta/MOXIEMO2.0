@@ -40,8 +40,39 @@ function SaveStatusIndicator() {
 }
 
 function StrategyHeader() {
-  const { editing, setEditing, status, saveNow, strategy } = useStrategyEditor();
+  const { editing, setEditing, status, saveNow, strategy, setEnhanced } = useStrategyEditor();
   const [exporting, setExporting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  const ef = (strategy?.enhanced_foundation || {}) as any;
+  const hasExecutionPlan = !!(ef.quarterlyThemes?.length || ef.channelStrategy?.primary || ef.successMetrics?.primary || ef.actionPlan?.week1);
+
+  const handleGenerate = async () => {
+    if (editing) await saveNow();
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-execution-plan", { body: { strategy } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      // Merge new sections into enhanced_foundation, preserving Sprint 1 fields.
+      const merged = {
+        ...ef,
+        quarterlyThemes: data.quarterlyThemes,
+        contentCalendar: data.contentCalendar,
+        channelStrategy: data.channelStrategy,
+        successMetrics: data.successMetrics,
+        actionPlan: data.actionPlan,
+      };
+      setEnhanced([], merged);
+      await saveNow();
+      toast.success("Execution plan generated", { description: "Content, Channels, Metrics and Action Plan are ready." });
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Couldn't generate plan", { description: e?.message || "Try again in a moment." });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleExport = async () => {
     if (editing) await saveNow();
@@ -68,6 +99,10 @@ function StrategyHeader() {
         <div className="mt-3"><SaveStatusIndicator /></div>
       </div>
       <div className="flex gap-2 flex-wrap items-center">
+        <Button onClick={handleGenerate} size="sm" disabled={generating || !strategy} className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg">
+          {generating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-2 h-3.5 w-3.5" />}
+          {hasExecutionPlan ? "Regenerate plan" : "Generate execution plan"}
+        </Button>
         {editing ? (
           <>
             <Button onClick={() => saveNow()} size="sm" disabled={status === "saving"} className="bg-foreground text-background hover:bg-foreground/90 rounded-lg">
