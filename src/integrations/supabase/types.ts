@@ -86,6 +86,7 @@ export type Database = {
           business_goal: string | null
           content_pillars: Json | null
           created_at: string
+          enhanced_foundation: Json | null
           id: string
           ideal_client: string | null
           pain_point: string | null
@@ -105,6 +106,7 @@ export type Database = {
           business_goal?: string | null
           content_pillars?: Json | null
           created_at?: string
+          enhanced_foundation?: Json | null
           id?: string
           ideal_client?: string | null
           pain_point?: string | null
@@ -124,6 +126,7 @@ export type Database = {
           business_goal?: string | null
           content_pillars?: Json | null
           created_at?: string
+          enhanced_foundation?: Json | null
           id?: string
           ideal_client?: string | null
           pain_point?: string | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.strategies ADD COLUMN IF NOT EXISTS enhanced_foundation jsonb DEFAULT '{}'::jsonb;
