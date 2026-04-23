@@ -627,71 +627,61 @@ async function loadLogo(): Promise<{ dataUrl: string; w: number; h: number } | n
 async function renderCover(ctx: Ctx, _s: StrategyLike, companyName?: string) {
   const { pdf, pageW, pageH, margin } = ctx;
 
-  // Beige background
+  // Cream paper background (every page in the document uses this).
   pdf.setFillColor(...COLORS.cream);
   pdf.rect(0, 0, pageW, pageH, "F");
 
-  // Logo (top-left, generous)
+  // Centered MOXIE wordmark/logo at the top — matches the reference cover.
   const logo = await loadLogo();
   if (logo) {
-    const targetH = 36;
+    const targetH = 70;
     const targetW = (logo.w / logo.h) * targetH;
-    pdf.addImage(logo.dataUrl, "PNG", margin, margin + 8, targetW, targetH);
+    const x = (pageW - targetW) / 2;
+    pdf.addImage(logo.dataUrl, "PNG", x, margin + 40, targetW, targetH);
   }
 
-  // Thin gold rule below logo
-  pdf.setDrawColor(...COLORS.accent);
-  pdf.setLineWidth(1);
-  pdf.line(margin, margin + 64, margin + 80, margin + 64);
+  // Large serif title — split across two lines like the reference.
+  pdf.setFont("times", "bold");
+  pdf.setFontSize(40);
+  pdf.setTextColor(...COLORS.ink);
+  const titleY = pageH * 0.42;
+  pdf.text("Chief MOXIE Officer", margin, titleY);
+  pdf.text("Strategic Report", margin, titleY + 48);
 
-  // Eyebrow
+  // "Prepared for" lockup
+  const company = (companyName && companyName.trim()) || "Your business";
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(14);
+  pdf.setTextColor(...COLORS.ink);
+  pdf.text(`Prepared for ${company}`, margin, titleY + 96);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(12);
+  pdf.setTextColor(...COLORS.body);
+  pdf.text(
+    `Prepared by MOXIE · ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`,
+    margin,
+    titleY + 118
+  );
+
+  // Coral confidential banner near the bottom — matches the reference.
+  const bannerY = pageH - margin - 90;
+  const bannerH = 44;
+  pdf.setFillColor(...COLORS.coralSoft);
+  pdf.rect(margin, bannerY, pageW - margin * 2, bannerH, "F");
+  pdf.setDrawColor(...COLORS.coral);
+  pdf.setLineWidth(3);
+  pdf.line(margin, bannerY, margin, bannerY + bannerH);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
-  pdf.setCharSpace(2);
-  pdf.setTextColor(...COLORS.accent);
-  pdf.text("STRATEGIC REPORT", margin, pageH / 2 - 80);
-  pdf.setCharSpace(0);
-
-  // Title — large display
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(46);
+  pdf.setCharSpace(1.2);
   pdf.setTextColor(...COLORS.ink);
-  pdf.text("Chief MOXIE", margin, pageH / 2 - 30);
-  pdf.text("Officer", margin, pageH / 2 + 16);
-
-  // Subtitle
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(20);
-  pdf.setTextColor(...COLORS.body);
-  pdf.text("Strategic Report", margin, pageH / 2 + 48);
-
-  // Created for + date — bottom-left block
-  const blockY = pageH - margin - 70;
-  pdf.setDrawColor(...COLORS.accent);
-  pdf.setLineWidth(0.75);
-  pdf.line(margin, blockY - 20, margin + 60, blockY - 20);
-
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(9);
-  pdf.setCharSpace(1.5);
-  pdf.setTextColor(...COLORS.muted);
-  pdf.text("CREATED FOR", margin, blockY);
-  pdf.setCharSpace(0);
-
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(18);
-  pdf.setTextColor(...COLORS.ink);
-  const company = (companyName && companyName.trim()) || "Your business";
-  pdf.text(company, margin, blockY + 22);
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(11);
-  pdf.setTextColor(...COLORS.muted);
   pdf.text(
-    new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }),
-    margin,
-    blockY + 44
+    `CONFIDENTIAL — Prepared exclusively for ${company.toUpperCase()}. Not for distribution.`,
+    margin + 16,
+    bannerY + bannerH / 2 + 4
   );
+  pdf.setCharSpace(0);
 }
 
 export async function exportStrategyPdf(opts: {
