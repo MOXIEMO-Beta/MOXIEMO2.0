@@ -777,21 +777,21 @@ async function renderCover(ctx: Ctx, _s: StrategyLike, companyName?: string) {
   pdf.setFontSize(40);
   pdf.setTextColor(...COLORS.ink);
   const titleY = pageH * 0.42;
-  pdf.text("Chief MOXIE Officer", margin, titleY);
-  pdf.text("Strategic Report", margin, titleY + 48);
+  pdf.text(safe("Chief MOXIE Officer"), margin, titleY);
+  pdf.text(safe("Strategic Report"), margin, titleY + 48);
 
   // "Prepared for" lockup
   const company = (companyName && companyName.trim()) || "Your business";
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(14);
   pdf.setTextColor(...COLORS.ink);
-  pdf.text(`Prepared for ${company}`, margin, titleY + 96);
+  pdf.text(safe(`Prepared for ${company}`), margin, titleY + 96);
 
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(12);
   pdf.setTextColor(...COLORS.body);
   pdf.text(
-    `Prepared by MOXIE · ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`,
+    safe(`Prepared by MOXIE  ·  ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`),
     margin,
     titleY + 118
   );
