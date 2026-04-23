@@ -729,10 +729,10 @@ function StrategyContent() {
         <TabsContent value="voice" className="mt-0 data-[state=inactive]:hidden" forceMount>
           <div id="strategy-export-voice"><VoiceTab /></div>
         </TabsContent>
-        <TabsContent value="content" className="mt-0">{TAB_PLACEHOLDER("Content themes")}</TabsContent>
-        <TabsContent value="channels" className="mt-0">{TAB_PLACEHOLDER("Channel strategy")}</TabsContent>
-        <TabsContent value="metrics" className="mt-0">{TAB_PLACEHOLDER("Success metrics")}</TabsContent>
-        <TabsContent value="action" className="mt-0">{TAB_PLACEHOLDER("Action plan")}</TabsContent>
+        <TabsContent value="content" className="mt-0"><ContentTab /></TabsContent>
+        <TabsContent value="channels" className="mt-0"><ChannelsTab /></TabsContent>
+        <TabsContent value="metrics" className="mt-0"><MetricsTab /></TabsContent>
+        <TabsContent value="action" className="mt-0"><ActionPlanTab /></TabsContent>
       </Tabs>
 
       <RefineSectionDialog
