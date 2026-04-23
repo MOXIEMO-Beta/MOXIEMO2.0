@@ -278,10 +278,12 @@ function drawCallout(ctx: Ctx, text: string) {
 }
 
 function drawCalloutBox(ctx: Ctx, lines: string[], boxH: number, padX: number, padY: number, lineH: number) {
-  ctx.pdf.setFillColor(...COLORS.softCream);
+  // Sage-green bordered card on a soft sage tint, matching the reference
+  // "callout" pattern (e.g. The Core Opportunity card).
+  ctx.pdf.setFillColor(...COLORS.sageSoft);
   ctx.pdf.rect(ctx.margin, ctx.y, ctx.contentW, boxH, "F");
-  ctx.pdf.setDrawColor(...COLORS.accent);
-  ctx.pdf.setLineWidth(2.5);
+  ctx.pdf.setDrawColor(...COLORS.sage);
+  ctx.pdf.setLineWidth(3);
   ctx.pdf.line(ctx.margin, ctx.y, ctx.margin, ctx.y + boxH);
   ctx.pdf.setFont("helvetica", "italic");
   ctx.pdf.setFontSize(11);
