@@ -10,6 +10,8 @@ import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loa
 import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
 import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
+import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
+import { RefineSectionDialog } from "@/components/strategy/RefineSectionDialog";
 import { exportStrategyPdf } from "@/lib/exportStrategyPdf";
 
 const TAB_PLACEHOLDER = (label: string) => (
@@ -672,9 +674,41 @@ function VoiceTab() {
 }
 
 function StrategyContent() {
+  const { strategy, setField } = useStrategyEditor();
+  const [refineOpen, setRefineOpen] = useState(false);
+  const [refineKey, setRefineKey] = useState<string | null>(null);
+  const [refineLabel, setRefineLabel] = useState<string | undefined>();
+  const [strengthDismissed, setStrengthDismissed] = useState(false);
+
+  const score = strategy?.strength_score as number | null | undefined;
+  const weak = (strategy?.weak_areas || []) as any[];
+  const strong = (strategy?.strong_areas || []) as any[];
+
+  const openRefine = (area: { refineKey: string; label: string }) => {
+    setRefineKey(area.refineKey);
+    setRefineLabel(area.label);
+    setRefineOpen(true);
+  };
+
+  const refineCurrentValue = (() => {
+    if (!refineKey) return "";
+    const v = strategy?.[refineKey];
+    if (Array.isArray(v)) return v.join(", ");
+    return v || "";
+  })();
+
   return (
     <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
       <StrategyHeader />
+      {!strengthDismissed && (
+        <StrategyStrengthCard
+          score={score ?? null}
+          weakAreas={weak}
+          strongAreas={strong}
+          onRefine={openRefine}
+          onDismiss={() => setStrengthDismissed(true)}
+        />
+      )}
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="bg-muted/60 h-auto p-1 mb-6 flex flex-wrap justify-start gap-1">
           <TabsTrigger value="overview" className="rounded-md">Overview</TabsTrigger>
@@ -695,6 +729,31 @@ function StrategyContent() {
         <TabsContent value="metrics" className="mt-0">{TAB_PLACEHOLDER("Success metrics")}</TabsContent>
         <TabsContent value="action" className="mt-0">{TAB_PLACEHOLDER("Action plan")}</TabsContent>
       </Tabs>
+
+      <RefineSectionDialog
+        open={refineOpen}
+        onOpenChange={setRefineOpen}
+        sectionKey={refineKey}
+        sectionLabel={refineLabel}
+        currentValue={refineCurrentValue}
+        context={{
+          ideal_client: strategy?.ideal_client,
+          pain_point: strategy?.pain_point,
+          transformation: strategy?.transformation,
+          voice_attributes: strategy?.voice_attributes,
+          positioning_statement: strategy?.positioning_statement,
+        }}
+        onApply={(newValue) => {
+          if (!refineKey) return;
+          // voice_attributes is an array column — split commas back out.
+          if (refineKey === "voice_attributes") {
+            const arr = newValue.split(/,|\n/).map((s) => s.trim()).filter(Boolean);
+            setField(refineKey, arr);
+          } else {
+            setField(refineKey, newValue);
+          }
+        }}
+      />
     </div>
   );
 }
