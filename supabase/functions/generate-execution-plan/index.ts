@@ -121,10 +121,164 @@ Today's date: ${todayISO()}`;
                 },
                 channelStrategy: {
                   type: "object",
+                  description: "Each of primary/secondary/tertiary MUST be a rich object (not a string) with platform, rationale (3-5 bullets), contentStrategy, postingSchedule, successMetrics, timeAllocation.",
                   properties: {
-                    primary: { $ref: "#/$defs/channel" },
-                    secondary: { $ref: "#/$defs/channel" },
-                    tertiary: { $ref: "#/$defs/channel" },
+                    primary: {
+                      type: "object",
+                      properties: {
+                        platform: { type: "string" },
+                        rationale: { type: "array", items: { type: "string" } },
+                        contentStrategy: {
+                          type: "object",
+                          properties: {
+                            frequency: { type: "string" },
+                            types: { type: "array", items: { type: "string" } },
+                            tone: { type: "string" },
+                          },
+                        },
+                        postingSchedule: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              day: { type: "string" },
+                              time: { type: "string" },
+                              type: { type: "string" },
+                              example: { type: "string" },
+                            },
+                            required: ["day", "type"],
+                          },
+                        },
+                        successMetrics: {
+                          type: "object",
+                          properties: {
+                            engagementRate: { type: "string" },
+                            profileViews: { type: "string" },
+                            connectionRequests: { type: "string" },
+                            discoveryCallInquiries: { type: "string" },
+                          },
+                        },
+                        timeAllocation: {
+                          type: "object",
+                          properties: {
+                            total: { type: "string" },
+                            breakdown: {
+                              type: "object",
+                              properties: {
+                                contentCreation: { type: "string" },
+                                engagement: { type: "string" },
+                                dmConversations: { type: "string" },
+                              },
+                            },
+                          },
+                        },
+                      },
+                      required: ["platform", "rationale"],
+                    },
+                    secondary: {
+                      type: "object",
+                      properties: {
+                        platform: { type: "string" },
+                        rationale: { type: "array", items: { type: "string" } },
+                        contentStrategy: {
+                          type: "object",
+                          properties: {
+                            frequency: { type: "string" },
+                            types: { type: "array", items: { type: "string" } },
+                            tone: { type: "string" },
+                          },
+                        },
+                        postingSchedule: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              day: { type: "string" },
+                              time: { type: "string" },
+                              type: { type: "string" },
+                              example: { type: "string" },
+                            },
+                            required: ["day", "type"],
+                          },
+                        },
+                        successMetrics: {
+                          type: "object",
+                          properties: {
+                            engagementRate: { type: "string" },
+                            profileViews: { type: "string" },
+                            connectionRequests: { type: "string" },
+                            discoveryCallInquiries: { type: "string" },
+                          },
+                        },
+                        timeAllocation: {
+                          type: "object",
+                          properties: {
+                            total: { type: "string" },
+                            breakdown: {
+                              type: "object",
+                              properties: {
+                                contentCreation: { type: "string" },
+                                engagement: { type: "string" },
+                                dmConversations: { type: "string" },
+                              },
+                            },
+                          },
+                        },
+                      },
+                      required: ["platform", "rationale"],
+                    },
+                    tertiary: {
+                      type: "object",
+                      properties: {
+                        platform: { type: "string" },
+                        rationale: { type: "array", items: { type: "string" } },
+                        contentStrategy: {
+                          type: "object",
+                          properties: {
+                            frequency: { type: "string" },
+                            types: { type: "array", items: { type: "string" } },
+                            tone: { type: "string" },
+                          },
+                        },
+                        postingSchedule: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              day: { type: "string" },
+                              time: { type: "string" },
+                              type: { type: "string" },
+                              example: { type: "string" },
+                            },
+                            required: ["day", "type"],
+                          },
+                        },
+                        successMetrics: {
+                          type: "object",
+                          properties: {
+                            engagementRate: { type: "string" },
+                            profileViews: { type: "string" },
+                            connectionRequests: { type: "string" },
+                            discoveryCallInquiries: { type: "string" },
+                          },
+                        },
+                        timeAllocation: {
+                          type: "object",
+                          properties: {
+                            total: { type: "string" },
+                            breakdown: {
+                              type: "object",
+                              properties: {
+                                contentCreation: { type: "string" },
+                                engagement: { type: "string" },
+                                dmConversations: { type: "string" },
+                              },
+                            },
+                          },
+                        },
+                      },
+                      required: ["platform", "rationale"],
+                    },
                     totalTimeWithMOXIE: {
                       type: "object",
                       properties: {
