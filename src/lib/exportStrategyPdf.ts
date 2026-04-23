@@ -1,22 +1,31 @@
 import jsPDF from "jspdf";
 import { toast } from "sonner";
-import logoUrl from "@/assets/moxie-logo.png";
+import logoUrl from "@/assets/moxie-logo-full.png";
 
 /**
  * Data-driven PDF export. Reads directly from the strategy object so every
  * section is included regardless of which tab is currently mounted.
+ *
+ * Visual language mirrors the editorial Studio SB / MOXIE brand audit
+ * reference: cream paper background, large serif display headlines,
+ * pill-shaped eyebrow tags, sage-green bordered callout cards, gold accents.
  */
 
 type StrategyLike = any;
 
 const COLORS = {
-  ink: [20, 20, 20] as const,
-  body: [55, 55, 55] as const,
-  muted: [120, 120, 120] as const,
-  rule: [220, 215, 205] as const,
-  accent: [196, 156, 76] as const, // gold-ish
-  cream: [245, 240, 230] as const,
-  softCream: [250, 247, 240] as const,
+  // Editorial palette inspired by the Studio SB reference.
+  ink: [22, 28, 38] as const,        // near-black navy for headlines
+  body: [45, 52, 64] as const,       // body copy
+  muted: [120, 124, 130] as const,
+  rule: [214, 208, 192] as const,
+  accent: [196, 156, 76] as const,   // gold rule
+  sage: [110, 130, 95] as const,     // sage-green left border on cards
+  sageSoft: [232, 236, 224] as const,
+  coral: [240, 130, 120] as const,   // confidential banner
+  coralSoft: [248, 200, 195] as const,
+  cream: [244, 240, 226] as const,   // page background
+  softCream: [250, 247, 235] as const,
   white: [255, 255, 255] as const,
 };
 
@@ -44,26 +53,46 @@ interface Ctx {
   y: number;
   brand: string;
   sectionTitle: string;
+  sectionNumber: number;
 }
 
 function newPage(ctx: Ctx, sectionTitle?: string) {
   ctx.pdf.addPage();
-  ctx.y = ctx.margin + 60;
   if (sectionTitle) ctx.sectionTitle = sectionTitle;
+  paintBackground(ctx);
   drawHeader(ctx);
+  ctx.y = ctx.margin + 84;
+}
+
+function paintBackground(ctx: Ctx) {
+  ctx.pdf.setFillColor(...COLORS.cream);
+  ctx.pdf.rect(0, 0, ctx.pageW, ctx.pageH, "F");
 }
 
 function drawHeader(ctx: Ctx) {
-  const { pdf, pageW, margin, brand, sectionTitle } = ctx;
-  pdf.setFillColor(...COLORS.cream);
-  pdf.rect(0, 0, pageW, 48, "F");
-  pdf.setTextColor(...COLORS.ink);
+  // Pill-shaped eyebrow tag at the top, matching the "02 | BRAND POSITIONING
+  // AUDIT" style from the reference. The body section title is rendered
+  // separately by drawDisplayTitle so the header stays minimal.
+  const { pdf, margin, brand, sectionTitle, sectionNumber } = ctx;
+  const label = `${String(sectionNumber).padStart(2, "0")} | ${(brand + " · " + sectionTitle).toUpperCase()}`;
+  drawPillTag(pdf, margin, margin + 24, label);
+}
+
+function drawPillTag(pdf: jsPDF, x: number, y: number, label: string) {
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(9);
-  pdf.text(brand.toUpperCase() + " · STRATEGY", margin, 20);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(13);
-  pdf.text(sectionTitle, margin, 38);
+  pdf.setFontSize(8);
+  pdf.setCharSpace(1.2);
+  const padX = 10;
+  const padY = 6;
+  const textW = pdf.getTextWidth(label);
+  const w = textW + padX * 2;
+  const h = 18;
+  pdf.setDrawColor(...COLORS.muted);
+  pdf.setLineWidth(0.6);
+  pdf.roundedRect(x, y - h + padY, w, h, 4, 4, "S");
+  pdf.setTextColor(...COLORS.muted);
+  pdf.text(label, x + padX, y);
+  pdf.setCharSpace(0);
 }
 
 function ensureSpace(ctx: Ctx, needed: number) {
@@ -101,25 +130,46 @@ function drawSectionTitle(ctx: Ctx, title: string) {
   ctx.y += 20;
 }
 
+/**
+ * Large serif display headline at the top of a section, mirroring the
+ * Playfair-style headlines in the reference report. Uses jsPDF's built-in
+ * Times serif so we don't need to bundle a custom font.
+ */
+function drawDisplayTitle(ctx: Ctx, title: string) {
+  ensureSpace(ctx, 80);
+  ctx.pdf.setFont("times", "bold");
+  ctx.pdf.setFontSize(30);
+  ctx.pdf.setTextColor(...COLORS.ink);
+  const lines = ctx.pdf.splitTextToSize(title, ctx.contentW);
+  const lineH = 30 * 1.15;
+  for (const ln of lines) {
+    ctx.pdf.text(ln, ctx.margin, ctx.y + 24);
+    ctx.y += lineH;
+  }
+  ctx.y += 12;
+}
+
 function drawEyebrow(ctx: Ctx, text: string) {
-  // Keep eyebrow attached to whatever follows (need ~3 lines of room).
+  // Sage-green uppercase mini eyebrow for sub-section labels.
   keepTogether(ctx, 60);
   ctx.pdf.setFont("helvetica", "bold");
   ctx.pdf.setFontSize(8.5);
-  ctx.pdf.setCharSpace(1.2);
-  ctx.pdf.setTextColor(...COLORS.accent);
+  ctx.pdf.setCharSpace(1.4);
+  ctx.pdf.setTextColor(...COLORS.sage);
   ctx.pdf.text(text.toUpperCase(), ctx.margin, ctx.y);
   ctx.pdf.setCharSpace(0);
-  ctx.y += SPACING.afterEyebrow + 4;
+  ctx.y += SPACING.afterEyebrow + 6;
 }
 
 function drawLabel(ctx: Ctx, text: string) {
+  // Serif sub-headline, matching "This includes:" / "The Core Opportunity"
+  // style from the reference.
   keepTogether(ctx, 40);
-  ctx.pdf.setFont("helvetica", "bold");
-  ctx.pdf.setFontSize(10);
+  ctx.pdf.setFont("times", "bold");
+  ctx.pdf.setFontSize(14);
   ctx.pdf.setTextColor(...COLORS.ink);
   ctx.pdf.text(text, ctx.margin, ctx.y);
-  ctx.y += SPACING.afterLabel + 8;
+  ctx.y += SPACING.afterLabel + 10;
 }
 
 function drawText(ctx: Ctx, text: string, opts: { size?: number; color?: readonly [number, number, number]; bold?: boolean; italic?: boolean; indent?: number; lineGap?: number } = {}) {
@@ -228,10 +278,12 @@ function drawCallout(ctx: Ctx, text: string) {
 }
 
 function drawCalloutBox(ctx: Ctx, lines: string[], boxH: number, padX: number, padY: number, lineH: number) {
-  ctx.pdf.setFillColor(...COLORS.softCream);
+  // Sage-green bordered card on a soft sage tint, matching the reference
+  // "callout" pattern (e.g. The Core Opportunity card).
+  ctx.pdf.setFillColor(...COLORS.sageSoft);
   ctx.pdf.rect(ctx.margin, ctx.y, ctx.contentW, boxH, "F");
-  ctx.pdf.setDrawColor(...COLORS.accent);
-  ctx.pdf.setLineWidth(2.5);
+  ctx.pdf.setDrawColor(...COLORS.sage);
+  ctx.pdf.setLineWidth(3);
   ctx.pdf.line(ctx.margin, ctx.y, ctx.margin, ctx.y + boxH);
   ctx.pdf.setFont("helvetica", "italic");
   ctx.pdf.setFontSize(11);
@@ -253,8 +305,9 @@ function asArray(v: any): any[] {
 // ---------- Section renderers ----------
 
 function renderOverview(ctx: Ctx, s: StrategyLike) {
-  ctx.sectionTitle = "Overview";
-  newPage(ctx, "Overview");
+  ctx.sectionNumber = 1;
+  newPage(ctx, "Strategic Overview");
+  drawDisplayTitle(ctx, "Strategic Overview");
 
   if (s.positioning_statement) {
     drawEyebrow(ctx, "Positioning statement");
@@ -328,7 +381,9 @@ function renderOverview(ctx: Ctx, s: StrategyLike) {
 }
 
 function renderVoice(ctx: Ctx, s: StrategyLike) {
+  ctx.sectionNumber = 2;
   newPage(ctx, "Voice & Brand");
+  drawDisplayTitle(ctx, "Voice & Brand Identity");
   const ef = s.enhanced_foundation || {};
   const v = ef.voiceGuidelines || {};
 
@@ -382,7 +437,9 @@ function renderContent(ctx: Ctx, s: StrategyLike) {
   const calendar = ef.contentCalendar || [];
   if (!themes.length && !calendar.length && !(s.content_pillars?.length)) return;
 
-  newPage(ctx, "Content");
+  ctx.sectionNumber = 3;
+  newPage(ctx, "Content Strategy");
+  drawDisplayTitle(ctx, "Content Strategy & Calendar");
 
   if (s.content_pillars?.length) {
     drawEyebrow(ctx, "Content pillars");
@@ -421,7 +478,9 @@ function renderChannels(ctx: Ctx, s: StrategyLike) {
   const cs = ef.channelStrategy;
   if (!cs) return;
 
+  ctx.sectionNumber = 4;
   newPage(ctx, "Channels");
+  drawDisplayTitle(ctx, "Channel Strategy");
 
   (["primary", "secondary", "tertiary"] as const).forEach((tier) => {
     const ch = cs[tier];
@@ -464,7 +523,9 @@ function renderMetrics(ctx: Ctx, s: StrategyLike) {
   const sm = ef.successMetrics;
   if (!sm) return;
 
-  newPage(ctx, "Metrics");
+  ctx.sectionNumber = 5;
+  newPage(ctx, "Success Metrics");
+  drawDisplayTitle(ctx, "Success Metrics");
 
   if (sm.primary) {
     drawEyebrow(ctx, "Primary goal");
@@ -508,7 +569,9 @@ function renderActionPlan(ctx: Ctx, s: StrategyLike) {
   const plan = ef.actionPlan;
   if (!plan) return;
 
+  ctx.sectionNumber = 6;
   newPage(ctx, "Action Plan");
+  drawDisplayTitle(ctx, "Your 4-Week Action Plan");
   const completion = (s.task_completion || {}) as Record<string, boolean>;
 
   ([plan.week1, plan.week2, plan.week3, plan.week4]).forEach((w, i) => {
@@ -564,71 +627,61 @@ async function loadLogo(): Promise<{ dataUrl: string; w: number; h: number } | n
 async function renderCover(ctx: Ctx, _s: StrategyLike, companyName?: string) {
   const { pdf, pageW, pageH, margin } = ctx;
 
-  // Beige background
+  // Cream paper background (every page in the document uses this).
   pdf.setFillColor(...COLORS.cream);
   pdf.rect(0, 0, pageW, pageH, "F");
 
-  // Logo (top-left, generous)
+  // Centered MOXIE wordmark/logo at the top — matches the reference cover.
   const logo = await loadLogo();
   if (logo) {
-    const targetH = 36;
+    const targetH = 70;
     const targetW = (logo.w / logo.h) * targetH;
-    pdf.addImage(logo.dataUrl, "PNG", margin, margin + 8, targetW, targetH);
+    const x = (pageW - targetW) / 2;
+    pdf.addImage(logo.dataUrl, "PNG", x, margin + 40, targetW, targetH);
   }
 
-  // Thin gold rule below logo
-  pdf.setDrawColor(...COLORS.accent);
-  pdf.setLineWidth(1);
-  pdf.line(margin, margin + 64, margin + 80, margin + 64);
+  // Large serif title — split across two lines like the reference.
+  pdf.setFont("times", "bold");
+  pdf.setFontSize(40);
+  pdf.setTextColor(...COLORS.ink);
+  const titleY = pageH * 0.42;
+  pdf.text("Chief MOXIE Officer", margin, titleY);
+  pdf.text("Strategic Report", margin, titleY + 48);
 
-  // Eyebrow
+  // "Prepared for" lockup
+  const company = (companyName && companyName.trim()) || "Your business";
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(14);
+  pdf.setTextColor(...COLORS.ink);
+  pdf.text(`Prepared for ${company}`, margin, titleY + 96);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(12);
+  pdf.setTextColor(...COLORS.body);
+  pdf.text(
+    `Prepared by MOXIE · ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })}`,
+    margin,
+    titleY + 118
+  );
+
+  // Coral confidential banner near the bottom — matches the reference.
+  const bannerY = pageH - margin - 90;
+  const bannerH = 44;
+  pdf.setFillColor(...COLORS.coralSoft);
+  pdf.rect(margin, bannerY, pageW - margin * 2, bannerH, "F");
+  pdf.setDrawColor(...COLORS.coral);
+  pdf.setLineWidth(3);
+  pdf.line(margin, bannerY, margin, bannerY + bannerH);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(10);
-  pdf.setCharSpace(2);
-  pdf.setTextColor(...COLORS.accent);
-  pdf.text("STRATEGIC REPORT", margin, pageH / 2 - 80);
-  pdf.setCharSpace(0);
-
-  // Title — large display
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(46);
+  pdf.setCharSpace(1.2);
   pdf.setTextColor(...COLORS.ink);
-  pdf.text("Chief MOXIE", margin, pageH / 2 - 30);
-  pdf.text("Officer", margin, pageH / 2 + 16);
-
-  // Subtitle
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(20);
-  pdf.setTextColor(...COLORS.body);
-  pdf.text("Strategic Report", margin, pageH / 2 + 48);
-
-  // Created for + date — bottom-left block
-  const blockY = pageH - margin - 70;
-  pdf.setDrawColor(...COLORS.accent);
-  pdf.setLineWidth(0.75);
-  pdf.line(margin, blockY - 20, margin + 60, blockY - 20);
-
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(9);
-  pdf.setCharSpace(1.5);
-  pdf.setTextColor(...COLORS.muted);
-  pdf.text("CREATED FOR", margin, blockY);
-  pdf.setCharSpace(0);
-
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(18);
-  pdf.setTextColor(...COLORS.ink);
-  const company = (companyName && companyName.trim()) || "Your business";
-  pdf.text(company, margin, blockY + 22);
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(11);
-  pdf.setTextColor(...COLORS.muted);
   pdf.text(
-    new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" }),
-    margin,
-    blockY + 44
+    `CONFIDENTIAL — Prepared exclusively for ${company.toUpperCase()}. Not for distribution.`,
+    margin + 16,
+    bannerY + bannerH / 2 + 4
   );
+  pdf.setCharSpace(0);
 }
 
 export async function exportStrategyPdf(opts: {
@@ -658,6 +711,7 @@ export async function exportStrategyPdf(opts: {
       y: margin,
       brand: brandName,
       sectionTitle: "Overview",
+      sectionNumber: 1,
     };
 
     await renderCover(ctx, strategy, companyName);
@@ -668,15 +722,17 @@ export async function exportStrategyPdf(opts: {
     renderMetrics(ctx, strategy);
     renderActionPlan(ctx, strategy);
 
-    // Footer page numbers (skip cover)
+    // Footer (skip cover) — page number on the right, brand on the left.
     const total = pdf.getNumberOfPages();
     for (let p = 2; p <= total; p++) {
       pdf.setPage(p);
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(9);
-      pdf.setTextColor(140, 140, 140);
-      pdf.text(`${p - 1} / ${total - 1}`, pageW - margin, pageH - 18, { align: "right" });
-      pdf.text(brandName.toUpperCase(), margin, pageH - 18);
+      pdf.setCharSpace(1.2);
+      pdf.setTextColor(...COLORS.muted);
+      pdf.text(`${p - 1} / ${total - 1}`, pageW - margin, pageH - 22, { align: "right" });
+      pdf.text(brandName.toUpperCase() + " · STRATEGIC REPORT", margin, pageH - 22);
+      pdf.setCharSpace(0);
     }
 
     pdf.save(fileName);
