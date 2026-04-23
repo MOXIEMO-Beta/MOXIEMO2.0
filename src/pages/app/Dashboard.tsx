@@ -63,7 +63,7 @@ export default function Dashboard() {
 
   const setupSteps = [
     {
-      label: "Run AI Discovery",
+      label: "Run MOXIE Discovery",
       done: discoveryComplete,
       active: !discoveryComplete,
       to: "/app/discovery",

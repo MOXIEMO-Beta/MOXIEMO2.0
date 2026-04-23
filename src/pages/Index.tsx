@@ -30,7 +30,7 @@ export default function Index() {
           <div className="relative max-w-5xl mx-auto mt-16">
             <Card className="p-2 border-border shadow-lift bg-card overflow-hidden rounded-2xl">
               <div className="rounded-xl bg-foreground p-10 md:p-14 text-background text-left">
-                <div className="text-xs text-accent mb-5 font-semibold tracking-wider uppercase">AI Discovery — Section 1 of 5</div>
+                <div className="text-xs text-accent mb-5 font-semibold tracking-wider uppercase">MOXIE Discovery — Section 1 of 5</div>
                 <p className="text-2xl md:text-3xl font-semibold mb-6 leading-tight tracking-tight">"What transformation do you help clients achieve?"</p>
                 <div className="text-sm text-background/60">MOXIE adapts as you answer — coaching when unclear, placeholders when stuck.</div>
               </div>
@@ -94,7 +94,7 @@ export default function Index() {
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { n: "01", icon: Compass, t: "AI Discovery", d: "A guided conversation extracts your positioning, voice, audience, and goals." },
+              { n: "01", icon: Compass, t: "MOXIE Discovery", d: "A guided conversation extracts your positioning, voice, audience, and goals." },
               { n: "02", icon: Layers, t: "Strategy synthesized", d: "Positioning, pillars, voice, channels, metrics — connected, not a PDF." },
               { n: "03", icon: Clock, t: "Execution embedded", d: "Every tool already knows your strategy. Approve, edit, publish." },
             ].map((s) => (

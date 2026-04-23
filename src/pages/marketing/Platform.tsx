@@ -7,7 +7,7 @@ const stages = [
     n: "01",
     label: "Strategic foundation",
     time: "30 minutes",
-    title: "AI Discovery conversation",
+    title: "MOXIE Discovery conversation",
     body: "MOXIE's AI interviews you about who you serve, the transformation you provide, your unique positioning, and your voice. The strategic work most tools skip — done in half an hour.",
     outputs: ["Strategic positioning statement", "Brand voice guidelines", "Audience pain map", "Content theme clusters", "Channel prioritization", "Success metrics dashboard"],
   },

@@ -33,7 +33,7 @@ export function MarketingPage({ eyebrow, title, subtitle, children }: MarketingP
       <section className="border-t border-border bg-muted/40 py-20">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-[1.1]">Ready when you are.</h2>
-          <p className="text-muted-foreground mb-7 text-lg">Start your AI Discovery in under a minute.</p>
+          <p className="text-muted-foreground mb-7 text-lg">Start your MOXIE Discovery in under a minute.</p>
           <Button asChild size="lg" className="bg-foreground hover:bg-foreground/90 text-background h-12 px-8 rounded-full font-semibold">
             <Link to="/auth">Get started <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
