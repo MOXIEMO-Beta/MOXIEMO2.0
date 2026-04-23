@@ -17,6 +17,8 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
+  const [signupEmail, setSignupEmail] = useState("");
 
   useEffect(() => { if (user) navigate("/app"); }, [user, navigate]);
 
@@ -30,7 +32,9 @@ export default function Auth() {
           options: { data: { full_name: name }, emailRedirectTo: `${window.location.origin}/app` },
         });
         if (error) throw error;
-        toast.success("Welcome to MOXIE. Let's build your strategy.");
+        setSignupEmail(email);
+        setSignupSuccess(true);
+        toast.success("Account created. Check your email to confirm.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
