@@ -94,12 +94,16 @@ export type Database = {
           posting_frequency: string | null
           primary_channel: string | null
           raw_foundation: Json | null
+          strength_breakdown: Json | null
+          strength_score: number | null
+          strong_areas: Json | null
           success_definition: string | null
           time_capacity: string | null
           transformation: string | null
           updated_at: string
           user_id: string
           voice_attributes: Json | null
+          weak_areas: Json | null
         }
         Insert: {
           anti_positioning?: string | null
@@ -114,12 +118,16 @@ export type Database = {
           posting_frequency?: string | null
           primary_channel?: string | null
           raw_foundation?: Json | null
+          strength_breakdown?: Json | null
+          strength_score?: number | null
+          strong_areas?: Json | null
           success_definition?: string | null
           time_capacity?: string | null
           transformation?: string | null
           updated_at?: string
           user_id: string
           voice_attributes?: Json | null
+          weak_areas?: Json | null
         }
         Update: {
           anti_positioning?: string | null
@@ -134,12 +142,16 @@ export type Database = {
           posting_frequency?: string | null
           primary_channel?: string | null
           raw_foundation?: Json | null
+          strength_breakdown?: Json | null
+          strength_score?: number | null
+          strong_areas?: Json | null
           success_definition?: string | null
           time_capacity?: string | null
           transformation?: string | null
           updated_at?: string
           user_id?: string
           voice_attributes?: Json | null
+          weak_areas?: Json | null
         }
         Relationships: []
       }
