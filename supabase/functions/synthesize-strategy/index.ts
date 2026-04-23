@@ -7,6 +7,99 @@ const SYSTEM = `You are MOXIE's strategy synthesizer. Read a discovery conversat
 You will save BOTH a base strategy AND an expanded "enhanced_foundation" object that deepens the output (Sprint 1: positioning breakdown, brand archetype, core values, competitive positioning, detailed voice guidelines).
 Be specific and grounded in the transcript — never generic. Every example, value, and word should feel derived from what the user actually said.`;
 
+// ---- Strength scoring -------------------------------------------------------
+// Parse [MODE:...] [Q:#] tags appended by the discovery agent.
+function parseModes(transcript: string): Record<number, "standard" | "coaching" | "placeholder"> {
+  const re = /\[MODE:(standard|coaching|placeholder)\]\s*\[Q:(\d{1,2})\]/gi;
+  const out: Record<number, any> = {};
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(transcript)) !== null) {
+    out[parseInt(m[2], 10)] = m[1].toLowerCase();
+  }
+  return out;
+}
+
+function modeScore(mode: string | undefined, std: number, coach: number, ph: number) {
+  if (mode === "standard") return std;
+  if (mode === "coaching") return coach;
+  if (mode === "placeholder") return ph;
+  return coach; // unknown -> assume coaching weight
+}
+
+function isQuantified(s?: string) {
+  if (!s) return false;
+  return /\d/.test(s) && /(per|\/|week|month|day|call|client|subscriber|\$|k\b)/i.test(s);
+}
+
+function specificity(s?: string): "high" | "medium" | "low" {
+  if (!s) return "low";
+  const len = s.trim().length;
+  if (len > 80 && /\d|\b(VP|CEO|CTO|director|manager|founder|years|ages?)\b/i.test(s)) return "high";
+  if (len > 40) return "medium";
+  return "low";
+}
+
+function computeStrength(transcript: string, parsed: any) {
+  const modes = parseModes(transcript);
+  const ef = parsed.enhanced_foundation || {};
+  const breakdown: Record<string, number> = {};
+
+  // Section 1: Business Foundation (40)
+  breakdown.transformation = modeScore(modes[1], 15, 10, 5);
+  const idealSpec = specificity(parsed.ideal_client);
+  breakdown.ideal_client = idealSpec === "high" ? 10 : idealSpec === "medium" ? 7 : 3;
+  breakdown.pain_point = modeScore(modes[3], 10, 7, 3);
+  breakdown.differentiation = modes[4] === "placeholder" ? 1 : 5;
+
+  // Section 2: Voice & Personality (25)
+  // Voice sample lives in the transcript as the user's Q6 answer; approximate via length of any user message after Q6 cue.
+  const voiceSampleLen = (() => {
+    // crude: longest user message in the transcript
+    const userMsgs = transcript.split(/\n\n/).filter((b) => b.startsWith("USER:")).map((b) => b.slice(5).trim());
+    return userMsgs.reduce((max, s) => Math.max(max, s.length), 0);
+  })();
+  breakdown.voice_sample = voiceSampleLen > 100 ? 15 : voiceSampleLen > 0 ? 8 : 0;
+  const voiceAttrs = parsed.voice_attributes?.length || 0;
+  breakdown.voice_attributes = voiceAttrs >= 5 ? 10 : voiceAttrs > 0 ? 5 : 0;
+
+  // Section 3: Current Reality (15)
+  breakdown.channel = parsed.primary_channel && parsed.primary_channel.length > 3 ? 10 : 5;
+  breakdown.time_capacity = parsed.time_capacity && /\d/.test(parsed.time_capacity) ? 5 : 2;
+
+  // Section 4: Goals (20)
+  breakdown.success_metric = isQuantified(parsed.success_definition) ? 15 : parsed.success_definition ? 10 : 5;
+  breakdown.business_goal = parsed.business_goal && parsed.business_goal.length > 12 ? 5 : 2;
+
+  const score = Object.values(breakdown).reduce((a, b) => a + b, 0);
+
+  // Identify weak / strong areas with friendly labels.
+  const labels: Record<string, { label: string; section: string; max: number; refineKey: string }> = {
+    transformation: { label: "Transformation", section: "Foundation", max: 15, refineKey: "transformation" },
+    ideal_client: { label: "Ideal client", section: "Foundation", max: 10, refineKey: "ideal_client" },
+    pain_point: { label: "Pain point", section: "Foundation", max: 10, refineKey: "pain_point" },
+    differentiation: { label: "Differentiation", section: "Positioning", max: 5, refineKey: "positioning_statement" },
+    voice_sample: { label: "Voice sample", section: "Voice", max: 15, refineKey: "voice_attributes" },
+    voice_attributes: { label: "Voice attributes", section: "Voice", max: 10, refineKey: "voice_attributes" },
+    channel: { label: "Channel strategy", section: "Channels", max: 10, refineKey: "primary_channel" },
+    time_capacity: { label: "Time capacity", section: "Capacity", max: 5, refineKey: "time_capacity" },
+    success_metric: { label: "Success metric", section: "Goals", max: 15, refineKey: "success_definition" },
+    business_goal: { label: "Business goal", section: "Goals", max: 5, refineKey: "business_goal" },
+  };
+
+  const weak: any[] = [];
+  const strong: any[] = [];
+  for (const k of Object.keys(breakdown)) {
+    const ratio = breakdown[k] / labels[k].max;
+    const item = { key: k, label: labels[k].label, section: labels[k].section, points: breakdown[k], max: labels[k].max, refineKey: labels[k].refineKey };
+    if (ratio >= 0.85) strong.push(item);
+    else if (ratio < 0.6) weak.push(item);
+  }
+  // Sort weak by widest gap first
+  weak.sort((a, b) => (a.points / a.max) - (b.points / b.max));
+
+  return { score, breakdown, weak_areas: weak, strong_areas: strong };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -205,6 +298,18 @@ Deno.serve(async (req) => {
     const data = await res.json();
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     const parsed = args ? JSON.parse(args) : {};
+
+    // Compute strength score from transcript + synthesized fields.
+    try {
+      const strength = computeStrength(transcript || "", parsed);
+      parsed.strength_score = strength.score;
+      parsed.strength_breakdown = strength.breakdown;
+      parsed.weak_areas = strength.weak_areas;
+      parsed.strong_areas = strength.strong_areas;
+    } catch (e) {
+      console.error("strength scoring failed", e);
+    }
+
     return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
