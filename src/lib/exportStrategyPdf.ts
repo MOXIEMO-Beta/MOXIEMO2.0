@@ -410,14 +410,15 @@ function renderOverview(ctx: Ctx, s: StrategyLike) {
   if (a) {
     drawHr(ctx);
     drawEyebrow(ctx, "Brand archetype");
-    drawText(ctx, [a.icon, a.name].filter(Boolean).join("  "), { size: 18, bold: true, color: COLORS.ink, lineGap: 4 });
+    // Skip the emoji icon — built-in PDF fonts can't render it.
+    drawText(ctx, a.name || "", { size: 18, bold: true, color: COLORS.ink, lineGap: 4 });
     if (a.secondary) drawText(ctx, `Secondary: ${a.secondary}`, { size: 9, color: COLORS.muted, lineGap: 8 });
     if (a.description) drawText(ctx, a.description, { size: 11 });
     if (a.exampleBrands?.length) drawKeyValue(ctx, "Brands", asArray(a.exampleBrands).join(", "));
     if (a.coreValues?.length) drawKeyValue(ctx, "Values", asArray(a.coreValues).join(", "));
     if (a.contentApproach) drawKeyValue(ctx, "Content approach", a.contentApproach);
     if (a.whyThisFits?.length) { drawLabel(ctx, "Why this fits you"); drawBullets(ctx, a.whyThisFits); }
-    if (a.howToApply?.length) { drawLabel(ctx, "How to use this"); drawBullets(ctx, a.howToApply, { bullet: "→" }); }
+    if (a.howToApply?.length) { drawLabel(ctx, "How to use this"); drawBullets(ctx, a.howToApply, { bullet: ">" }); }
   }
 
   drawHr(ctx);
@@ -434,8 +435,8 @@ function renderOverview(ctx: Ctx, s: StrategyLike) {
       drawText(ctx, `${String(i + 1).padStart(2, "0")}  ${v.name || "Value"}`, { size: 13, bold: true, color: COLORS.ink, lineGap: 4 });
       if (v.decisionFilter) drawCallout(ctx, `Decision filter: ${v.decisionFilter}`);
       if (v.description) drawText(ctx, v.description, { color: COLORS.body });
-      if (v.yesExamples?.length) { drawText(ctx, "Yes:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, v.yesExamples, { bullet: "✓" }); }
-      if (v.noExamples?.length) { drawText(ctx, "No:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, v.noExamples, { bullet: "✗" }); }
+      if (v.yesExamples?.length) { drawText(ctx, "Yes:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, v.yesExamples, { bullet: "+" }); }
+      if (v.noExamples?.length) { drawText(ctx, "No:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, v.noExamples, { bullet: "x" }); }
       ctx.y += 4;
     });
   }
