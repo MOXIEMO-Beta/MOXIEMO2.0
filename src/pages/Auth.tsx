@@ -74,6 +74,28 @@ export default function Auth() {
       <div className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-8"><MoxieLogo /></div>
+          {signupSuccess ? (
+            <div>
+              <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center mb-6">
+                <Mail className="h-6 w-6 text-accent-foreground" />
+              </div>
+              <h1 className="font-display text-4xl mb-3">Check your email</h1>
+              <p className="text-muted-foreground mb-6">
+                Thanks for signing up! We sent a confirmation link to{" "}
+                <span className="text-foreground font-medium">{signupEmail}</span>. Click the link in that email to verify your account and start building your strategy.
+              </p>
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm text-muted-foreground mb-6">
+                Didn't get it? Check your spam folder, or wait a minute and look again. The link expires in 24 hours.
+              </div>
+              <button
+                onClick={() => { setSignupSuccess(false); setMode("signin"); setPassword(""); }}
+                className="text-sm text-foreground font-medium hover:text-accent"
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : (
+          <>
           <h1 className="font-display text-4xl mb-2">{mode === "signup" ? "Get started" : "Welcome back"}</h1>
           <p className="text-muted-foreground mb-8">{mode === "signup" ? "Create your account in 30 seconds." : "Sign in to your workspace."}</p>
 
@@ -103,6 +125,8 @@ export default function Auth() {
               {mode === "signup" ? "Sign in" : "Create account"}
             </button>
           </p>
+          </>
+          )}
         </div>
       </div>
     </div>
