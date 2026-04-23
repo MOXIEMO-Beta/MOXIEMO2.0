@@ -6,13 +6,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
-import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loader2, CheckCircle2, AlertCircle, Zap } from "lucide-react";
+import { toast } from "sonner";
 import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
 import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
 import { RefineSectionDialog } from "@/components/strategy/RefineSectionDialog";
 import { exportStrategyPdf } from "@/lib/exportStrategyPdf";
+import { ContentTab } from "@/components/strategy/tabs/ContentTab";
+import { ChannelsTab } from "@/components/strategy/tabs/ChannelsTab";
+import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
+import { ActionPlanTab } from "@/components/strategy/tabs/ActionPlanTab";
 
 const TAB_PLACEHOLDER = (label: string) => (
   <Card className="p-10 border-dashed border-border bg-background text-center">
@@ -35,8 +40,39 @@ function SaveStatusIndicator() {
 }
 
 function StrategyHeader() {
-  const { editing, setEditing, status, saveNow, strategy } = useStrategyEditor();
+  const { editing, setEditing, status, saveNow, strategy, setEnhanced } = useStrategyEditor();
   const [exporting, setExporting] = useState(false);
+  const [generating, setGenerating] = useState(false);
+
+  const ef = (strategy?.enhanced_foundation || {}) as any;
+  const hasExecutionPlan = !!(ef.quarterlyThemes?.length || ef.channelStrategy?.primary || ef.successMetrics?.primary || ef.actionPlan?.week1);
+
+  const handleGenerate = async () => {
+    if (editing) await saveNow();
+    setGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-execution-plan", { body: { strategy } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      // Merge new sections into enhanced_foundation, preserving Sprint 1 fields.
+      const merged = {
+        ...ef,
+        quarterlyThemes: data.quarterlyThemes,
+        contentCalendar: data.contentCalendar,
+        channelStrategy: data.channelStrategy,
+        successMetrics: data.successMetrics,
+        actionPlan: data.actionPlan,
+      };
+      setEnhanced([], merged);
+      await saveNow();
+      toast.success("Execution plan generated", { description: "Content, Channels, Metrics and Action Plan are ready." });
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Couldn't generate plan", { description: e?.message || "Try again in a moment." });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleExport = async () => {
     if (editing) await saveNow();
@@ -63,6 +99,10 @@ function StrategyHeader() {
         <div className="mt-3"><SaveStatusIndicator /></div>
       </div>
       <div className="flex gap-2 flex-wrap items-center">
+        <Button onClick={handleGenerate} size="sm" disabled={generating || !strategy} className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg">
+          {generating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-2 h-3.5 w-3.5" />}
+          {hasExecutionPlan ? "Regenerate plan" : "Generate execution plan"}
+        </Button>
         {editing ? (
           <>
             <Button onClick={() => saveNow()} size="sm" disabled={status === "saving"} className="bg-foreground text-background hover:bg-foreground/90 rounded-lg">
@@ -724,10 +764,10 @@ function StrategyContent() {
         <TabsContent value="voice" className="mt-0 data-[state=inactive]:hidden" forceMount>
           <div id="strategy-export-voice"><VoiceTab /></div>
         </TabsContent>
-        <TabsContent value="content" className="mt-0">{TAB_PLACEHOLDER("Content themes")}</TabsContent>
-        <TabsContent value="channels" className="mt-0">{TAB_PLACEHOLDER("Channel strategy")}</TabsContent>
-        <TabsContent value="metrics" className="mt-0">{TAB_PLACEHOLDER("Success metrics")}</TabsContent>
-        <TabsContent value="action" className="mt-0">{TAB_PLACEHOLDER("Action plan")}</TabsContent>
+        <TabsContent value="content" className="mt-0"><ContentTab /></TabsContent>
+        <TabsContent value="channels" className="mt-0"><ChannelsTab /></TabsContent>
+        <TabsContent value="metrics" className="mt-0"><MetricsTab /></TabsContent>
+        <TabsContent value="action" className="mt-0"><ActionPlanTab /></TabsContent>
       </Tabs>
 
       <RefineSectionDialog

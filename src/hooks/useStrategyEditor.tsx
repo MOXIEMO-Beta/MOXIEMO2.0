@@ -39,6 +39,7 @@ const TOP_LEVEL_COLUMNS = new Set([
   "business_goal",
   "time_capacity",
   "enhanced_foundation",
+  "task_completion",
 ]);
 
 function setIn(obj: any, path: (string | number)[], value: any): any {
