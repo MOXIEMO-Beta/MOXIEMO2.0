@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { MoxieLogo } from "@/components/MoxieLogo";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 
 export default function Auth() {
   const navigate = useNavigate();
