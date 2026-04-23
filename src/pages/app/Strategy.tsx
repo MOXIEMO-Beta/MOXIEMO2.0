@@ -684,8 +684,12 @@ function StrategyContent() {
           <TabsTrigger value="metrics" className="rounded-md">Metrics</TabsTrigger>
           <TabsTrigger value="action" className="rounded-md">Action Plan</TabsTrigger>
         </TabsList>
-        <TabsContent value="overview" className="mt-0"><OverviewTab /></TabsContent>
-        <TabsContent value="voice" className="mt-0"><VoiceTab /></TabsContent>
+        <TabsContent value="overview" className="mt-0 data-[state=inactive]:hidden" forceMount>
+          <div id="strategy-export-overview"><OverviewTab /></div>
+        </TabsContent>
+        <TabsContent value="voice" className="mt-0 data-[state=inactive]:hidden" forceMount>
+          <div id="strategy-export-voice"><VoiceTab /></div>
+        </TabsContent>
         <TabsContent value="content" className="mt-0">{TAB_PLACEHOLDER("Content themes")}</TabsContent>
         <TabsContent value="channels" className="mt-0">{TAB_PLACEHOLDER("Channel strategy")}</TabsContent>
         <TabsContent value="metrics" className="mt-0">{TAB_PLACEHOLDER("Success metrics")}</TabsContent>
