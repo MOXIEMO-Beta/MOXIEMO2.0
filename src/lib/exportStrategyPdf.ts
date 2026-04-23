@@ -465,7 +465,16 @@ function renderVoice(ctx: Ctx, s: StrategyLike) {
     drawLabel(ctx, "Sentence structure");
     if (typeof v.sentenceStructure === "string") drawText(ctx, v.sentenceStructure);
     else {
-      Object.entries(v.sentenceStructure).forEach(([k, val]) => drawKeyValue(ctx, k, String(val)));
+      Object.entries(v.sentenceStructure).forEach(([k, val]) => {
+        // Rules / examples are often arrays — render arrays as bulleted lists
+        // instead of comma-joined strings so each rule reads cleanly.
+        if (Array.isArray(val)) {
+          drawText(ctx, humanize(k).toUpperCase(), { bold: true, size: 8.5, color: COLORS.muted, lineGap: 2 });
+          drawBullets(ctx, val);
+        } else {
+          drawKeyValue(ctx, humanize(k), valueToString(val));
+        }
+      });
     }
   }
 
@@ -477,7 +486,9 @@ function renderVoice(ctx: Ctx, s: StrategyLike) {
 
   if (v.toneByPlatform) {
     drawLabel(ctx, "Tone by platform");
-    Object.entries(v.toneByPlatform).forEach(([p, t]: any) => drawKeyValue(ctx, p, typeof t === "string" ? t : t?.tone || JSON.stringify(t)));
+    Object.entries(v.toneByPlatform).forEach(([p, t]: any) =>
+      drawKeyValue(ctx, humanize(p), typeof t === "string" ? t : (t?.tone || valueToString(t)))
+    );
   }
 
   if (v.examples?.length) {
@@ -491,8 +502,9 @@ function renderVoice(ctx: Ctx, s: StrategyLike) {
   if (v.neverSoundLike?.length) {
     drawLabel(ctx, "Never sound like");
     v.neverSoundLike.forEach((n: any) => {
-      drawText(ctx, `✗ ${n.example || n}`, { color: COLORS.body, lineGap: 1 });
-      if (n.why) drawText(ctx, `   Why: ${n.why}`, { size: 9, color: COLORS.muted });
+      const example = typeof n === "string" ? n : (n.example || "");
+      if (example) drawText(ctx, `x  ${example}`, { color: COLORS.body, lineGap: 2 });
+      if (n.why) drawText(ctx, `Why: ${n.why}`, { size: 9, color: COLORS.muted, indent: SPACING.bulletIndent });
     });
   } else if (s.anti_positioning) {
     drawLabel(ctx, "Anti-positioning");
@@ -519,13 +531,28 @@ function renderContent(ctx: Ctx, s: StrategyLike) {
     drawEyebrow(ctx, "Quarterly themes");
     themes.forEach((t: any, i: number) => {
       drawText(ctx, `${t.quarter || `Q${i + 1}`} · ${t.theme || ""}`, { size: 13, bold: true, color: COLORS.ink, lineGap: 3 });
-      if (t.description) drawText(ctx, t.description);
-      if (t.contentTopics?.length) { drawText(ctx, "Topics:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, t.contentTopics); }
+      if (t.overview) drawText(ctx, t.overview);
+      if (t.strategicRationale) {
+        drawText(ctx, "Why this quarter", { bold: true, size: 8.5, color: COLORS.muted, lineGap: 2 });
+        drawText(ctx, t.strategicRationale);
+      }
+      if (t.contentTopics?.length) {
+        drawText(ctx, "Topics — 12 weeks", { bold: true, size: 8.5, color: COLORS.muted, lineGap: 2 });
+        t.contentTopics.forEach((c: any) => {
+          const week = c.week ? `Week ${String(c.week).padStart(2, "0")} — ` : "";
+          const topic = c.topic || c.keyMessage || "";
+          drawText(ctx, `${week}${topic}`, { color: COLORS.ink, bold: true, size: 10, lineGap: 1 });
+          const meta = [c.angle, c.contentType].filter(Boolean).join(" · ");
+          if (meta) drawText(ctx, meta, { size: 9, color: COLORS.muted, lineGap: 2 });
+          if (c.keyMessage && c.topic) drawText(ctx, c.keyMessage, { size: 9.5, lineGap: 6 });
+        });
+      }
       if (t.contentMix) {
         drawText(ctx, "Content mix:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 });
-        Object.entries(t.contentMix).forEach(([k, v]) => drawKeyValue(ctx, k, String(v)));
+        Object.entries(t.contentMix).filter(([, v]) => v).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), valueToString(v)));
       }
-      if (t.successMetrics?.length) { drawText(ctx, "Success metrics:", { bold: true, size: 9, color: COLORS.muted, lineGap: 1 }); drawBullets(ctx, t.successMetrics); }
+      if (t.successMetric) drawKeyValue(ctx, "Success metric", t.successMetric);
+      if (t.cta) drawKeyValue(ctx, "Call to action", t.cta);
       ctx.y += 4;
     });
   }
@@ -534,10 +561,18 @@ function renderContent(ctx: Ctx, s: StrategyLike) {
     drawHr(ctx);
     drawEyebrow(ctx, "30-day content calendar");
     calendar.slice(0, 60).forEach((item: any) => {
-      const head = [item.day && `Day ${item.day}`, item.platform, item.format].filter(Boolean).join(" · ");
-      drawText(ctx, head, { bold: true, size: 10, color: COLORS.ink, lineGap: 1 });
-      if (item.title || item.topic) drawText(ctx, item.title || item.topic, { size: 10 });
-      if (item.notes) drawText(ctx, item.notes, { size: 9, color: COLORS.muted, lineGap: 6 });
+      const head = [
+        item.day && (item.date ? `${item.day} · ${item.date}` : item.day),
+        item.platform,
+        item.format || item.contentType,
+      ].filter(Boolean).join("  ·  ");
+      if (head) drawText(ctx, head, { bold: true, size: 9.5, color: COLORS.ink, lineGap: 2 });
+      const topic = item.topic || item.title || item.keyMessage;
+      if (topic) drawText(ctx, topic, { size: 10.5, lineGap: 2 });
+      const meta = [item.theme, item.angle].filter(Boolean).join(" · ");
+      if (meta) drawText(ctx, meta, { size: 9, color: COLORS.muted, lineGap: 2 });
+      if (item.notes) drawText(ctx, item.notes, { size: 9, color: COLORS.muted, lineGap: 8 });
+      else ctx.y += 6;
     });
   }
 }
@@ -556,33 +591,61 @@ function renderChannels(ctx: Ctx, s: StrategyLike) {
     if (!ch || typeof ch === "string") return;
     drawEyebrow(ctx, `${tier} channel`);
     drawText(ctx, ch.platform || tier, { size: 14, bold: true, color: COLORS.ink, lineGap: 3 });
-    if (ch.rationale) drawText(ctx, ch.rationale, { italic: true, color: COLORS.body });
+    if (ch.rationale) {
+      // Rationale can be a string OR an array of bullet points.
+      if (Array.isArray(ch.rationale)) drawBullets(ctx, ch.rationale);
+      else drawText(ctx, String(ch.rationale), { italic: true, color: COLORS.body });
+    }
 
     if (ch.contentStrategy && typeof ch.contentStrategy === "object") {
       drawLabel(ctx, "Content strategy");
       Object.entries(ch.contentStrategy).forEach(([k, v]) => {
-        if (Array.isArray(v)) drawKeyValue(ctx, k, v.join(", "));
-        else if (v) drawKeyValue(ctx, k, String(v));
+        if (v == null || v === "") return;
+        if (Array.isArray(v)) {
+          if (v.every((x) => typeof x === "string")) drawKeyValue(ctx, humanize(k), v.join(", "));
+          else { drawText(ctx, humanize(k).toUpperCase(), { bold: true, size: 8.5, color: COLORS.muted, lineGap: 2 }); drawBullets(ctx, v); }
+        } else if (typeof v === "object") {
+          drawKeyValue(ctx, humanize(k), valueToString(v));
+        } else {
+          drawKeyValue(ctx, humanize(k), String(v));
+        }
       });
     }
-    if (ch.postingSchedule && typeof ch.postingSchedule === "object") {
+    if (ch.postingSchedule) {
       drawLabel(ctx, "Posting schedule");
-      Object.entries(ch.postingSchedule).forEach(([k, v]) => drawKeyValue(ctx, k, String(v)));
+      if (Array.isArray(ch.postingSchedule)) {
+        ch.postingSchedule.forEach((s: any) => {
+          const head = [s.day, s.time].filter(Boolean).join(" · ");
+          drawText(ctx, head || "Scheduled", { bold: true, size: 9.5, color: COLORS.ink, lineGap: 2 });
+          if (s.type) drawText(ctx, s.type, { size: 10, lineGap: 1 });
+          if (s.example) drawText(ctx, s.example, { italic: true, size: 9, color: COLORS.muted, lineGap: 6 });
+        });
+      } else {
+        Object.entries(ch.postingSchedule).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), valueToString(v)));
+      }
     }
     if (ch.successMetrics) {
       drawLabel(ctx, "Success metrics");
       if (Array.isArray(ch.successMetrics)) drawBullets(ctx, ch.successMetrics);
-      else Object.entries(ch.successMetrics).forEach(([k, v]) => drawKeyValue(ctx, k, String(v)));
+      else Object.entries(ch.successMetrics).filter(([, v]) => v).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), valueToString(v)));
     }
     if (ch.timeAllocation) {
-      drawKeyValue(ctx, "Time allocation", typeof ch.timeAllocation === "string" ? ch.timeAllocation : JSON.stringify(ch.timeAllocation));
+      drawLabel(ctx, "Time allocation");
+      if (typeof ch.timeAllocation === "string") {
+        drawText(ctx, ch.timeAllocation);
+      } else {
+        if (ch.timeAllocation.total) drawKeyValue(ctx, "Total", String(ch.timeAllocation.total));
+        if (ch.timeAllocation.breakdown) {
+          Object.entries(ch.timeAllocation.breakdown).filter(([, v]) => v).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), valueToString(v)));
+        }
+      }
     }
     drawHr(ctx);
   });
 
   if (cs.timeSavings || cs.comparison) {
     drawEyebrow(ctx, "Time savings with MOXIE");
-    if (cs.timeSavings) drawText(ctx, typeof cs.timeSavings === "string" ? cs.timeSavings : JSON.stringify(cs.timeSavings));
+    if (cs.timeSavings) drawText(ctx, typeof cs.timeSavings === "string" ? cs.timeSavings : valueToString(cs.timeSavings));
     if (cs.comparison) drawText(ctx, cs.comparison, { italic: true, color: COLORS.muted });
   }
 }
@@ -624,12 +687,12 @@ function renderMetrics(ctx: Ctx, s: StrategyLike) {
 
   if (sm.businessGoals) {
     drawEyebrow(ctx, "Business goals");
-    Object.entries(sm.businessGoals).forEach(([k, v]) => drawKeyValue(ctx, k, typeof v === "string" ? v : JSON.stringify(v)));
+    Object.entries(sm.businessGoals).forEach(([k, v]) => drawKeyValue(ctx, humanize(k), typeof v === "string" ? v : valueToString(v)));
   }
 
   if (sm.brandHealth) {
     drawEyebrow(ctx, "Brand health");
-    Object.entries(sm.brandHealth).forEach(([k, v]: any) => drawKeyValue(ctx, k, typeof v === "object" ? `${v.score ?? ""} ${v.note ? `— ${v.note}` : ""}` : String(v)));
+    Object.entries(sm.brandHealth).forEach(([k, v]: any) => drawKeyValue(ctx, humanize(k), typeof v === "object" ? `${v.score ?? ""}${v.note ? ` — ${v.note}` : ""}` : String(v)));
   }
 }
 
@@ -649,7 +712,7 @@ function renderActionPlan(ctx: Ctx, s: StrategyLike) {
     if (w.title) drawText(ctx, w.title, { size: 13, bold: true, color: COLORS.ink, lineGap: 6 });
     const tasks = w.tasks || [];
     tasks.forEach((t: any) => {
-      const mark = completion[t.id] ? "☑" : "☐";
+      const mark = completion[t.id] ? "[x]" : "[ ]";
       const time = t.estimatedTime ? `  (${t.estimatedTime})` : "";
       drawText(ctx, `${mark}  ${t.task}${time}`, { color: COLORS.body, lineGap: 2 });
     });
