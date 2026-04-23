@@ -2,8 +2,12 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Clock, Sparkles } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, Clock, Sparkles, AlertTriangle, Loader2, Zap } from "lucide-react";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 function ChannelSection({ channel, level, defaultOpen }: { channel: any; level: string; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(!!defaultOpen);
@@ -92,7 +96,8 @@ function ChannelSection({ channel, level, defaultOpen }: { channel: any; level: 
 }
 
 export function ChannelsTab() {
-  const { strategy } = useStrategyEditor();
+  const { strategy, setEnhanced, saveNow } = useStrategyEditor();
+  const [regenerating, setRegenerating] = useState(false);
   const ef = (strategy?.enhanced_foundation || {}) as any;
   const cs = ef.channelStrategy;
 
@@ -107,8 +112,68 @@ export function ChannelsTab() {
 
   const time = cs.totalTimeWithMOXIE;
 
+  // Validation: detect malformed channel data (strings instead of structured objects).
+  const validateChannel = (ch: any, level: string): string[] => {
+    const issues: string[] = [];
+    if (!ch) return issues;
+    if (typeof ch === "string") { issues.push(`${level} channel is a plain string instead of a structured object`); return issues; }
+    if (ch.contentStrategy && typeof ch.contentStrategy === "string") issues.push(`${level} contentStrategy is a string (expected object with frequency/types/tone)`);
+    if (ch.postingSchedule && typeof ch.postingSchedule === "string") issues.push(`${level} postingSchedule is a string (expected array of schedule entries)`);
+    if (ch.successMetrics && typeof ch.successMetrics === "string") issues.push(`${level} successMetrics is a string (expected object)`);
+    if (ch.timeAllocation && typeof ch.timeAllocation === "string") issues.push(`${level} timeAllocation is a string (expected object)`);
+    if (ch.rationale && typeof ch.rationale === "string") issues.push(`${level} rationale is a string (expected array)`);
+    return issues;
+  };
+  const issues = [
+    ...validateChannel(cs.primary, "Primary"),
+    ...validateChannel(cs.secondary, "Secondary"),
+    ...validateChannel(cs.tertiary, "Tertiary"),
+  ];
+
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-execution-plan", { body: { strategy } });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const merged = {
+        ...ef,
+        quarterlyThemes: data.quarterlyThemes,
+        contentCalendar: data.contentCalendar,
+        channelStrategy: data.channelStrategy,
+        successMetrics: data.successMetrics,
+        actionPlan: data.actionPlan,
+      };
+      setEnhanced([], merged);
+      await saveNow();
+      toast.success("Channels regenerated", { description: "Channel strategy has been rebuilt with structured data." });
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Couldn't regenerate channels", { description: e?.message || "Try again in a moment." });
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-5">
+      {issues.length > 0 && (
+        <Alert variant="destructive" className="border-destructive/40 bg-destructive/5">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle className="font-display tracking-[-0.01em]">Channel data needs a refresh</AlertTitle>
+          <AlertDescription className="space-y-3">
+            <p className="text-sm">Some channel fields came back unstructured from the last generation and won't render correctly:</p>
+            <ul className="text-xs space-y-1 list-disc pl-4">
+              {issues.map((iss, i) => <li key={i}>{iss}</li>)}
+            </ul>
+            <Button onClick={handleRegenerate} disabled={regenerating} size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg mt-1">
+              {regenerating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-2 h-3.5 w-3.5" />}
+              Regenerate Channels
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <ChannelSection channel={cs.primary} level="PRIMARY" defaultOpen />
       <ChannelSection channel={cs.secondary} level="SECONDARY" />
       <ChannelSection channel={cs.tertiary} level="TERTIARY" />
