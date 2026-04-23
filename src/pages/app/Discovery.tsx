@@ -13,6 +13,10 @@ type Msg = { role: "user" | "assistant"; content: string };
 
 const SECTIONS = ["Business Foundation", "Positioning", "Voice", "Content & Channel", "Goals & Capacity"];
 
+// Strip the hidden mode-tracking tag from assistant messages before displaying.
+const MODE_TAG_RE = /\n?\[MODE:(standard|coaching|placeholder)\]\s*\[Q:\d+\]\s*$/i;
+const stripModeTag = (text: string) => text.replace(MODE_TAG_RE, "").trimEnd();
+
 export default function Discovery() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -197,7 +201,9 @@ export default function Discovery() {
                 "max-w-[78%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap",
                 m.role === "user" ? "bg-foreground text-background" : "bg-card border border-border shadow-soft text-foreground"
               )}>
-                {m.content || <span className="inline-flex items-center gap-1 text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-pulse" /> thinking…</span>}
+                {m.content
+                  ? (m.role === "assistant" ? stripModeTag(m.content) : m.content)
+                  : <span className="inline-flex items-center gap-1 text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-pulse" /> thinking…</span>}
               </div>
             </div>
           ))}
