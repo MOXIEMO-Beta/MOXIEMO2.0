@@ -64,6 +64,63 @@ function newPage(ctx: Ctx, sectionTitle?: string) {
   ctx.y = ctx.margin + 84;
 }
 
+/**
+ * Append " (cont.)" to a section title, but never stack multiple suffixes.
+ */
+function contTitle(title: string): string {
+  return /\(cont\.\)$/i.test(title) ? title : `${title} (cont.)`;
+}
+
+/**
+ * jsPDF retains state like charSpace across operations; reset before any
+ * text we don't want tracked. Built-in PDF fonts also lack many Unicode
+ * glyphs (emoji, smart symbols) — strip those rather than render tofu.
+ */
+function resetText(pdf: jsPDF) {
+  pdf.setCharSpace(0);
+}
+
+function safe(text: any): string {
+  if (text == null) return "";
+  // Replace fancy quotes/dashes/ellipses with ASCII equivalents and strip
+  // characters outside the WinAnsi range (emoji, etc) so jsPDF's standard
+  // fonts don't render garbage.
+  return String(text)
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    .replace(/[\u2013\u2014]/g, "—")
+    .replace(/\u2026/g, "...")
+    .replace(/[^\x09\x0A\x0D\x20-\xFF]/g, "");
+}
+
+/** Convert camelCase / snake_case keys to nicely capitalised labels. */
+function humanize(key: string): string {
+  return String(key)
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^./, (c) => c.toUpperCase());
+}
+
+/** Render any value (object, array, primitive) into a readable string. */
+function valueToString(v: any): string {
+  if (v == null) return "";
+  if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") return String(v);
+  if (Array.isArray(v)) {
+    // Array of primitives → comma list. Array of objects → newline-joined entries.
+    if (v.every((x) => typeof x !== "object" || x == null)) return v.filter(Boolean).join(", ");
+    return v.map((x) => valueToString(x)).filter(Boolean).join(" · ");
+  }
+  if (typeof v === "object") {
+    return Object.entries(v)
+      .filter(([, val]) => val != null && val !== "")
+      .map(([k, val]) => `${humanize(k)}: ${valueToString(val)}`)
+      .join(" · ");
+  }
+  return "";
+}
+
 function paintBackground(ctx: Ctx) {
   ctx.pdf.setFillColor(...COLORS.cream);
   ctx.pdf.rect(0, 0, ctx.pageW, ctx.pageH, "F");
@@ -81,7 +138,10 @@ function drawHeader(ctx: Ctx) {
 function drawPillTag(pdf: jsPDF, x: number, y: number, label: string) {
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(8);
-  pdf.setCharSpace(1.2);
+  // Letter spacing is handled visually via the uppercased label only —
+  // jsPDF's setCharSpace can leak into later draws on some platforms, so
+  // we avoid it entirely outside this function.
+  resetText(pdf);
   const padX = 10;
   const padY = 6;
   const textW = pdf.getTextWidth(label);
@@ -92,12 +152,11 @@ function drawPillTag(pdf: jsPDF, x: number, y: number, label: string) {
   pdf.roundedRect(x, y - h + padY, w, h, 4, 4, "S");
   pdf.setTextColor(...COLORS.muted);
   pdf.text(label, x + padX, y);
-  pdf.setCharSpace(0);
 }
 
 function ensureSpace(ctx: Ctx, needed: number) {
   if (ctx.y + needed > ctx.pageH - ctx.margin) {
-    newPage(ctx, ctx.sectionTitle + " (cont.)");
+    newPage(ctx, contTitle(ctx.sectionTitle));
   }
 }
 
@@ -108,7 +167,7 @@ function ensureSpace(ctx: Ctx, needed: number) {
  */
 function keepTogether(ctx: Ctx, needed: number) {
   if (ctx.y + needed > ctx.pageH - ctx.margin) {
-    newPage(ctx, ctx.sectionTitle + " (cont.)");
+    newPage(ctx, contTitle(ctx.sectionTitle));
   }
 }
 
