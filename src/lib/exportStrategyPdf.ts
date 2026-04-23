@@ -130,25 +130,46 @@ function drawSectionTitle(ctx: Ctx, title: string) {
   ctx.y += 20;
 }
 
+/**
+ * Large serif display headline at the top of a section, mirroring the
+ * Playfair-style headlines in the reference report. Uses jsPDF's built-in
+ * Times serif so we don't need to bundle a custom font.
+ */
+function drawDisplayTitle(ctx: Ctx, title: string) {
+  ensureSpace(ctx, 80);
+  ctx.pdf.setFont("times", "bold");
+  ctx.pdf.setFontSize(30);
+  ctx.pdf.setTextColor(...COLORS.ink);
+  const lines = ctx.pdf.splitTextToSize(title, ctx.contentW);
+  const lineH = 30 * 1.15;
+  for (const ln of lines) {
+    ctx.pdf.text(ln, ctx.margin, ctx.y + 24);
+    ctx.y += lineH;
+  }
+  ctx.y += 12;
+}
+
 function drawEyebrow(ctx: Ctx, text: string) {
-  // Keep eyebrow attached to whatever follows (need ~3 lines of room).
+  // Sage-green uppercase mini eyebrow for sub-section labels.
   keepTogether(ctx, 60);
   ctx.pdf.setFont("helvetica", "bold");
   ctx.pdf.setFontSize(8.5);
-  ctx.pdf.setCharSpace(1.2);
-  ctx.pdf.setTextColor(...COLORS.accent);
+  ctx.pdf.setCharSpace(1.4);
+  ctx.pdf.setTextColor(...COLORS.sage);
   ctx.pdf.text(text.toUpperCase(), ctx.margin, ctx.y);
   ctx.pdf.setCharSpace(0);
-  ctx.y += SPACING.afterEyebrow + 4;
+  ctx.y += SPACING.afterEyebrow + 6;
 }
 
 function drawLabel(ctx: Ctx, text: string) {
+  // Serif sub-headline, matching "This includes:" / "The Core Opportunity"
+  // style from the reference.
   keepTogether(ctx, 40);
-  ctx.pdf.setFont("helvetica", "bold");
-  ctx.pdf.setFontSize(10);
+  ctx.pdf.setFont("times", "bold");
+  ctx.pdf.setFontSize(14);
   ctx.pdf.setTextColor(...COLORS.ink);
   ctx.pdf.text(text, ctx.margin, ctx.y);
-  ctx.y += SPACING.afterLabel + 8;
+  ctx.y += SPACING.afterLabel + 10;
 }
 
 function drawText(ctx: Ctx, text: string, opts: { size?: number; color?: readonly [number, number, number]; bold?: boolean; italic?: boolean; indent?: number; lineGap?: number } = {}) {
