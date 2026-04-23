@@ -98,6 +98,7 @@ export type Database = {
           strength_score: number | null
           strong_areas: Json | null
           success_definition: string | null
+          task_completion: Json
           time_capacity: string | null
           transformation: string | null
           updated_at: string
@@ -122,6 +123,7 @@ export type Database = {
           strength_score?: number | null
           strong_areas?: Json | null
           success_definition?: string | null
+          task_completion?: Json
           time_capacity?: string | null
           transformation?: string | null
           updated_at?: string
@@ -146,6 +148,7 @@ export type Database = {
           strength_score?: number | null
           strong_areas?: Json | null
           success_definition?: string | null
+          task_completion?: Json
           time_capacity?: string | null
           transformation?: string | null
           updated_at?: string
