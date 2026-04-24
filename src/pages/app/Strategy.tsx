@@ -834,20 +834,19 @@ function StrategyContent({ reportData }: { reportData?: any }) {
         }}
       />
 
-      {reportData && (
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            left: -10000,
-            top: 0,
-            width: 794,
-            pointerEvents: "none",
-          }}
-        >
-          <MoxieReport data={reportData} />
-        </div>
-      )}
+      <div
+        style={{
+          position: "absolute",
+          left: "-9999px",
+          top: 0,
+          width: "794px",
+          background: "white",
+          zIndex: -1,
+        }}
+        aria-hidden="true"
+      >
+        {reportData && <MoxieReport data={reportData} />}
+      </div>
     </div>
   );
 }
