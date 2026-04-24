@@ -24,9 +24,9 @@ const FONT = `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, 
 
 // ─── Shared page wrapper ───────────────────────────────────────
 const pageBase: React.CSSProperties = {
-  width: 794,
-  minHeight: "auto",
-  padding: 56,
+  width: "794px",
+  minHeight: "1123px",
+  padding: "48px",
   boxSizing: "border-box",
   fontFamily: FONT,
   color: C.navy,
