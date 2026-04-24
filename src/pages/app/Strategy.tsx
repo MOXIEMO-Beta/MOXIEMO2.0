@@ -10,6 +10,7 @@ import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loa
 import { toast } from "sonner";
 import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
 import { useReportData } from "@/hooks/useReportData";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
@@ -43,6 +44,7 @@ function SaveStatusIndicator() {
 function StrategyHeader() {
   const { editing, setEditing, status, saveNow, strategy, setEnhanced } = useStrategyEditor();
   const { user } = useAuth();
+  const { reportData } = useReportData();
   const [exporting, setExporting] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -105,6 +107,24 @@ function StrategyHeader() {
         <div className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-accent px-3 py-1.5 rounded-full bg-accent-soft mb-3">Your strategy</div>
         <h1 className="font-display text-5xl md:text-6xl tracking-[-0.03em] mb-3">Marketing foundation</h1>
         <p className="text-muted-foreground max-w-2xl">This strategy powers every piece of content, email, and post MOXIE generates. Update it any time — your execution layer adapts automatically.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <span className="uppercase tracking-[0.2em] text-[10px]">Prepared for</span>
+            {reportData?.meta?.preparedFor ? (
+              <span className="text-foreground/80">{reportData.meta.preparedFor}</span>
+            ) : (
+              <Skeleton className="h-3 w-24 inline-block align-middle" />
+            )}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <span className="uppercase tracking-[0.2em] text-[10px]">Date</span>
+            {reportData?.meta?.date ? (
+              <span className="text-foreground/80">{reportData.meta.date}</span>
+            ) : (
+              <Skeleton className="h-3 w-28 inline-block align-middle" />
+            )}
+          </span>
+        </div>
         <div className="mt-3"><SaveStatusIndicator /></div>
       </div>
       <div className="flex gap-2 flex-wrap items-center">
@@ -126,6 +146,9 @@ function StrategyHeader() {
         )}
         <Button variant="outline" size="sm" className="rounded-lg" onClick={handleExport} disabled={exporting || !strategy}>
           {exporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />} PDF
+        </Button>
+        <Button variant="outline" size="sm" className="rounded-lg" onClick={() => {}}>
+          <Download className="mr-2 h-3.5 w-3.5" /> Download PDF
         </Button>
         <Button variant="outline" size="sm" className="rounded-lg"><Share2 className="mr-2 h-3.5 w-3.5" /> Share</Button>
       </div>
