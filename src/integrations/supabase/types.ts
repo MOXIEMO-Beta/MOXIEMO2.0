@@ -83,17 +83,23 @@ export type Database = {
       strategies: {
         Row: {
           anti_positioning: string | null
+          archetype: Json | null
+          brand_health: Json | null
           business_goal: string | null
+          calendar_entries: Json | null
           content_pillars: Json | null
+          content_themes: Json | null
           created_at: string
           enhanced_foundation: Json | null
           id: string
           ideal_client: string | null
+          methodology: string | null
           pain_point: string | null
           positioning_statement: string | null
           posting_frequency: string | null
           primary_channel: string | null
           raw_foundation: Json | null
+          report_cached: Json | null
           strength_breakdown: Json | null
           strength_score: number | null
           strong_areas: Json | null
@@ -102,23 +108,30 @@ export type Database = {
           time_capacity: string | null
           transformation: string | null
           updated_at: string
+          use_words: Json | null
           user_id: string
           voice_attributes: Json | null
           weak_areas: Json | null
         }
         Insert: {
           anti_positioning?: string | null
+          archetype?: Json | null
+          brand_health?: Json | null
           business_goal?: string | null
+          calendar_entries?: Json | null
           content_pillars?: Json | null
+          content_themes?: Json | null
           created_at?: string
           enhanced_foundation?: Json | null
           id?: string
           ideal_client?: string | null
+          methodology?: string | null
           pain_point?: string | null
           positioning_statement?: string | null
           posting_frequency?: string | null
           primary_channel?: string | null
           raw_foundation?: Json | null
+          report_cached?: Json | null
           strength_breakdown?: Json | null
           strength_score?: number | null
           strong_areas?: Json | null
@@ -127,23 +140,30 @@ export type Database = {
           time_capacity?: string | null
           transformation?: string | null
           updated_at?: string
+          use_words?: Json | null
           user_id: string
           voice_attributes?: Json | null
           weak_areas?: Json | null
         }
         Update: {
           anti_positioning?: string | null
+          archetype?: Json | null
+          brand_health?: Json | null
           business_goal?: string | null
+          calendar_entries?: Json | null
           content_pillars?: Json | null
+          content_themes?: Json | null
           created_at?: string
           enhanced_foundation?: Json | null
           id?: string
           ideal_client?: string | null
+          methodology?: string | null
           pain_point?: string | null
           positioning_statement?: string | null
           posting_frequency?: string | null
           primary_channel?: string | null
           raw_foundation?: Json | null
+          report_cached?: Json | null
           strength_breakdown?: Json | null
           strength_score?: number | null
           strong_areas?: Json | null
@@ -152,6 +172,7 @@ export type Database = {
           time_capacity?: string | null
           transformation?: string | null
           updated_at?: string
+          use_words?: Json | null
           user_id?: string
           voice_attributes?: Json | null
           weak_areas?: Json | null
