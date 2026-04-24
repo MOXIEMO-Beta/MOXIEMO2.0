@@ -778,6 +778,7 @@ function StrategyContent({ reportData }: { reportData?: any }) {
   return (
     <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
       <StrategyHeader />
+      <div id="moxie-strategy-report">
       {!strengthDismissed && (
         <StrategyStrengthCard
           score={score ?? null}
@@ -807,6 +808,7 @@ function StrategyContent({ reportData }: { reportData?: any }) {
         <TabsContent value="metrics" className="mt-0"><MetricsTab /></TabsContent>
         <TabsContent value="action" className="mt-0"><ActionPlanTab /></TabsContent>
       </Tabs>
+      </div>
 
       <RefineSectionDialog
         open={refineOpen}
