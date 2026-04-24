@@ -10,6 +10,7 @@ import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loa
 import { toast } from "sonner";
 import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
 import { useReportData } from "@/hooks/useReportData";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
