@@ -568,7 +568,7 @@ function VoiceTab() {
   const never: any[] = vg.neverSoundLike || [];
 
   return (
-    <div className="space-y-6 mt-0">
+    <div className="space-y-6 mt-0 report-page">
       {/* Voice attributes */}
       <Card className="p-7 border-border shadow-soft">
         <div className="flex items-center justify-between mb-4">
