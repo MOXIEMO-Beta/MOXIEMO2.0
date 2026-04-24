@@ -145,9 +145,6 @@ function StrategyHeader() {
             <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
           </Button>
         )}
-        <Button variant="outline" size="sm" className="rounded-lg" onClick={handleExport} disabled={exporting || !strategy}>
-          {exporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />} PDF
-        </Button>
         <Button
           variant="outline"
           size="sm"
