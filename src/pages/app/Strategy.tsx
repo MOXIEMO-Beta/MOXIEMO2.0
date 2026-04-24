@@ -16,6 +16,7 @@ import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
 import { RefineSectionDialog } from "@/components/strategy/RefineSectionDialog";
 import { exportStrategyPdf } from "@/lib/exportStrategyPdf";
+import { exportViaHTML2PDF } from "@/lib/pdfExport";
 import { ContentTab } from "@/components/strategy/tabs/ContentTab";
 import { ChannelsTab } from "@/components/strategy/tabs/ChannelsTab";
 import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
@@ -147,7 +148,12 @@ function StrategyHeader() {
         <Button variant="outline" size="sm" className="rounded-lg" onClick={handleExport} disabled={exporting || !strategy}>
           {exporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />} PDF
         </Button>
-        <Button variant="outline" size="sm" className="rounded-lg" onClick={() => {}}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="rounded-lg"
+          onClick={() => exportViaHTML2PDF('moxie-strategy-report', (strategy as any)?.profiles?.full_name ?? 'Founder')}
+        >
           <Download className="mr-2 h-3.5 w-3.5" /> Download PDF
         </Button>
         <Button variant="outline" size="sm" className="rounded-lg"><Share2 className="mr-2 h-3.5 w-3.5" /> Share</Button>
