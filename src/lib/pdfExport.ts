@@ -63,8 +63,36 @@ export async function exportViaHTML2PDF(
   const parent = element.parentElement;
   const prevStyle = parent ? parent.getAttribute('style') : null;
   if (parent) {
-    parent.setAttribute('style', 'position:fixed;top:0;left:0;width:794px;z-index:99999;background:white;');
+    parent.setAttribute('style', 'position:fixed;top:0;left:0;width:794px;z-index:99999;background:white;outline:4px solid magenta;');
   }
+
+  // ── DEBUG: log layout dimensions of the report and its pages ──
+  // Force layout flush before measuring
+  void element.offsetHeight;
+  const rect = element.getBoundingClientRect();
+  console.log('[MOXIE PDF DEBUG] #moxie-pdf-report bounding box:', {
+    width: rect.width,
+    height: rect.height,
+    top: rect.top,
+    left: rect.left,
+    scrollWidth: element.scrollWidth,
+    scrollHeight: element.scrollHeight,
+    childCount: element.children.length,
+    innerHTMLLength: element.innerHTML.length,
+  });
+  const pages = element.querySelectorAll('.report-page');
+  console.log(`[MOXIE PDF DEBUG] Found ${pages.length} .report-page elements`);
+  pages.forEach((p, i) => {
+    const pr = (p as HTMLElement).getBoundingClientRect();
+    console.log(`  page[${i}]`, { width: pr.width, height: pr.height, top: pr.top });
+  });
+
+  // Add a temporary debug banner inside the report so we can see if it renders in the PDF
+  const debugBanner = document.createElement('div');
+  debugBanner.id = 'moxie-pdf-debug-banner';
+  debugBanner.style.cssText = 'position:absolute;top:0;left:0;right:0;background:magenta;color:white;font:bold 14px sans-serif;padding:6px 10px;z-index:99999;';
+  debugBanner.textContent = `DEBUG: report ${Math.round(rect.width)}×${Math.round(rect.height)}, pages=${pages.length}`;
+  element.prepend(debugBanner);
 
   const filename = `MOXIE_Strategic_Report_${sanitizeFilename(recipientName)}_${formatFilenameDate()}.pdf`;
 
@@ -104,6 +132,9 @@ export async function exportViaHTML2PDF(
   try {
     await html2pdf().set(options).from(element).save();
   } finally {
+    // Remove debug banner
+    const banner = document.getElementById('moxie-pdf-debug-banner');
+    if (banner) banner.remove();
     // Restore hidden state on the parent wrapper
     if (parent) {
       if (prevStyle !== null) {
