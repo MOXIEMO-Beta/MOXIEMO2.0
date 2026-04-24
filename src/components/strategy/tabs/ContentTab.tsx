@@ -44,7 +44,7 @@ export function ContentTab() {
 
   if (!themes.length && !calendar.length) {
     return (
-      <Card className="p-10 border-dashed border-border bg-background text-center">
+      <Card className="report-card p-10 border-dashed border-border bg-background text-center">
         <h3 className="font-display text-2xl mb-2">No content plan yet</h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">Generate your execution plan from the button at the top of this page to populate quarterly themes and a 30-day calendar.</p>
       </Card>
@@ -56,7 +56,7 @@ export function ContentTab() {
   return (
     <div className="space-y-6 report-page">
       {themes.length > 0 && (
-        <Card className="p-7 border-border shadow-soft">
+        <Card className="report-card p-7 border-border shadow-soft">
           <div className="flex items-center justify-between mb-5">
             <div>
               <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Quarterly content themes</div>
@@ -132,7 +132,7 @@ export function ContentTab() {
       )}
 
       {calendar.length > 0 && (
-        <Card className="p-7 border-border shadow-soft">
+        <Card className="report-card p-7 border-border shadow-soft">
           <div className="flex items-center justify-between mb-5">
             <div>
               <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2 flex items-center gap-2"><CalendarIcon className="h-3.5 w-3.5" /> Next 30 days</div>

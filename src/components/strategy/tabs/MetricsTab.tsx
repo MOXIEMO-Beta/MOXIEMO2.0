@@ -15,7 +15,7 @@ export function MetricsTab() {
 
   if (!sm?.primary) {
     return (
-      <Card className="p-10 border-dashed border-border bg-background text-center">
+      <Card className="report-card p-10 border-dashed border-border bg-background text-center">
         <h3 className="font-display text-2xl mb-2">No metrics dashboard yet</h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">Generate your execution plan to set targets, lead source projections, and brand health baselines.</p>
       </Card>
@@ -30,7 +30,7 @@ export function MetricsTab() {
   return (
     <div className="space-y-6 report-page">
       {/* Primary goal */}
-      <Card className="p-7 border-border shadow-soft bg-foreground text-background">
+      <Card className="report-card p-7 border-border shadow-soft bg-foreground text-background">
         <div className="flex items-start gap-3 mb-5">
           <div className="h-10 w-10 rounded-lg bg-accent-soft/20 flex items-center justify-center shrink-0">
             <Target className="h-5 w-5 text-accent" />
@@ -57,7 +57,7 @@ export function MetricsTab() {
       {(Array.isArray(primary.leadSources) || primary.qualification) && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {Array.isArray(primary.leadSources) && primary.leadSources.length > 0 && (
-            <Card className="p-6 border-border shadow-soft">
+            <Card className="report-card p-6 border-border shadow-soft">
               <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Projected lead sources</div>
               <div className="space-y-3">
                 {primary.leadSources.map((s: any, i: number) => (
@@ -73,7 +73,7 @@ export function MetricsTab() {
             </Card>
           )}
           {primary.qualification && (
-            <Card className="p-6 border-border shadow-soft">
+            <Card className="report-card p-6 border-border shadow-soft">
               <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Lead qualification mix</div>
               <div className="space-y-3">
                 {(["highFit", "mediumFit", "lowFit"] as const).map((k) => {
@@ -97,7 +97,7 @@ export function MetricsTab() {
       )}
 
       {/* Content performance */}
-      <Card className="p-7 border-border shadow-soft">
+      <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4"><TrendingUp className="h-3.5 w-3.5" /> Content performance targets</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {cp.linkedin && (
@@ -127,7 +127,7 @@ export function MetricsTab() {
 
       {/* Business goals */}
       {(bg.revenueGrowth || bg.scalingPlan) && (
-        <Card className="p-7 border-border shadow-soft">
+        <Card className="report-card p-7 border-border shadow-soft">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4"><Sparkles className="h-3.5 w-3.5" /> Business goals</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {bg.revenueGrowth && (
@@ -147,7 +147,7 @@ export function MetricsTab() {
       )}
 
       {/* Brand health */}
-      <Card className="p-7 border-border shadow-soft">
+      <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-5"><Heart className="h-3.5 w-3.5" /> Brand health</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>

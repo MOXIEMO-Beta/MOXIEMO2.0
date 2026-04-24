@@ -103,7 +103,7 @@ export function ChannelsTab() {
 
   if (!cs?.primary?.platform) {
     return (
-      <Card className="p-10 border-dashed border-border bg-background text-center">
+      <Card className="report-card p-10 border-dashed border-border bg-background text-center">
         <h3 className="font-display text-2xl mb-2">No channel strategy yet</h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">Generate your execution plan to map your primary, secondary and tertiary channels with rationale, schedule and time allocation.</p>
       </Card>
@@ -179,7 +179,7 @@ export function ChannelsTab() {
       <ChannelSection channel={cs.tertiary} level="TERTIARY" />
 
       {time && (time.before || time.after || time.freed) && (
-        <Card className="p-7 border-border shadow-soft bg-accent-soft/30">
+        <Card className="report-card p-7 border-border shadow-soft bg-accent-soft/30">
           <div className="flex items-start gap-3 mb-4">
             <div className="h-10 w-10 rounded-lg bg-foreground flex items-center justify-center shrink-0">
               <Sparkles className="h-5 w-5 text-accent" />
