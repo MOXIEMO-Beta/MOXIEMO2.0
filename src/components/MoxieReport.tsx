@@ -270,8 +270,12 @@ function Content({ data }: { data: any }) {
           <div key={i} style={{ display: "flex", gap: 12, padding: "10px 0", borderTop: i ? `1px solid ${C.creamDark}` : "none" }}>
             <div style={{ minWidth: 28, height: 28, borderRadius: 6, background: C.coralPale, color: C.coral, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>{i + 1}</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>{p?.name ?? p?.title ?? p}</div>
-              {p?.description && <div style={{ fontSize: 12, color: C.navy3, marginTop: 2 }}>{p.description}</div>}
+              <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>
+                {typeof p === "string" ? p : (p?.name ?? p?.title ?? "—")}
+              </div>
+              {typeof p !== "string" && p?.description && (
+                <div style={{ fontSize: 12, color: C.navy3, marginTop: 2 }}>{p.description}</div>
+              )}
             </div>
           </div>
         ))}
