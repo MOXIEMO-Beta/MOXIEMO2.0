@@ -25,7 +25,7 @@ const FONT = `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, 
 // ─── Shared page wrapper ───────────────────────────────────────
 const pageBase: React.CSSProperties = {
   width: 794,
-  minHeight: 1123,
+  minHeight: "auto",
   padding: 56,
   boxSizing: "border-box",
   fontFamily: FONT,
@@ -346,7 +346,11 @@ function Calendar({ data }: { data: any }) {
             <div style={{ fontSize: 11, color: C.muted, letterSpacing: 1, textTransform: "uppercase" }}>{e?.dayName ?? ""}</div>
             <div style={{ fontSize: 11, fontWeight: 700, color: C.coral, textTransform: "uppercase", letterSpacing: 1 }}>{e?.channel ?? ""}</div>
             <div style={{ fontSize: 11, color: C.navy3, textTransform: "uppercase", letterSpacing: 1 }}>{e?.type ?? ""}</div>
-            <div style={{ fontSize: 13, color: C.navy2 }}>{e?.title ?? ""}</div>
+            <div style={{ fontSize: 13, color: C.navy2 }}>
+              {typeof e?.title === "string"
+                ? e.title
+                : e?.title?.text ?? e?.title?.name ?? (e?.title ? JSON.stringify(e.title) : "")}
+            </div>
           </div>
         ))}
         {entries.length === 0 && <div style={{ color: C.muted }}>No calendar entries.</div>}
@@ -505,9 +509,11 @@ function ActionPlan({ data }: { data: any }) {
 
 // ─── Root ──────────────────────────────────────────────────────
 export default function MoxieReport({ data }: { data: any }) {
+  // Temporary debug for business goals data shape
+  // eslint-disable-next-line no-console
+  console.log("metrics", data?.metrics);
   return (
     <div
-      id="moxie-pdf-report"
       style={{
         background: C.cream,
         color: C.navy,
