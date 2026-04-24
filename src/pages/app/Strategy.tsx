@@ -750,7 +750,7 @@ function StrategyContent({ reportData }: { reportData?: any }) {
     <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
       <StrategyHeader />
       <pre className="text-xs bg-muted/40 border border-border rounded-md p-3 mb-6 overflow-auto max-h-64">
-        {JSON.stringify(reportData?.meta, null, 2)}
+        {JSON.stringify(reportData, null, 2)}
       </pre>
       {!strengthDismissed && (
         <StrategyStrengthCard
