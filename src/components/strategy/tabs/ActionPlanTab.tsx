@@ -86,7 +86,7 @@ export function ActionPlanTab() {
   const overallPct = totalTasks ? Math.round((totalDone / totalTasks) * 100) : 0;
 
   return (
-    <div className="space-y-6 report-page">
+    <div className="space-y-6 report-page" style={{ pageBreakAfter: "always" }}>
       <Card className="report-card p-7 border-border shadow-soft bg-foreground text-background">
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2">Quick start</div>
         <h3 className="font-display text-3xl tracking-[-0.02em] mb-4">Your 4-week action plan</h3>
