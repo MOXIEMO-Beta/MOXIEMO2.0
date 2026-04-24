@@ -147,7 +147,6 @@ export function MetricsTab() {
       )}
 
       {/* Brand health */}
-      {(() => null)()}
       <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-5"><Heart className="h-3.5 w-3.5" /> Brand health</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
