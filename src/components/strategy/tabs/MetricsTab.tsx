@@ -147,13 +147,19 @@ export function MetricsTab() {
       )}
 
       {/* Brand health */}
+      {(() => null)()}
       <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-5"><Heart className="h-3.5 w-3.5" /> Brand health</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div>
             <div className="flex items-baseline justify-between mb-2">
               <span className="text-sm font-medium">Voice consistency</span>
-              <span className="font-display text-3xl text-accent">{bh.voiceConsistencyScore ?? 100}%</span>
+              <span className="font-display text-3xl text-accent">
+                {(() => {
+                  const v = bh.voiceConsistencyScore ?? 100;
+                  return v > 10 ? `${(v / 10).toFixed(1)} / 10` : `${v} / 10`;
+                })()}
+              </span>
             </div>
             <Progress value={bh.voiceConsistencyScore ?? 100} className="h-2" />
             <p className="text-xs text-muted-foreground mt-2">Perfect baseline — no content deviations yet.</p>
@@ -161,7 +167,12 @@ export function MetricsTab() {
           <div>
             <div className="flex items-baseline justify-between mb-2">
               <span className="text-sm font-medium">Archetype alignment</span>
-              <span className="font-display text-3xl text-accent">{bh.archetypeAlignment ?? 100}%</span>
+              <span className="font-display text-3xl text-accent">
+                {(() => {
+                  const v = bh.archetypeAlignment ?? 100;
+                  return v > 10 ? `${(v / 10).toFixed(1)} / 10` : `${v} / 10`;
+                })()}
+              </span>
             </div>
             <Progress value={bh.archetypeAlignment ?? 100} className="h-2" />
             {bh.notes && <p className="text-xs text-muted-foreground mt-2">{bh.notes}</p>}
