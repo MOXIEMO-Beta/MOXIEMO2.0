@@ -17,6 +17,7 @@ import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard
 import { RefineSectionDialog } from "@/components/strategy/RefineSectionDialog";
 import { exportStrategyPdf } from "@/lib/exportStrategyPdf";
 import { exportViaHTML2PDF } from "@/lib/pdfExport";
+import MoxieReport from "@/components/MoxieReport";
 import { ContentTab } from "@/components/strategy/tabs/ContentTab";
 import { ChannelsTab } from "@/components/strategy/tabs/ChannelsTab";
 import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
@@ -150,7 +151,7 @@ function StrategyHeader() {
           size="sm"
           className="rounded-lg"
           data-pdf-export-btn
-          onClick={() => exportViaHTML2PDF('moxie-strategy-report', (strategy as any)?.profiles?.full_name ?? 'Founder')}
+          onClick={() => exportViaHTML2PDF('moxie-pdf-report', (strategy as any)?.profiles?.full_name ?? 'Founder')}
         >
           <Download className="mr-2 h-3.5 w-3.5" /> Download PDF
         </Button>
@@ -832,6 +833,21 @@ function StrategyContent({ reportData }: { reportData?: any }) {
           }
         }}
       />
+
+      {reportData && (
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            left: -10000,
+            top: 0,
+            width: 794,
+            pointerEvents: "none",
+          }}
+        >
+          <MoxieReport data={reportData} />
+        </div>
+      )}
     </div>
   );
 }
