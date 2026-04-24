@@ -70,6 +70,11 @@ export async function exportViaHTML2PDF(
       useCORS:         true,
       letterRendering: true,
       backgroundColor: '#f7f2eb',
+      logging:                true,
+      allowTaint:             true,
+      foreignObjectRendering: false,
+      windowWidth:            794,
+      windowHeight:           1123,
     },
     jsPDF: {
       unit:        'px',
