@@ -811,6 +811,7 @@ export default function Strategy() {
   const { user } = useAuth();
   const [strategy, setStrategy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { reportData, isLoading, error } = useReportData();
 
   useEffect(() => {
     if (!user) return;
@@ -818,6 +819,9 @@ export default function Strategy() {
       setStrategy(data); setLoading(false);
     });
   }, [user]);
+
+  if (isLoading) return <p className="p-10 text-muted-foreground">Loading strategy...</p>;
+  if (error) return <p className="p-10 text-destructive">Error: {error.message}</p>;
 
   if (loading) return <div className="p-10 text-muted-foreground">Loading…</div>;
 
@@ -836,7 +840,7 @@ export default function Strategy() {
 
   return (
     <StrategyEditorProvider initial={strategy} userId={user!.id}>
-      <StrategyContent />
+      <StrategyContent reportData={reportData} />
     </StrategyEditorProvider>
   );
 }
