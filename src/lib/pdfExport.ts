@@ -41,7 +41,7 @@ export function exportViaPrint(
  * Falls back to print dialog if html2pdf.js is not installed.
  */
 export async function exportViaHTML2PDF(
-  containerId: string = 'moxie-strategy-report',
+  containerId: string = 'moxie-pdf-report',
   recipientName: string = 'Founder'
 ) {
   let html2pdf: any;
@@ -57,6 +57,13 @@ export async function exportViaHTML2PDF(
   if (!element) {
     console.error(`[MOXIE PDF] Element #${containerId} not found.`);
     return;
+  }
+
+  // Temporarily make visible for html2canvas
+  const parent = element.parentElement;
+  const prevStyle = parent ? parent.getAttribute('style') : null;
+  if (parent) {
+    parent.setAttribute('style', 'position:fixed;top:0;left:0;width:794px;z-index:99999;background:white;');
   }
 
   const filename = `MOXIE_Strategic_Report_${sanitizeFilename(recipientName)}_${formatFilenameDate()}.pdf`;
@@ -97,6 +104,14 @@ export async function exportViaHTML2PDF(
   try {
     await html2pdf().set(options).from(element).save();
   } finally {
+    // Restore hidden state on the parent wrapper
+    if (parent) {
+      if (prevStyle !== null) {
+        parent.setAttribute('style', prevStyle);
+      } else {
+        parent.setAttribute('style', 'position:fixed;top:0;left:0;width:794px;height:1px;overflow:hidden;pointer-events:none;z-index:-9999;opacity:0;');
+      }
+    }
     if (btn) {
       btn.disabled = false;
       btn.textContent = 'Download PDF';

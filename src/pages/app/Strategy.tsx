@@ -838,7 +838,6 @@ function StrategyContent({ reportData }: { reportData?: any }) {
       />
 
       <div
-        id="moxie-pdf-report"
         style={{
           position: "fixed",
           top: 0,
@@ -852,7 +851,9 @@ function StrategyContent({ reportData }: { reportData?: any }) {
         }}
         aria-hidden="true"
       >
-        {reportData && <MoxieReport data={reportData} />}
+        <div id="moxie-pdf-report">
+          {reportData && <MoxieReport data={reportData} />}
+        </div>
       </div>
     </div>
   );
