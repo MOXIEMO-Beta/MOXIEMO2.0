@@ -102,7 +102,7 @@ export function MetricsTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {cp.linkedin && (
             <div className="p-4 rounded-lg border border-border">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">LinkedIn</div>
+              <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">{strategy?.primary_channel ?? 'LinkedIn'}</div>
               <ul className="text-sm space-y-1">
                 {cp.linkedin.engagementTarget && <li className="flex justify-between"><span className="text-muted-foreground">Engagement</span><span>{cp.linkedin.engagementTarget}</span></li>}
                 {cp.linkedin.profileViewsTarget && <li className="flex justify-between"><span className="text-muted-foreground">Profile views</span><span>{cp.linkedin.profileViewsTarget}</span></li>}
