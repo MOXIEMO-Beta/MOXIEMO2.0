@@ -182,7 +182,7 @@ function OverviewTab() {
   ];
 
   return (
-    <div className="space-y-6 mt-0">
+    <div className="space-y-6 mt-0 report-page">
       {/* Positioning */}
       <Card className="p-8 bg-foreground text-background border-0">
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">Positioning statement</div>
