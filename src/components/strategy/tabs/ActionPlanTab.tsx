@@ -99,7 +99,7 @@ export function ActionPlanTab() {
 
       <div className="space-y-3">
         {weeks.map((w, i) => (
-          <WeekSection key={i} week={w} weekNumber={i + 1} completion={completion} onToggle={setCompletion} defaultOpen={i === 0} />
+          <WeekSection key={i} week={w} weekNumber={i + 1} completion={completion} onToggle={setCompletion} defaultOpen />
         ))}
       </div>
 
