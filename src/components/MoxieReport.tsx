@@ -182,8 +182,10 @@ function Overview({ data }: { data: any }) {
 
       <div>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>VALUES</div>
-        {values.length ? values.map((v, i) => (
-          <span key={i} style={pill(C.coralPale, C.navy)}>{v}</span>
+        {values.length ? values.map((v: any, i) => (
+          <span key={i} style={pill(C.coralPale, C.navy)}>
+            {typeof v === "string" ? v : (v?.name ?? v?.title ?? "—")}
+          </span>
         )) : <span style={{ color: C.muted }}>—</span>}
       </div>
     </div>
