@@ -838,6 +838,7 @@ function StrategyContent({ reportData }: { reportData?: any }) {
       />
 
       <div
+        id="moxie-pdf-report"
         style={{
           position: "absolute",
           left: "-9999px",
