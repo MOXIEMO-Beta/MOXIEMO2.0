@@ -137,3 +137,19 @@
   .shadow-card { box-shadow: var(--shadow-card); }
   .shadow-lift { box-shadow: var(--shadow-lift); }
 }
+
+/* PDF export sizing — A4 page constraints for #moxie-strategy-report */
+#moxie-strategy-report .report-page {
+  min-height: 1123px;
+  max-width: 794px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+#moxie-strategy-report .report-card,
+#moxie-strategy-report .report-card * {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  overflow: visible;
+}

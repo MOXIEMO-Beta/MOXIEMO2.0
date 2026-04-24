@@ -179,7 +179,7 @@ function OverviewTab() {
   ];
 
   return (
-    <div className="space-y-6 mt-0 report-page">
+    <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
       {/* Positioning */}
       <Card className="report-card p-8 bg-foreground text-background border-0">
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">Positioning statement</div>
@@ -565,7 +565,7 @@ function VoiceTab() {
   const never: any[] = vg.neverSoundLike || [];
 
   return (
-    <div className="space-y-6 mt-0 report-page">
+    <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
       {/* Voice attributes */}
       <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center justify-between mb-4">
