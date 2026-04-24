@@ -182,8 +182,10 @@ function Overview({ data }: { data: any }) {
 
       <div>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>VALUES</div>
-        {values.length ? values.map((v, i) => (
-          <span key={i} style={pill(C.coralPale, C.navy)}>{v}</span>
+        {values.length ? values.map((v: any, i) => (
+          <span key={i} style={pill(C.coralPale, C.navy)}>
+            {typeof v === "string" ? v : (v?.name ?? v?.title ?? "—")}
+          </span>
         )) : <span style={{ color: C.muted }}>—</span>}
       </div>
     </div>
@@ -204,22 +206,28 @@ function Voice({ data }: { data: any }) {
 
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>VOICE ATTRIBUTES</div>
-        {attrs.slice(0, 4).map((a, i) => (
-          <span key={i} style={pill(C.coral, C.white)}>{a}</span>
+        {attrs.slice(0, 4).map((a: any, i) => (
+          <span key={i} style={pill(C.coral, C.white)}>
+            {typeof a === "string" ? a : (a?.name ?? a?.title ?? "—")}
+          </span>
         ))}
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
         <div style={card}>
           <div style={{ fontSize: 11, letterSpacing: 2, color: C.green, fontWeight: 700, marginBottom: 8 }}>USE</div>
-          {useWords.map((w, i) => (
-            <span key={i} style={pill(C.greenPale, C.green)}>{w}</span>
+          {useWords.map((w: any, i) => (
+            <span key={i} style={pill(C.greenPale, C.green)}>
+              {typeof w === "string" ? w : (w?.name ?? w?.word ?? "—")}
+            </span>
           ))}
         </div>
         <div style={card}>
           <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>AVOID</div>
-          {avoidWords.map((w, i) => (
-            <span key={i} style={pill(C.coralPale, C.coral, { textDecoration: "line-through" })}>{w}</span>
+          {avoidWords.map((w: any, i) => (
+            <span key={i} style={pill(C.coralPale, C.coral, { textDecoration: "line-through" })}>
+              {typeof w === "string" ? w : (w?.name ?? w?.word ?? "—")}
+            </span>
           ))}
         </div>
       </div>
