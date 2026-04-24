@@ -150,7 +150,7 @@ function StrategyHeader() {
           size="sm"
           className="rounded-lg"
           data-pdf-export-btn
-          onClick={() => exportViaHTML2PDF('moxie-strategy-report', (strategy as any)?.profiles?.full_name ?? reportData?.meta?.preparedFor ?? 'Founder')}
+          onClick={() => exportViaHTML2PDF('moxie-strategy-report', (strategy as any)?.profiles?.full_name ?? 'Founder')}
         >
           <Download className="mr-2 h-3.5 w-3.5" /> Download PDF
         </Button>
