@@ -28,7 +28,7 @@ export function MetricsTab() {
   const bh = sm.brandHealth || {};
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 report-page">
       {/* Primary goal */}
       <Card className="p-7 border-border shadow-soft bg-foreground text-background">
         <div className="flex items-start gap-3 mb-5">

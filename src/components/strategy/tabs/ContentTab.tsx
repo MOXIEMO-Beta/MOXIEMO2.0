@@ -54,7 +54,7 @@ export function ContentTab() {
   const weeks = groupByWeek(calendar);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 report-page">
       {themes.length > 0 && (
         <Card className="p-7 border-border shadow-soft">
           <div className="flex items-center justify-between mb-5">

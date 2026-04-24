@@ -156,7 +156,7 @@ export function ChannelsTab() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 report-page">
       {issues.length > 0 && (
         <Alert variant="destructive" className="border-destructive/40 bg-destructive/5">
           <AlertTriangle className="h-4 w-4" />
