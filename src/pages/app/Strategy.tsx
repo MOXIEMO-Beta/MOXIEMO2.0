@@ -840,12 +840,15 @@ function StrategyContent({ reportData }: { reportData?: any }) {
       <div
         id="moxie-pdf-report"
         style={{
-          position: "absolute",
-          left: "-9999px",
+          position: "fixed",
           top: 0,
+          left: 0,
           width: "794px",
-          background: "white",
-          zIndex: -1,
+          height: "1px",
+          overflow: "hidden",
+          pointerEvents: "none",
+          zIndex: -9999,
+          opacity: 0,
         }}
         aria-hidden="true"
       >
