@@ -152,7 +152,8 @@ function StrategyHeader() {
           variant="outline"
           size="sm"
           className="rounded-lg"
-          onClick={() => exportViaHTML2PDF('moxie-strategy-report', (strategy as any)?.profiles?.full_name ?? 'Founder')}
+          data-pdf-export-btn
+          onClick={() => exportViaHTML2PDF('moxie-strategy-report', (strategy as any)?.profiles?.full_name ?? reportData?.meta?.preparedFor ?? 'Founder')}
         >
           <Download className="mr-2 h-3.5 w-3.5" /> Download PDF
         </Button>
@@ -181,9 +182,9 @@ function OverviewTab() {
   ];
 
   return (
-    <div className="space-y-6 mt-0">
+    <div className="space-y-6 mt-0 report-page">
       {/* Positioning */}
-      <Card className="p-8 bg-foreground text-background border-0">
+      <Card className="report-card p-8 bg-foreground text-background border-0">
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">Positioning statement</div>
         <div className="font-display text-2xl md:text-3xl leading-relaxed mb-6">
           <EditableField
@@ -236,7 +237,7 @@ function OverviewTab() {
 
       {/* Brand archetype */}
       {(archetype || editing) && (
-        <Card className="p-7 border-border shadow-soft">
+        <Card className="report-card p-7 border-border shadow-soft">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Brand archetype</div>
           <div className="flex items-start gap-4 mb-5">
             <div className="text-5xl leading-none">
@@ -332,7 +333,7 @@ function OverviewTab() {
           { label: "Pain point", key: "pain_point" },
           { label: "Transformation", key: "transformation" },
         ].map((s) => (
-          <Card key={s.key} className="p-5 border-border shadow-soft">
+          <Card key={s.key} className="report-card p-5 border-border shadow-soft">
             <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">{s.label}</div>
             <p className="text-sm leading-relaxed">
               <EditableField
@@ -348,7 +349,7 @@ function OverviewTab() {
 
       {/* Core values */}
       {(coreValues.length > 0 || editing) && (
-        <Card className="p-7 border-border shadow-soft">
+        <Card className="report-card p-7 border-border shadow-soft">
           <div className="flex items-center justify-between mb-5">
             <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Core values & decision filters</div>
             {editing && (
@@ -413,7 +414,7 @@ function OverviewTab() {
 
       {/* Competitive positioning */}
       {(competitive || editing) && (
-        <Card className="p-7 border-border shadow-soft">
+        <Card className="report-card p-7 border-border shadow-soft">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Competitive positioning</div>
           <p className="font-display text-xl tracking-[-0.01em] mb-3">
             <EditableField
@@ -459,13 +460,13 @@ function OverviewTab() {
 
       {/* Success + goal */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-6 border-border shadow-soft">
+        <Card className="report-card p-6 border-border shadow-soft">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Success looks like</div>
           <p>
             <EditableField value={strategy.success_definition} onChange={(v) => setField("success_definition", v)} multiline placeholder="What success looks like" />
           </p>
         </Card>
-        <Card className="p-6 border-border shadow-soft">
+        <Card className="report-card p-6 border-border shadow-soft">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Business goal</div>
           <p>
             <EditableField value={strategy.business_goal} onChange={(v) => setField("business_goal", v)} multiline placeholder="Your primary business goal" />
@@ -567,9 +568,9 @@ function VoiceTab() {
   const never: any[] = vg.neverSoundLike || [];
 
   return (
-    <div className="space-y-6 mt-0">
+    <div className="space-y-6 mt-0 report-page">
       {/* Voice attributes */}
-      <Card className="p-7 border-border shadow-soft">
+      <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center justify-between mb-4">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Voice attributes</div>
           {editing && (
@@ -614,7 +615,7 @@ function VoiceTab() {
       </Card>
 
       {/* Sentence structure */}
-      <Card className="p-7 border-border shadow-soft">
+      <Card className="report-card p-7 border-border shadow-soft">
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Sentence structure</div>
         <div className="mb-5">
           <EditableBulletList
@@ -633,7 +634,7 @@ function VoiceTab() {
 
       {/* Vocabulary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="p-6 border-border shadow-soft">
+        <Card className="report-card p-6 border-border shadow-soft">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-accent mb-3"><Check className="h-3.5 w-3.5" /> Words to use</div>
           <EditableList
             items={vocab.use || []}
@@ -641,7 +642,7 @@ function VoiceTab() {
             chipClassName="bg-accent-soft text-accent"
           />
         </Card>
-        <Card className="p-6 border-border shadow-soft">
+        <Card className="report-card p-6 border-border shadow-soft">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3"><X className="h-3.5 w-3.5" /> Words to avoid</div>
           <EditableList
             items={vocab.avoid || []}
@@ -652,7 +653,7 @@ function VoiceTab() {
       </div>
 
       {/* Tone by platform */}
-      <Card className="p-7 border-border shadow-soft">
+      <Card className="report-card p-7 border-border shadow-soft">
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Tone by platform</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {(["linkedin", "email", "podcast"] as const).map((p) => {
@@ -676,7 +677,7 @@ function VoiceTab() {
       </Card>
 
       {/* Voice examples */}
-      <Card className="p-7 border-border shadow-soft">
+      <Card className="report-card p-7 border-border shadow-soft">
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-5">Voice examples</div>
         <div className="space-y-5">
           {([
@@ -712,7 +713,7 @@ function VoiceTab() {
       </Card>
 
       {/* Never sound like */}
-      <Card className="p-7 border-border shadow-soft">
+      <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center justify-between mb-4">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Never sound like</div>
           {editing && (

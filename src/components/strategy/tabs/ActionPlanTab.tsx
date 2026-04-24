@@ -73,7 +73,7 @@ export function ActionPlanTab() {
 
   if (!plan?.week1) {
     return (
-      <Card className="p-10 border-dashed border-border bg-background text-center">
+      <Card className="report-card p-10 border-dashed border-border bg-background text-center">
         <h3 className="font-display text-2xl mb-2">No action plan yet</h3>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">Generate your execution plan to get a 4-week quick start guide and weekly routine.</p>
       </Card>
@@ -86,8 +86,8 @@ export function ActionPlanTab() {
   const overallPct = totalTasks ? Math.round((totalDone / totalTasks) * 100) : 0;
 
   return (
-    <div className="space-y-6">
-      <Card className="p-7 border-border shadow-soft bg-foreground text-background">
+    <div className="space-y-6 report-page">
+      <Card className="report-card p-7 border-border shadow-soft bg-foreground text-background">
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2">Quick start</div>
         <h3 className="font-display text-3xl tracking-[-0.02em] mb-4">Your 4-week action plan</h3>
         <div className="flex items-center gap-4">
@@ -110,7 +110,7 @@ export function ActionPlanTab() {
       </div>
 
       {plan.ongoingRoutine && (
-        <Card className="p-7 border-border shadow-soft bg-accent-soft/30">
+        <Card className="report-card p-7 border-border shadow-soft bg-accent-soft/30">
           <div className="flex items-start gap-3 mb-5">
             <div className="h-10 w-10 rounded-lg bg-foreground flex items-center justify-center shrink-0">
               <Repeat className="h-5 w-5 text-accent" />
