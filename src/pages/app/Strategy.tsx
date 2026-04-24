@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loader2, CheckCircle2, AlertCircle, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
+import { useReportData } from "@/hooks/useReportData";
 import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
@@ -721,7 +722,7 @@ function VoiceTab() {
   );
 }
 
-function StrategyContent() {
+function StrategyContent({ reportData }: { reportData?: any }) {
   const { strategy, setField } = useStrategyEditor();
   const [refineOpen, setRefineOpen] = useState(false);
   const [refineKey, setRefineKey] = useState<string | null>(null);
@@ -748,6 +749,9 @@ function StrategyContent() {
   return (
     <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
       <StrategyHeader />
+      <pre className="text-xs bg-muted/40 border border-border rounded-md p-3 mb-6 overflow-auto max-h-64">
+        {JSON.stringify(reportData?.meta, null, 2)}
+      </pre>
       {!strengthDismissed && (
         <StrategyStrengthCard
           score={score ?? null}
@@ -810,6 +814,7 @@ export default function Strategy() {
   const { user } = useAuth();
   const [strategy, setStrategy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { reportData, isLoading, error } = useReportData();
 
   useEffect(() => {
     if (!user) return;
@@ -817,6 +822,9 @@ export default function Strategy() {
       setStrategy(data); setLoading(false);
     });
   }, [user]);
+
+  if (isLoading) return <p className="p-10 text-muted-foreground">Loading strategy...</p>;
+  if (error) return <p className="p-10 text-destructive">Error: {error.message}</p>;
 
   if (loading) return <div className="p-10 text-muted-foreground">Loading…</div>;
 
@@ -835,7 +843,7 @@ export default function Strategy() {
 
   return (
     <StrategyEditorProvider initial={strategy} userId={user!.id}>
-      <StrategyContent />
+      <StrategyContent reportData={reportData} />
     </StrategyEditorProvider>
   );
 }
