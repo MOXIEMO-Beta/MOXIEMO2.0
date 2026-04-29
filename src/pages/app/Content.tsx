@@ -234,13 +234,18 @@ export default function Content() {
         <TabsContent value="generate" className="space-y-6">
           <Card className="p-6 border-border shadow-soft space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground mb-2 block">
+              <label className="text-sm font-medium text-foreground mb-1 block">
                 What do you want to write about?
               </label>
-              <Input
+              <p className="text-xs text-muted-foreground mb-2">
+                Be specific — include your angle, the audience insight, or a client story you want to reference.
+              </p>
+              <Textarea
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g. why most operators struggle to delegate"
+                placeholder="e.g. why most operators struggle to delegate — add as much context as you want. The more detail you give MOXIE, the more on-brand your output will be."
+                rows={4}
+                className="resize-y min-h-[100px]"
               />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
