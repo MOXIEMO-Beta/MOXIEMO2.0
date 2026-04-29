@@ -37,6 +37,10 @@ import {
   Trash2,
   ArrowRight,
   FileText,
+  ThumbsUp,
+  MessageCircle,
+  Repeat2,
+  Globe2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,6 +89,7 @@ function toLocalInputValue(iso: string | null): string {
 export default function Content() {
   const { user } = useAuth();
   const [strategy, setStrategy] = useState<any>(null);
+  const [profile, setProfile] = useState<{ full_name: string | null; business_name: string | null; email: string | null } | null>(null);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -95,6 +100,8 @@ export default function Content() {
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showHashtags, setShowHashtags] = useState(true);
+  const [hashtagLoading, setHashtagLoading] = useState(false);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -103,7 +110,7 @@ export default function Content() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [stratRes, itemsRes] = await Promise.all([
+      const [stratRes, itemsRes, profileRes] = await Promise.all([
         supabase
           .from("strategies")
           .select(
@@ -116,12 +123,19 @@ export default function Content() {
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("full_name, business_name, email")
+          .eq("id", user.id)
+          .maybeSingle(),
       ]);
       if (cancelled) return;
       if (stratRes.error) console.error(stratRes.error);
       if (itemsRes.error) console.error(itemsRes.error);
+      if (profileRes.error) console.error(profileRes.error);
       setStrategy(stratRes.data ?? null);
       setItems((itemsRes.data ?? []) as ContentItem[]);
+      setProfile((profileRes.data as any) ?? null);
       setLoading(false);
     })();
     return () => {
@@ -141,6 +155,7 @@ export default function Content() {
       return;
     }
     setGenerating(true);
+    setShowHashtags(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-content", {
         body: { topic, platform, contentType, strategy },
@@ -153,6 +168,26 @@ export default function Content() {
       toast.error("Couldn't generate", { description: e?.message ?? "Try again." });
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleGenerateHashtags() {
+    if (!generated.trim()) return;
+    setHashtagLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-content", {
+        body: { mode: "hashtags", text: generated },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const tags = ((data as any).hashtags ?? "").trim();
+      if (tags) setGenerated((prev) => `${prev.trimEnd()}\n\n${tags}`);
+      setShowHashtags(false);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Couldn't generate hashtags", { description: e?.message ?? "Try again." });
+    } finally {
+      setHashtagLoading(false);
     }
   }
 
