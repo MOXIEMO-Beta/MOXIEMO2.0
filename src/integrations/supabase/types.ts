@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      content_items: {
+        Row: {
+          body: string | null
+          content_type: string | null
+          created_at: string
+          engagement: Json
+          id: string
+          platform: string | null
+          platform_post_id: string | null
+          published_at: string | null
+          scheduled_for: string | null
+          status: string
+          topic: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          content_type?: string | null
+          created_at?: string
+          engagement?: Json
+          id?: string
+          platform?: string | null
+          platform_post_id?: string | null
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          topic?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          content_type?: string | null
+          created_at?: string
+          engagement?: Json
+          id?: string
+          platform?: string | null
+          platform_post_id?: string | null
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          topic?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       discovery_sessions: {
         Row: {
           answers: Json
