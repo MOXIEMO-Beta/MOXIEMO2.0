@@ -321,39 +321,35 @@ export default function Content() {
           </Card>
 
           {(generated || generating) && (
-            <Card className="p-6 border-border shadow-soft space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                  Draft preview
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {platformIcon(platform)} {platform} · {contentType}
-                </div>
-              </div>
-              <Textarea
-                value={generated}
-                onChange={(e) => setGenerated(e.target.value)}
-                rows={14}
-                className="font-mono text-sm leading-relaxed"
-                placeholder={generating ? "Generating…" : ""}
+            <div className="max-w-[560px] mx-auto w-full space-y-4">
+              <LinkedInPreview
+                profile={profile}
+                generated={generated}
+                onChange={setGenerated}
+                generating={generating}
+                showHashtags={showHashtags && !!generated && !generated.includes("#")}
+                onGenerateHashtags={handleGenerateHashtags}
+                onDismissHashtags={() => setShowHashtags(false)}
+                hashtagLoading={hashtagLoading}
               />
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   variant="outline"
                   onClick={() => saveItem("draft")}
                   disabled={saving || !generated.trim()}
+                  className="flex-1"
                 >
                   <Save className="mr-2 h-4 w-4" /> Save as Draft
                 </Button>
                 <Button
                   onClick={() => saveItem("queued")}
                   disabled={saving || !generated.trim()}
-                  className="bg-foreground text-background hover:bg-foreground/90"
+                  className="flex-1 bg-foreground text-background hover:bg-foreground/90"
                 >
                   <ArrowRight className="mr-2 h-4 w-4" /> Add to Queue
                 </Button>
               </div>
-            </Card>
+            </div>
           )}
         </TabsContent>
 
