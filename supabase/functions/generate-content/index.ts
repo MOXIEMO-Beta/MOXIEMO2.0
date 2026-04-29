@@ -44,32 +44,60 @@ Return only the post copy. No preamble.`;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { topic, platform, contentType, strategy } = await req.json();
+    const { topic, platform, contentType, strategy, mode, text } = await req.json();
+    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
+
+    const callClaude = async (system: string, userPrompt: string, maxTokens = 1024) => {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-5",
+          max_tokens: maxTokens,
+          system,
+          messages: [{ role: "user", content: userPrompt }],
+        }),
+      });
+      return res;
+    };
+
+    if (mode === "hashtags") {
+      const snippet = String(text ?? "").slice(0, 200);
+      const res = await callClaude(
+        "You generate concise, relevant LinkedIn hashtags.",
+        `Generate 4-6 relevant LinkedIn hashtags for this post. Return only the hashtags, space-separated, no explanation: ${snippet}`,
+        200,
+      );
+      if (!res.ok) {
+        const t = await res.text();
+        console.error("hashtags AI error", res.status, t);
+        return new Response(JSON.stringify({ error: "AI gateway error" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const data = await res.json();
+      const hashtags = data.content?.[0]?.text?.trim() ?? "";
+      return new Response(JSON.stringify({ hashtags }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!topic || !platform || !contentType) {
       return new Response(JSON.stringify({ error: "topic, platform, contentType required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
     const prompt = buildPrompt({ topic, platform, contentType, strategy });
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 1024,
-        system: SYSTEM,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+    const res = await callClaude(SYSTEM, prompt, 1024);
 
     if (!res.ok) {
       if (res.status === 429)

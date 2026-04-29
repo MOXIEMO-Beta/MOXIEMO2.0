@@ -37,6 +37,10 @@ import {
   Trash2,
   ArrowRight,
   FileText,
+  ThumbsUp,
+  MessageCircle,
+  Repeat2,
+  Globe2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -85,6 +89,7 @@ function toLocalInputValue(iso: string | null): string {
 export default function Content() {
   const { user } = useAuth();
   const [strategy, setStrategy] = useState<any>(null);
+  const [profile, setProfile] = useState<{ full_name: string | null; business_name: string | null; email: string | null } | null>(null);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -95,6 +100,8 @@ export default function Content() {
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showHashtags, setShowHashtags] = useState(true);
+  const [hashtagLoading, setHashtagLoading] = useState(false);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -103,7 +110,7 @@ export default function Content() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [stratRes, itemsRes] = await Promise.all([
+      const [stratRes, itemsRes, profileRes] = await Promise.all([
         supabase
           .from("strategies")
           .select(
@@ -116,12 +123,19 @@ export default function Content() {
           .select("*")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("full_name, business_name, email")
+          .eq("id", user.id)
+          .maybeSingle(),
       ]);
       if (cancelled) return;
       if (stratRes.error) console.error(stratRes.error);
       if (itemsRes.error) console.error(itemsRes.error);
+      if (profileRes.error) console.error(profileRes.error);
       setStrategy(stratRes.data ?? null);
       setItems((itemsRes.data ?? []) as ContentItem[]);
+      setProfile((profileRes.data as any) ?? null);
       setLoading(false);
     })();
     return () => {
@@ -141,6 +155,7 @@ export default function Content() {
       return;
     }
     setGenerating(true);
+    setShowHashtags(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-content", {
         body: { topic, platform, contentType, strategy },
@@ -153,6 +168,26 @@ export default function Content() {
       toast.error("Couldn't generate", { description: e?.message ?? "Try again." });
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleGenerateHashtags() {
+    if (!generated.trim()) return;
+    setHashtagLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-content", {
+        body: { mode: "hashtags", text: generated },
+      });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const tags = ((data as any).hashtags ?? "").trim();
+      if (tags) setGenerated((prev) => `${prev.trimEnd()}\n\n${tags}`);
+      setShowHashtags(false);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Couldn't generate hashtags", { description: e?.message ?? "Try again." });
+    } finally {
+      setHashtagLoading(false);
     }
   }
 
@@ -286,39 +321,35 @@ export default function Content() {
           </Card>
 
           {(generated || generating) && (
-            <Card className="p-6 border-border shadow-soft space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">
-                  Draft preview
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {platformIcon(platform)} {platform} · {contentType}
-                </div>
-              </div>
-              <Textarea
-                value={generated}
-                onChange={(e) => setGenerated(e.target.value)}
-                rows={14}
-                className="font-mono text-sm leading-relaxed"
-                placeholder={generating ? "Generating…" : ""}
+            <div className="max-w-[560px] mx-auto w-full space-y-4">
+              <LinkedInPreview
+                profile={profile}
+                generated={generated}
+                onChange={setGenerated}
+                generating={generating}
+                showHashtags={showHashtags && !!generated && !generated.includes("#")}
+                onGenerateHashtags={handleGenerateHashtags}
+                onDismissHashtags={() => setShowHashtags(false)}
+                hashtagLoading={hashtagLoading}
               />
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   variant="outline"
                   onClick={() => saveItem("draft")}
                   disabled={saving || !generated.trim()}
+                  className="flex-1"
                 >
                   <Save className="mr-2 h-4 w-4" /> Save as Draft
                 </Button>
                 <Button
                   onClick={() => saveItem("queued")}
                   disabled={saving || !generated.trim()}
-                  className="bg-foreground text-background hover:bg-foreground/90"
+                  className="flex-1 bg-foreground text-background hover:bg-foreground/90"
                 >
                   <ArrowRight className="mr-2 h-4 w-4" /> Add to Queue
                 </Button>
               </div>
-            </Card>
+            </div>
           )}
         </TabsContent>
 
@@ -465,6 +496,110 @@ function EmptyState({ message }: { message: string }) {
     <Card className="p-10 border-dashed border-border bg-background text-center text-sm text-muted-foreground">
       {message}
     </Card>
+  );
+}
+
+function getInitials(name: string | null | undefined, fallback: string | null | undefined) {
+  const src = (name && name.trim()) || (fallback && fallback.trim()) || "?";
+  const parts = src.split(/\s+/).filter(Boolean);
+  const letters = parts.length >= 2 ? parts[0][0] + parts[1][0] : src.slice(0, 2);
+  return letters.toUpperCase();
+}
+
+function LinkedInPreview({
+  profile,
+  generated,
+  onChange,
+  generating,
+  showHashtags,
+  onGenerateHashtags,
+  onDismissHashtags,
+  hashtagLoading,
+}: {
+  profile: { full_name: string | null; business_name: string | null; email: string | null } | null;
+  generated: string;
+  onChange: (v: string) => void;
+  generating: boolean;
+  showHashtags: boolean;
+  onGenerateHashtags: () => void;
+  onDismissHashtags: () => void;
+  hashtagLoading: boolean;
+}) {
+  const fullName = profile?.full_name || "Your Name";
+  const businessName = profile?.business_name || "Your business";
+  const initials = getInitials(profile?.full_name, profile?.email);
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 text-gray-900">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className="h-12 w-12 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
+          {initials}
+        </div>
+        <div className="min-w-0">
+          <div className="font-semibold text-[15px] leading-tight text-gray-900">{fullName}</div>
+          <div className="text-[13px] text-gray-600 leading-tight mt-0.5">{businessName}</div>
+          <div className="text-[11px] text-gray-500 leading-tight mt-0.5 flex items-center gap-1">
+            Just now · <Globe2 className="h-3 w-3" />
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="mt-3">
+        <Textarea
+          value={generated}
+          onChange={(e) => onChange(e.target.value)}
+          rows={12}
+          placeholder={generating ? "Generating…" : ""}
+          className="resize-y border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-[14px] leading-relaxed text-gray-900 whitespace-pre-wrap bg-transparent min-h-[260px]"
+        />
+      </div>
+
+      {/* Hashtag suggestion */}
+      {showHashtags && (
+        <div className="mt-2 flex items-center gap-2 flex-wrap text-[13px] text-gray-600 border-t border-gray-100 pt-3">
+          <Sparkles className="h-3.5 w-3.5 text-accent" />
+          <span>Add hashtags?</span>
+          <button
+            type="button"
+            onClick={onGenerateHashtags}
+            disabled={hashtagLoading}
+            className="text-accent font-medium hover:underline disabled:opacity-60 inline-flex items-center gap-1"
+          >
+            {hashtagLoading ? (
+              <><Loader2 className="h-3 w-3 animate-spin" /> Generating…</>
+            ) : (
+              "Generate hashtags"
+            )}
+          </button>
+          <span className="text-gray-300">·</span>
+          <button
+            type="button"
+            onClick={onDismissHashtags}
+            className="text-gray-500 hover:underline"
+          >
+            No thanks
+          </button>
+        </div>
+      )}
+
+      {/* Action bar */}
+      <div className="mt-3 border-t border-gray-200 pt-2 grid grid-cols-4 gap-1">
+        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
+          <ThumbsUp className="h-4 w-4" /> Like
+        </button>
+        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
+          <MessageCircle className="h-4 w-4" /> Comment
+        </button>
+        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
+          <Repeat2 className="h-4 w-4" /> Repost
+        </button>
+        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
+          <Send className="h-4 w-4" /> Send
+        </button>
+      </div>
+    </div>
   );
 }
 
