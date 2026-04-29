@@ -53,6 +53,42 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_entries: {
+        Row: {
+          created_at: string
+          discovery_calls: number
+          email_opens: number
+          id: string
+          notes: string | null
+          posts_published: number
+          updated_at: string
+          user_id: string
+          week_of: string
+        }
+        Insert: {
+          created_at?: string
+          discovery_calls?: number
+          email_opens?: number
+          id?: string
+          notes?: string | null
+          posts_published?: number
+          updated_at?: string
+          user_id: string
+          week_of: string
+        }
+        Update: {
+          created_at?: string
+          discovery_calls?: number
+          email_opens?: number
+          id?: string
+          notes?: string | null
+          posts_published?: number
+          updated_at?: string
+          user_id?: string
+          week_of?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           business_name: string | null
