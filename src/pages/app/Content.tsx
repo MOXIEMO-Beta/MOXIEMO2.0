@@ -499,6 +499,110 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+function getInitials(name: string | null | undefined, fallback: string | null | undefined) {
+  const src = (name && name.trim()) || (fallback && fallback.trim()) || "?";
+  const parts = src.split(/\s+/).filter(Boolean);
+  const letters = parts.length >= 2 ? parts[0][0] + parts[1][0] : src.slice(0, 2);
+  return letters.toUpperCase();
+}
+
+function LinkedInPreview({
+  profile,
+  generated,
+  onChange,
+  generating,
+  showHashtags,
+  onGenerateHashtags,
+  onDismissHashtags,
+  hashtagLoading,
+}: {
+  profile: { full_name: string | null; business_name: string | null; email: string | null } | null;
+  generated: string;
+  onChange: (v: string) => void;
+  generating: boolean;
+  showHashtags: boolean;
+  onGenerateHashtags: () => void;
+  onDismissHashtags: () => void;
+  hashtagLoading: boolean;
+}) {
+  const fullName = profile?.full_name || "Your Name";
+  const businessName = profile?.business_name || "Your business";
+  const initials = getInitials(profile?.full_name, profile?.email);
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 text-gray-900">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className="h-12 w-12 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
+          {initials}
+        </div>
+        <div className="min-w-0">
+          <div className="font-semibold text-[15px] leading-tight text-gray-900">{fullName}</div>
+          <div className="text-[13px] text-gray-600 leading-tight mt-0.5">{businessName}</div>
+          <div className="text-[11px] text-gray-500 leading-tight mt-0.5 flex items-center gap-1">
+            Just now · <Globe2 className="h-3 w-3" />
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="mt-3">
+        <Textarea
+          value={generated}
+          onChange={(e) => onChange(e.target.value)}
+          rows={12}
+          placeholder={generating ? "Generating…" : ""}
+          className="resize-y border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-[14px] leading-relaxed text-gray-900 whitespace-pre-wrap bg-transparent min-h-[260px]"
+        />
+      </div>
+
+      {/* Hashtag suggestion */}
+      {showHashtags && (
+        <div className="mt-2 flex items-center gap-2 flex-wrap text-[13px] text-gray-600 border-t border-gray-100 pt-3">
+          <Sparkles className="h-3.5 w-3.5 text-accent" />
+          <span>Add hashtags?</span>
+          <button
+            type="button"
+            onClick={onGenerateHashtags}
+            disabled={hashtagLoading}
+            className="text-accent font-medium hover:underline disabled:opacity-60 inline-flex items-center gap-1"
+          >
+            {hashtagLoading ? (
+              <><Loader2 className="h-3 w-3 animate-spin" /> Generating…</>
+            ) : (
+              "Generate hashtags"
+            )}
+          </button>
+          <span className="text-gray-300">·</span>
+          <button
+            type="button"
+            onClick={onDismissHashtags}
+            className="text-gray-500 hover:underline"
+          >
+            No thanks
+          </button>
+        </div>
+      )}
+
+      {/* Action bar */}
+      <div className="mt-3 border-t border-gray-200 pt-2 grid grid-cols-4 gap-1">
+        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
+          <ThumbsUp className="h-4 w-4" /> Like
+        </button>
+        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
+          <MessageCircle className="h-4 w-4" /> Comment
+        </button>
+        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
+          <Repeat2 className="h-4 w-4" /> Repost
+        </button>
+        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
+          <Send className="h-4 w-4" /> Send
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DraftEditor({
   item,
   onPatch,
