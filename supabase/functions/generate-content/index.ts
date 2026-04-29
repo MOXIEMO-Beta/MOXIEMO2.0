@@ -51,20 +51,23 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
     const prompt = buildPrompt({ topic, platform, contentType, strategy });
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: SYSTEM },
-          { role: "user", content: prompt },
-        ],
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1024,
+        system: SYSTEM,
+        messages: [{ role: "user", content: prompt }],
       }),
     });
 
@@ -88,7 +91,7 @@ Deno.serve(async (req) => {
     }
 
     const data = await res.json();
-    const body = data.choices?.[0]?.message?.content?.trim() ?? "";
+    const body = data.content?.[0]?.text?.trim() ?? "";
     return new Response(JSON.stringify({ body }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
