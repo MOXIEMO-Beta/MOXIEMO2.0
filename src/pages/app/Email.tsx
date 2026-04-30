@@ -1046,9 +1046,17 @@ export default function Email() {
             </div>
           )}
 
-          {subscribers.length === 0 ? (
+          {(() => {
+            const filtered = tableFilter
+              ? subscribers.filter((s) => s.tags.includes(tableFilter))
+              : subscribers;
+            return subscribers.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               No subscribers yet. Add one or import a CSV to get started.
+            </p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No subscribers in this list yet.
             </p>
           ) : (
             <Table>
@@ -1056,7 +1064,7 @@ export default function Email() {
                 <TableRow>
                   <TableHead className="w-10">
                     <Checkbox
-                      checked={selectedIds.size > 0 && selectedIds.size === subscribers.length}
+                      checked={selectedIds.size > 0 && selectedIds.size === filtered.length}
                       onCheckedChange={(c) => toggleSelectAll(Boolean(c))}
                     />
                   </TableHead>
@@ -1068,7 +1076,7 @@ export default function Email() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {subscribers.map((s) => (
+                {filtered.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>
                       <Checkbox
@@ -1084,17 +1092,20 @@ export default function Email() {
                           const seg = segmentMap[tagId];
                           if (!seg) return null;
                           return (
-                            <span
+                            <button
                               key={tagId}
-                              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                              type="button"
+                              onClick={() => setTableFilter(tagId === tableFilter ? null : tagId)}
+                              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80 transition"
                               style={{
                                 background: `${seg.color}22`,
                                 color: seg.color,
                               }}
+                              title={`Filter by ${seg.name}`}
                             >
                               <span className="h-1.5 w-1.5 rounded-full" style={{ background: seg.color }} />
                               {seg.name}
-                            </span>
+                            </button>
                           );
                         })}
                       </div>
@@ -1141,7 +1152,8 @@ export default function Email() {
                 ))}
               </TableBody>
             </Table>
-          )}
+          );
+          })()}
         </CardContent>
       </Card>
 
