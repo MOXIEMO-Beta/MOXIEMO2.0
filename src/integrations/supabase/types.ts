@@ -164,6 +164,45 @@ export type Database = {
         }
         Relationships: []
       }
+      social_connections: {
+        Row: {
+          access_token: string | null
+          connected_at: string
+          expires_at: string | null
+          id: string
+          platform: string
+          profile_image: string | null
+          profile_name: string | null
+          profile_url: string | null
+          refresh_token: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token?: string | null
+          connected_at?: string
+          expires_at?: string | null
+          id?: string
+          platform: string
+          profile_image?: string | null
+          profile_name?: string | null
+          profile_url?: string | null
+          refresh_token?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string | null
+          connected_at?: string
+          expires_at?: string | null
+          id?: string
+          platform?: string
+          profile_image?: string | null
+          profile_name?: string | null
+          profile_url?: string | null
+          refresh_token?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       strategies: {
         Row: {
           anti_positioning: string | null
