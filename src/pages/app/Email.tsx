@@ -687,29 +687,48 @@ export default function Email() {
                     </label>
 
                     <div className="rounded-md border bg-background p-3 space-y-2">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          checked={audienceMode === "segment"}
-                          onChange={() => setAudienceMode("segment")}
-                        />
-                        <span className="text-sm font-medium">Specific segment</span>
-                      </label>
-                      {audienceMode === "segment" && (
-                        <div className="flex flex-wrap gap-2 pl-6">
-                          {segments.map((seg) => (
-                            <button
-                              key={seg.id}
-                              type="button"
-                              onClick={() => setSendSegmentId(seg.id)}
-                              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition ${
-                                sendSegmentId === seg.id ? "border-foreground bg-foreground text-background" : "bg-background"
-                              }`}
-                            >
-                              <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
-                              {seg.name} ({segmentCounts[seg.id] ?? 0})
-                            </button>
-                          ))}
+                      <p className="text-xs font-medium text-muted-foreground">Or choose specific lists:</p>
+                      {segments.length === 0 ? (
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p>No lists yet — add subscribers to lists to send to specific groups.</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowSendPanel(false);
+                              document.getElementById("subscribers-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                            className="text-orange-600 hover:underline"
+                          >
+                            Manage lists →
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {segments.map((seg) => {
+                            const checked = sendSegmentIds.includes(seg.id);
+                            return (
+                              <label
+                                key={seg.id}
+                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs cursor-pointer transition ${
+                                  checked ? "border-foreground bg-foreground text-background" : "bg-background"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="sr-only"
+                                  checked={checked}
+                                  onChange={() => {
+                                    setAudienceMode("segment");
+                                    setSendSegmentIds((prev) =>
+                                      checked ? prev.filter((id) => id !== seg.id) : [...prev, seg.id],
+                                    );
+                                  }}
+                                />
+                                <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
+                                {seg.name} ({segmentCounts[seg.id] ?? 0})
+                              </label>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -731,7 +750,7 @@ export default function Email() {
                     <Button
                       onClick={() => setSendStep(2)}
                       disabled={
-                        (audienceMode === "segment" && !sendSegmentId) ||
+                        (audienceMode === "segment" && sendSegmentIds.length === 0) ||
                         (audienceMode === "selected" && selectedIds.size === 0) ||
                         sendRecipientIds.length === 0
                       }
