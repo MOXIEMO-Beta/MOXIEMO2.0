@@ -262,7 +262,20 @@ export default function Email() {
         payload.segment = sendSegmentIds.join(",");
       }
       const { data, error } = await supabase.functions.invoke("send-email", { body: payload });
-      if (error) throw error;
+      if (error) {
+        let description = error.message;
+        try {
+          const ctx = (error as { context?: Response }).context;
+          if (ctx && typeof ctx.json === "function") {
+            const errorData = await ctx.json();
+            description = errorData?.error ?? errorData?.message ?? description;
+          }
+        } catch (_) { /* ignore */ }
+        toast.error("Failed to send", {
+          description: description ?? "Check your sending details and try again.",
+        });
+        return;
+      }
       if (data?.error) throw new Error(data.error);
       toast.success(`Sent to ${data.sent_count} subscribers`);
       setSubject("");
@@ -273,7 +286,9 @@ export default function Email() {
       loadAll();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to send";
-      toast.error(message);
+      toast.error("Failed to send", {
+        description: message ?? "Check your sending details and try again.",
+      });
     } finally {
       setSending(false);
     }
