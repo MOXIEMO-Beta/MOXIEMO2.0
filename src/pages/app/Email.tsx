@@ -1181,12 +1181,12 @@ export default function Email() {
               </TableHeader>
               <TableBody>
                 {sends.map((s) => {
+                  const ids = s.segment && s.segment !== "all" ? s.segment.split(",") : [];
                   const segName =
                     !s.segment || s.segment === "all"
                       ? "All subscribers"
-                      : segmentMap[s.segment]?.name || "Segment";
-                  const segColor =
-                    s.segment && s.segment !== "all" ? segmentMap[s.segment]?.color : null;
+                      : ids.map((id) => segmentMap[id]?.name).filter(Boolean).join(", ") || "List";
+                  const segColor = ids.length === 1 ? segmentMap[ids[0]]?.color : null;
                   return (
                     <TableRow key={s.id}>
                       <TableCell className="max-w-xs truncate">{s.subject || "—"}</TableCell>
