@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Sparkles, Dices, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Pin, Pencil, Dices, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +20,12 @@ const EMAIL_TYPES = [
   "Discovery Call Invite",
 ];
 
-type FocusMode = "pillar" | "theme" | "custom" | "surprise" | null;
+type FocusMode = "pillar" | "custom" | "surprise" | null;
+
+function pickRandomPillar(pillars: string[]): string {
+  if (!pillars.length) return "founder positioning";
+  return pillars[Math.floor(Math.random() * pillars.length)];
+}
 
 export default function GeneratePanel({
   pillars,
@@ -36,55 +40,55 @@ export default function GeneratePanel({
 }) {
   const [focusMode, setFocusMode] = useState<FocusMode>(null);
   const [selectedPillar, setSelectedPillar] = useState<string>("");
-  const [selectedTheme, setSelectedTheme] = useState<string>("");
   const [customTopic, setCustomTopic] = useState<string>("");
+  const [surprisePick, setSurprisePick] = useState<string>("");
   const [emailType, setEmailType] = useState<string>("");
 
-  const themeLabel = (t: Theme): string => {
-    if (typeof t === "string") return t;
-    const q = t.quarter ? `${t.quarter}: ` : "";
-    return `${q}${t.label || t.theme || t.title || ""}`.trim();
-  };
-
   const hasFocus =
-    focusMode === "surprise" ||
     (focusMode === "pillar" && selectedPillar) ||
-    (focusMode === "theme" && selectedTheme) ||
-    (focusMode === "custom" && customTopic.trim().length > 0);
+    (focusMode === "custom" && customTopic.trim().length > 0) ||
+    (focusMode === "surprise" && surprisePick);
 
-  const canGenerate = hasFocus && (focusMode === "surprise" || emailType);
+  const canGenerate = !!hasFocus && !!emailType;
 
-  function pickFocus(mode: Exclude<FocusMode, null>) {
+  function selectCard(mode: Exclude<FocusMode, null>) {
     setFocusMode(mode);
     if (mode !== "pillar") setSelectedPillar("");
-    if (mode !== "theme") setSelectedTheme("");
     if (mode !== "custom") setCustomTopic("");
+    if (mode === "surprise") {
+      setSurprisePick(pickRandomPillar(pillars));
+    } else {
+      setSurprisePick("");
+    }
   }
 
   function handleGenerate() {
     let topic = "";
-    let type = emailType;
     if (focusMode === "pillar") topic = selectedPillar;
-    else if (focusMode === "theme") topic = selectedTheme;
     else if (focusMode === "custom") topic = customTopic.trim();
-    else if (focusMode === "surprise") {
-      topic = pillars.length
-        ? pillars[Math.floor(Math.random() * pillars.length)]
-        : "founder positioning";
-      if (!type) type = "Weekly Newsletter";
-    }
-    onGenerate({ topic, emailType: type });
+    else if (focusMode === "surprise") topic = surprisePick;
+    onGenerate({ topic, emailType });
   }
 
   const noStrategy = pillars.length === 0 && themes.length === 0;
+  const stepLabel = hasFocus ? "Step 2 of 2 — Choose email type" : "Step 1 of 2 — Choose your focus";
+
+  const cardBase = "text-left rounded-lg border-2 p-4 transition-all";
+  const cardSelected = "border-orange-500 bg-orange-50";
+  const cardUnselected = "border-border bg-background hover:border-orange-300";
 
   return (
     <Card className="border-orange-200 bg-orange-50/40">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Sparkles className="h-4 w-4 text-orange-600" />
-          Generate with MOXIE
-        </CardTitle>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Sparkles className="h-4 w-4 text-orange-600" />
+            Generate with MOXIE
+          </CardTitle>
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+            {stepLabel}
+          </span>
+        </div>
       </CardHeader>
       <CardContent className="space-y-5">
         {noStrategy && (
@@ -98,139 +102,181 @@ export default function GeneratePanel({
 
         {/* Step 1 */}
         <div className="space-y-3">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-            Step 1 — What's this email about?
-          </Label>
+          <div>
+            <h3 className="text-sm font-semibold">Step 1 — Choose your focus</h3>
+            <p className="text-xs text-muted-foreground">
+              Pick one starting point for your email
+            </p>
+          </div>
 
-          {pillars.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Content pillar</p>
-              <div className="flex flex-wrap gap-2">
-                {pillars.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => {
-                      pickFocus("pillar");
-                      setSelectedPillar(p);
-                    }}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full border text-sm transition",
-                      focusMode === "pillar" && selectedPillar === p
-                        ? "bg-orange-600 text-white border-orange-600"
-                        : "bg-background hover:border-orange-400",
-                    )}
-                  >
-                    {p}
-                  </button>
-                ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Content Pillar card */}
+            <button
+              type="button"
+              onClick={() => selectCard("pillar")}
+              className={cn(
+                cardBase,
+                focusMode === "pillar" ? cardSelected : cardUnselected,
+              )}
+            >
+              <div className="flex items-center gap-2 font-medium">
+                <Pin className="h-4 w-4 text-orange-600" />
+                Content Pillar
               </div>
-            </div>
-          )}
+              <p className="text-xs text-muted-foreground mt-1">
+                Pick from your strategy — stays on-brand automatically
+              </p>
+            </button>
 
-          {themes.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Quarterly theme</p>
-              <div className="flex flex-wrap gap-2">
-                {themes.map((t, i) => {
-                  const label = themeLabel(t);
-                  if (!label) return null;
-                  return (
+            {/* Custom Topic card */}
+            <button
+              type="button"
+              onClick={() => selectCard("custom")}
+              className={cn(
+                cardBase,
+                focusMode === "custom" ? cardSelected : cardUnselected,
+              )}
+            >
+              <div className="flex items-center gap-2 font-medium">
+                <Pencil className="h-4 w-4 text-orange-600" />
+                Custom Topic
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Write your own angle, idea, or story
+              </p>
+            </button>
+          </div>
+
+          {/* Surprise me — full width */}
+          <button
+            type="button"
+            onClick={() => selectCard("surprise")}
+            className={cn(
+              cardBase,
+              "w-full",
+              focusMode === "surprise" ? cardSelected : cardUnselected,
+            )}
+          >
+            <div className="flex items-center gap-2 font-medium">
+              <Dices className="h-4 w-4 text-orange-600" />
+              Surprise me
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              MOXIE picks a focus from your strategy and runs with it
+            </p>
+            {focusMode === "surprise" && surprisePick && (
+              <div className="mt-2 flex items-center gap-2 text-sm">
+                <Check className="h-4 w-4 text-orange-600" />
+                <span>MOXIE picked: <span className="font-medium">{surprisePick}</span></span>
+                <span
+                  role="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSurprisePick(pickRandomPillar(pillars));
+                  }}
+                  className="ml-2 text-orange-600 underline cursor-pointer"
+                >
+                  pick again
+                </span>
+              </div>
+            )}
+          </button>
+
+          {/* Expanded content for Pillar */}
+          {focusMode === "pillar" && (
+            <div className="animate-fade-in rounded-md border bg-background p-3">
+              {pillars.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Complete your strategy to unlock this option —{" "}
+                  <Link to="/app/strategy" className="text-orange-600 underline">
+                    Go to Strategy →
+                  </Link>
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {pillars.map((p) => (
                     <button
-                      key={i}
+                      key={p}
                       type="button"
-                      onClick={() => {
-                        pickFocus("theme");
-                        setSelectedTheme(label);
-                      }}
+                      onClick={() => setSelectedPillar(p)}
                       className={cn(
                         "px-3 py-1.5 rounded-full border text-sm transition",
-                        focusMode === "theme" && selectedTheme === label
+                        selectedPillar === p
                           ? "bg-orange-600 text-white border-orange-600"
                           : "bg-background hover:border-orange-400",
                       )}
                     >
-                      {label}
+                      {p}
                     </button>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Custom topic</p>
-            <Input
-              value={customTopic}
-              onChange={(e) => {
-                pickFocus("custom");
-                setCustomTopic(e.target.value);
-              }}
-              placeholder="What do you want to write about?"
-              className={cn(
-                focusMode === "custom" && "border-orange-500 ring-1 ring-orange-500",
-              )}
-            />
-          </div>
-
-          <div>
-            <button
-              type="button"
-              onClick={() => pickFocus("surprise")}
-              className={cn(
-                "inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm transition",
-                focusMode === "surprise"
-                  ? "bg-orange-600 text-white border-orange-600"
-                  : "bg-background hover:border-orange-400",
-              )}
-            >
-              <Dices className="h-4 w-4" />
-              Surprise me — generate from my strategy
-            </button>
-          </div>
+          {/* Expanded content for Custom */}
+          {focusMode === "custom" && (
+            <div className="animate-fade-in">
+              <Textarea
+                value={customTopic}
+                onChange={(e) => setCustomTopic(e.target.value)}
+                placeholder="e.g. Why I stopped posting every day and what happened next..."
+                rows={3}
+              />
+            </div>
+          )}
         </div>
 
         {/* Step 2 */}
-        <div className="space-y-3">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
-            Step 2 — Email type
-          </Label>
-          <div className="flex flex-wrap gap-2">
-            {EMAIL_TYPES.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setEmailType(t)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full border text-sm transition",
-                  emailType === t
-                    ? "bg-foreground text-background border-foreground"
-                    : "bg-background hover:border-foreground/40",
-                )}
-              >
-                {t}
-              </button>
-            ))}
+        {hasFocus && (
+          <div className="space-y-3 animate-fade-in">
+            <div>
+              <h3 className="text-sm font-semibold">Step 2 — What type of email?</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {EMAIL_TYPES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setEmailType(t)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full border text-sm transition",
+                    emailType === t
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-background hover:border-foreground/40",
+                  )}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Step 3 */}
-        <Button
-          onClick={handleGenerate}
-          disabled={!canGenerate || generating}
-          className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-          size="lg"
-        >
-          {generating ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" /> Generating...
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" /> Generate with MOXIE
-            </>
-          )}
-        </Button>
+        {/* Generate */}
+        {hasFocus && emailType && (
+          <div className="space-y-2 animate-fade-in">
+            <Button
+              onClick={handleGenerate}
+              disabled={!canGenerate || generating}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+              size="lg"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" /> Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" /> Generate with MOXIE
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">
+              MOXIE will use your strategy, voice, and selected focus to write the full email
+            </p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
