@@ -5,7 +5,7 @@ import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,10 +80,12 @@ function LinkPopover({ editor }: { editor: Editor }) {
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
   const [newTab, setNewTab] = useState(true);
+  const selectionRef = useRef<{ from: number; to: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const { from, to, empty } = editor.state.selection;
+    selectionRef.current = { from, to };
     const selected = empty ? "" : editor.state.doc.textBetween(from, to, " ");
     setText(selected);
     const prev = editor.getAttributes("link").href as string | undefined;
@@ -94,24 +96,29 @@ function LinkPopover({ editor }: { editor: Editor }) {
     if (!url.trim()) return;
     const target = newTab ? "_blank" : "_self";
     const rel = newTab ? "noopener noreferrer" : null;
-    const { from, to, empty } = editor.state.selection;
-    const display = text.trim() || url;
+    const sel = selectionRef.current ?? editor.state.selection;
+    const from = sel.from;
+    const to = sel.to;
+    const empty = from === to;
+    const display = text.trim() || url.trim();
     if (empty) {
       editor
         .chain()
         .focus()
+        .setTextSelection({ from, to })
         .insertContent({
           type: "text",
           text: display,
-          marks: [{ type: "link", attrs: { href: url, target, rel } }],
+          marks: [{ type: "link", attrs: { href: url.trim(), target, rel } }],
         })
         .run();
     } else {
       editor
         .chain()
         .focus()
+        .setTextSelection({ from, to })
         .extendMarkRange("link")
-        .setLink({ href: url, target, rel })
+        .setLink({ href: url.trim(), target, rel })
         .command(({ tr }) => {
           if (display !== editor.state.doc.textBetween(from, to, " ")) {
             tr.insertText(display, from, to);
@@ -121,6 +128,7 @@ function LinkPopover({ editor }: { editor: Editor }) {
         .run();
     }
     setOpen(false);
+    selectionRef.current = null;
     setUrl("");
     setText("");
   }
@@ -271,7 +279,12 @@ export default function RichTextEditor({
       Link.configure({
         openOnClick: false,
         autolink: true,
-        HTMLAttributes: { class: "text-primary underline" },
+        defaultProtocol: "https",
+        HTMLAttributes: {
+          class: "text-primary underline cursor-pointer",
+          target: "_blank",
+          rel: "noopener noreferrer",
+        },
       }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TextStyle,
