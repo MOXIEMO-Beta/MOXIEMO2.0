@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
     }
     const userId = claimsData.claims.sub;
 
-    const { subject, body } = await req.json();
+    const { subject, body, segment, subscriber_ids } = await req.json();
     if (!subject || !body) {
       return new Response(JSON.stringify({ error: "subject and body are required" }), {
         status: 400,
@@ -58,11 +58,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { data: subscribers } = await supabase
+    let query = supabase
       .from("subscribers")
-      .select("email")
+      .select("id, email")
       .eq("user_id", userId)
       .eq("status", "active");
+
+    if (Array.isArray(subscriber_ids) && subscriber_ids.length > 0) {
+      query = query.in("id", subscriber_ids);
+    } else if (segment && segment !== "all") {
+      query = query.contains("tags", [segment]);
+    }
+
+    const { data: subscribers } = await query;
 
     if (!subscribers || subscribers.length === 0) {
       return new Response(JSON.stringify({ error: "No subscribers to send to" }), {
@@ -111,6 +119,8 @@ Deno.serve(async (req) => {
       sent_at: new Date().toISOString(),
       recipient_count: subscribers.length,
       resend_email_id: result.id || null,
+      segment: segment || "all",
+      recipient_ids: subscribers.map((s) => s.id),
     });
 
     return new Response(
