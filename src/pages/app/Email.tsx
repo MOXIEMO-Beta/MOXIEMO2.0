@@ -865,9 +865,9 @@ export default function Email() {
 
           {csvPending && (
             <div className="rounded-md border bg-muted/30 p-4 space-y-3">
-              <h4 className="font-semibold text-sm">Tag this import</h4>
+              <h4 className="font-semibold text-sm">Which list should these contacts go into?</h4>
               <p className="text-xs text-muted-foreground">
-                Which segment should these {csvPending.rows.length} contacts go into? (optional)
+                {csvPending.rows.length} contacts ready to import. You can also skip and assign later.
               </p>
               <div className="flex flex-wrap gap-2">
                 {segments.map((seg) => {
@@ -897,7 +897,38 @@ export default function Email() {
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={() => setInlineListForm("csv")}
+                  className="inline-flex items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs text-orange-600 hover:bg-orange-50"
+                >
+                  <Plus className="h-3 w-3" /> Create a new list for this import
+                </button>
               </div>
+              {inlineListForm === "csv" && (
+                <div className="rounded-md border bg-background p-3 space-y-2">
+                  <Input
+                    placeholder="List name"
+                    value={inlineListName}
+                    onChange={(e) => setInlineListName(e.target.value)}
+                  />
+                  <div className="flex gap-2 items-center">
+                    {PRESET_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setInlineListColor(c)}
+                        className={`h-5 w-5 rounded-full border-2 transition ${
+                          inlineListColor === c ? "border-foreground scale-110" : "border-transparent"
+                        }`}
+                        style={{ background: c }}
+                      />
+                    ))}
+                    <Button size="sm" onClick={() => createInlineList("csv")}>Create</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setInlineListForm(null)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button size="sm" onClick={confirmCsvImport}>Import {csvPending.rows.length} contacts</Button>
                 <Button size="sm" variant="ghost" onClick={() => setCsvPending(null)}>Cancel</Button>
@@ -920,36 +951,65 @@ export default function Email() {
                   onChange={(e) => setNewSub({ ...newSub, email: e.target.value })}
                 />
               </div>
-              {segments.length > 0 && (
-                <div className="space-y-1">
-                  <Label className="text-xs">Tags (optional)</Label>
-                  <div className="flex flex-wrap gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Add to a list (optional)</Label>
+                {segments.length > 0 && (
+                  <div className="space-y-1.5">
                     {segments.map((seg) => {
                       const active = newSub.tags.includes(seg.id);
                       return (
-                        <button
-                          key={seg.id}
-                          type="button"
-                          onClick={() =>
-                            setNewSub((prev) => ({
-                              ...prev,
-                              tags: active
-                                ? prev.tags.filter((t) => t !== seg.id)
-                                : [...prev.tags, seg.id],
-                            }))
-                          }
-                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition ${
-                            active ? "border-foreground bg-foreground text-background" : "bg-background"
-                          }`}
-                        >
+                        <label key={seg.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                          <Checkbox
+                            checked={active}
+                            onCheckedChange={() =>
+                              setNewSub((prev) => ({
+                                ...prev,
+                                tags: active
+                                  ? prev.tags.filter((t) => t !== seg.id)
+                                  : [...prev.tags, seg.id],
+                              }))
+                            }
+                          />
                           <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
                           {seg.name}
-                        </button>
+                        </label>
                       );
                     })}
                   </div>
-                </div>
-              )}
+                )}
+                {inlineListForm === "add" ? (
+                  <div className="rounded-md border bg-background p-3 space-y-2 mt-2">
+                    <Input
+                      placeholder="List name"
+                      value={inlineListName}
+                      onChange={(e) => setInlineListName(e.target.value)}
+                    />
+                    <div className="flex gap-2 items-center">
+                      {PRESET_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setInlineListColor(c)}
+                          className={`h-5 w-5 rounded-full border-2 transition ${
+                            inlineListColor === c ? "border-foreground scale-110" : "border-transparent"
+                          }`}
+                          style={{ background: c }}
+                        />
+                      ))}
+                      <Button size="sm" onClick={() => createInlineList("add")}>Create</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setInlineListForm(null)}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setInlineListForm("add")}
+                    className="text-xs text-orange-600 hover:underline inline-flex items-center gap-1 mt-1"
+                  >
+                    <Plus className="h-3 w-3" /> Create new list
+                  </button>
+                )}
+              </div>
               <Button onClick={addSubscriber}>Add</Button>
             </div>
           )}
