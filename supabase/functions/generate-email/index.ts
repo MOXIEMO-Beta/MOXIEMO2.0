@@ -33,35 +33,67 @@ Deno.serve(async (req) => {
     }
     const userId = userData.user.id;
 
+    let topic = "";
+    let emailType = "Weekly Newsletter";
+    try {
+      const body = await req.json();
+      if (body?.topic) topic = String(body.topic);
+      if (body?.emailType) emailType = String(body.emailType);
+    } catch {
+      // no body provided — use defaults
+    }
+
     const { data: strategy } = await supabase
       .from("strategies")
-      .select("positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning")
+      .select(
+        "positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning, content_pillars",
+      )
       .eq("user_id", userId)
       .maybeSingle();
 
-    const { data: latestContent } = await supabase
-      .from("content_items")
-      .select("topic")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    if (!topic) {
+      const pillars = Array.isArray(strategy?.content_pillars)
+        ? (strategy!.content_pillars as unknown[])
+        : [];
+      if (pillars.length) {
+        const pick = pillars[Math.floor(Math.random() * pillars.length)];
+        topic = typeof pick === "string" ? pick : JSON.stringify(pick);
+      } else {
+        topic = "founder positioning and messaging";
+      }
+    }
 
-    const latestTopic = latestContent?.topic;
-    const prompt = `You are MOXIE, an AI Chief Marketing Officer generating a complete email newsletter for a founder.
+    const prompt = `You are MOXIE, an AI Chief Marketing Officer generating a complete email for a founder.
 
 FOUNDER'S STRATEGY:
 Positioning: ${strategy?.positioning_statement ?? "Expert founder helping clients achieve transformation"}
 Ideal client: ${strategy?.ideal_client ?? "B2B founders"}
 Pain point: ${strategy?.pain_point ?? "unclear messaging and marketing overwhelm"}
 Voice attributes: ${JSON.stringify(strategy?.voice_attributes ?? ["authoritative", "empathetic", "direct"])}
-Anti-positioning (never sound like): ${strategy?.anti_positioning ?? "corporate jargon"}
-Latest content topic: ${latestTopic ?? "founder branding and positioning"}
+Anti-positioning: ${strategy?.anti_positioning ?? "corporate jargon"}
+Content pillars: ${JSON.stringify(strategy?.content_pillars ?? [])}
 
-Generate a complete weekly newsletter email. Return ONLY valid JSON, no other text:
+EMAIL BRIEF:
+Topic/Focus: ${topic}
+Email type: ${emailType}
+
+EMAIL TYPE INSTRUCTIONS:
+- Weekly Newsletter: Value-packed insight on the topic, 400-500 words, ends with a question
+- Framework Deep-Dive: Teach one concept from their framework using the topic as the lens, 350-450 words
+- Client Win Story: Tell a transformation story related to the topic (use archetypal client, not real names), 300-400 words
+- Discovery Call Invite: Warm, direct invitation to book a call, topic used as the pain point hook, 200-300 words
+
+VOICE RULES:
+- Match voice attributes exactly
+- Never use anti-positioning language
+- Write for the ideal client
+- Sound like a smart CMO colleague, not a corporate newsletter
+
+Return ONLY valid JSON:
 {
-  "subject": "A curiosity-driven subject line under 50 characters",
-  "body": "Full HTML email body — 400-600 words. Use <h2> for section headers, <p> for paragraphs. Match the voice attributes exactly. Address the ideal client's pain point. End with a thought-provoking question. Include a coral CTA button at the bottom: <a href='[CALENDAR LINK]' style='display:inline-block;background:#ff6b6b;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;'>Book a Discovery Call</a>"
+  "subject": "Subject line under 50 chars — curiosity-driven, no clickbait",
+  "preview_text": "Preview text under 90 chars shown in inbox",
+  "body": "Full HTML email body matching the email type instructions above. Use <h2> for headers, <p> for paragraphs. End with a coral CTA button: <a href='[CALENDAR LINK]' style='display:inline-block;background:#ff6b6b;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;'>Book a Discovery Call</a>"
 }`;
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
@@ -97,7 +129,10 @@ Generate a complete weekly newsletter email. Return ONLY valid JSON, no other te
 
     const aiData = await aiRes.json();
     const text = (aiData.content?.[0]?.text ?? "").trim();
-    let parsed: { subject: string; body: string } = { subject: "", body: "" };
+    let parsed: { subject: string; body: string; preview_text?: string } = {
+      subject: "",
+      body: "",
+    };
     try {
       parsed = JSON.parse(text);
     } catch {
