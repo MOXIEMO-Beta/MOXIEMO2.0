@@ -4,8 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import RichTextEditor from "@/components/email/RichTextEditor";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -281,12 +281,10 @@ export default function Email() {
 
           <div className="space-y-2">
             <Label>Body</Label>
-            <Textarea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
+            <RichTextEditor
+              content={body}
+              onChange={setBody}
               placeholder="Write your newsletter..."
-              rows={16}
-              className="resize-y min-h-[400px]"
             />
           </div>
 
@@ -324,7 +322,7 @@ export default function Email() {
                 <div
                   className="text-sm text-gray-700 whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{
-                    __html: (body || "Body preview...").replace(/</g, "&lt;").replace(/\n/g, "<br>"),
+                    __html: body || "<p>Body preview...</p>",
                   }}
                 />
               </div>
