@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     }
 
     const clientId = Deno.env.get("LINKEDIN_CLIENT_ID");
-    const redirectUri = Deno.env.get("LINKEDIN_REDIRECT_URI");
+    const redirectUri = Deno.env.get("LINKEDIN_REDIRECT_URI")?.trim();
 
     if (!clientId || !redirectUri) {
       return new Response(
