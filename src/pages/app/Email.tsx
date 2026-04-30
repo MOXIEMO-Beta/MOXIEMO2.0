@@ -103,6 +103,7 @@ export default function Email() {
   const [sends, setSends] = useState<EmailSend[]>([]);
   const [settings, setSettings] = useState<EmailSettings>({});
   const [strategy, setStrategy] = useState<Strategy | null>(null);
+  const [fullName, setFullName] = useState<string>("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSub, setNewSub] = useState({ name: "", email: "", tags: [] as string[] });
   const [savingSettings, setSavingSettings] = useState(false);
@@ -156,7 +157,7 @@ export default function Email() {
         .order("sent_at", { ascending: false }),
       supabase
         .from("profiles")
-        .select("email_settings")
+        .select("email_settings, full_name")
         .eq("id", user.id)
         .maybeSingle(),
       supabase
@@ -182,6 +183,7 @@ export default function Email() {
     const settingsValue = (profileRes.data?.email_settings as EmailSettings) || {};
     setSettings(settingsValue);
     setStrategy((strategyRes.data as Strategy) || null);
+    setFullName((profileRes.data?.full_name as string) || "");
 
     let segs = (segRes.data as Segment[]) || [];
     if (segs.length === 0) {
@@ -209,7 +211,12 @@ export default function Email() {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-email", {
-        body: { topic: params.topic, emailType: params.emailType },
+        body: {
+          topic: params.topic,
+          emailType: params.emailType,
+          strategy,
+          senderName: fullName || "Your Name",
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);

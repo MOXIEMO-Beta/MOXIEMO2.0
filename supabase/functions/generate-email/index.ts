@@ -35,10 +35,12 @@ Deno.serve(async (req) => {
 
     let topic = "";
     let emailType = "Weekly Newsletter";
+    let senderName = "Your Name";
     try {
       const body = await req.json();
       if (body?.topic) topic = String(body.topic);
       if (body?.emailType) emailType = String(body.emailType);
+      if (body?.senderName) senderName = String(body.senderName);
     } catch {
       // no body provided — use defaults
     }
@@ -93,8 +95,19 @@ Return ONLY valid JSON:
 {
   "subject": "Subject line under 50 chars — curiosity-driven, no clickbait",
   "preview_text": "Preview text under 90 chars shown in inbox",
-  "body": "Full HTML email body matching the email type instructions above. Use <h2> for headers, <p> for paragraphs. End with a coral CTA button: <a href='[CALENDAR LINK]' style='display:inline-block;background:#ff6b6b;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;'>Book a Discovery Call</a>"
-}`;
+  "body": "Full HTML email body matching the email type instructions above. Use <h2> for headers, <p> for paragraphs. End with a coral CTA button: <a href='[ADD YOUR CALENDAR LINK HERE]' style='display:inline-block;background:#ff6b6b;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;'>Book a Discovery Call</a>"
+}
+
+SIGNATURE RULE:
+Always end the email with the sender's actual name, never "MOXIE".
+Use this exact format for the closing (placed AFTER the CTA button):
+<p>—${senderName}</p>
+
+Never use "—MOXIE", "The MOXIE Team", or any variation of MOXIE as a signature.
+MOXIE is the tool, not the sender. The human founder is the sender.
+
+CTA LINK RULE:
+The CTA button href must be the literal string [ADD YOUR CALENDAR LINK HERE] so the user knows to replace it before sending.`;
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
