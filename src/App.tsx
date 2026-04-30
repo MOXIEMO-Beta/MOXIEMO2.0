@@ -22,6 +22,7 @@ import Analytics from "./pages/app/Analytics.tsx";
 import Settings from "./pages/app/Settings.tsx";
 import ComingSoon from "./pages/app/ComingSoon.tsx";
 import Goals from "./pages/app/Goals.tsx";
+import Social from "./pages/app/Social.tsx";
 import { AuthProvider } from "./hooks/useAuth.tsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
 
@@ -53,7 +54,7 @@ const App = () => (
               <Route path="settings" element={<Settings />} />
               <Route path="goals" element={<Goals />} />
               <Route path="email" element={<ComingSoon title="Email" />} />
-              <Route path="social" element={<ComingSoon title="Social" />} />
+              <Route path="social" element={<Social />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
