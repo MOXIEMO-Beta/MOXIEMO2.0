@@ -183,6 +183,7 @@ export default function Email() {
     const settingsValue = (profileRes.data?.email_settings as EmailSettings) || {};
     setSettings(settingsValue);
     setStrategy((strategyRes.data as Strategy) || null);
+    setFullName((profileRes.data?.full_name as string) || "");
 
     let segs = (segRes.data as Segment[]) || [];
     if (segs.length === 0) {
@@ -210,7 +211,12 @@ export default function Email() {
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-email", {
-        body: { topic: params.topic, emailType: params.emailType },
+        body: {
+          topic: params.topic,
+          emailType: params.emailType,
+          strategy,
+          senderName: fullName || "Your Name",
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
