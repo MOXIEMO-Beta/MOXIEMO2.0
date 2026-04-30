@@ -173,10 +173,10 @@ export default function Email() {
         .order("created_at", { ascending: true }),
     ]);
 
-    const subs = (subsRes.data || []).map((s: { tags?: unknown } & Subscriber) => ({
+    const subs = ((subsRes.data || []) as Array<Record<string, unknown>>).map((s) => ({
       ...s,
       tags: Array.isArray(s.tags) ? (s.tags as string[]) : [],
-    })) as Subscriber[];
+    })) as unknown as Subscriber[];
     setSubscribers(subs);
     setSends((sendsRes.data as EmailSend[]) || []);
     const settingsValue = (profileRes.data?.email_settings as EmailSettings) || {};
@@ -754,7 +754,8 @@ export default function Email() {
                     <div className="flex justify-between"><span className="text-muted-foreground">Sending to:</span><span className="font-medium">{sendAudienceLabel}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Recipients:</span><span className="font-medium">{sendRecipientIds.length} contacts</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Subject:</span><span className="font-medium truncate max-w-[60%] text-right">{subject}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">From:</span><span className="font-medium">{settings.from_name ? `${settings.from_name} <${settings.from_email}>` : settings.from_email}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">From:</span><span className="font-medium">{settings.from_name || "MOXIE"} &lt;hello@mail.usemoxie.com&gt;</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Replies to:</span><span className="font-medium">{settings.reply_to || "—"}</span></div>
                   </div>
                   <div className="flex gap-2 justify-end">
                     <Button variant="ghost" onClick={() => setSendStep(1)}>Back</Button>
