@@ -100,7 +100,7 @@ export default function Email() {
       if (data?.error) throw new Error(data.error);
       if (data?.subject) setSubject(data.subject);
       if (data?.body) setBody(data.body);
-      toast.success("Draft generated");
+      toast.success("Email draft generated — review and personalize before sending");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to generate";
       toast.error(message);
