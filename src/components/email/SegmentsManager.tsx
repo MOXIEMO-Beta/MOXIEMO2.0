@@ -26,12 +26,13 @@ export const PRESET_COLORS = [
 type Props = {
   segments: Segment[];
   counts: Record<string, number>;
-  totalActive: number;
   userId: string;
   onChange: () => void;
+  activeFilter?: string | null;
+  onFilterChange?: (segmentId: string | null) => void;
 };
 
-export default function SegmentsManager({ segments, counts, totalActive, userId, onChange }: Props) {
+export default function SegmentsManager({ segments, counts, userId, onChange, activeFilter, onFilterChange }: Props) {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -69,50 +70,92 @@ export default function SegmentsManager({ segments, counts, totalActive, userId,
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-2 items-center">
-        <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1.5 text-xs">
-          <span className="h-2 w-2 rounded-full bg-foreground/60" />
-          <span className="font-medium">All subscribers</span>
-          <span className="text-muted-foreground">({totalActive})</span>
-        </div>
-        {segments.map((seg) => (
-          <div
-            key={seg.id}
-            className="group inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-xs"
-          >
-            <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
-            <span className="font-medium">{seg.name}</span>
-            <span className="text-muted-foreground">({counts[seg.id] ?? 0})</span>
-            {!seg.is_system && (
-              <button
-                type="button"
-                onClick={() => deleteSegment(seg.id)}
-                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition"
-                title="Delete segment"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
+      {segments.length === 0 && !showForm ? (
+        <div className="rounded-lg border border-dashed bg-muted/20 p-6 text-center space-y-3">
+          <div className="flex justify-center">
+            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+              <Tag className="h-5 w-5 text-muted-foreground" />
+            </div>
           </div>
-        ))}
-        <Button variant="outline" size="sm" onClick={() => setShowForm((v) => !v)}>
-          <Plus className="h-3.5 w-3.5" /> New segment
-        </Button>
-      </div>
+          <div className="space-y-1">
+            <p className="text-sm font-medium">You haven't created any lists yet.</p>
+            <p className="text-xs text-muted-foreground max-w-md mx-auto">
+              Lists let you send the right email to the right people — customers, subscribers, leads, community members — whatever makes sense for your business.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => setShowForm(true)}
+            className="bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            <Plus className="h-3.5 w-3.5" /> Create your first list
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2 items-center">
+          {segments.map((seg) => {
+            const isActive = activeFilter === seg.id;
+            return (
+              <div
+                key={seg.id}
+                className={`group inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition ${
+                  isActive ? "border-foreground bg-foreground text-background" : "bg-background"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onFilterChange?.(isActive ? null : seg.id)}
+                  className="inline-flex items-center gap-2"
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
+                  <span className="font-medium">{seg.name}</span>
+                  <span className={isActive ? "opacity-80" : "text-muted-foreground"}>({counts[seg.id] ?? 0})</span>
+                </button>
+                {!seg.is_system && (
+                  <button
+                    type="button"
+                    onClick={() => deleteSegment(seg.id)}
+                    className={`${isActive ? "opacity-80" : "opacity-0 group-hover:opacity-100"} hover:text-destructive transition`}
+                    title="Delete list"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          {activeFilter && (
+            <button
+              type="button"
+              onClick={() => onFilterChange?.(null)}
+              className="text-xs text-muted-foreground hover:text-foreground underline"
+            >
+              Clear filter
+            </button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setShowForm((v) => !v)}>
+            <Plus className="h-3.5 w-3.5" /> New list
+          </Button>
+        </div>
+      )}
 
       {showForm && (
         <div className="rounded-md border bg-muted/30 p-3 space-y-3">
           <div className="grid sm:grid-cols-2 gap-2">
             <div className="space-y-1">
-              <Label className="text-xs">Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="VIP clients" />
+              <Label className="text-xs">List name</Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Customers, Newsletter readers, VIP members, Workshop attendees..."
+              />
             </div>
             <div className="space-y-1">
               <Label className="text-xs">Description (optional)</Label>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Top tier subscribers"
+                placeholder="Who is in this list?"
               />
             </div>
           </div>
@@ -133,7 +176,7 @@ export default function SegmentsManager({ segments, counts, totalActive, userId,
             </div>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={saveSegment}>Save segment</Button>
+            <Button size="sm" onClick={saveSegment}>Save list</Button>
             <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancel</Button>
           </div>
         </div>
