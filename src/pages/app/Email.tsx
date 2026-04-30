@@ -16,7 +16,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
-import { AlertTriangle, Sparkles, Upload, Loader2, Trash2, Plus } from "lucide-react";
+import { AlertTriangle, Upload, Loader2, Trash2, Plus, Pencil } from "lucide-react";
+import GeneratePanel, { type GenerateParams } from "@/components/email/GeneratePanel";
 
 type Subscriber = {
   id: string;
@@ -41,16 +42,29 @@ type EmailSettings = {
   reply_to?: string;
 };
 
+type Strategy = {
+  positioning_statement?: string | null;
+  ideal_client?: string | null;
+  pain_point?: string | null;
+  voice_attributes?: unknown;
+  anti_positioning?: string | null;
+  content_pillars?: unknown;
+  content_themes?: unknown;
+};
+
 export default function Email() {
   const { user } = useAuth();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [previewText, setPreviewText] = useState("");
   const [generating, setGenerating] = useState(false);
+  const [showGenPanel, setShowGenPanel] = useState(true);
   const [sending, setSending] = useState(false);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [sends, setSends] = useState<EmailSend[]>([]);
   const [settings, setSettings] = useState<EmailSettings>({});
+  const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSub, setNewSub] = useState({ name: "", email: "" });
   const [savingSettings, setSavingSettings] = useState(false);
@@ -64,7 +78,7 @@ export default function Email() {
 
   async function loadAll() {
     if (!user) return;
-    const [subsRes, sendsRes, profileRes] = await Promise.all([
+    const [subsRes, sendsRes, profileRes, strategyRes] = await Promise.all([
       supabase
         .from("subscribers")
         .select("*")
@@ -80,11 +94,19 @@ export default function Email() {
         .select("email_settings")
         .eq("id", user.id)
         .maybeSingle(),
+      supabase
+        .from("strategies")
+        .select(
+          "positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning, content_pillars, content_themes",
+        )
+        .eq("user_id", user.id)
+        .maybeSingle(),
     ]);
     setSubscribers((subsRes.data as Subscriber[]) || []);
     setSends((sendsRes.data as EmailSend[]) || []);
     const s = (profileRes.data?.email_settings as EmailSettings) || {};
     setSettings(s);
+    setStrategy((strategyRes.data as Strategy) || null);
   }
 
   useEffect(() => {
@@ -92,15 +114,19 @@ export default function Email() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  async function generateWithMoxie() {
+  async function generateWithMoxie(params: GenerateParams) {
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-email");
+      const { data, error } = await supabase.functions.invoke("generate-email", {
+        body: { topic: params.topic, emailType: params.emailType },
+      });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       if (data?.subject) setSubject(data.subject);
       if (data?.body) setBody(data.body);
-      toast.success("Email draft generated — review and personalize before sending");
+      if (data?.preview_text) setPreviewText(data.preview_text);
+      setShowGenPanel(false);
+      toast.success("Draft ready — personalize the brackets before sending");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to generate";
       toast.error(message);
@@ -220,6 +246,15 @@ export default function Email() {
 
   const needsSetup = !settings.from_email;
 
+  const pillars: string[] = Array.isArray(strategy?.content_pillars)
+    ? (strategy!.content_pillars as unknown[]).map((p) =>
+        typeof p === "string" ? p : (p as { label?: string; name?: string; title?: string })?.label || (p as { name?: string }).name || (p as { title?: string }).title || "",
+      ).filter(Boolean)
+    : [];
+  const themes: Array<Record<string, string> | string> = Array.isArray(strategy?.content_themes)
+    ? (strategy!.content_themes as Array<Record<string, string> | string>)
+    : [];
+
   return (
     <div className="container max-w-5xl py-8 space-y-6">
       <div>
@@ -254,29 +289,47 @@ export default function Email() {
           <CardTitle>Compose</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {showGenPanel && (
+            <GeneratePanel
+              pillars={pillars}
+              themes={themes}
+              generating={generating}
+              onGenerate={generateWithMoxie}
+            />
+          )}
+
           <div className="space-y-2">
             <Label>Subject line</Label>
-            <div className="flex gap-2">
-              <Input
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="Your newsletter subject"
-                className="flex-1"
-              />
-              <Button
-                variant="outline"
-                onClick={generateWithMoxie}
-                disabled={generating}
-                className="shrink-0"
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Your newsletter subject"
+            />
+            {previewText && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Preview text: {previewText}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = window.prompt("Edit preview text", previewText);
+                    if (next !== null) setPreviewText(next);
+                  }}
+                  className="inline-flex items-center hover:text-foreground"
+                  title="Edit preview text"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+            {!showGenPanel && (
+              <button
+                type="button"
+                onClick={() => setShowGenPanel(true)}
+                className="text-xs text-orange-600 hover:underline"
               >
-                {generating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                Generate with MOXIE
-              </Button>
-            </div>
+                Regenerate with MOXIE
+              </button>
+            )}
           </div>
 
           <div className="space-y-2">
