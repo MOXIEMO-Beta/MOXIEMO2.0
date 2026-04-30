@@ -103,6 +103,7 @@ export default function Email() {
   const [sends, setSends] = useState<EmailSend[]>([]);
   const [settings, setSettings] = useState<EmailSettings>({});
   const [strategy, setStrategy] = useState<Strategy | null>(null);
+  const [fullName, setFullName] = useState<string>("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [newSub, setNewSub] = useState({ name: "", email: "", tags: [] as string[] });
   const [savingSettings, setSavingSettings] = useState(false);
