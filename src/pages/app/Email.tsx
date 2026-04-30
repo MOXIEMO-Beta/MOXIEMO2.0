@@ -38,6 +38,12 @@ import {
   Download,
   Send,
   X,
+  Info,
+  Reply,
+  Shield,
+  ChevronDown,
+  ChevronUp,
+  Check,
 } from "lucide-react";
 import GeneratePanel, { type GenerateParams } from "@/components/email/GeneratePanel";
 import SegmentsManager, { type Segment } from "@/components/email/SegmentsManager";
@@ -111,6 +117,7 @@ export default function Email() {
   const [sendSegmentId, setSendSegmentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(true);
 
   const activeSubscribers = useMemo(
     () => subscribers.filter((s) => s.status === "active"),
@@ -192,6 +199,11 @@ export default function Email() {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  // Collapse "how it works" by default if user has already sent emails
+  useEffect(() => {
+    if (sends.length > 0) setHowItWorksOpen(false);
+  }, [sends.length]);
 
   async function generateWithMoxie(params: GenerateParams) {
     setGenerating(true);
@@ -448,7 +460,7 @@ export default function Email() {
     else setSelectedIds(new Set());
   }
 
-  const needsSetup = !settings.from_email;
+  const needsSetup = !settings.reply_to;
 
   const pillars: string[] = Array.isArray(strategy?.content_pillars)
     ? (strategy!.content_pillars as unknown[]).map((p) =>
@@ -473,7 +485,7 @@ export default function Email() {
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-orange-600 shrink-0" />
             <p className="text-sm text-orange-900">
-              Set up your sending details to start emailing your audience.
+              Add your reply-to email so subscriber replies reach your inbox.
             </p>
           </div>
           <Button
@@ -486,6 +498,62 @@ export default function Email() {
           </Button>
         </div>
       )}
+
+      {/* How email sending works */}
+      <Card>
+        <CardHeader className="pb-3">
+          <button
+            onClick={() => setHowItWorksOpen((v) => !v)}
+            className="flex w-full items-center justify-between gap-2 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-orange-600" />
+              <CardTitle className="text-lg">How MOXIE sends your emails</CardTitle>
+            </div>
+            {howItWorksOpen ? (
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+        </CardHeader>
+        {howItWorksOpen && (
+          <CardContent className="space-y-4">
+            <div className="flex gap-3">
+              <Send className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                Your emails send through MOXIE's secure sending infrastructure. Your name appears as the sender — your subscribers won't see "MOXIE" anywhere.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Reply className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                Replies go straight to you. Set your reply-to email in Sending Details below and all subscriber replies land in your inbox.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Shield className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+              <p className="text-sm text-muted-foreground">
+                We handle deliverability. SPF, DKIM, and DMARC are configured on our end so your emails reach inboxes, not spam folders.
+              </p>
+            </div>
+            <div className="pt-2 border-t">
+              <p className="text-xs text-muted-foreground">
+                Want to send from your own domain (e.g. karee@yourdomain.com)?{" "}
+                <button
+                  onClick={() =>
+                    settingsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+                  }
+                  className="underline hover:text-foreground"
+                >
+                  Add your domain in Sending Details
+                </button>{" "}
+                for full brand control.
+              </p>
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       {/* Compose */}
       <Card>
