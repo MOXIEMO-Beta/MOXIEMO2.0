@@ -156,7 +156,7 @@ export default function Email() {
         .order("sent_at", { ascending: false }),
       supabase
         .from("profiles")
-        .select("email_settings")
+        .select("email_settings, full_name")
         .eq("id", user.id)
         .maybeSingle(),
       supabase
