@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import RichTextEditor from "@/components/email/RichTextEditor";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -15,9 +16,31 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { AlertTriangle, Upload, Loader2, Trash2, Plus, Pencil } from "lucide-react";
+import {
+  AlertTriangle,
+  Upload,
+  Loader2,
+  Trash2,
+  Plus,
+  Pencil,
+  Tag,
+  MoreHorizontal,
+  Download,
+  Send,
+  X,
+} from "lucide-react";
 import GeneratePanel, { type GenerateParams } from "@/components/email/GeneratePanel";
+import SegmentsManager, { type Segment } from "@/components/email/SegmentsManager";
 
 type Subscriber = {
   id: string;
@@ -25,6 +48,7 @@ type Subscriber = {
   name: string | null;
   status: string;
   subscribed_at: string;
+  tags: string[];
 };
 
 type EmailSend = {
@@ -34,6 +58,7 @@ type EmailSend = {
   recipient_count: number | null;
   open_rate: number | null;
   click_rate: number | null;
+  segment: string | null;
 };
 
 type EmailSettings = {
@@ -52,6 +77,12 @@ type Strategy = {
   content_themes?: unknown;
 };
 
+const DEFAULT_SEGMENTS = [
+  { name: "Hot leads", color: "#ff6b6b", description: "Engaged prospects close to buying" },
+  { name: "Nurture list", color: "#0c2340", description: "Long-term audience to warm up" },
+  { name: "Past clients", color: "#2dd4a8", description: "Previous customers and referrals" },
+];
+
 export default function Email() {
   const { user } = useAuth();
   const [subject, setSubject] = useState("");
@@ -62,12 +93,22 @@ export default function Email() {
   const [sending, setSending] = useState(false);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
+  const [segments, setSegments] = useState<Segment[]>([]);
   const [sends, setSends] = useState<EmailSend[]>([]);
   const [settings, setSettings] = useState<EmailSettings>({});
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [newSub, setNewSub] = useState({ name: "", email: "" });
+  const [newSub, setNewSub] = useState({ name: "", email: "", tags: [] as string[] });
   const [savingSettings, setSavingSettings] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [csvPending, setCsvPending] = useState<null | {
+    rows: Array<{ user_id: string; email: string; name: string | null; status: string; tags: string[] }>;
+    selectedTags: string[];
+  }>(null);
+  const [showSendPanel, setShowSendPanel] = useState(false);
+  const [sendStep, setSendStep] = useState<1 | 2>(1);
+  const [audienceMode, setAudienceMode] = useState<"all" | "segment" | "selected">("all");
+  const [sendSegmentId, setSendSegmentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
@@ -76,9 +117,26 @@ export default function Email() {
     [subscribers],
   );
 
+  const segmentCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const seg of segments) counts[seg.id] = 0;
+    for (const sub of activeSubscribers) {
+      for (const tagId of sub.tags || []) {
+        if (counts[tagId] !== undefined) counts[tagId] += 1;
+      }
+    }
+    return counts;
+  }, [segments, activeSubscribers]);
+
+  const segmentMap = useMemo(() => {
+    const m: Record<string, Segment> = {};
+    for (const s of segments) m[s.id] = s;
+    return m;
+  }, [segments]);
+
   async function loadAll() {
     if (!user) return;
-    const [subsRes, sendsRes, profileRes, strategyRes] = await Promise.all([
+    const [subsRes, sendsRes, profileRes, strategyRes, segRes] = await Promise.all([
       supabase
         .from("subscribers")
         .select("*")
@@ -101,12 +159,33 @@ export default function Email() {
         )
         .eq("user_id", user.id)
         .maybeSingle(),
+      supabase
+        .from("subscriber_segments")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: true }),
     ]);
-    setSubscribers((subsRes.data as Subscriber[]) || []);
+
+    const subs = (subsRes.data || []).map((s: { tags?: unknown } & Subscriber) => ({
+      ...s,
+      tags: Array.isArray(s.tags) ? (s.tags as string[]) : [],
+    })) as Subscriber[];
+    setSubscribers(subs);
     setSends((sendsRes.data as EmailSend[]) || []);
-    const s = (profileRes.data?.email_settings as EmailSettings) || {};
-    setSettings(s);
+    const settingsValue = (profileRes.data?.email_settings as EmailSettings) || {};
+    setSettings(settingsValue);
     setStrategy((strategyRes.data as Strategy) || null);
+
+    let segs = (segRes.data as Segment[]) || [];
+    if (segs.length === 0) {
+      const inserts = DEFAULT_SEGMENTS.map((s) => ({ ...s, user_id: user.id }));
+      const { data: created } = await supabase
+        .from("subscriber_segments")
+        .insert(inserts)
+        .select("*");
+      if (created) segs = created as Segment[];
+    }
+    setSegments(segs);
   }
 
   useEffect(() => {
@@ -135,21 +214,52 @@ export default function Email() {
     }
   }
 
-  async function sendEmail() {
+  function openSendPanel() {
     if (!subject.trim() || !body.trim()) {
       toast.error("Add a subject and body first");
       return;
     }
+    setSendStep(1);
+    setAudienceMode(selectedIds.size > 0 ? "selected" : "all");
+    setShowSendPanel(true);
+  }
+
+  const sendRecipientIds = useMemo(() => {
+    if (audienceMode === "selected") return Array.from(selectedIds);
+    if (audienceMode === "segment" && sendSegmentId) {
+      return activeSubscribers
+        .filter((s) => s.tags.includes(sendSegmentId))
+        .map((s) => s.id);
+    }
+    return activeSubscribers.map((s) => s.id);
+  }, [audienceMode, selectedIds, sendSegmentId, activeSubscribers]);
+
+  const sendAudienceLabel = useMemo(() => {
+    if (audienceMode === "selected") return `${selectedIds.size} selected contacts`;
+    if (audienceMode === "segment" && sendSegmentId) {
+      return segmentMap[sendSegmentId]?.name || "Segment";
+    }
+    return "All active subscribers";
+  }, [audienceMode, selectedIds.size, sendSegmentId, segmentMap]);
+
+  async function confirmSend() {
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-email", {
-        body: { subject, body },
-      });
+      const payload: Record<string, unknown> = { subject, body };
+      if (audienceMode === "selected") {
+        payload.subscriber_ids = Array.from(selectedIds);
+      } else if (audienceMode === "segment" && sendSegmentId) {
+        payload.segment = sendSegmentId;
+      }
+      const { data, error } = await supabase.functions.invoke("send-email", { body: payload });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       toast.success(`Sent to ${data.sent_count} subscribers`);
       setSubject("");
       setBody("");
+      setPreviewText("");
+      setShowSendPanel(false);
+      setSelectedIds(new Set());
       loadAll();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to send";
@@ -166,13 +276,14 @@ export default function Email() {
       email: newSub.email.trim(),
       name: newSub.name.trim() || null,
       status: "active",
+      tags: newSub.tags,
     });
     if (error) {
       toast.error(error.message);
       return;
     }
     toast.success("Subscriber added");
-    setNewSub({ name: "", email: "" });
+    setNewSub({ name: "", email: "", tags: [] });
     setShowAddForm(false);
     loadAll();
   }
@@ -189,12 +300,84 @@ export default function Email() {
     loadAll();
   }
 
+  async function toggleSubscriberTag(subId: string, segId: string) {
+    const sub = subscribers.find((s) => s.id === subId);
+    if (!sub) return;
+    const next = sub.tags.includes(segId)
+      ? sub.tags.filter((t) => t !== segId)
+      : [...sub.tags, segId];
+    const { error } = await supabase
+      .from("subscribers")
+      .update({ tags: next })
+      .eq("id", subId);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setSubscribers((prev) =>
+      prev.map((s) => (s.id === subId ? { ...s, tags: next } : s)),
+    );
+  }
+
+  async function bulkApplyTag(segId: string) {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const updates = subscribers
+      .filter((s) => ids.includes(s.id))
+      .map((s) => {
+        const tags = s.tags.includes(segId) ? s.tags : [...s.tags, segId];
+        return supabase.from("subscribers").update({ tags }).eq("id", s.id);
+      });
+    await Promise.all(updates);
+    toast.success(`Tagged ${ids.length} subscribers`);
+    loadAll();
+  }
+
+  async function bulkRemove() {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    if (!confirm(`Remove ${ids.length} subscribers? They will be marked as unsubscribed.`)) return;
+    const { error } = await supabase
+      .from("subscribers")
+      .update({ status: "unsubscribed", unsubscribed_at: new Date().toISOString() })
+      .in("id", ids);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Removed ${ids.length} subscribers`);
+    setSelectedIds(new Set());
+    loadAll();
+  }
+
+  function bulkExport() {
+    const ids = Array.from(selectedIds);
+    const rows = subscribers.filter((s) => ids.includes(s.id));
+    const header = "name,email,status,tags\n";
+    const csv =
+      header +
+      rows
+        .map((r) => {
+          const tagNames = r.tags.map((t) => segmentMap[t]?.name || "").filter(Boolean).join("|");
+          return [r.name || "", r.email, r.status, tagNames]
+            .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+            .join(",");
+        })
+        .join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `subscribers-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   async function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     const text = await file.text();
     const lines = text.split(/\r?\n/).filter(Boolean);
-    // detect header
     const header = lines[0]?.toLowerCase() || "";
     const hasHeader = header.includes("email");
     const dataLines = hasHeader ? lines.slice(1) : lines;
@@ -211,21 +394,28 @@ export default function Email() {
         const email = cols[emailIdx >= 0 ? emailIdx : 0];
         const name = nameIdx >= 0 ? cols[nameIdx] : null;
         if (!email || !email.includes("@")) return null;
-        return { user_id: user.id, email, name: name || null, status: "active" };
+        return { user_id: user.id, email, name: name || null, status: "active", tags: [] as string[] };
       })
-      .filter(Boolean) as Array<{ user_id: string; email: string; name: string | null; status: string }>;
+      .filter(Boolean) as Array<{ user_id: string; email: string; name: string | null; status: string; tags: string[] }>;
 
     if (rows.length === 0) {
       toast.error("No valid emails found in CSV");
       return;
     }
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setCsvPending({ rows, selectedTags: [] });
+  }
+
+  async function confirmCsvImport() {
+    if (!csvPending) return;
+    const rows = csvPending.rows.map((r) => ({ ...r, tags: csvPending.selectedTags }));
     const { error } = await supabase.from("subscribers").insert(rows);
     if (error) {
       toast.error(error.message);
       return;
     }
     toast.success(`Imported ${rows.length} subscribers`);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    setCsvPending(null);
     loadAll();
   }
 
@@ -242,6 +432,20 @@ export default function Email() {
       return;
     }
     toast.success("Sending details saved");
+  }
+
+  function toggleSelected(id: string, checked: boolean) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll(checked: boolean) {
+    if (checked) setSelectedIds(new Set(subscribers.map((s) => s.id)));
+    else setSelectedIds(new Set());
   }
 
   const needsSetup = !settings.from_email;
@@ -382,26 +586,126 @@ export default function Email() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 pt-2">
-            <p className="text-sm text-muted-foreground text-center">
-              Sending to {activeSubscribers.length} subscriber
-              {activeSubscribers.length === 1 ? "" : "s"}
-            </p>
-            <Button
-              onClick={sendEmail}
-              disabled={sending || activeSubscribers.length === 0 || needsSetup}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-              size="lg"
-            >
-              {sending ? (
+          {/* Send panel */}
+          {!showSendPanel ? (
+            <div className="pt-2">
+              <Button
+                onClick={openSendPanel}
+                disabled={activeSubscribers.length === 0 || needsSetup}
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                size="lg"
+              >
+                <Send className="h-4 w-4" /> Send email
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
+              {sendStep === 1 ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> Sending...
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">Step 1 — Choose your audience</h4>
+                    <button onClick={() => setShowSendPanel(false)} className="text-muted-foreground hover:text-foreground">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Who are you sending this to?</p>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 rounded-md border bg-background p-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={audienceMode === "all"}
+                        onChange={() => setAudienceMode("all")}
+                      />
+                      <span className="text-sm font-medium">All active subscribers</span>
+                      <span className="text-xs text-muted-foreground ml-auto">{activeSubscribers.length} total</span>
+                    </label>
+
+                    <div className="rounded-md border bg-background p-3 space-y-2">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          checked={audienceMode === "segment"}
+                          onChange={() => setAudienceMode("segment")}
+                        />
+                        <span className="text-sm font-medium">Specific segment</span>
+                      </label>
+                      {audienceMode === "segment" && (
+                        <div className="flex flex-wrap gap-2 pl-6">
+                          {segments.map((seg) => (
+                            <button
+                              key={seg.id}
+                              type="button"
+                              onClick={() => setSendSegmentId(seg.id)}
+                              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition ${
+                                sendSegmentId === seg.id ? "border-foreground bg-foreground text-background" : "bg-background"
+                              }`}
+                            >
+                              <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
+                              {seg.name} ({segmentCounts[seg.id] ?? 0})
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <label className={`flex items-center gap-3 rounded-md border bg-background p-3 ${selectedIds.size === 0 ? "opacity-50" : "cursor-pointer"}`}>
+                      <input
+                        type="radio"
+                        checked={audienceMode === "selected"}
+                        onChange={() => setAudienceMode("selected")}
+                        disabled={selectedIds.size === 0}
+                      />
+                      <span className="text-sm font-medium">Selected contacts only</span>
+                      <span className="text-xs text-muted-foreground ml-auto">{selectedIds.size} selected</span>
+                    </label>
+                  </div>
+
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="ghost" onClick={() => setShowSendPanel(false)}>Cancel</Button>
+                    <Button
+                      onClick={() => setSendStep(2)}
+                      disabled={
+                        (audienceMode === "segment" && !sendSegmentId) ||
+                        (audienceMode === "selected" && selectedIds.size === 0) ||
+                        sendRecipientIds.length === 0
+                      }
+                    >
+                      Continue
+                    </Button>
+                  </div>
                 </>
               ) : (
-                "Send to all subscribers"
+                <>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">Step 2 — Confirm and send</h4>
+                    <button onClick={() => setShowSendPanel(false)} className="text-muted-foreground hover:text-foreground">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="rounded-md bg-background border p-4 text-sm space-y-2">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Sending to:</span><span className="font-medium">{sendAudienceLabel}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Recipients:</span><span className="font-medium">{sendRecipientIds.length} contacts</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Subject:</span><span className="font-medium truncate max-w-[60%] text-right">{subject}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">From:</span><span className="font-medium">{settings.from_name ? `${settings.from_name} <${settings.from_email}>` : settings.from_email}</span></div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="ghost" onClick={() => setSendStep(1)}>Back</Button>
+                    <Button
+                      onClick={confirmSend}
+                      disabled={sending || sendRecipientIds.length === 0}
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      {sending ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
+                      ) : (
+                        "Send now"
+                      )}
+                    </Button>
+                  </div>
+                </>
               )}
-            </Button>
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -432,20 +736,136 @@ export default function Email() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {user && (
+            <SegmentsManager
+              segments={segments}
+              counts={segmentCounts}
+              totalActive={activeSubscribers.length}
+              userId={user.id}
+              onChange={loadAll}
+            />
+          )}
+
+          {csvPending && (
+            <div className="rounded-md border bg-muted/30 p-4 space-y-3">
+              <h4 className="font-semibold text-sm">Tag this import</h4>
+              <p className="text-xs text-muted-foreground">
+                Which segment should these {csvPending.rows.length} contacts go into? (optional)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {segments.map((seg) => {
+                  const active = csvPending.selectedTags.includes(seg.id);
+                  return (
+                    <button
+                      key={seg.id}
+                      type="button"
+                      onClick={() =>
+                        setCsvPending((prev) =>
+                          prev
+                            ? {
+                                ...prev,
+                                selectedTags: active
+                                  ? prev.selectedTags.filter((t) => t !== seg.id)
+                                  : [...prev.selectedTags, seg.id],
+                              }
+                            : prev,
+                        )
+                      }
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition ${
+                        active ? "border-foreground bg-foreground text-background" : "bg-background"
+                      }`}
+                    >
+                      <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
+                      {seg.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={confirmCsvImport}>Import {csvPending.rows.length} contacts</Button>
+                <Button size="sm" variant="ghost" onClick={() => setCsvPending(null)}>Cancel</Button>
+              </div>
+            </div>
+          )}
+
           {showAddForm && (
-            <div className="flex flex-col sm:flex-row gap-2 p-3 rounded-md border bg-muted/30">
-              <Input
-                placeholder="Name (optional)"
-                value={newSub.name}
-                onChange={(e) => setNewSub({ ...newSub, name: e.target.value })}
-              />
-              <Input
-                placeholder="email@example.com"
-                value={newSub.email}
-                type="email"
-                onChange={(e) => setNewSub({ ...newSub, email: e.target.value })}
-              />
+            <div className="p-3 rounded-md border bg-muted/30 space-y-2">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
+                  placeholder="Name (optional)"
+                  value={newSub.name}
+                  onChange={(e) => setNewSub({ ...newSub, name: e.target.value })}
+                />
+                <Input
+                  placeholder="email@example.com"
+                  value={newSub.email}
+                  type="email"
+                  onChange={(e) => setNewSub({ ...newSub, email: e.target.value })}
+                />
+              </div>
+              {segments.length > 0 && (
+                <div className="space-y-1">
+                  <Label className="text-xs">Tags (optional)</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {segments.map((seg) => {
+                      const active = newSub.tags.includes(seg.id);
+                      return (
+                        <button
+                          key={seg.id}
+                          type="button"
+                          onClick={() =>
+                            setNewSub((prev) => ({
+                              ...prev,
+                              tags: active
+                                ? prev.tags.filter((t) => t !== seg.id)
+                                : [...prev.tags, seg.id],
+                            }))
+                          }
+                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition ${
+                            active ? "border-foreground bg-foreground text-background" : "bg-background"
+                          }`}
+                        >
+                          <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
+                          {seg.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <Button onClick={addSubscriber}>Add</Button>
+            </div>
+          )}
+
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-2 rounded-md border bg-accent-soft px-3 py-2">
+              <span className="text-sm font-medium">{selectedIds.size} selected</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Tag className="h-3.5 w-3.5" /> Tag selected
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuLabel>Apply segment</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {segments.map((seg) => (
+                    <DropdownMenuItem key={seg.id} onClick={() => bulkApplyTag(seg.id)}>
+                      <span className="h-2 w-2 rounded-full mr-2" style={{ background: seg.color }} />
+                      {seg.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button size="sm" variant="outline" onClick={bulkExport}>
+                <Download className="h-3.5 w-3.5" /> Export
+              </Button>
+              <Button size="sm" variant="outline" onClick={bulkRemove}>
+                <Trash2 className="h-3.5 w-3.5" /> Remove
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())} className="ml-auto">
+                Clear
+              </Button>
             </div>
           )}
 
@@ -457,9 +877,15 @@ export default function Email() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={selectedIds.size > 0 && selectedIds.size === subscribers.length}
+                      onCheckedChange={(c) => toggleSelectAll(Boolean(c))}
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Subscribed</TableHead>
+                  <TableHead>Tags</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="w-12" />
                 </TableRow>
@@ -467,12 +893,34 @@ export default function Email() {
               <TableBody>
                 {subscribers.map((s) => (
                   <TableRow key={s.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(s.id)}
+                        onCheckedChange={(c) => toggleSelected(s.id, Boolean(c))}
+                      />
+                    </TableCell>
                     <TableCell>{s.name || "—"}</TableCell>
                     <TableCell>{s.email}</TableCell>
                     <TableCell>
-                      {s.subscribed_at
-                        ? new Date(s.subscribed_at).toLocaleDateString()
-                        : "—"}
+                      <div className="flex flex-wrap gap-1">
+                        {s.tags.map((tagId) => {
+                          const seg = segmentMap[tagId];
+                          if (!seg) return null;
+                          return (
+                            <span
+                              key={tagId}
+                              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                              style={{
+                                background: `${seg.color}22`,
+                                color: seg.color,
+                              }}
+                            >
+                              <span className="h-1.5 w-1.5 rounded-full" style={{ background: seg.color }} />
+                              {seg.name}
+                            </span>
+                          );
+                        })}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={s.status === "active" ? "default" : "secondary"}>
@@ -480,15 +928,37 @@ export default function Email() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {s.status === "active" && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeSubscriber(s.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Tags</DropdownMenuLabel>
+                          {segments.map((seg) => (
+                            <DropdownMenuCheckboxItem
+                              key={seg.id}
+                              checked={s.tags.includes(seg.id)}
+                              onCheckedChange={() => toggleSubscriberTag(s.id, seg.id)}
+                            >
+                              <span className="h-2 w-2 rounded-full mr-2" style={{ background: seg.color }} />
+                              {seg.name}
+                            </DropdownMenuCheckboxItem>
+                          ))}
+                          {s.status === "active" && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => removeSubscriber(s.id)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" /> Remove
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -513,6 +983,7 @@ export default function Email() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Subject</TableHead>
+                  <TableHead>Sent to</TableHead>
                   <TableHead>Sent</TableHead>
                   <TableHead>Recipients</TableHead>
                   <TableHead>Open rate</TableHead>
@@ -520,21 +991,37 @@ export default function Email() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sends.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="max-w-xs truncate">{s.subject || "—"}</TableCell>
-                    <TableCell>
-                      {s.sent_at ? new Date(s.sent_at).toLocaleDateString() : "—"}
-                    </TableCell>
-                    <TableCell>{s.recipient_count ?? 0}</TableCell>
-                    <TableCell>
-                      {s.open_rate != null ? `${Math.round(s.open_rate * 100)}%` : "—"}
-                    </TableCell>
-                    <TableCell>
-                      {s.click_rate != null ? `${Math.round(s.click_rate * 100)}%` : "—"}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {sends.map((s) => {
+                  const segName =
+                    !s.segment || s.segment === "all"
+                      ? "All subscribers"
+                      : segmentMap[s.segment]?.name || "Segment";
+                  const segColor =
+                    s.segment && s.segment !== "all" ? segmentMap[s.segment]?.color : null;
+                  return (
+                    <TableRow key={s.id}>
+                      <TableCell className="max-w-xs truncate">{s.subject || "—"}</TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center gap-2 text-xs">
+                          {segColor && (
+                            <span className="h-2 w-2 rounded-full" style={{ background: segColor }} />
+                          )}
+                          {segName}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {s.sent_at ? new Date(s.sent_at).toLocaleDateString() : "—"}
+                      </TableCell>
+                      <TableCell>{s.recipient_count ?? 0}</TableCell>
+                      <TableCell>
+                        {s.open_rate != null ? `${Math.round(s.open_rate * 100)}%` : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {s.click_rate != null ? `${Math.round(s.click_rate * 100)}%` : "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
