@@ -43,20 +43,14 @@ Deno.serve(async (req) => {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("email_settings")
+      .select("email_settings, full_name")
       .eq("id", userId)
       .maybeSingle();
 
     const settings = (profile?.email_settings as Record<string, string> | null) || {};
-    const from_name = settings.from_name;
+    const from_name = settings.from_name || profile?.full_name || "MOXIE";
     const from_email = settings.from_email;
-
-    if (!from_email) {
-      return new Response(
-        JSON.stringify({ error: "Please configure your sending details first" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
-    }
+    const reply_to = settings.reply_to || from_email;
 
     let query = supabase
       .from("subscribers")
@@ -87,7 +81,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const fromHeader = from_name ? `${from_name} <${from_email}>` : from_email;
+    const fromHeader = `${from_name} <hello@mail.usemoxie.com>`;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -100,7 +94,7 @@ Deno.serve(async (req) => {
         to: subscribers.map((s) => s.email),
         subject,
         html: body.replace(/\n/g, "<br>"),
-        ...(settings.reply_to ? { reply_to: settings.reply_to } : {}),
+        ...(reply_to ? { reply_to } : {}),
       }),
     });
 
