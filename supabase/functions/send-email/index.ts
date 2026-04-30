@@ -74,14 +74,9 @@ Deno.serve(async (req) => {
     }
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      return new Response(JSON.stringify({ error: "RESEND_API_KEY not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY missing");
 
-    const fromHeader = `${from_name} <hello@mail.usemoxie.com>`;
+    const fromHeader = `${from_name} <hello@mail.buildwithmoxie.co>`;
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
