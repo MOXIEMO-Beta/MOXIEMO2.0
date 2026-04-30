@@ -73,10 +73,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    console.log('Subscribers found:', subscribers?.length ?? 0);
+    console.log('From name:', from_name);
+    console.log('From email setting:', from_email);
+    console.log('Subject:', subject);
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY missing");
 
     const fromHeader = `${from_name} <hello@mail.buildwithmoxie.co>`;
+
+    const resendPayload = {
+      from: fromHeader,
+      to: subscribers.map((s) => s.email),
+      subject,
+      html: body.replace(/\n/g, "<br>"),
+      ...(reply_to ? { reply_to } : {}),
+    };
+    console.log('Resend payload:', JSON.stringify(resendPayload));
 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -84,19 +98,18 @@ Deno.serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        from: fromHeader,
-        to: subscribers.map((s) => s.email),
-        subject,
-        html: body.replace(/\n/g, "<br>"),
-        ...(reply_to ? { reply_to } : {}),
-      }),
+      body: JSON.stringify(resendPayload),
     });
 
     const result = await res.json();
+    console.log('Resend response status:', res.status);
+    console.log('Resend response body:', JSON.stringify(result));
     if (!res.ok) {
-      return new Response(JSON.stringify({ error: "Resend error", details: result }), {
-        status: 500,
+      return new Response(JSON.stringify({
+        error: result?.message ?? result?.name ?? 'Resend API error',
+        details: result,
+      }), {
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
