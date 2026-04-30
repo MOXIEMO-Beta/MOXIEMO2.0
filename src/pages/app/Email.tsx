@@ -298,6 +298,36 @@ export default function Email() {
     loadAll();
   }
 
+  async function createInlineList(target: "add" | "csv") {
+    if (!user || !inlineListName.trim()) return;
+    const { data, error } = await supabase
+      .from("subscriber_segments")
+      .insert({
+        user_id: user.id,
+        name: inlineListName.trim(),
+        color: inlineListColor,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const created = data as Segment;
+    setSegments((prev) => [...prev, created]);
+    if (target === "add") {
+      setNewSub((prev) => ({ ...prev, tags: [...prev.tags, created.id] }));
+    } else {
+      setCsvPending((prev) =>
+        prev ? { ...prev, selectedTags: [...prev.selectedTags, created.id] } : prev,
+      );
+    }
+    setInlineListName("");
+    setInlineListColor(PRESET_COLORS[0]);
+    setInlineListForm(null);
+    toast.success("List created");
+  }
+
   async function removeSubscriber(id: string) {
     const { error } = await supabase
       .from("subscribers")
