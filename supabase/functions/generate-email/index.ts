@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
 
     const { data: strategy } = await supabase
       .from("strategies")
-      .select("positioning_statement, voice_attributes, anti_positioning")
+      .select("positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -47,21 +47,22 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    const prompt = `You are MOXIE, an AI CMO. Generate a weekly newsletter subject line and body for this founder.
+    const latestTopic = latestContent?.topic;
+    const prompt = `You are MOXIE, an AI Chief Marketing Officer generating a complete email newsletter for a founder.
 
-STRATEGY CONTEXT:
-Positioning: ${strategy?.positioning_statement || "Not set"}
-Voice: ${JSON.stringify(strategy?.voice_attributes || [])}
-Anti-positioning: ${strategy?.anti_positioning || "Not set"}
+FOUNDER'S STRATEGY:
+Positioning: ${strategy?.positioning_statement ?? "Expert founder helping clients achieve transformation"}
+Ideal client: ${strategy?.ideal_client ?? "B2B founders"}
+Pain point: ${strategy?.pain_point ?? "unclear messaging and marketing overwhelm"}
+Voice attributes: ${JSON.stringify(strategy?.voice_attributes ?? ["authoritative", "empathetic", "direct"])}
+Anti-positioning (never sound like): ${strategy?.anti_positioning ?? "corporate jargon"}
+Latest content topic: ${latestTopic ?? "founder branding and positioning"}
 
-LATEST CONTENT TOPIC:
-${latestContent?.topic || "No recent content"}
-
-Generate:
-1. A subject line (max 50 chars, curiosity-driven, no clickbait)
-2. A newsletter body (400-600 words, Sage voice, ends with a question)
-
-Return as JSON: { "subject": "...", "body": "..." }`;
+Generate a complete weekly newsletter email. Return ONLY valid JSON, no other text:
+{
+  "subject": "A curiosity-driven subject line under 50 characters",
+  "body": "Full HTML email body — 400-600 words. Use <h2> for section headers, <p> for paragraphs. Match the voice attributes exactly. Address the ideal client's pain point. End with a thought-provoking question. Include a coral CTA button at the bottom: <a href='[CALENDAR LINK]' style='display:inline-block;background:#ff6b6b;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;'>Book a Discovery Call</a>"
+}`;
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
@@ -80,13 +81,14 @@ Return as JSON: { "subject": "...", "body": "..." }`;
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-20250514",
-        max_tokens: 2000,
+        max_tokens: 1500,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
     if (!aiRes.ok) {
       const errText = await aiRes.text();
+      console.error("Anthropic error:", aiRes.status, errText);
       return new Response(JSON.stringify({ error: "AI request failed", details: errText }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -94,14 +96,20 @@ Return as JSON: { "subject": "...", "body": "..." }`;
     }
 
     const aiData = await aiRes.json();
-    const text = aiData.content?.[0]?.text || "";
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    let parsed = { subject: "", body: text };
-    if (jsonMatch) {
-      try {
-        parsed = JSON.parse(jsonMatch[0]);
-      } catch {
-        // keep fallback
+    const text = (aiData.content?.[0]?.text ?? "").trim();
+    let parsed: { subject: string; body: string } = { subject: "", body: "" };
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        try {
+          parsed = JSON.parse(jsonMatch[0]);
+        } catch {
+          parsed = { subject: "Your weekly newsletter", body: text };
+        }
+      } else {
+        parsed = { subject: "Your weekly newsletter", body: text };
       }
     }
 
