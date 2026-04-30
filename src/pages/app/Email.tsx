@@ -46,7 +46,7 @@ import {
   Check,
 } from "lucide-react";
 import GeneratePanel, { type GenerateParams } from "@/components/email/GeneratePanel";
-import SegmentsManager, { type Segment } from "@/components/email/SegmentsManager";
+import SegmentsManager, { type Segment, PRESET_COLORS } from "@/components/email/SegmentsManager";
 
 type Subscriber = {
   id: string;
@@ -83,12 +83,6 @@ type Strategy = {
   content_themes?: unknown;
 };
 
-const DEFAULT_SEGMENTS = [
-  { name: "Hot leads", color: "#ff6b6b", description: "Engaged prospects close to buying" },
-  { name: "Nurture list", color: "#0c2340", description: "Long-term audience to warm up" },
-  { name: "Past clients", color: "#2dd4a8", description: "Previous customers and referrals" },
-];
-
 export default function Email() {
   const { user } = useAuth();
   const [subject, setSubject] = useState("");
@@ -115,7 +109,11 @@ export default function Email() {
   const [showSendPanel, setShowSendPanel] = useState(false);
   const [sendStep, setSendStep] = useState<1 | 2>(1);
   const [audienceMode, setAudienceMode] = useState<"all" | "segment" | "selected">("all");
-  const [sendSegmentId, setSendSegmentId] = useState<string | null>(null);
+  const [sendSegmentIds, setSendSegmentIds] = useState<string[]>([]);
+  const [tableFilter, setTableFilter] = useState<string | null>(null);
+  const [inlineListForm, setInlineListForm] = useState<null | "add" | "csv">(null);
+  const [inlineListName, setInlineListName] = useState("");
+  const [inlineListColor, setInlineListColor] = useState(PRESET_COLORS[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const [howItWorksOpen, setHowItWorksOpen] = useState(true);
@@ -185,15 +183,7 @@ export default function Email() {
     setStrategy((strategyRes.data as Strategy) || null);
     setFullName((profileRes.data?.full_name as string) || "");
 
-    let segs = (segRes.data as Segment[]) || [];
-    if (segs.length === 0) {
-      const inserts = DEFAULT_SEGMENTS.map((s) => ({ ...s, user_id: user.id }));
-      const { data: created } = await supabase
-        .from("subscriber_segments")
-        .insert(inserts)
-        .select("*");
-      if (created) segs = created as Segment[];
-    }
+    const segs = (segRes.data as Segment[]) || [];
     setSegments(segs);
   }
 
@@ -245,21 +235,21 @@ export default function Email() {
 
   const sendRecipientIds = useMemo(() => {
     if (audienceMode === "selected") return Array.from(selectedIds);
-    if (audienceMode === "segment" && sendSegmentId) {
+    if (audienceMode === "segment" && sendSegmentIds.length > 0) {
       return activeSubscribers
-        .filter((s) => s.tags.includes(sendSegmentId))
+        .filter((s) => s.tags.some((t) => sendSegmentIds.includes(t)))
         .map((s) => s.id);
     }
     return activeSubscribers.map((s) => s.id);
-  }, [audienceMode, selectedIds, sendSegmentId, activeSubscribers]);
+  }, [audienceMode, selectedIds, sendSegmentIds, activeSubscribers]);
 
   const sendAudienceLabel = useMemo(() => {
     if (audienceMode === "selected") return `${selectedIds.size} selected contacts`;
-    if (audienceMode === "segment" && sendSegmentId) {
-      return segmentMap[sendSegmentId]?.name || "Segment";
+    if (audienceMode === "segment" && sendSegmentIds.length > 0) {
+      return sendSegmentIds.map((id) => segmentMap[id]?.name).filter(Boolean).join(", ");
     }
     return "All active subscribers";
-  }, [audienceMode, selectedIds.size, sendSegmentId, segmentMap]);
+  }, [audienceMode, selectedIds.size, sendSegmentIds, segmentMap]);
 
   async function confirmSend() {
     setSending(true);
@@ -267,8 +257,9 @@ export default function Email() {
       const payload: Record<string, unknown> = { subject, body };
       if (audienceMode === "selected") {
         payload.subscriber_ids = Array.from(selectedIds);
-      } else if (audienceMode === "segment" && sendSegmentId) {
-        payload.segment = sendSegmentId;
+      } else if (audienceMode === "segment" && sendSegmentIds.length > 0) {
+        payload.subscriber_ids = sendRecipientIds;
+        payload.segment = sendSegmentIds.join(",");
       }
       const { data, error } = await supabase.functions.invoke("send-email", { body: payload });
       if (error) throw error;
