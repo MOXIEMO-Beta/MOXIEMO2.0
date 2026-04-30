@@ -101,6 +101,42 @@ export type Database = {
         }
         Relationships: []
       }
+      email_sends: {
+        Row: {
+          body: string | null
+          click_rate: number | null
+          id: string
+          open_rate: number | null
+          recipient_count: number | null
+          resend_email_id: string | null
+          sent_at: string | null
+          subject: string | null
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          click_rate?: number | null
+          id?: string
+          open_rate?: number | null
+          recipient_count?: number | null
+          resend_email_id?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          click_rate?: number | null
+          id?: string
+          open_rate?: number | null
+          recipient_count?: number | null
+          resend_email_id?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       goal_entries: {
         Row: {
           created_at: string
@@ -142,6 +178,7 @@ export type Database = {
           business_name: string | null
           created_at: string
           email: string | null
+          email_settings: Json | null
           full_name: string | null
           id: string
           updated_at: string
@@ -150,6 +187,7 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           email?: string | null
+          email_settings?: Json | null
           full_name?: string | null
           id: string
           updated_at?: string
@@ -158,6 +196,7 @@ export type Database = {
           business_name?: string | null
           created_at?: string
           email?: string | null
+          email_settings?: Json | null
           full_name?: string | null
           id?: string
           updated_at?: string
@@ -299,6 +338,36 @@ export type Database = {
           user_id?: string
           voice_attributes?: Json | null
           weak_areas?: Json | null
+        }
+        Relationships: []
+      }
+      subscribers: {
+        Row: {
+          email: string
+          id: string
+          name: string | null
+          status: string | null
+          subscribed_at: string | null
+          unsubscribed_at: string | null
+          user_id: string
+        }
+        Insert: {
+          email: string
+          id?: string
+          name?: string | null
+          status?: string | null
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          user_id: string
+        }
+        Update: {
+          email?: string
+          id?: string
+          name?: string | null
+          status?: string | null
+          subscribed_at?: string | null
+          unsubscribed_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
