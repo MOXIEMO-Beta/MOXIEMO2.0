@@ -801,7 +801,7 @@ export default function Email() {
                     <div className="flex justify-between"><span className="text-muted-foreground">Sending to:</span><span className="font-medium">{sendAudienceLabel}</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Recipients:</span><span className="font-medium">{sendRecipientIds.length} contacts</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Subject:</span><span className="font-medium truncate max-w-[60%] text-right">{subject}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">From:</span><span className="font-medium">{settings.from_name || "MOXIE"} &lt;hello@mail.usemoxie.com&gt;</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">From:</span><span className="font-medium">{settings.from_name || "MOXIE"} &lt;hello@mail.buildwithmoxie.co&gt;</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Replies to:</span><span className="font-medium">{settings.reply_to || "—"}</span></div>
                   </div>
                   <div className="flex gap-2 justify-end">
