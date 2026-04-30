@@ -1110,24 +1110,28 @@ export default function Email() {
               onChange={(e) => setSettings({ ...settings, from_name: e.target.value })}
               placeholder="Your name or brand"
             />
+            <p className="text-xs text-muted-foreground">
+              This is what subscribers see as the sender name.
+            </p>
           </div>
           <div className="space-y-2">
-            <Label>From email</Label>
-            <Input
-              value={settings.from_email || ""}
-              onChange={(e) => setSettings({ ...settings, from_email: e.target.value })}
-              placeholder="hello@yourdomain.com"
-              type="email"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Reply-to email</Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-base font-semibold">Where should subscriber replies go?</Label>
+              {settings.reply_to && (
+                <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
+                  <Check className="h-3 w-3" /> Saved
+                </span>
+              )}
+            </div>
             <Input
               value={settings.reply_to || ""}
               onChange={(e) => setSettings({ ...settings, reply_to: e.target.value })}
               placeholder="you@yourdomain.com"
               type="email"
             />
+            <p className="text-xs text-muted-foreground">
+              This is your most important setting — make sure it's correct.
+            </p>
           </div>
           <Button onClick={saveSettings} disabled={savingSettings}>
             {savingSettings ? (
@@ -1139,8 +1143,7 @@ export default function Email() {
             )}
           </Button>
           <p className="text-xs text-muted-foreground">
-            To improve deliverability, add a custom domain in your Resend account at
-            resend.com
+            Beta 1: emails send from MOXIE's verified domain. Custom domain support coming soon.
           </p>
         </CardContent>
       </Card>
