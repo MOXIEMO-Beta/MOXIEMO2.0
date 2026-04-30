@@ -796,7 +796,7 @@ export default function Email() {
       </Card>
 
       {/* Subscribers */}
-      <Card>
+      <Card id="subscribers-card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Subscribers ({subscribers.length})</CardTitle>
@@ -826,9 +826,10 @@ export default function Email() {
             <SegmentsManager
               segments={segments}
               counts={segmentCounts}
-              totalActive={activeSubscribers.length}
               userId={user.id}
               onChange={loadAll}
+              activeFilter={tableFilter}
+              onFilterChange={setTableFilter}
             />
           )}
 
