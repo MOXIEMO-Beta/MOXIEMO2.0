@@ -46,7 +46,7 @@ import {
   Check,
 } from "lucide-react";
 import GeneratePanel, { type GenerateParams } from "@/components/email/GeneratePanel";
-import SegmentsManager, { type Segment } from "@/components/email/SegmentsManager";
+import SegmentsManager, { type Segment, PRESET_COLORS } from "@/components/email/SegmentsManager";
 
 type Subscriber = {
   id: string;
@@ -83,12 +83,6 @@ type Strategy = {
   content_themes?: unknown;
 };
 
-const DEFAULT_SEGMENTS = [
-  { name: "Hot leads", color: "#ff6b6b", description: "Engaged prospects close to buying" },
-  { name: "Nurture list", color: "#0c2340", description: "Long-term audience to warm up" },
-  { name: "Past clients", color: "#2dd4a8", description: "Previous customers and referrals" },
-];
-
 export default function Email() {
   const { user } = useAuth();
   const [subject, setSubject] = useState("");
@@ -115,7 +109,11 @@ export default function Email() {
   const [showSendPanel, setShowSendPanel] = useState(false);
   const [sendStep, setSendStep] = useState<1 | 2>(1);
   const [audienceMode, setAudienceMode] = useState<"all" | "segment" | "selected">("all");
-  const [sendSegmentId, setSendSegmentId] = useState<string | null>(null);
+  const [sendSegmentIds, setSendSegmentIds] = useState<string[]>([]);
+  const [tableFilter, setTableFilter] = useState<string | null>(null);
+  const [inlineListForm, setInlineListForm] = useState<null | "add" | "csv">(null);
+  const [inlineListName, setInlineListName] = useState("");
+  const [inlineListColor, setInlineListColor] = useState(PRESET_COLORS[0]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const [howItWorksOpen, setHowItWorksOpen] = useState(true);
@@ -185,15 +183,7 @@ export default function Email() {
     setStrategy((strategyRes.data as Strategy) || null);
     setFullName((profileRes.data?.full_name as string) || "");
 
-    let segs = (segRes.data as Segment[]) || [];
-    if (segs.length === 0) {
-      const inserts = DEFAULT_SEGMENTS.map((s) => ({ ...s, user_id: user.id }));
-      const { data: created } = await supabase
-        .from("subscriber_segments")
-        .insert(inserts)
-        .select("*");
-      if (created) segs = created as Segment[];
-    }
+    const segs = (segRes.data as Segment[]) || [];
     setSegments(segs);
   }
 
@@ -245,21 +235,21 @@ export default function Email() {
 
   const sendRecipientIds = useMemo(() => {
     if (audienceMode === "selected") return Array.from(selectedIds);
-    if (audienceMode === "segment" && sendSegmentId) {
+    if (audienceMode === "segment" && sendSegmentIds.length > 0) {
       return activeSubscribers
-        .filter((s) => s.tags.includes(sendSegmentId))
+        .filter((s) => s.tags.some((t) => sendSegmentIds.includes(t)))
         .map((s) => s.id);
     }
     return activeSubscribers.map((s) => s.id);
-  }, [audienceMode, selectedIds, sendSegmentId, activeSubscribers]);
+  }, [audienceMode, selectedIds, sendSegmentIds, activeSubscribers]);
 
   const sendAudienceLabel = useMemo(() => {
     if (audienceMode === "selected") return `${selectedIds.size} selected contacts`;
-    if (audienceMode === "segment" && sendSegmentId) {
-      return segmentMap[sendSegmentId]?.name || "Segment";
+    if (audienceMode === "segment" && sendSegmentIds.length > 0) {
+      return sendSegmentIds.map((id) => segmentMap[id]?.name).filter(Boolean).join(", ");
     }
     return "All active subscribers";
-  }, [audienceMode, selectedIds.size, sendSegmentId, segmentMap]);
+  }, [audienceMode, selectedIds.size, sendSegmentIds, segmentMap]);
 
   async function confirmSend() {
     setSending(true);
@@ -267,8 +257,9 @@ export default function Email() {
       const payload: Record<string, unknown> = { subject, body };
       if (audienceMode === "selected") {
         payload.subscriber_ids = Array.from(selectedIds);
-      } else if (audienceMode === "segment" && sendSegmentId) {
-        payload.segment = sendSegmentId;
+      } else if (audienceMode === "segment" && sendSegmentIds.length > 0) {
+        payload.subscriber_ids = sendRecipientIds;
+        payload.segment = sendSegmentIds.join(",");
       }
       const { data, error } = await supabase.functions.invoke("send-email", { body: payload });
       if (error) throw error;
@@ -305,6 +296,36 @@ export default function Email() {
     setNewSub({ name: "", email: "", tags: [] });
     setShowAddForm(false);
     loadAll();
+  }
+
+  async function createInlineList(target: "add" | "csv") {
+    if (!user || !inlineListName.trim()) return;
+    const { data, error } = await supabase
+      .from("subscriber_segments")
+      .insert({
+        user_id: user.id,
+        name: inlineListName.trim(),
+        color: inlineListColor,
+      })
+      .select("*")
+      .single();
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    const created = data as Segment;
+    setSegments((prev) => [...prev, created]);
+    if (target === "add") {
+      setNewSub((prev) => ({ ...prev, tags: [...prev.tags, created.id] }));
+    } else {
+      setCsvPending((prev) =>
+        prev ? { ...prev, selectedTags: [...prev.selectedTags, created.id] } : prev,
+      );
+    }
+    setInlineListName("");
+    setInlineListColor(PRESET_COLORS[0]);
+    setInlineListForm(null);
+    toast.success("List created");
   }
 
   async function removeSubscriber(id: string) {
@@ -696,29 +717,48 @@ export default function Email() {
                     </label>
 
                     <div className="rounded-md border bg-background p-3 space-y-2">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="radio"
-                          checked={audienceMode === "segment"}
-                          onChange={() => setAudienceMode("segment")}
-                        />
-                        <span className="text-sm font-medium">Specific segment</span>
-                      </label>
-                      {audienceMode === "segment" && (
-                        <div className="flex flex-wrap gap-2 pl-6">
-                          {segments.map((seg) => (
-                            <button
-                              key={seg.id}
-                              type="button"
-                              onClick={() => setSendSegmentId(seg.id)}
-                              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition ${
-                                sendSegmentId === seg.id ? "border-foreground bg-foreground text-background" : "bg-background"
-                              }`}
-                            >
-                              <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
-                              {seg.name} ({segmentCounts[seg.id] ?? 0})
-                            </button>
-                          ))}
+                      <p className="text-xs font-medium text-muted-foreground">Or choose specific lists:</p>
+                      {segments.length === 0 ? (
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p>No lists yet — add subscribers to lists to send to specific groups.</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowSendPanel(false);
+                              document.getElementById("subscribers-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                            className="text-orange-600 hover:underline"
+                          >
+                            Manage lists →
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {segments.map((seg) => {
+                            const checked = sendSegmentIds.includes(seg.id);
+                            return (
+                              <label
+                                key={seg.id}
+                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs cursor-pointer transition ${
+                                  checked ? "border-foreground bg-foreground text-background" : "bg-background"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="sr-only"
+                                  checked={checked}
+                                  onChange={() => {
+                                    setAudienceMode("segment");
+                                    setSendSegmentIds((prev) =>
+                                      checked ? prev.filter((id) => id !== seg.id) : [...prev, seg.id],
+                                    );
+                                  }}
+                                />
+                                <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
+                                {seg.name} ({segmentCounts[seg.id] ?? 0})
+                              </label>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -740,7 +780,7 @@ export default function Email() {
                     <Button
                       onClick={() => setSendStep(2)}
                       disabled={
-                        (audienceMode === "segment" && !sendSegmentId) ||
+                        (audienceMode === "segment" && sendSegmentIds.length === 0) ||
                         (audienceMode === "selected" && selectedIds.size === 0) ||
                         sendRecipientIds.length === 0
                       }
@@ -786,7 +826,7 @@ export default function Email() {
       </Card>
 
       {/* Subscribers */}
-      <Card>
+      <Card id="subscribers-card">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Subscribers ({subscribers.length})</CardTitle>
@@ -816,17 +856,18 @@ export default function Email() {
             <SegmentsManager
               segments={segments}
               counts={segmentCounts}
-              totalActive={activeSubscribers.length}
               userId={user.id}
               onChange={loadAll}
+              activeFilter={tableFilter}
+              onFilterChange={setTableFilter}
             />
           )}
 
           {csvPending && (
             <div className="rounded-md border bg-muted/30 p-4 space-y-3">
-              <h4 className="font-semibold text-sm">Tag this import</h4>
+              <h4 className="font-semibold text-sm">Which list should these contacts go into?</h4>
               <p className="text-xs text-muted-foreground">
-                Which segment should these {csvPending.rows.length} contacts go into? (optional)
+                {csvPending.rows.length} contacts ready to import. You can also skip and assign later.
               </p>
               <div className="flex flex-wrap gap-2">
                 {segments.map((seg) => {
@@ -856,7 +897,38 @@ export default function Email() {
                     </button>
                   );
                 })}
+                <button
+                  type="button"
+                  onClick={() => setInlineListForm("csv")}
+                  className="inline-flex items-center gap-1 rounded-full border border-dashed px-3 py-1.5 text-xs text-orange-600 hover:bg-orange-50"
+                >
+                  <Plus className="h-3 w-3" /> Create a new list for this import
+                </button>
               </div>
+              {inlineListForm === "csv" && (
+                <div className="rounded-md border bg-background p-3 space-y-2">
+                  <Input
+                    placeholder="List name"
+                    value={inlineListName}
+                    onChange={(e) => setInlineListName(e.target.value)}
+                  />
+                  <div className="flex gap-2 items-center">
+                    {PRESET_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setInlineListColor(c)}
+                        className={`h-5 w-5 rounded-full border-2 transition ${
+                          inlineListColor === c ? "border-foreground scale-110" : "border-transparent"
+                        }`}
+                        style={{ background: c }}
+                      />
+                    ))}
+                    <Button size="sm" onClick={() => createInlineList("csv")}>Create</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setInlineListForm(null)}>Cancel</Button>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2">
                 <Button size="sm" onClick={confirmCsvImport}>Import {csvPending.rows.length} contacts</Button>
                 <Button size="sm" variant="ghost" onClick={() => setCsvPending(null)}>Cancel</Button>
@@ -879,36 +951,65 @@ export default function Email() {
                   onChange={(e) => setNewSub({ ...newSub, email: e.target.value })}
                 />
               </div>
-              {segments.length > 0 && (
-                <div className="space-y-1">
-                  <Label className="text-xs">Tags (optional)</Label>
-                  <div className="flex flex-wrap gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs">Add to a list (optional)</Label>
+                {segments.length > 0 && (
+                  <div className="space-y-1.5">
                     {segments.map((seg) => {
                       const active = newSub.tags.includes(seg.id);
                       return (
-                        <button
-                          key={seg.id}
-                          type="button"
-                          onClick={() =>
-                            setNewSub((prev) => ({
-                              ...prev,
-                              tags: active
-                                ? prev.tags.filter((t) => t !== seg.id)
-                                : [...prev.tags, seg.id],
-                            }))
-                          }
-                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs transition ${
-                            active ? "border-foreground bg-foreground text-background" : "bg-background"
-                          }`}
-                        >
+                        <label key={seg.id} className="flex items-center gap-2 cursor-pointer text-sm">
+                          <Checkbox
+                            checked={active}
+                            onCheckedChange={() =>
+                              setNewSub((prev) => ({
+                                ...prev,
+                                tags: active
+                                  ? prev.tags.filter((t) => t !== seg.id)
+                                  : [...prev.tags, seg.id],
+                              }))
+                            }
+                          />
                           <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
                           {seg.name}
-                        </button>
+                        </label>
                       );
                     })}
                   </div>
-                </div>
-              )}
+                )}
+                {inlineListForm === "add" ? (
+                  <div className="rounded-md border bg-background p-3 space-y-2 mt-2">
+                    <Input
+                      placeholder="List name"
+                      value={inlineListName}
+                      onChange={(e) => setInlineListName(e.target.value)}
+                    />
+                    <div className="flex gap-2 items-center">
+                      {PRESET_COLORS.map((c) => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setInlineListColor(c)}
+                          className={`h-5 w-5 rounded-full border-2 transition ${
+                            inlineListColor === c ? "border-foreground scale-110" : "border-transparent"
+                          }`}
+                          style={{ background: c }}
+                        />
+                      ))}
+                      <Button size="sm" onClick={() => createInlineList("add")}>Create</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setInlineListForm(null)}>Cancel</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setInlineListForm("add")}
+                    className="text-xs text-orange-600 hover:underline inline-flex items-center gap-1 mt-1"
+                  >
+                    <Plus className="h-3 w-3" /> Create new list
+                  </button>
+                )}
+              </div>
               <Button onClick={addSubscriber}>Add</Button>
             </div>
           )}
@@ -945,9 +1046,17 @@ export default function Email() {
             </div>
           )}
 
-          {subscribers.length === 0 ? (
+          {(() => {
+            const filtered = tableFilter
+              ? subscribers.filter((s) => s.tags.includes(tableFilter))
+              : subscribers;
+            return subscribers.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">
               No subscribers yet. Add one or import a CSV to get started.
+            </p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No subscribers in this list yet.
             </p>
           ) : (
             <Table>
@@ -955,7 +1064,7 @@ export default function Email() {
                 <TableRow>
                   <TableHead className="w-10">
                     <Checkbox
-                      checked={selectedIds.size > 0 && selectedIds.size === subscribers.length}
+                      checked={selectedIds.size > 0 && selectedIds.size === filtered.length}
                       onCheckedChange={(c) => toggleSelectAll(Boolean(c))}
                     />
                   </TableHead>
@@ -967,7 +1076,7 @@ export default function Email() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {subscribers.map((s) => (
+                {filtered.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>
                       <Checkbox
@@ -983,17 +1092,20 @@ export default function Email() {
                           const seg = segmentMap[tagId];
                           if (!seg) return null;
                           return (
-                            <span
+                            <button
                               key={tagId}
-                              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium"
+                              type="button"
+                              onClick={() => setTableFilter(tagId === tableFilter ? null : tagId)}
+                              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80 transition"
                               style={{
                                 background: `${seg.color}22`,
                                 color: seg.color,
                               }}
+                              title={`Filter by ${seg.name}`}
                             >
                               <span className="h-1.5 w-1.5 rounded-full" style={{ background: seg.color }} />
                               {seg.name}
-                            </span>
+                            </button>
                           );
                         })}
                       </div>
@@ -1040,7 +1152,8 @@ export default function Email() {
                 ))}
               </TableBody>
             </Table>
-          )}
+          );
+          })()}
         </CardContent>
       </Card>
 
@@ -1068,12 +1181,12 @@ export default function Email() {
               </TableHeader>
               <TableBody>
                 {sends.map((s) => {
+                  const ids = s.segment && s.segment !== "all" ? s.segment.split(",") : [];
                   const segName =
                     !s.segment || s.segment === "all"
                       ? "All subscribers"
-                      : segmentMap[s.segment]?.name || "Segment";
-                  const segColor =
-                    s.segment && s.segment !== "all" ? segmentMap[s.segment]?.color : null;
+                      : ids.map((id) => segmentMap[id]?.name).filter(Boolean).join(", ") || "List";
+                  const segColor = ids.length === 1 ? segmentMap[ids[0]]?.color : null;
                   return (
                     <TableRow key={s.id}>
                       <TableCell className="max-w-xs truncate">{s.subject || "—"}</TableCell>
