@@ -108,7 +108,9 @@ export type Database = {
           id: string
           open_rate: number | null
           recipient_count: number | null
+          recipient_ids: Json
           resend_email_id: string | null
+          segment: string | null
           sent_at: string | null
           subject: string | null
           user_id: string
@@ -119,7 +121,9 @@ export type Database = {
           id?: string
           open_rate?: number | null
           recipient_count?: number | null
+          recipient_ids?: Json
           resend_email_id?: string | null
+          segment?: string | null
           sent_at?: string | null
           subject?: string | null
           user_id: string
@@ -130,7 +134,9 @@ export type Database = {
           id?: string
           open_rate?: number | null
           recipient_count?: number | null
+          recipient_ids?: Json
           resend_email_id?: string | null
+          segment?: string | null
           sent_at?: string | null
           subject?: string | null
           user_id?: string
@@ -341,13 +347,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriber_segments: {
+        Row: {
+          color: string
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_system?: boolean
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscribers: {
         Row: {
           email: string
           id: string
           name: string | null
+          notes: string | null
           status: string | null
           subscribed_at: string | null
+          tags: Json
           unsubscribed_at: string | null
           user_id: string
         }
@@ -355,8 +393,10 @@ export type Database = {
           email: string
           id?: string
           name?: string | null
+          notes?: string | null
           status?: string | null
           subscribed_at?: string | null
+          tags?: Json
           unsubscribed_at?: string | null
           user_id: string
         }
@@ -364,8 +404,10 @@ export type Database = {
           email?: string
           id?: string
           name?: string | null
+          notes?: string | null
           status?: string | null
           subscribed_at?: string | null
+          tags?: Json
           unsubscribed_at?: string | null
           user_id?: string
         }
