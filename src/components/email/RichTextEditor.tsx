@@ -75,103 +75,31 @@ function ToolbarButton({
   );
 }
 
-function LinkPopover({ editor }: { editor: Editor }) {
-  const [open, setOpen] = useState(false);
-  const [url, setUrl] = useState("");
-  const [text, setText] = useState("");
-  const [newTab, setNewTab] = useState(true);
-  const selectionRef = useRef<{ from: number; to: number } | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const { from, to, empty } = editor.state.selection;
-    selectionRef.current = { from, to };
-    const selected = empty ? "" : editor.state.doc.textBetween(from, to, " ");
-    setText(selected);
-    const prev = editor.getAttributes("link").href as string | undefined;
-    setUrl(prev || "");
-  }, [open, editor]);
-
-  function insert() {
-    if (!url.trim()) return;
-    const target = newTab ? "_blank" : "_self";
-    const rel = newTab ? "noopener noreferrer" : null;
-    const sel = selectionRef.current ?? editor.state.selection;
-    const from = sel.from;
-    const to = sel.to;
-    const empty = from === to;
-    const display = text.trim() || url.trim();
-    if (empty) {
-      editor
-        .chain()
-        .focus()
-        .setTextSelection({ from, to })
-        .insertContent({
-          type: "text",
-          text: display,
-          marks: [{ type: "link", attrs: { href: url.trim(), target, rel } }],
-        })
-        .run();
-    } else {
-      editor
-        .chain()
-        .focus()
-        .setTextSelection({ from, to })
-        .extendMarkRange("link")
-        .setLink({ href: url.trim(), target, rel })
-        .command(({ tr }) => {
-          if (display !== editor.state.doc.textBetween(from, to, " ")) {
-            tr.insertText(display, from, to);
-          }
-          return true;
-        })
-        .run();
+function LinkButton({ editor }: { editor: Editor }) {
+  function handleClick() {
+    const previousUrl = editor.getAttributes("link").href;
+    const url = window.prompt("Enter URL:", previousUrl || "https://");
+    if (url === null) return;
+    if (url === "") {
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
+      return;
     }
-    setOpen(false);
-    selectionRef.current = null;
-    setUrl("");
-    setText("");
+    editor
+      .chain()
+      .focus()
+      .extendMarkRange("link")
+      .setLink({ href: url, target: "_blank" })
+      .run();
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <ToolbarButton active={editor.isActive("link")} title="Insert link">
-          <Link2 className="h-4 w-4" />
-        </ToolbarButton>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 space-y-3">
-        <div className="space-y-1.5">
-          <Label className="text-xs">URL</Label>
-          <Input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="https://example.com"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs">Display text</Label>
-          <Input
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Click here"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Checkbox
-            id="new-tab"
-            checked={newTab}
-            onCheckedChange={(v) => setNewTab(v === true)}
-          />
-          <Label htmlFor="new-tab" className="text-sm font-normal cursor-pointer">
-            Open in new tab
-          </Label>
-        </div>
-        <Button onClick={insert} className="w-full" size="sm">
-          Insert Link
-        </Button>
-      </PopoverContent>
-    </Popover>
+    <ToolbarButton
+      onClick={handleClick}
+      active={editor.isActive("link")}
+      title="Insert link"
+    >
+      <Link2 className="h-4 w-4" />
+    </ToolbarButton>
   );
 }
 
@@ -408,7 +336,7 @@ export default function RichTextEditor({
 
         <Separator orientation="vertical" className="mx-1 h-6" />
 
-        <LinkPopover editor={editor} />
+        <LinkButton editor={editor} />
         <ColorPopover editor={editor} />
 
         <Separator orientation="vertical" className="mx-1 h-6" />
