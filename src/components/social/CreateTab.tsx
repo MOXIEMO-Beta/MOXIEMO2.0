@@ -564,6 +564,19 @@ export default function CreateTab({
         instagram: platforms.includes("instagram") ? posts.instagram || prev.instagram : prev.instagram,
       }));
       toast.success("Posts generated — review and personalize before publishing");
+      // Reset per-post focus hints so they can show once again for the new post
+      setFocusHint({ linkedin: false, facebook: false, instagram: false });
+      setHasEdited((prev) => {
+        const next = { ...prev };
+        for (const p of platforms) next[p] = false;
+        return next;
+      });
+      // Show the one-time tip banner if user hasn't dismissed it this session
+      if (!tipDismissed && sessionStorage.getItem("moxie_tip_seen") !== "true") {
+        setShowTipBanner(true);
+      } else {
+        triggerFirstSentenceHighlight();
+      }
     } catch (err) {
       console.error(err);
       toast.error("Couldn't generate posts", { description: (err as Error).message });
