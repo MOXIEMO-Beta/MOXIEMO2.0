@@ -59,14 +59,18 @@ export function MetricsTab() {
           {Array.isArray(primary.leadSources) && primary.leadSources.length > 0 && (
             <Card className="report-card p-6 border-border shadow-soft">
               <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Projected lead sources</div>
-              <div className="space-y-3">
+              <div className="space-y-3" style={{ width: '100%', overflow: 'hidden' }}>
                 {primary.leadSources.map((s: any, i: number) => (
-                  <div key={i}>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="font-medium">{s.source}</span>
-                      <span className="text-muted-foreground">{s.percentage}%{s.perWeek ? ` · ${s.perWeek}` : ""}</span>
+                  <div key={i} style={{ width: '100%', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', minWidth: 0 }}>
+                      <span style={{ flexShrink: 0, minWidth: '120px', fontSize: '12px' }} className="font-medium truncate">{s.source}</span>
+                      <div style={{ flex: 1, minWidth: 0, height: '8px', background: 'hsl(var(--muted))', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.min(100, Number(s.percentage) || 0)}%`, height: '100%', background: 'hsl(var(--accent))', borderRadius: '4px', maxWidth: '100%' }} />
+                      </div>
+                      <span style={{ flexShrink: 0, fontSize: '12px', minWidth: '32px', textAlign: 'right' }} className="text-muted-foreground">
+                        {s.percentage}%{s.perWeek ? ` · ${s.perWeek}` : ""}
+                      </span>
                     </div>
-                    <Progress value={s.percentage} className="h-1.5" />
                   </div>
                 ))}
               </div>
@@ -149,31 +153,35 @@ export function MetricsTab() {
       {/* Brand health */}
       <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-5"><Heart className="h-3.5 w-3.5" /> Brand health</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <div className="flex items-baseline justify-between mb-2">
-              <span className="text-sm font-medium">Voice consistency</span>
-              <span className="font-display text-3xl text-accent">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5" style={{ width: '100%', overflow: 'hidden' }}>
+          <div style={{ width: '100%', minWidth: 0, overflow: 'hidden' }}>
+            <div className="flex items-baseline justify-between mb-2" style={{ minWidth: 0 }}>
+              <span className="text-sm font-medium truncate" style={{ flexShrink: 1, minWidth: 0 }}>Voice consistency</span>
+              <span className="font-display text-3xl text-accent" style={{ flexShrink: 0 }}>
                 {(() => {
                   const v = bh.voiceConsistencyScore ?? 100;
                   return v > 10 ? `${(v / 10).toFixed(1)} / 10` : `${v} / 10`;
                 })()}
               </span>
             </div>
-            <Progress value={bh.voiceConsistencyScore ?? 100} className="h-2" />
+            <div style={{ flex: 1, minWidth: 0, height: '6px', background: 'hsl(var(--muted))', borderRadius: '3px', overflow: 'hidden', width: '100%' }}>
+              <div style={{ width: `${Math.min(100, bh.voiceConsistencyScore ?? 100)}%`, height: '100%', background: 'hsl(var(--accent))', borderRadius: '3px' }} />
+            </div>
             <p className="text-xs text-muted-foreground mt-2">Perfect baseline — no content deviations yet.</p>
           </div>
-          <div>
-            <div className="flex items-baseline justify-between mb-2">
-              <span className="text-sm font-medium">Archetype alignment</span>
-              <span className="font-display text-3xl text-accent">
+          <div style={{ width: '100%', minWidth: 0, overflow: 'hidden' }}>
+            <div className="flex items-baseline justify-between mb-2" style={{ minWidth: 0 }}>
+              <span className="text-sm font-medium truncate" style={{ flexShrink: 1, minWidth: 0 }}>Archetype alignment</span>
+              <span className="font-display text-3xl text-accent" style={{ flexShrink: 0 }}>
                 {(() => {
                   const v = bh.archetypeAlignment ?? 100;
                   return v > 10 ? `${(v / 10).toFixed(1)} / 10` : `${v} / 10`;
                 })()}
               </span>
             </div>
-            <Progress value={bh.archetypeAlignment ?? 100} className="h-2" />
+            <div style={{ flex: 1, minWidth: 0, height: '6px', background: 'hsl(var(--muted))', borderRadius: '3px', overflow: 'hidden', width: '100%' }}>
+              <div style={{ width: `${Math.min(100, bh.archetypeAlignment ?? 100)}%`, height: '100%', background: 'hsl(var(--accent))', borderRadius: '3px' }} />
+            </div>
             {bh.notes && <p className="text-xs text-muted-foreground mt-2">{bh.notes}</p>}
           </div>
         </div>
