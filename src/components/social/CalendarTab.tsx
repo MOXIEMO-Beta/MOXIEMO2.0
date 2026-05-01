@@ -674,94 +674,139 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
         )}
       </div>
 
-      {/* SIDE PANEL */}
-      {selectedPost && (
-        <div className="fixed inset-0 z-40" onClick={() => setSelectedPost(null)}>
+      {/* SIDE PANEL — day view */}
+      {sidePanelOpen && selectedDate && (
+        <div className="fixed inset-0 z-40" onClick={closePanel}>
           <div className="absolute inset-0 bg-black/20" />
           <div
-            className="absolute right-0 top-0 flex h-full w-[320px] flex-col border-l border-border bg-background shadow-xl"
+            className="absolute right-0 top-0 flex h-full w-[320px] flex-col border-l border-border bg-background shadow-xl transition-transform duration-[250ms] ease-out"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2 border-b border-border p-3">
-              <div className="flex items-center gap-2">
-                {(selectedPost.platforms ?? []).map((p) => (
-                  <PlatformIcon key={p} p={p as Platform} size={16} />
-                ))}
-                <StatusBadge s={statusOf(selectedPost)} />
-              </div>
-              <button onClick={() => setSelectedPost(null)} className="text-muted-foreground hover:text-foreground">
+              <p className="text-sm font-semibold text-foreground">
+                {selectedDate.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+              <button onClick={closePanel} className="text-muted-foreground hover:text-foreground">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
-              {selectedPost.pillar && (
-                <Badge className="bg-[#fff0f0] text-[#c43d3d] hover:bg-[#fff0f0]">{selectedPost.pillar}</Badge>
-              )}
-              <div className="whitespace-pre-wrap text-foreground">
-                {Object.entries(selectedPost.content_by_platform ?? {}).map(([plat, txt]) => (
-                  <div key={plat} className="mb-3">
-                    <p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">{plat}</p>
-                    <p>{txt}</p>
-                  </div>
-                ))}
-              </div>
-              {postDate(selectedPost) && (
-                <p className="text-xs text-muted-foreground">
-                  {statusOf(selectedPost) === "published" ? "Published" : "Scheduled"}:{" "}
-                  {fmtDateLong(postDate(selectedPost)!)} · {fmtTime(postDate(selectedPost)!)}
-                </p>
-              )}
-
-              {rescheduleOpen && (
-                <div className="space-y-2 rounded-md border border-border p-3">
-                  <p className="text-xs font-medium">New date & time</p>
-                  <div className="flex gap-2">
-                    <Input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} />
-                    <Input type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)} />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setRescheduleOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleReschedule} disabled={actionLoading === "reschedule"}>
-                      {actionLoading === "reschedule" ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
-                    </Button>
-                  </div>
-                </div>
-              )}
+            <div className="border-b border-border p-3">
+              <Button
+                size="sm"
+                className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                onClick={() => onCreateAtDate(selectedDate.toISOString())}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" /> Add post for this day
+              </Button>
             </div>
-            <div className="space-y-2 border-t border-border p-3">
-              <div className="grid grid-cols-3 gap-2">
-                <Button size="sm" variant="outline" onClick={() => onEditPost(selectedPost.id)}>
-                  <Pencil className="mr-1 h-3 w-3" /> Edit
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setRescheduleOpen((v) => !v)}>
-                  <CalendarIcon className="mr-1 h-3 w-3" /> Reschedule
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleDelete(selectedPost.id)}>
-                  {actionLoading === "delete" ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <>
-                      <Trash2 className="mr-1 h-3 w-3" /> Delete
-                    </>
-                  )}
-                </Button>
-              </div>
-              {(statusOf(selectedPost) === "scheduled" || statusOf(selectedPost) === "queued") && (
-                <Button
-                  size="sm"
-                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                  onClick={() => handlePublishNow(selectedPost)}
-                  disabled={actionLoading === "publish"}
-                >
-                  {actionLoading === "publish" ? (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                  ) : (
-                    <Send className="mr-1 h-3 w-3" />
-                  )}
-                  Publish now
-                </Button>
+            <div className="flex-1 space-y-3 overflow-y-auto p-3 text-sm">
+              {dayPosts.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  <p className="mb-1 font-medium text-foreground">No posts scheduled for this day</p>
+                  <p>Click + Add post to create one</p>
+                </div>
+              ) : (
+                dayPosts.map((p) => {
+                  const d = postDate(p);
+                  const s = statusOf(p);
+                  return (
+                    <div
+                      key={p.id}
+                      className="space-y-2 rounded-md border border-border p-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          {(p.platforms ?? []).slice(0, 1).map((pl) => (
+                            <PlatformDot key={pl} p={pl as Platform} />
+                          ))}
+                          <span className="text-xs capitalize text-foreground">
+                            {(p.platforms ?? [])[0] ?? "—"}
+                          </span>
+                        </div>
+                        <StatusBadge s={s} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                        {d && <span>{fmtTime(d)}</span>}
+                        {p.pillar && (
+                          <Badge className="bg-[#fff0f0] text-[#c43d3d] hover:bg-[#fff0f0]">{p.pillar}</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-foreground">{firstCopy(p, 80)}</p>
+
+                      {rescheduleForId === p.id && (
+                        <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2">
+                          <p className="text-[11px] font-medium">New date & time</p>
+                          <div className="flex gap-2">
+                            <Input
+                              type="date"
+                              value={rescheduleDate}
+                              onChange={(e) => setRescheduleDate(e.target.value)}
+                            />
+                            <Input
+                              type="time"
+                              value={rescheduleTime}
+                              onChange={(e) => setRescheduleTime(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button size="sm" variant="outline" onClick={() => setRescheduleForId(null)}>
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={handleReschedule}
+                              disabled={actionLoading === "reschedule"}
+                            >
+                              {actionLoading === "reschedule" ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                "Save"
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <Button size="sm" variant="outline" onClick={() => onEditPost(p.id)}>
+                          <Pencil className="mr-1 h-3 w-3" /> Edit
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => openReschedule(p)}>
+                          <CalendarIcon className="mr-1 h-3 w-3" /> Reschedule
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleDelete(p.id)}>
+                          {actionLoading === "delete" ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Trash2 className="mr-1 h-3 w-3" /> Delete
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      {(s === "scheduled" || s === "queued") && (
+                        <Button
+                          size="sm"
+                          className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                          onClick={() => handlePublishNow(p)}
+                          disabled={actionLoading === "publish"}
+                        >
+                          {actionLoading === "publish" ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="mr-1 h-3 w-3" />
+                          )}
+                          Publish now
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
