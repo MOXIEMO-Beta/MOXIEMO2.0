@@ -191,9 +191,10 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
   });
   const [pillarFilter, setPillarFilter] = useState<Record<string, boolean>>({});
 
-  // selected post side panel
-  const [selectedPost, setSelectedPost] = useState<SocialPost | null>(null);
-  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  // day side panel
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [rescheduleForId, setRescheduleForId] = useState<string | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -381,6 +382,15 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
   };
 
   /* side panel actions */
+  const handleDayClick = (date: Date) => {
+    setSelectedDate(date);
+    setSidePanelOpen(true);
+    setRescheduleForId(null);
+  };
+  const closePanel = () => {
+    setSidePanelOpen(false);
+    setRescheduleForId(null);
+  };
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this post?")) return;
     setActionLoading("delete");
@@ -392,7 +402,6 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     }
     toast.success("Post deleted");
     setPosts((arr) => arr.filter((p) => p.id !== id));
-    setSelectedPost(null);
   };
   const handlePublishNow = async (post: SocialPost) => {
     if (!userId) return;
@@ -413,34 +422,48 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     }
     toast.success("Published");
     fetchPosts();
-    setSelectedPost(null);
   };
   const handleReschedule = async () => {
-    if (!selectedPost || !rescheduleDate || !rescheduleTime) return;
+    if (!rescheduleForId || !rescheduleDate || !rescheduleTime) return;
     const iso = new Date(`${rescheduleDate}T${rescheduleTime}:00`).toISOString();
     setActionLoading("reschedule");
     const { error } = await supabase
       .from("social_posts")
       .update({ scheduled_for: iso, status: "scheduled" })
-      .eq("id", selectedPost.id);
+      .eq("id", rescheduleForId);
     setActionLoading(null);
     if (error) {
       toast.error("Couldn't reschedule");
       return;
     }
     toast.success("Rescheduled");
-    setRescheduleOpen(false);
+    setRescheduleForId(null);
     fetchPosts();
-    setSelectedPost(null);
   };
 
-  const openPanelWithReschedule = (p: SocialPost) => {
-    setSelectedPost(p);
+  const openReschedule = (p: SocialPost) => {
+    setRescheduleForId(p.id);
     const d = postDate(p) ?? new Date();
     setRescheduleDate(ymd(d));
     setRescheduleTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
-    setRescheduleOpen(false);
   };
+  // Clicking a post chip opens the same day panel as clicking the day cell.
+  const handleSelectPost = (p: SocialPost) => {
+    const d = postDate(p) ?? new Date();
+    handleDayClick(d);
+  };
+
+  const dayPosts = useMemo(() => {
+    if (!selectedDate) return [] as SocialPost[];
+    const key = ymd(selectedDate);
+    return posts
+      .filter((p) => {
+        const sk = p.scheduled_for ? ymd(new Date(p.scheduled_for)) : null;
+        const pk = p.published_at ? ymd(new Date(p.published_at)) : null;
+        return sk === key || pk === key;
+      })
+      .sort((a, b) => (postDate(a)?.getTime() ?? 0) - (postDate(b)?.getTime() ?? 0));
+  }, [selectedDate, posts]);
 
   /* mini calendar nav */
   const scrollToDay = (key: string) => {
@@ -591,7 +614,8 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
             grid={monthGrid}
             postsByDay={postsByDay}
             dayRefs={dayRefs}
-            onSelectPost={openPanelWithReschedule}
+            onSelectPost={handleSelectPost}
+            onDayClick={handleDayClick}
             onAddAtDate={(d) => onCreateAtDate(d.toISOString())}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
@@ -603,11 +627,11 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
           <WeekView
             weekCursor={weekCursor}
             posts={filteredPosts}
-            onSelectPost={openPanelWithReschedule}
+            onSelectPost={handleSelectPost}
             onAddAtDate={(d) => onCreateAtDate(d.toISOString())}
           />
         ) : (
-          <ListView posts={filteredPosts} onSelectPost={openPanelWithReschedule} />
+          <ListView posts={filteredPosts} onSelectPost={handleSelectPost} />
         )}
 
         {/* Strategy coverage panel */}
@@ -650,94 +674,139 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
         )}
       </div>
 
-      {/* SIDE PANEL */}
-      {selectedPost && (
-        <div className="fixed inset-0 z-40" onClick={() => setSelectedPost(null)}>
+      {/* SIDE PANEL — day view */}
+      {sidePanelOpen && selectedDate && (
+        <div className="fixed inset-0 z-40" onClick={closePanel}>
           <div className="absolute inset-0 bg-black/20" />
           <div
-            className="absolute right-0 top-0 flex h-full w-[320px] flex-col border-l border-border bg-background shadow-xl"
+            className="absolute right-0 top-0 flex h-full w-[320px] flex-col border-l border-border bg-background shadow-xl transition-transform duration-[250ms] ease-out"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2 border-b border-border p-3">
-              <div className="flex items-center gap-2">
-                {(selectedPost.platforms ?? []).map((p) => (
-                  <PlatformIcon key={p} p={p as Platform} size={16} />
-                ))}
-                <StatusBadge s={statusOf(selectedPost)} />
-              </div>
-              <button onClick={() => setSelectedPost(null)} className="text-muted-foreground hover:text-foreground">
+              <p className="text-sm font-semibold text-foreground">
+                {selectedDate.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+              <button onClick={closePanel} className="text-muted-foreground hover:text-foreground">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex-1 space-y-3 overflow-y-auto p-4 text-sm">
-              {selectedPost.pillar && (
-                <Badge className="bg-[#fff0f0] text-[#c43d3d] hover:bg-[#fff0f0]">{selectedPost.pillar}</Badge>
-              )}
-              <div className="whitespace-pre-wrap text-foreground">
-                {Object.entries(selectedPost.content_by_platform ?? {}).map(([plat, txt]) => (
-                  <div key={plat} className="mb-3">
-                    <p className="mb-1 text-[10px] font-semibold uppercase text-muted-foreground">{plat}</p>
-                    <p>{txt}</p>
-                  </div>
-                ))}
-              </div>
-              {postDate(selectedPost) && (
-                <p className="text-xs text-muted-foreground">
-                  {statusOf(selectedPost) === "published" ? "Published" : "Scheduled"}:{" "}
-                  {fmtDateLong(postDate(selectedPost)!)} · {fmtTime(postDate(selectedPost)!)}
-                </p>
-              )}
-
-              {rescheduleOpen && (
-                <div className="space-y-2 rounded-md border border-border p-3">
-                  <p className="text-xs font-medium">New date & time</p>
-                  <div className="flex gap-2">
-                    <Input type="date" value={rescheduleDate} onChange={(e) => setRescheduleDate(e.target.value)} />
-                    <Input type="time" value={rescheduleTime} onChange={(e) => setRescheduleTime(e.target.value)} />
-                  </div>
-                  <div className="flex justify-end gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setRescheduleOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button size="sm" onClick={handleReschedule} disabled={actionLoading === "reschedule"}>
-                      {actionLoading === "reschedule" ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
-                    </Button>
-                  </div>
-                </div>
-              )}
+            <div className="border-b border-border p-3">
+              <Button
+                size="sm"
+                className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                onClick={() => onCreateAtDate(selectedDate.toISOString())}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" /> Add post for this day
+              </Button>
             </div>
-            <div className="space-y-2 border-t border-border p-3">
-              <div className="grid grid-cols-3 gap-2">
-                <Button size="sm" variant="outline" onClick={() => onEditPost(selectedPost.id)}>
-                  <Pencil className="mr-1 h-3 w-3" /> Edit
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setRescheduleOpen((v) => !v)}>
-                  <CalendarIcon className="mr-1 h-3 w-3" /> Reschedule
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => handleDelete(selectedPost.id)}>
-                  {actionLoading === "delete" ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <>
-                      <Trash2 className="mr-1 h-3 w-3" /> Delete
-                    </>
-                  )}
-                </Button>
-              </div>
-              {(statusOf(selectedPost) === "scheduled" || statusOf(selectedPost) === "queued") && (
-                <Button
-                  size="sm"
-                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                  onClick={() => handlePublishNow(selectedPost)}
-                  disabled={actionLoading === "publish"}
-                >
-                  {actionLoading === "publish" ? (
-                    <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                  ) : (
-                    <Send className="mr-1 h-3 w-3" />
-                  )}
-                  Publish now
-                </Button>
+            <div className="flex-1 space-y-3 overflow-y-auto p-3 text-sm">
+              {dayPosts.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  <p className="mb-1 font-medium text-foreground">No posts scheduled for this day</p>
+                  <p>Click + Add post to create one</p>
+                </div>
+              ) : (
+                dayPosts.map((p) => {
+                  const d = postDate(p);
+                  const s = statusOf(p);
+                  return (
+                    <div
+                      key={p.id}
+                      className="space-y-2 rounded-md border border-border p-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          {(p.platforms ?? []).slice(0, 1).map((pl) => (
+                            <PlatformDot key={pl} p={pl as Platform} />
+                          ))}
+                          <span className="text-xs capitalize text-foreground">
+                            {(p.platforms ?? [])[0] ?? "—"}
+                          </span>
+                        </div>
+                        <StatusBadge s={s} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                        {d && <span>{fmtTime(d)}</span>}
+                        {p.pillar && (
+                          <Badge className="bg-[#fff0f0] text-[#c43d3d] hover:bg-[#fff0f0]">{p.pillar}</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-foreground">{firstCopy(p, 80)}</p>
+
+                      {rescheduleForId === p.id && (
+                        <div className="space-y-2 rounded-md border border-border bg-muted/30 p-2">
+                          <p className="text-[11px] font-medium">New date & time</p>
+                          <div className="flex gap-2">
+                            <Input
+                              type="date"
+                              value={rescheduleDate}
+                              onChange={(e) => setRescheduleDate(e.target.value)}
+                            />
+                            <Input
+                              type="time"
+                              value={rescheduleTime}
+                              onChange={(e) => setRescheduleTime(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button size="sm" variant="outline" onClick={() => setRescheduleForId(null)}>
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={handleReschedule}
+                              disabled={actionLoading === "reschedule"}
+                            >
+                              {actionLoading === "reschedule" ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                "Save"
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-3 gap-1.5">
+                        <Button size="sm" variant="outline" onClick={() => onEditPost(p.id)}>
+                          <Pencil className="mr-1 h-3 w-3" /> Edit
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => openReschedule(p)}>
+                          <CalendarIcon className="mr-1 h-3 w-3" /> Reschedule
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleDelete(p.id)}>
+                          {actionLoading === "delete" ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <>
+                              <Trash2 className="mr-1 h-3 w-3" /> Delete
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      {(s === "scheduled" || s === "queued") && (
+                        <Button
+                          size="sm"
+                          className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                          onClick={() => handlePublishNow(p)}
+                          disabled={actionLoading === "publish"}
+                        >
+                          {actionLoading === "publish" ? (
+                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                          ) : (
+                            <Send className="mr-1 h-3 w-3" />
+                          )}
+                          Publish now
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
@@ -810,6 +879,7 @@ function MonthGrid({
   postsByDay,
   dayRefs,
   onSelectPost,
+  onDayClick,
   onAddAtDate,
   onDragStart,
   onDragEnd,
@@ -822,6 +892,7 @@ function MonthGrid({
   postsByDay: Map<string, SocialPost[]>;
   dayRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   onSelectPost: (p: SocialPost) => void;
+  onDayClick: (d: Date) => void;
   onAddAtDate: (d: Date) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>, p: SocialPost) => void;
   onDragEnd: () => void;
@@ -853,11 +924,12 @@ function MonthGrid({
             <div
               key={key}
               ref={(el) => (dayRefs.current[key] = el)}
+              onClick={() => onDayClick(d)}
               onDragOver={(e) => onDragOverDay(e, key)}
               onDragLeave={() => null}
               onDrop={(e) => handleDropOnDay(e, d)}
               className={cn(
-                "group relative min-h-[110px] border-b border-r border-border p-1.5 text-xs",
+                "group relative min-h-[110px] cursor-pointer border-b border-r border-border p-1.5 text-xs hover:bg-muted/30",
                 !inMonth && "bg-muted/20 text-muted-foreground/50",
                 isDragOver && "ring-2 ring-inset ring-[#ff6b6b]",
               )}
@@ -880,13 +952,25 @@ function MonthGrid({
               </div>
               <div className="space-y-1">
                 {visible.map((p) => (
-                  <PostChip key={p.id} post={p} onClick={() => onSelectPost(p)} onDragStart={(e) => onDragStart(e, p)} onDragEnd={onDragEnd} />
+                  <PostChip
+                    key={p.id}
+                    post={p}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectPost(p);
+                    }}
+                    onDragStart={(e) => onDragStart(e, p)}
+                    onDragEnd={onDragEnd}
+                  />
                 ))}
                 {overflow > 0 && (
                   <button
                     type="button"
                     className="block w-full text-left text-[10px] text-muted-foreground hover:text-foreground"
-                    onClick={() => onSelectPost(dayPosts[2])}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectPost(dayPosts[2]);
+                    }}
                   >
                     + {overflow} more
                   </button>
@@ -895,7 +979,10 @@ function MonthGrid({
               {inMonth && dayPosts.length === 0 && (
                 <button
                   type="button"
-                  onClick={() => onAddAtDate(d)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddAtDate(d);
+                  }}
                   className="absolute bottom-1 right-1 hidden items-center gap-0.5 rounded border border-dashed border-border px-1.5 py-0.5 text-[9px] text-muted-foreground hover:border-[#ff6b6b] hover:text-[#ff6b6b] group-hover:flex"
                 >
                   <Plus className="h-2.5 w-2.5" /> Add
@@ -916,7 +1003,7 @@ function PostChip({
   onDragEnd,
 }: {
   post: SocialPost;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>) => void;
   onDragEnd: () => void;
 }) {
