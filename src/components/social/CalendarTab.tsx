@@ -1003,7 +1003,7 @@ function PostChip({
   onDragEnd,
 }: {
   post: SocialPost;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>) => void;
   onDragEnd: () => void;
 }) {
