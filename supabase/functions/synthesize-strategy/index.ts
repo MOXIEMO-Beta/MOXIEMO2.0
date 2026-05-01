@@ -103,9 +103,13 @@ function computeStrength(transcript: string, parsed: any) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { transcript } = await req.json();
+    const { transcript, revenueRange, biggestChallenge } = await req.json();
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+
+    let userContent = "Discovery transcript:\n\n" + transcript;
+    if (revenueRange) userContent += `\n\nFounder's revenue stage: ${revenueRange}`;
+    if (biggestChallenge) userContent += `\nBiggest marketing challenge: ${biggestChallenge}`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -114,7 +118,7 @@ Deno.serve(async (req) => {
         model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: SYSTEM },
-          { role: "user", content: "Discovery transcript:\n\n" + transcript },
+          { role: "user", content: userContent },
         ],
         tools: [{
           type: "function",
