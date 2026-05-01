@@ -5,6 +5,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const SYSTEM = `You are MOXIE, an AI Chief Marketing Officer writing email newsletters for an expertise-based founder.
+
+Your user sells their expertise — coaching, consulting, fractional services, or agency work. They have a real audience who trusts them. Your job is to write emails that sound like the founder wrote them personally — not like a marketing tool.
+
+Never sign off as MOXIE. Always use the founder's name.
+Never use buzzwords the founder has listed as anti-positioning.
+Always match the voice attributes provided.`;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -65,9 +73,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    const prompt = `You are MOXIE, an AI Chief Marketing Officer generating a complete email for a founder.
-
-FOUNDER'S STRATEGY:
+    const prompt = `FOUNDER'S STRATEGY:
 Positioning: ${strategy?.positioning_statement ?? "Expert founder helping clients achieve transformation"}
 Ideal client: ${strategy?.ideal_client ?? "B2B founders"}
 Pain point: ${strategy?.pain_point ?? "unclear messaging and marketing overwhelm"}
@@ -127,6 +133,7 @@ The CTA button href must be the literal string [ADD YOUR CALENDAR LINK HERE] so 
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
         max_tokens: 1500,
+        system: SYSTEM,
         messages: [{ role: "user", content: prompt }],
       }),
     });

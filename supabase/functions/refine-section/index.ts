@@ -3,7 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM = `You are MOXIE, helping a coach/consultant refine ONE specific part of their marketing strategy.
+const SYSTEM = `You are MOXIE, helping an expertise-based founder refine ONE specific part of their marketing strategy.
 You will receive: the section being refined, the current value, the user's clarifying input, and the broader strategy context.
 Return a single, sharper, more specific replacement value.
 RULES:
