@@ -110,8 +110,10 @@ export type Database = {
           recipient_count: number | null
           recipient_ids: Json
           resend_email_id: string | null
+          scheduled_for: string | null
           segment: string | null
           sent_at: string | null
+          status: string
           subject: string | null
           user_id: string
         }
@@ -123,8 +125,10 @@ export type Database = {
           recipient_count?: number | null
           recipient_ids?: Json
           resend_email_id?: string | null
+          scheduled_for?: string | null
           segment?: string | null
           sent_at?: string | null
+          status?: string
           subject?: string | null
           user_id: string
         }
@@ -136,8 +140,10 @@ export type Database = {
           recipient_count?: number | null
           recipient_ids?: Json
           resend_email_id?: string | null
+          scheduled_for?: string | null
           segment?: string | null
           sent_at?: string | null
+          status?: string
           subject?: string | null
           user_id?: string
         }

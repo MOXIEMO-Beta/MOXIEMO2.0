@@ -25,6 +25,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -44,6 +54,11 @@ import {
   ChevronDown,
   ChevronUp,
   Check,
+  CalendarDays,
+  ClipboardList,
+  Zap,
+  Mail,
+  CheckCircle2,
 } from "lucide-react";
 import GeneratePanel, { type GenerateParams } from "@/components/email/GeneratePanel";
 import SegmentsManager, { type Segment, PRESET_COLORS } from "@/components/email/SegmentsManager";
@@ -65,6 +80,10 @@ type EmailSend = {
   open_rate: number | null;
   click_rate: number | null;
   segment: string | null;
+  status: string | null;
+  scheduled_for: string | null;
+  body: string | null;
+  recipient_ids: unknown;
 };
 
 type EmailSettings = {
@@ -82,6 +101,8 @@ type Strategy = {
   content_pillars?: unknown;
   content_themes?: unknown;
 };
+
+type SendMode = "now" | "schedule" | "queue";
 
 export default function Email() {
   const { user } = useAuth();
@@ -118,6 +139,13 @@ export default function Email() {
   const settingsRef = useRef<HTMLDivElement>(null);
   const [howItWorksOpen, setHowItWorksOpen] = useState(true);
 
+  // New: scheduling + confirmation + post-send state
+  const [sendMode, setSendMode] = useState<SendMode>("now");
+  const [scheduleDate, setScheduleDate] = useState<string>("");
+  const [scheduleTime, setScheduleTime] = useState<string>("09:00");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [lastSent, setLastSent] = useState<null | { subject: string; count: number; sentAt: string }>(null);
+
   const activeSubscribers = useMemo(
     () => subscribers.filter((s) => s.status === "active"),
     [subscribers],
@@ -139,6 +167,18 @@ export default function Email() {
     for (const s of segments) m[s.id] = s;
     return m;
   }, [segments]);
+
+  const userTimezone = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    [],
+  );
+
+  // Tomorrow as min for date picker
+  const minScheduleDate = useMemo(() => {
+    const t = new Date();
+    t.setDate(t.getDate() + 1);
+    return t.toISOString().slice(0, 10);
+  }, []);
 
   async function loadAll() {
     if (!user) return;
@@ -192,7 +232,6 @@ export default function Email() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
-  // Collapse "how it works" by default if user has already sent emails
   useEffect(() => {
     if (sends.length > 0) setHowItWorksOpen(false);
   }, [sends.length]);
@@ -230,7 +269,9 @@ export default function Email() {
     }
     setSendStep(1);
     setAudienceMode(selectedIds.size > 0 ? "selected" : "all");
+    setSendMode("now");
     setShowSendPanel(true);
+    setLastSent(null);
   }
 
   const sendRecipientIds = useMemo(() => {
@@ -251,7 +292,18 @@ export default function Email() {
     return "All active subscribers";
   }, [audienceMode, selectedIds.size, sendSegmentIds, segmentMap]);
 
-  async function confirmSend() {
+  function resetCompose() {
+    setSubject("");
+    setBody("");
+    setPreviewText("");
+    setShowSendPanel(false);
+    setLastSent(null);
+    setSelectedIds(new Set());
+    setSendMode("now");
+    setShowGenPanel(true);
+  }
+
+  async function doSendNow() {
     setSending(true);
     try {
       const payload: Record<string, unknown> = { subject, body };
@@ -277,12 +329,13 @@ export default function Email() {
         return;
       }
       if (data?.error) throw new Error(data.error);
-      toast.success(`Sent to ${data.sent_count} subscribers`);
-      setSubject("");
-      setBody("");
-      setPreviewText("");
-      setShowSendPanel(false);
-      setSelectedIds(new Set());
+      const count = data?.sent_count ?? sendRecipientIds.length;
+      toast.success(`Sent to ${count} subscribers`);
+      setLastSent({
+        subject,
+        count,
+        sentAt: new Date().toLocaleString(),
+      });
       loadAll();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to send";
@@ -291,7 +344,130 @@ export default function Email() {
       });
     } finally {
       setSending(false);
+      setConfirmOpen(false);
     }
+  }
+
+  async function saveScheduled() {
+    if (!user) return;
+    if (!scheduleDate || !scheduleTime) {
+      toast.error("Pick a date and time");
+      return;
+    }
+    const dt = new Date(`${scheduleDate}T${scheduleTime}:00`);
+    if (isNaN(dt.getTime()) || dt.getTime() <= Date.now()) {
+      toast.error("Schedule time must be in the future");
+      return;
+    }
+    setSending(true);
+    const segmentValue =
+      audienceMode === "segment" && sendSegmentIds.length > 0
+        ? sendSegmentIds.join(",")
+        : "all";
+    const { error } = await supabase.from("email_sends").insert({
+      user_id: user.id,
+      subject,
+      body,
+      status: "scheduled",
+      scheduled_for: dt.toISOString(),
+      segment: segmentValue,
+      recipient_ids: sendRecipientIds,
+      recipient_count: sendRecipientIds.length,
+    });
+    setSending(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Email scheduled");
+    resetCompose();
+    loadAll();
+  }
+
+  async function saveQueued() {
+    if (!user) return;
+    setSending(true);
+    const segmentValue =
+      audienceMode === "segment" && sendSegmentIds.length > 0
+        ? sendSegmentIds.join(",")
+        : "all";
+    const { error } = await supabase.from("email_sends").insert({
+      user_id: user.id,
+      subject,
+      body,
+      status: "queued",
+      segment: segmentValue,
+      recipient_ids: sendRecipientIds,
+      recipient_count: sendRecipientIds.length,
+    });
+    setSending(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Saved to queue");
+    resetCompose();
+    loadAll();
+  }
+
+  // Send a previously queued/scheduled email straight away
+  async function sendFromLog(item: EmailSend) {
+    if (!item.subject || !item.body) {
+      toast.error("This email is missing subject or body");
+      return;
+    }
+    const ids = Array.isArray(item.recipient_ids) ? (item.recipient_ids as string[]) : [];
+    const payload: Record<string, unknown> = {
+      subject: item.subject,
+      body: item.body,
+    };
+    if (ids.length > 0) payload.subscriber_ids = ids;
+    if (item.segment && item.segment !== "all") payload.segment = item.segment;
+    const { data, error } = await supabase.functions.invoke("send-email", { body: payload });
+    if (error) {
+      toast.error("Failed to send", { description: error.message });
+      return;
+    }
+    if (data?.error) {
+      toast.error("Failed to send", { description: data.error });
+      return;
+    }
+    // Remove the original queued/scheduled record (the edge function inserted a new "sent" row)
+    await supabase.from("email_sends").delete().eq("id", item.id);
+    toast.success(`Sent to ${data?.sent_count ?? ids.length} subscribers`);
+    loadAll();
+  }
+
+  async function deleteSendRow(id: string) {
+    const { error } = await supabase.from("email_sends").delete().eq("id", id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Deleted");
+    loadAll();
+  }
+
+  async function rescheduleSend(item: EmailSend) {
+    const dateStr = window.prompt("New date (YYYY-MM-DD)", item.scheduled_for?.slice(0, 10) || minScheduleDate);
+    if (!dateStr) return;
+    const timeStr = window.prompt("New time (HH:MM, 24h)", item.scheduled_for?.slice(11, 16) || "09:00");
+    if (!timeStr) return;
+    const dt = new Date(`${dateStr}T${timeStr}:00`);
+    if (isNaN(dt.getTime()) || dt.getTime() <= Date.now()) {
+      toast.error("Schedule time must be in the future");
+      return;
+    }
+    const { error } = await supabase
+      .from("email_sends")
+      .update({ scheduled_for: dt.toISOString(), status: "scheduled" })
+      .eq("id", item.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Rescheduled");
+    loadAll();
   }
 
   async function addSubscriber() {
@@ -505,6 +681,12 @@ export default function Email() {
 
   const needsSetup = !settings.reply_to;
 
+  // Progress / step completion
+  const stepDetails = !!(settings.from_name && settings.reply_to);
+  const stepSubs = activeSubscribers.length > 0;
+  const stepCompose = subject.trim().length > 0 && body.trim().length > 0;
+  const stepSendReady = stepDetails && stepSubs && stepCompose;
+
   const pillars: string[] = Array.isArray(strategy?.content_pillars)
     ? (strategy!.content_pillars as unknown[]).map((p) =>
         typeof p === "string" ? p : (p as { label?: string; name?: string; title?: string })?.label || (p as { name?: string }).name || (p as { title?: string }).title || "",
@@ -514,6 +696,47 @@ export default function Email() {
     ? (strategy!.content_themes as Array<Record<string, string> | string>)
     : [];
 
+  function StepChip({
+    n,
+    label,
+    done,
+    extra,
+  }: {
+    n: number;
+    label: string;
+    done: boolean;
+    extra?: string;
+  }) {
+    return (
+      <div className="flex items-center gap-2">
+        <div
+          className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+            done
+              ? "bg-orange-600 text-white"
+              : "bg-muted text-muted-foreground border"
+          }`}
+        >
+          {done ? <Check className="h-3.5 w-3.5" /> : n}
+        </div>
+        <span className={`text-sm ${done ? "text-foreground font-medium" : "text-muted-foreground"}`}>
+          {label}
+          {extra ? <span className="text-muted-foreground font-normal"> {extra}</span> : null}
+        </span>
+      </div>
+    );
+  }
+
+  function countdownLabel(iso: string) {
+    const ms = new Date(iso).getTime() - Date.now();
+    if (ms <= 0) return "Sending soon";
+    const mins = Math.round(ms / 60000);
+    if (mins < 60) return `Sends in ${mins} min`;
+    const hours = Math.round(mins / 60);
+    if (hours < 48) return `Sends in ${hours} ${hours === 1 ? "hour" : "hours"}`;
+    const days = Math.round(hours / 24);
+    return `Sends in ${days} days`;
+  }
+
   return (
     <div className="container max-w-5xl py-8 space-y-6">
       <div>
@@ -521,6 +744,24 @@ export default function Email() {
         <p className="text-muted-foreground mt-1">
           Write, generate, and send newsletters to your audience.
         </p>
+      </div>
+
+      {/* Progress indicator */}
+      <div className="rounded-lg border bg-muted/30 p-4">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <StepChip n={1} label="Sending details" done={stepDetails} />
+          <span className="text-muted-foreground">→</span>
+          <StepChip
+            n={2}
+            label="Subscribers"
+            done={stepSubs}
+            extra={`(${activeSubscribers.length})`}
+          />
+          <span className="text-muted-foreground">→</span>
+          <StepChip n={3} label="Compose" done={stepCompose} />
+          <span className="text-muted-foreground">→</span>
+          <StepChip n={4} label="Send" done={stepSendReady && !!lastSent} />
+        </div>
       </div>
 
       {needsSetup && (
@@ -542,7 +783,7 @@ export default function Email() {
         </div>
       )}
 
-      {/* How email sending works */}
+      {/* 1. How MOXIE sends your emails */}
       <Card>
         <CardHeader className="pb-3">
           <button
@@ -580,267 +821,62 @@ export default function Email() {
                 We handle deliverability. SPF, DKIM, and DMARC are configured on our end so your emails reach inboxes, not spam folders.
               </p>
             </div>
-            <div className="pt-2 border-t">
-              <p className="text-xs text-muted-foreground">
-                Want to send from your own domain (e.g. karee@yourdomain.com)?{" "}
-                <button
-                  onClick={() =>
-                    settingsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-                  }
-                  className="underline hover:text-foreground"
-                >
-                  Add your domain in Sending Details
-                </button>{" "}
-                for full brand control.
-              </p>
-            </div>
           </CardContent>
         )}
       </Card>
 
-      {/* Compose */}
-      <Card>
+      {/* 2. Sending Details */}
+      <Card id="settings" ref={settingsRef}>
         <CardHeader>
-          <CardTitle>Compose</CardTitle>
+          <CardTitle>Sending details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {showGenPanel && (
-            <GeneratePanel
-              pillars={pillars}
-              themes={themes}
-              generating={generating}
-              onGenerate={generateWithMoxie}
-            />
-          )}
-
           <div className="space-y-2">
-            <Label>Subject line</Label>
+            <Label>From name</Label>
             <Input
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Your newsletter subject"
+              value={settings.from_name || ""}
+              onChange={(e) => setSettings({ ...settings, from_name: e.target.value })}
+              placeholder="Your name or brand"
             />
-            {previewText && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <span>Preview text: {previewText}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const next = window.prompt("Edit preview text", previewText);
-                    if (next !== null) setPreviewText(next);
-                  }}
-                  className="inline-flex items-center hover:text-foreground"
-                  title="Edit preview text"
-                >
-                  <Pencil className="h-3 w-3" />
-                </button>
-              </div>
-            )}
-            {!showGenPanel && (
-              <button
-                type="button"
-                onClick={() => setShowGenPanel(true)}
-                className="text-xs text-orange-600 hover:underline"
-              >
-                Regenerate with MOXIE
-              </button>
-            )}
+            <p className="text-xs text-muted-foreground">
+              This is what subscribers see as the sender name.
+            </p>
           </div>
-
           <div className="space-y-2">
-            <Label>Body</Label>
-            <RichTextEditor
-              content={body}
-              onChange={setBody}
-              placeholder="Write your newsletter..."
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Preview</Label>
-              <div className="inline-flex rounded-md border bg-muted p-0.5">
-                <button
-                  onClick={() => setPreviewMode("desktop")}
-                  className={`px-3 py-1 text-xs rounded ${
-                    previewMode === "desktop" ? "bg-background shadow-sm" : "text-muted-foreground"
-                  }`}
-                >
-                  Desktop
-                </button>
-                <button
-                  onClick={() => setPreviewMode("mobile")}
-                  className={`px-3 py-1 text-xs rounded ${
-                    previewMode === "mobile" ? "bg-background shadow-sm" : "text-muted-foreground"
-                  }`}
-                >
-                  Mobile
-                </button>
-              </div>
-            </div>
-            <div className="rounded-lg border bg-muted/30 p-4">
-              <div
-                className={`bg-white border rounded-md p-6 mx-auto ${
-                  previewMode === "mobile" ? "max-w-[375px]" : "w-full"
-                }`}
-              >
-                <h3 className="font-semibold text-lg mb-3 text-gray-900">
-                  {subject || "Subject preview"}
-                </h3>
-                <div
-                  className="text-sm text-gray-700 whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{
-                    __html: body || "<p>Body preview...</p>",
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Send panel */}
-          {!showSendPanel ? (
-            <div className="pt-2">
-              <Button
-                onClick={openSendPanel}
-                disabled={activeSubscribers.length === 0 || needsSetup}
-                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-                size="lg"
-              >
-                <Send className="h-4 w-4" /> Send email
-              </Button>
-            </div>
-          ) : (
-            <div className="rounded-lg border bg-muted/30 p-4 space-y-4">
-              {sendStep === 1 ? (
-                <>
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">Step 1 — Choose your audience</h4>
-                    <button onClick={() => setShowSendPanel(false)} className="text-muted-foreground hover:text-foreground">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Who are you sending this to?</p>
-                  <div className="space-y-2">
-                    <label className="flex items-center gap-3 rounded-md border bg-background p-3 cursor-pointer">
-                      <input
-                        type="radio"
-                        checked={audienceMode === "all"}
-                        onChange={() => setAudienceMode("all")}
-                      />
-                      <span className="text-sm font-medium">All active subscribers</span>
-                      <span className="text-xs text-muted-foreground ml-auto">{activeSubscribers.length} total</span>
-                    </label>
-
-                    <div className="rounded-md border bg-background p-3 space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground">Or choose specific lists:</p>
-                      {segments.length === 0 ? (
-                        <div className="text-xs text-muted-foreground space-y-1">
-                          <p>No lists yet — add subscribers to lists to send to specific groups.</p>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setShowSendPanel(false);
-                              document.getElementById("subscribers-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                            }}
-                            className="text-orange-600 hover:underline"
-                          >
-                            Manage lists →
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {segments.map((seg) => {
-                            const checked = sendSegmentIds.includes(seg.id);
-                            return (
-                              <label
-                                key={seg.id}
-                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs cursor-pointer transition ${
-                                  checked ? "border-foreground bg-foreground text-background" : "bg-background"
-                                }`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="sr-only"
-                                  checked={checked}
-                                  onChange={() => {
-                                    setAudienceMode("segment");
-                                    setSendSegmentIds((prev) =>
-                                      checked ? prev.filter((id) => id !== seg.id) : [...prev, seg.id],
-                                    );
-                                  }}
-                                />
-                                <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
-                                {seg.name} ({segmentCounts[seg.id] ?? 0})
-                              </label>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-
-                    <label className={`flex items-center gap-3 rounded-md border bg-background p-3 ${selectedIds.size === 0 ? "opacity-50" : "cursor-pointer"}`}>
-                      <input
-                        type="radio"
-                        checked={audienceMode === "selected"}
-                        onChange={() => setAudienceMode("selected")}
-                        disabled={selectedIds.size === 0}
-                      />
-                      <span className="text-sm font-medium">Selected contacts only</span>
-                      <span className="text-xs text-muted-foreground ml-auto">{selectedIds.size} selected</span>
-                    </label>
-                  </div>
-
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="ghost" onClick={() => setShowSendPanel(false)}>Cancel</Button>
-                    <Button
-                      onClick={() => setSendStep(2)}
-                      disabled={
-                        (audienceMode === "segment" && sendSegmentIds.length === 0) ||
-                        (audienceMode === "selected" && selectedIds.size === 0) ||
-                        sendRecipientIds.length === 0
-                      }
-                    >
-                      Continue
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">Step 2 — Confirm and send</h4>
-                    <button onClick={() => setShowSendPanel(false)} className="text-muted-foreground hover:text-foreground">
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <div className="rounded-md bg-background border p-4 text-sm space-y-2">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Sending to:</span><span className="font-medium">{sendAudienceLabel}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Recipients:</span><span className="font-medium">{sendRecipientIds.length} contacts</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Subject:</span><span className="font-medium truncate max-w-[60%] text-right">{subject}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">From:</span><span className="font-medium">{settings.from_name || "MOXIE"} &lt;hello@mail.buildwithmoxie.co&gt;</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Replies to:</span><span className="font-medium">{settings.reply_to || "—"}</span></div>
-                  </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button variant="ghost" onClick={() => setSendStep(1)}>Back</Button>
-                    <Button
-                      onClick={confirmSend}
-                      disabled={sending || sendRecipientIds.length === 0}
-                      className="bg-orange-600 hover:bg-orange-700 text-white"
-                    >
-                      {sending ? (
-                        <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</>
-                      ) : (
-                        "Send now"
-                      )}
-                    </Button>
-                  </div>
-                </>
+            <div className="flex items-center gap-2">
+              <Label className="text-base font-semibold">Where should subscriber replies go?</Label>
+              {settings.reply_to && (
+                <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
+                  <Check className="h-3 w-3" /> Saved
+                </span>
               )}
             </div>
-          )}
+            <Input
+              value={settings.reply_to || ""}
+              onChange={(e) => setSettings({ ...settings, reply_to: e.target.value })}
+              placeholder="you@yourdomain.com"
+              type="email"
+            />
+            <p className="text-xs text-muted-foreground">
+              This is your most important setting — make sure it's correct.
+            </p>
+          </div>
+          <Button onClick={saveSettings} disabled={savingSettings}>
+            {savingSettings ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" /> Saving...
+              </>
+            ) : (
+              "Save"
+            )}
+          </Button>
+          <p className="text-xs text-muted-foreground border-t pt-3">
+            In Beta 1, all emails send from <span className="font-mono">hello@mail.buildwithmoxie.co</span> on your behalf. Your name appears as the sender. Replies go directly to your reply-to address. Custom sending domains are coming in a future update.
+          </p>
         </CardContent>
       </Card>
 
-      {/* Subscribers */}
+      {/* 3. Subscribers */}
       <Card id="subscribers-card">
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -1066,113 +1102,447 @@ export default function Email() {
               ? subscribers.filter((s) => s.tags.includes(tableFilter))
               : subscribers;
             return subscribers.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No subscribers yet. Add one or import a CSV to get started.
-            </p>
-          ) : filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No subscribers in this list yet.
-            </p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-10">
-                    <Checkbox
-                      checked={selectedIds.size > 0 && selectedIds.size === filtered.length}
-                      onCheckedChange={(c) => toggleSelectAll(Boolean(c))}
-                    />
-                  </TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Tags</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell>
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No subscribers yet. Add one or import a CSV to get started.
+              </p>
+            ) : filtered.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">
+                No subscribers in this list yet.
+              </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10">
                       <Checkbox
-                        checked={selectedIds.has(s.id)}
-                        onCheckedChange={(c) => toggleSelected(s.id, Boolean(c))}
+                        checked={selectedIds.size > 0 && selectedIds.size === filtered.length}
+                        onCheckedChange={(c) => toggleSelectAll(Boolean(c))}
                       />
-                    </TableCell>
-                    <TableCell>{s.name || "—"}</TableCell>
-                    <TableCell>{s.email}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {s.tags.map((tagId) => {
-                          const seg = segmentMap[tagId];
-                          if (!seg) return null;
-                          return (
-                            <button
-                              key={tagId}
-                              type="button"
-                              onClick={() => setTableFilter(tagId === tableFilter ? null : tagId)}
-                              className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80 transition"
-                              style={{
-                                background: `${seg.color}22`,
-                                color: seg.color,
-                              }}
-                              title={`Filter by ${seg.name}`}
-                            >
-                              <span className="h-1.5 w-1.5 rounded-full" style={{ background: seg.color }} />
-                              {seg.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={s.status === "active" ? "default" : "secondary"}>
-                        {s.status === "active" ? "Active" : "Unsubscribed"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Tags</DropdownMenuLabel>
-                          {segments.map((seg) => (
-                            <DropdownMenuCheckboxItem
-                              key={seg.id}
-                              checked={s.tags.includes(seg.id)}
-                              onCheckedChange={() => toggleSubscriberTag(s.id, seg.id)}
-                            >
-                              <span className="h-2 w-2 rounded-full mr-2" style={{ background: seg.color }} />
-                              {seg.name}
-                            </DropdownMenuCheckboxItem>
-                          ))}
-                          {s.status === "active" && (
-                            <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => removeSubscriber(s.id)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" /> Remove
-                              </DropdownMenuItem>
-                            </>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                    </TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Tags</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-12" />
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          );
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((s) => (
+                    <TableRow key={s.id}>
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(s.id)}
+                          onCheckedChange={(c) => toggleSelected(s.id, Boolean(c))}
+                        />
+                      </TableCell>
+                      <TableCell>{s.name || "—"}</TableCell>
+                      <TableCell>{s.email}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-1">
+                          {s.tags.map((tagId) => {
+                            const seg = segmentMap[tagId];
+                            if (!seg) return null;
+                            return (
+                              <button
+                                key={tagId}
+                                type="button"
+                                onClick={() => setTableFilter(tagId === tableFilter ? null : tagId)}
+                                className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium hover:opacity-80 transition"
+                                style={{
+                                  background: `${seg.color}22`,
+                                  color: seg.color,
+                                }}
+                                title={`Filter by ${seg.name}`}
+                              >
+                                <span className="h-1.5 w-1.5 rounded-full" style={{ background: seg.color }} />
+                                {seg.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={s.status === "active" ? "default" : "secondary"}>
+                          {s.status === "active" ? "Active" : "Unsubscribed"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Tags</DropdownMenuLabel>
+                            {segments.map((seg) => (
+                              <DropdownMenuCheckboxItem
+                                key={seg.id}
+                                checked={s.tags.includes(seg.id)}
+                                onCheckedChange={() => toggleSubscriberTag(s.id, seg.id)}
+                              >
+                                <span className="h-2 w-2 rounded-full mr-2" style={{ background: seg.color }} />
+                                {seg.name}
+                              </DropdownMenuCheckboxItem>
+                            ))}
+                            {s.status === "active" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={() => removeSubscriber(s.id)}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" /> Remove
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            );
           })()}
         </CardContent>
       </Card>
 
-      {/* Sent emails */}
+      {/* 4. Compose */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Compose</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {showGenPanel && (
+            <GeneratePanel
+              pillars={pillars}
+              themes={themes}
+              generating={generating}
+              onGenerate={generateWithMoxie}
+            />
+          )}
+
+          <div className="space-y-2">
+            <Label>Subject line</Label>
+            <Input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Your newsletter subject"
+            />
+            {previewText && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>Preview text: {previewText}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = window.prompt("Edit preview text", previewText);
+                    if (next !== null) setPreviewText(next);
+                  }}
+                  className="inline-flex items-center hover:text-foreground"
+                  title="Edit preview text"
+                >
+                  <Pencil className="h-3 w-3" />
+                </button>
+              </div>
+            )}
+            {!showGenPanel && (
+              <button
+                type="button"
+                onClick={() => setShowGenPanel(true)}
+                className="text-xs text-orange-600 hover:underline"
+              >
+                Regenerate with MOXIE
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Body</Label>
+            <RichTextEditor
+              content={body}
+              onChange={setBody}
+              placeholder="Write your newsletter..."
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 5. Preview */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Preview</CardTitle>
+            <div className="inline-flex rounded-md border bg-muted p-0.5">
+              <button
+                onClick={() => setPreviewMode("desktop")}
+                className={`px-3 py-1 text-xs rounded ${
+                  previewMode === "desktop" ? "bg-background shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Desktop
+              </button>
+              <button
+                onClick={() => setPreviewMode("mobile")}
+                className={`px-3 py-1 text-xs rounded ${
+                  previewMode === "mobile" ? "bg-background shadow-sm" : "text-muted-foreground"
+                }`}
+              >
+                Mobile
+              </button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <div
+              className={`bg-white border rounded-md p-6 mx-auto ${
+                previewMode === "mobile" ? "max-w-[375px]" : "w-full"
+              }`}
+            >
+              <h3 className="font-semibold text-lg mb-3 text-gray-900">
+                {subject || "Subject preview"}
+              </h3>
+              <div
+                className="text-sm text-gray-700 whitespace-pre-wrap"
+                dangerouslySetInnerHTML={{
+                  __html: body || "<p>Body preview...</p>",
+                }}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 6. Send / Schedule */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Send or schedule</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {lastSent ? (
+            <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center space-y-3">
+              <div className="flex justify-center">
+                <CheckCircle2 className="h-10 w-10 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-green-900">Email sent!</h3>
+              <div className="text-sm text-green-900 space-y-1">
+                <p>Delivered to <span className="font-semibold">{lastSent.count}</span> subscribers</p>
+                <p>Subject: <span className="font-medium">{lastSent.subject}</span></p>
+                <p>Sent: {lastSent.sentAt}</p>
+              </div>
+              <Button onClick={resetCompose} className="bg-orange-600 hover:bg-orange-700 text-white">
+                Write another email
+              </Button>
+            </div>
+          ) : !showSendPanel ? (
+            <Button
+              onClick={openSendPanel}
+              disabled={activeSubscribers.length === 0 || needsSetup}
+              className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+              size="lg"
+            >
+              <Send className="h-4 w-4" /> Send email
+            </Button>
+          ) : (
+            <div className="relative rounded-lg border bg-muted/30 p-4 space-y-4">
+              {sending && (
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/90 backdrop-blur-sm">
+                  <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+                  <p className="font-semibold">Sending your email...</p>
+                  <p className="text-sm text-muted-foreground">
+                    Delivering to {sendRecipientIds.length} subscribers
+                  </p>
+                  <p className="text-xs text-muted-foreground">Please don't close this window</p>
+                </div>
+              )}
+
+              {sendStep === 1 ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">Step 1 — Choose your audience</h4>
+                    <button onClick={() => setShowSendPanel(false)} className="text-muted-foreground hover:text-foreground">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Who are you sending this to?</p>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 rounded-md border bg-background p-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        checked={audienceMode === "all"}
+                        onChange={() => setAudienceMode("all")}
+                      />
+                      <span className="text-sm font-medium">All active subscribers</span>
+                      <span className="text-xs text-muted-foreground ml-auto">{activeSubscribers.length} total</span>
+                    </label>
+
+                    <div className="rounded-md border bg-background p-3 space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground">Or choose specific lists:</p>
+                      {segments.length === 0 ? (
+                        <div className="text-xs text-muted-foreground space-y-1">
+                          <p>No lists yet — add subscribers to lists to send to specific groups.</p>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowSendPanel(false);
+                              document.getElementById("subscribers-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                            }}
+                            className="text-orange-600 hover:underline"
+                          >
+                            Manage lists →
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex flex-wrap gap-2">
+                          {segments.map((seg) => {
+                            const checked = sendSegmentIds.includes(seg.id);
+                            return (
+                              <label
+                                key={seg.id}
+                                className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs cursor-pointer transition ${
+                                  checked ? "border-foreground bg-foreground text-background" : "bg-background"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  className="sr-only"
+                                  checked={checked}
+                                  onChange={() => {
+                                    setAudienceMode("segment");
+                                    setSendSegmentIds((prev) =>
+                                      checked ? prev.filter((id) => id !== seg.id) : [...prev, seg.id],
+                                    );
+                                  }}
+                                />
+                                <span className="h-2 w-2 rounded-full" style={{ background: seg.color }} />
+                                {seg.name} ({segmentCounts[seg.id] ?? 0})
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <label className={`flex items-center gap-3 rounded-md border bg-background p-3 ${selectedIds.size === 0 ? "opacity-50" : "cursor-pointer"}`}>
+                      <input
+                        type="radio"
+                        checked={audienceMode === "selected"}
+                        onChange={() => setAudienceMode("selected")}
+                        disabled={selectedIds.size === 0}
+                      />
+                      <span className="text-sm font-medium">Selected contacts only</span>
+                      <span className="text-xs text-muted-foreground ml-auto">{selectedIds.size} selected</span>
+                    </label>
+                  </div>
+
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="ghost" onClick={() => setShowSendPanel(false)}>Cancel</Button>
+                    <Button
+                      onClick={() => setSendStep(2)}
+                      disabled={
+                        (audienceMode === "segment" && sendSegmentIds.length === 0) ||
+                        (audienceMode === "selected" && selectedIds.size === 0) ||
+                        sendRecipientIds.length === 0
+                      }
+                    >
+                      Continue
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">Ready to send?</h4>
+                    <button onClick={() => setShowSendPanel(false)} className="text-muted-foreground hover:text-foreground">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="rounded-md bg-background border p-4 text-sm space-y-2">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Sending to:</span><span className="font-medium">{sendAudienceLabel} — {sendRecipientIds.length} recipients</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Subject:</span><span className="font-medium truncate max-w-[60%] text-right">{subject}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">From:</span><span className="font-medium">{settings.from_name || "MOXIE"} &lt;hello@mail.buildwithmoxie.co&gt;</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Replies to:</span><span className="font-medium">{settings.reply_to || "—"}</span></div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Button
+                      onClick={() => { setSendMode("now"); setConfirmOpen(true); }}
+                      disabled={sendRecipientIds.length === 0}
+                      className="bg-orange-600 hover:bg-orange-700 text-white"
+                    >
+                      <Zap className="h-4 w-4" /> Send now
+                    </Button>
+                    <Button
+                      variant={sendMode === "schedule" ? "default" : "outline"}
+                      onClick={() => setSendMode(sendMode === "schedule" ? "now" : "schedule")}
+                      disabled={sendRecipientIds.length === 0}
+                    >
+                      <CalendarDays className="h-4 w-4" /> Schedule
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={saveQueued}
+                      disabled={sendRecipientIds.length === 0 || sending}
+                    >
+                      <ClipboardList className="h-4 w-4" /> Save to queue
+                    </Button>
+                  </div>
+
+                  {sendMode === "schedule" && (
+                    <div className="rounded-md border bg-background p-4 space-y-3">
+                      <h5 className="text-sm font-semibold">Pick a date and time</h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Date</Label>
+                          <Input
+                            type="date"
+                            value={scheduleDate}
+                            min={minScheduleDate}
+                            onChange={(e) => setScheduleDate(e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Time</Label>
+                          <select
+                            value={scheduleTime}
+                            onChange={(e) => setScheduleTime(e.target.value)}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          >
+                            {Array.from({ length: 48 }).map((_, i) => {
+                              const h = String(Math.floor(i / 2)).padStart(2, "0");
+                              const m = i % 2 === 0 ? "00" : "30";
+                              const v = `${h}:${m}`;
+                              return (
+                                <option key={v} value={v}>
+                                  {v}
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Timezone: {userTimezone}</p>
+                      <div className="flex gap-2 justify-end">
+                        <Button variant="ghost" onClick={() => setSendMode("now")}>Cancel</Button>
+                        <Button onClick={saveScheduled} disabled={sending || !scheduleDate}>
+                          Confirm schedule
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 justify-start">
+                    <Button variant="ghost" onClick={() => setSendStep(1)}>Back</Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* 7. Sent emails log */}
       <Card>
         <CardHeader>
           <CardTitle>Sent emails</CardTitle>
@@ -1188,10 +1558,10 @@ export default function Email() {
                 <TableRow>
                   <TableHead>Subject</TableHead>
                   <TableHead>Sent to</TableHead>
-                  <TableHead>Sent</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Date</TableHead>
                   <TableHead>Recipients</TableHead>
-                  <TableHead>Open rate</TableHead>
-                  <TableHead>Click rate</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1202,6 +1572,7 @@ export default function Email() {
                       ? "All subscribers"
                       : ids.map((id) => segmentMap[id]?.name).filter(Boolean).join(", ") || "List";
                   const segColor = ids.length === 1 ? segmentMap[ids[0]]?.color : null;
+                  const status = s.status || "sent";
                   return (
                     <TableRow key={s.id}>
                       <TableCell className="max-w-xs truncate">{s.subject || "—"}</TableCell>
@@ -1214,14 +1585,55 @@ export default function Email() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        {s.sent_at ? new Date(s.sent_at).toLocaleDateString() : "—"}
+                        {status === "sent" && (
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">Sent</Badge>
+                        )}
+                        {status === "scheduled" && (
+                          <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">Scheduled</Badge>
+                        )}
+                        {status === "queued" && (
+                          <Badge variant="secondary">Queued</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {status === "scheduled" && s.scheduled_for ? (
+                          <div className="flex flex-col">
+                            <span>{new Date(s.scheduled_for).toLocaleString()}</span>
+                            <span className="text-xs text-muted-foreground">{countdownLabel(s.scheduled_for)}</span>
+                          </div>
+                        ) : status === "queued" ? (
+                          <span className="text-muted-foreground">—</span>
+                        ) : s.sent_at ? (
+                          new Date(s.sent_at).toLocaleDateString()
+                        ) : (
+                          "—"
+                        )}
                       </TableCell>
                       <TableCell>{s.recipient_count ?? 0}</TableCell>
-                      <TableCell>
-                        {s.open_rate != null ? `${Math.round(s.open_rate * 100)}%` : "—"}
-                      </TableCell>
-                      <TableCell>
-                        {s.click_rate != null ? `${Math.round(s.click_rate * 100)}%` : "—"}
+                      <TableCell className="text-right">
+                        {status === "queued" && (
+                          <div className="flex gap-1 justify-end">
+                            <Button size="sm" variant="outline" onClick={() => sendFromLog(s)}>
+                              <Send className="h-3 w-3" /> Send now
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => deleteSendRow(s.id)}>
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                        {status === "scheduled" && (
+                          <div className="flex gap-1 justify-end">
+                            <Button size="sm" variant="outline" onClick={() => sendFromLog(s)}>
+                              <Send className="h-3 w-3" /> Send now
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => rescheduleSend(s)}>
+                              Reschedule
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => deleteSendRow(s.id)}>
+                              Cancel
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -1232,56 +1644,29 @@ export default function Email() {
         </CardContent>
       </Card>
 
-      {/* Settings */}
-      <Card id="settings" ref={settingsRef}>
-        <CardHeader>
-          <CardTitle>Sending details</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>From name</Label>
-            <Input
-              value={settings.from_name || ""}
-              onChange={(e) => setSettings({ ...settings, from_name: e.target.value })}
-              placeholder="Your name or brand"
-            />
-            <p className="text-xs text-muted-foreground">
-              This is what subscribers see as the sender name.
-            </p>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label className="text-base font-semibold">Where should subscriber replies go?</Label>
-              {settings.reply_to && (
-                <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
-                  <Check className="h-3 w-3" /> Saved
-                </span>
-              )}
-            </div>
-            <Input
-              value={settings.reply_to || ""}
-              onChange={(e) => setSettings({ ...settings, reply_to: e.target.value })}
-              placeholder="you@yourdomain.com"
-              type="email"
-            />
-            <p className="text-xs text-muted-foreground">
-              This is your most important setting — make sure it's correct.
-            </p>
-          </div>
-          <Button onClick={saveSettings} disabled={savingSettings}>
-            {savingSettings ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Saving...
-              </>
-            ) : (
-              "Save"
-            )}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            Beta 1: emails send from MOXIE's verified domain. Custom domain support coming soon.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Send confirmation dialog */}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-orange-600" /> Ready to send?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will send immediately to <span className="font-semibold text-foreground">{sendRecipientIds.length}</span> subscribers. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={sending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); doSendNow(); }}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              disabled={sending}
+            >
+              {sending ? <><Loader2 className="h-4 w-4 animate-spin" /> Sending...</> : "Yes, send it"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
