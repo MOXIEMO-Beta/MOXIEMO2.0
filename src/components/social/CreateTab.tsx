@@ -245,31 +245,48 @@ export default function CreateTab({
     facebook: false,
     instagram: false,
   });
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [placeholderFading, setPlaceholderFading] = useState(false);
-  const [placeholderPaused, setPlaceholderPaused] = useState(false);
+  const [suggestionsOpenFor, setSuggestionsOpenFor] = useState<Platform | null>(null);
+  const instructionRowRefs = useRef<Record<Platform, HTMLDivElement | null>>({
+    linkedin: null,
+    facebook: null,
+    instagram: null,
+  });
+  const instructionInputRefs = useRef<Record<Platform, HTMLInputElement | null>>({
+    linkedin: null,
+    facebook: null,
+    instagram: null,
+  });
 
-  const ROTATING_PLACEHOLDERS = [
-    "Ask MOXIE to change something… e.g. 'Make the hook more direct'",
-    "Try: 'Add a quote about clarity'",
-    "Try: 'Change the ending question to focus on revenue'",
-    "Try: 'Make this sound less formal'",
-    "Try: 'Add a client success example'",
-    "Try: 'Shorten the second paragraph'",
+  const ASK_MOXIE_SUGGESTIONS = [
+    "Make the hook more direct",
+    "Add a client success example",
+    "Change the ending question to focus on revenue",
+    "Make this sound less formal",
+    "Shorten the second paragraph",
+    "Add a statistic or data point",
+    "Make the opening line more provocative",
+    "Add a specific call to action",
   ];
 
-  // Rotate placeholder every 4s with fade
+  // Dismiss suggestions on outside click or Escape
   useEffect(() => {
-    if (placeholderPaused) return;
-    const id = setInterval(() => {
-      setPlaceholderFading(true);
-      setTimeout(() => {
-        setPlaceholderIndex((i) => (i + 1) % ROTATING_PLACEHOLDERS.length);
-        setPlaceholderFading(false);
-      }, 300);
-    }, 4000);
-    return () => clearInterval(id);
-  }, [placeholderPaused]);
+    if (!suggestionsOpenFor) return;
+    function handleClick(e: MouseEvent) {
+      const row = instructionRowRefs.current[suggestionsOpenFor!];
+      if (row && !row.contains(e.target as Node)) {
+        setSuggestionsOpenFor(null);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setSuggestionsOpenFor(null);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [suggestionsOpenFor]);
 
   // Auto-dismiss tip banner after 8s
   useEffect(() => {
