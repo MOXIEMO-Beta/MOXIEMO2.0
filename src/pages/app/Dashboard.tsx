@@ -21,6 +21,7 @@ import {
   Plus,
   Flame,
 } from "lucide-react";
+import { toast } from "sonner";
 
 type Strategy = any;
 type Discovery = { status?: string; messages?: any[] } | null;
@@ -93,6 +94,43 @@ export default function Dashboard() {
   ];
   const completedSteps = setupSteps.filter((s) => s.done).length;
   const setupProgress = Math.round((completedSteps / setupSteps.length) * 100);
+
+  async function testConnection() {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+        ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+
+      console.log("Testing connection to:", `${supabaseUrl}/functions/v1/discovery-chat`);
+      console.log("Auth token available:", !!session?.access_token);
+      console.log("Anon key available:", !!supabaseKey);
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/discovery-chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token ?? supabaseKey}`,
+          "apikey": supabaseKey ?? "",
+        },
+        body: JSON.stringify({ messages: [], userContext: { firstName: "Test", role: "Founder" } }),
+      });
+
+      console.log("Response status:", resp.status);
+      console.log("Response headers:", Object.fromEntries(resp.headers.entries()));
+
+      if (!resp.ok) {
+        const text = await resp.text();
+        console.error("Error response:", text);
+        toast.error(`Connection test failed: ${resp.status}`, { description: text.slice(0, 200) });
+      } else {
+        toast.success(`Connection test passed: ${resp.status}`);
+      }
+    } catch (e: any) {
+      console.error("Connection test error:", e);
+      toast.error("Connection test threw an error", { description: e?.message });
+    }
+  }
 
   const quickActions = [
     { label: "New post", icon: FileText, to: "/app/content", color: "accent" },
