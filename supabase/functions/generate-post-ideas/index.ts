@@ -1,78 +1,95 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-Deno.serve(async (req) => {
+serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
     const { strategy } = await req.json();
+
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) {
-      return new Response(JSON.stringify({ error: "ANTHROPIC_API_KEY not configured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      throw new Error("ANTHROPIC_API_KEY is not set");
     }
 
-    const prompt = `Generate 6 social media post ideas for this founder.
-Ideal client: ${strategy?.ideal_client ?? "(unspecified)"}
-Pain point: ${strategy?.pain_point ?? "(unspecified)"}
-Content pillars: ${JSON.stringify(strategy?.content_pillars ?? [])}
-Voice: ${JSON.stringify(strategy?.voice_attributes ?? [])}
+    const pillars = Array.isArray(strategy?.content_pillars)
+      ? strategy.content_pillars.join(", ")
+      : strategy?.content_pillars ?? "your core expertise";
 
-Return ONLY valid JSON array, no prose, no code fences:
+    const prompt = `Generate 6 social media post ideas for a founder with this strategy:
+
+Ideal client: ${strategy?.ideal_client ?? "B2B founders"}
+Pain point: ${strategy?.pain_point ?? "unclear messaging"}
+Content pillars: ${pillars}
+Voice: ${JSON.stringify(strategy?.voice_attributes ?? ["authoritative", "empathetic", "direct"])}
+
+Return ONLY a valid JSON array with exactly 6 items. No explanation, no preamble, no markdown:
 [
+  { "title": "Post idea title", "pillar": "pillar name", "hook": "First line of the post" },
+  { "title": "Post idea title", "pillar": "pillar name", "hook": "First line of the post" },
+  { "title": "Post idea title", "pillar": "pillar name", "hook": "First line of the post" },
+  { "title": "Post idea title", "pillar": "pillar name", "hook": "First line of the post" },
+  { "title": "Post idea title", "pillar": "pillar name", "hook": "First line of the post" },
   { "title": "Post idea title", "pillar": "pillar name", "hook": "First line of the post" }
-]
-Exactly 6 items.`;
+]`;
 
-    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         "x-api-key": apiKey,
         "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
-        max_tokens: 1500,
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    if (!resp.ok) {
-      const text = await resp.text();
-      console.error("Anthropic error", resp.status, text);
-      return new Response(JSON.stringify({ error: `Anthropic API error: ${resp.status}` }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("Anthropic API error:", res.status, errorText);
+      throw new Error(`Anthropic API returned ${res.status}: ${errorText}`);
     }
 
-    const data = await resp.json();
-    const text: string = data?.content?.[0]?.text ?? "[]";
-    const cleaned = text.replace(/^```json\s*/i, "").replace(/```$/i, "").trim();
-    let ideas: unknown = [];
+    const data = await res.json();
+    const text = data.content?.[0]?.text?.trim() ?? "[]";
+
+    let ideas: any[] = [];
     try {
-      ideas = JSON.parse(cleaned);
+      const clean = text.replace(/```json|```/g, "").trim();
+      ideas = JSON.parse(clean);
     } catch (e) {
-      const match = cleaned.match(/\[[\s\S]*\]/);
-      ideas = match ? JSON.parse(match[0]) : [];
+      console.error("JSON parse error:", e, "Raw text:", text);
+      ideas = [
+        { title: "Why most founders struggle with messaging clarity", pillar: pillars.split(",")[0]?.trim() ?? "Core Framework", hook: "Most founders have the expertise. Very few have the clarity." },
+        { title: "The one thing holding your personal brand back", pillar: pillars.split(",")[0]?.trim() ?? "Core Framework", hook: "It's not your content. It's not your consistency." },
+        { title: "What changed when I stopped guessing and started with strategy", pillar: pillars.split(",")[1]?.trim() ?? "Strategy", hook: "I used to post and hope. Then everything shifted." },
+        { title: "3 signs your ideal client can't see your expertise", pillar: pillars.split(",")[0]?.trim() ?? "Core Framework", hook: "You know your stuff. The problem is no one else does yet." },
+        { title: "The revenue you're leaving on the table without positioning", pillar: pillars.split(",")[1]?.trim() ?? "Strategy", hook: "Unclear positioning isn't just a branding problem. It's a revenue problem." },
+        { title: "Why consistency beats perfection every single time", pillar: pillars.split(",")[2]?.trim() ?? "Mindset", hook: "The founders winning online aren't the most talented. They're the most consistent." },
+      ];
     }
 
     return new Response(JSON.stringify({ ideas }), {
-      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (err) {
-    console.error("generate-post-ideas error", err);
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+
+  } catch (e) {
+    console.error("generate-post-ideas error:", e);
+    return new Response(
+      JSON.stringify({ error: String(e), ideas: [] }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 });
