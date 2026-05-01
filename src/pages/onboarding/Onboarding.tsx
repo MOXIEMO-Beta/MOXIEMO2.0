@@ -211,12 +211,43 @@ export default function Onboarding() {
     setFinalizing(true);
     try {
       const code = betaCode.toUpperCase().trim();
-      await supabase.from("profiles").update({
-        plan: "beta_lifetime", beta_code_used: code, onboarding_completed: true,
-      }).eq("id", user.id);
-      await supabase.from("beta_codes").update({ uses_count: (codeData.uses_count ?? 0) + 1 }).eq("id", codeData.id);
-      navigate("/app/discovery?welcome=true");
+      // Bump beta code usage first (non-blocking failure ok)
+      await supabase
+        .from("beta_codes")
+        .update({ uses_count: (codeData.uses_count ?? 0) + 1 })
+        .eq("id", codeData.id);
+
+      // Update profile and verify the write succeeded before redirect
+      const { data: updated, error: updateError } = await supabase
+        .from("profiles")
+        .update({
+          plan: "beta_lifetime",
+          beta_code_used: code,
+          onboarding_completed: true,
+        })
+        .eq("id", user.id)
+        .select("onboarding_completed")
+        .single();
+
+      if (updateError) throw updateError;
+      if (!updated?.onboarding_completed) {
+        throw new Error("Profile update did not persist. Please try again.");
+      }
+
+      // Confirm via a fresh read so ProtectedRoute (which re-fetches on mount) sees the new value
+      const { data: confirmed } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!confirmed?.onboarding_completed) {
+        throw new Error("Couldn't confirm onboarding completion. Please try again.");
+      }
+
+      // Hard navigation forces ProtectedRoute to remount and re-check the profile cleanly
+      window.location.assign("/app/discovery?welcome=true");
     } catch (e: any) {
+      console.error("Founding member error:", e);
       toast.error(e.message || "Couldn't finalize");
       setFinalizing(false);
     }
@@ -226,9 +257,30 @@ export default function Onboarding() {
     if (!user) return;
     setFinalizing(true);
     try {
-      await supabase.from("profiles").update({ plan: "growth_trial", onboarding_completed: true }).eq("id", user.id);
-      navigate("/app/discovery?welcome=true");
+      const { data: updated, error: updateError } = await supabase
+        .from("profiles")
+        .update({ plan: "growth_trial", onboarding_completed: true })
+        .eq("id", user.id)
+        .select("onboarding_completed")
+        .single();
+
+      if (updateError) throw updateError;
+      if (!updated?.onboarding_completed) {
+        throw new Error("Profile update did not persist. Please try again.");
+      }
+
+      const { data: confirmed } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!confirmed?.onboarding_completed) {
+        throw new Error("Couldn't confirm onboarding completion. Please try again.");
+      }
+
+      window.location.assign("/app/discovery?welcome=true");
     } catch (e: any) {
+      console.error("Growth trial error:", e);
       toast.error(e.message || "Couldn't finalize");
       setFinalizing(false);
     }
