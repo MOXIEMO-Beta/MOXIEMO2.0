@@ -313,6 +313,9 @@ export type Database = {
           content_by_platform: Json
           created_at: string
           id: string
+          image_urls: Json
+          is_inspiration: boolean
+          is_template: boolean
           media_urls: Json
           pillar: string | null
           platform_post_ids: Json
@@ -320,6 +323,7 @@ export type Database = {
           published_at: string | null
           scheduled_for: string | null
           status: string
+          topic: string | null
           updated_at: string
           user_id: string
         }
@@ -328,6 +332,9 @@ export type Database = {
           content_by_platform?: Json
           created_at?: string
           id?: string
+          image_urls?: Json
+          is_inspiration?: boolean
+          is_template?: boolean
           media_urls?: Json
           pillar?: string | null
           platform_post_ids?: Json
@@ -335,6 +342,7 @@ export type Database = {
           published_at?: string | null
           scheduled_for?: string | null
           status?: string
+          topic?: string | null
           updated_at?: string
           user_id: string
         }
@@ -343,6 +351,9 @@ export type Database = {
           content_by_platform?: Json
           created_at?: string
           id?: string
+          image_urls?: Json
+          is_inspiration?: boolean
+          is_template?: boolean
           media_urls?: Json
           pillar?: string | null
           platform_post_ids?: Json
@@ -350,6 +361,7 @@ export type Database = {
           published_at?: string | null
           scheduled_for?: string | null
           status?: string
+          topic?: string | null
           updated_at?: string
           user_id?: string
         }
