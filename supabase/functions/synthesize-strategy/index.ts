@@ -104,28 +104,14 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     const { transcript, revenueRange, biggestChallenge } = await req.json();
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
-    if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
+    const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+    if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
     let userContent = "Discovery transcript:\n\n" + transcript;
     if (revenueRange) userContent += `\n\nFounder's revenue stage: ${revenueRange}`;
     if (biggestChallenge) userContent += `\nBiggest marketing challenge: ${biggestChallenge}`;
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
-        messages: [
-          { role: "system", content: SYSTEM },
-          { role: "user", content: userContent },
-        ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "save_strategy",
-            description: "Save the synthesized marketing strategy.",
-            parameters: {
+    const saveStrategyParams = {
               type: "object",
               properties: {
                 positioning_statement: { type: "string" },
@@ -287,10 +273,26 @@ Deno.serve(async (req) => {
                 },
               },
               required: ["positioning_statement", "ideal_client", "pain_point", "transformation", "voice_attributes", "content_pillars", "primary_channel", "success_definition"],
-            },
-          },
+    } as const;
+
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-5",
+        max_tokens: 8192,
+        system: SYSTEM,
+        messages: [{ role: "user", content: userContent }],
+        tools: [{
+          name: "save_strategy",
+          description: "Save the synthesized marketing strategy.",
+          input_schema: saveStrategyParams,
         }],
-        tool_choice: { type: "function", function: { name: "save_strategy" } },
+        tool_choice: { type: "tool", name: "save_strategy" },
       }),
     });
 
@@ -300,8 +302,10 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ error: "AI error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const data = await res.json();
-    const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    const parsed = args ? JSON.parse(args) : {};
+    const toolUse = Array.isArray(data?.content)
+      ? data.content.find((b: any) => b?.type === "tool_use")
+      : null;
+    const parsed: any = toolUse?.input ?? {};
 
     // Compute strength score from transcript + synthesized fields.
     try {
