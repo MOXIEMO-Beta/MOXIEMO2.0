@@ -12,15 +12,15 @@ function stripModeTag(text: string): string {
 }
 
 const OPENING_BY_ROLE: Record<string, (n: string) => string> = {
-  "Founder": (n) => `Hey ${n} — I'm MOXIE, your AI CMO. Let's build the marketing foundation for your business. I'll ask you 13 questions and turn your answers into a complete strategy. Ready?`,
-  "Consultant": (n) => `Hey ${n} — I'm MOXIE. Let's create a strategy that positions your consulting expertise and drives qualified leads. 13 questions, then you'll have a complete marketing foundation. Let's go.`,
-  "Solopreneur": (n) => `Hey ${n} — I'm MOXIE, your AI CMO. Let's build a lean, focused marketing engine that works while you work. 13 questions and we'll have your strategy locked in. Ready?`,
-  "Fractional Executive": (n) => `Hey ${n} — I'm MOXIE. Let's position your fractional practice to attract the right retainer clients. 13 questions and we'll build the foundation that makes your expertise unmistakable. Let's go.`,
-  "Agency Owner": (n) => `Hey ${n} — I'm MOXIE. Let's build the strategy behind your agency's own brand — because the cobbler's kids need shoes too. 13 questions, then you'll have a complete marketing foundation. Ready?`,
-  "Marketer": (n) => `Hey ${n} — I'm MOXIE. Let's build the strategic foundation your marketing will execute against. 13 questions and we'll have a complete strategy locked in. Ready?`,
-  "Business Owner": (n) => `Hey ${n} — I'm MOXIE, your AI CMO. Let's build a marketing strategy that actually fits your business — not a template. 13 questions and we'll have your foundation ready. Let's go.`,
-  "Marketing Team": (n) => `Hey ${n} — I'm MOXIE. Let's align your team around a clear marketing strategy. 13 questions and we'll build the foundation that keeps everyone on the same page. Ready?`,
-  "default": (n) => `Hey ${n} — I'm MOXIE, your AI Chief Marketing Officer. I'll ask you 13 questions to build your complete marketing strategy. Everything in MOXIE flows from here. Ready?`,
+  "Founder": (n) => `Hey ${n}, I'm MOXIE, your AI CMO. Let's build the marketing foundation for your business. I'll ask you 15 questions and turn your answers into a complete strategy. Takes about 15-20 minutes. Ready?`,
+  "Consultant": (n) => `Hey ${n}, I'm MOXIE. Let's create a strategy that positions your consulting expertise and drives qualified leads. 15 questions, about 15-20 minutes, and you'll have a complete marketing foundation. Let's go.`,
+  "Solopreneur": (n) => `Hey ${n}, I'm MOXIE, your AI CMO. Let's build a lean, focused marketing engine that works while you work. 15 questions and about 15-20 minutes and we'll have your strategy locked in. Ready?`,
+  "Fractional Executive": (n) => `Hey ${n}, I'm MOXIE. Let's position your fractional practice to attract the right retainer clients. 15 questions, about 15-20 minutes, and we'll build the foundation that makes your expertise unmistakable. Let's go.`,
+  "Agency Owner": (n) => `Hey ${n}, I'm MOXIE. Let's build the strategy behind your agency's own brand, because the cobbler's kids need shoes too. 15 questions, about 15-20 minutes, and you'll have a complete marketing foundation. Ready?`,
+  "Marketer": (n) => `Hey ${n}, I'm MOXIE. Let's build the strategic foundation your marketing will execute against. 15 questions, about 15-20 minutes, and we'll have a complete strategy locked in. Ready?`,
+  "Business Owner": (n) => `Hey ${n}, I'm MOXIE, your AI CMO. Let's build a marketing strategy that actually fits your business, not a template. 15 questions, about 15-20 minutes, and we'll have your foundation ready. Let's go.`,
+  "Marketing Team": (n) => `Hey ${n}, I'm MOXIE. Let's align your team around a clear marketing strategy. 15 questions, about 15-20 minutes, and we'll build the foundation that keeps everyone on the same page. Ready?`,
+  "default": (n) => `Hey ${n}, I'm MOXIE, your AI Chief Marketing Officer. I'll ask you 15 questions to build your complete marketing strategy. Everything in MOXIE flows from here. This takes about 15-20 minutes and I'll go one question at a time. The more specific you are, the stronger your strategy. Ready to build?`,
 };
 
 const Q4_BY_ROLE: Record<string, string> = {
