@@ -269,7 +269,21 @@ export default function Social() {
           onCreateNew={() => setActiveTab("create")}
         />
       )}
-      {activeTab === "reports" && <ComingSoonTab label="Reports" />}
+      {activeTab === "reports" && (
+        <ReportsTab
+          userId={user?.id ?? null}
+          onSwitchTab={setActiveTab}
+          onRepurposePost={(topic) => {
+            setCreatePrefill(topic);
+          }}
+          onCreateWithPillar={(pillar) => {
+            setCreatePillar(pillar);
+            const next = new URLSearchParams(searchParams);
+            next.set("pillar", pillar);
+            setSearchParams(next, { replace: true });
+          }}
+        />
+      )}
     </div>
   );
 }
