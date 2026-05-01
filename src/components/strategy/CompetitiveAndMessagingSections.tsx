@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Target, Copy, Loader2, Check, ChevronDown, Sparkles } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Target, Copy, Loader2, Check, ChevronDown, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { EditableField } from "@/components/strategy/EditableField";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
 
 function CopyBlock({ label, text, placeholder }: { label: string; text: string; placeholder?: string }) {
@@ -46,11 +46,76 @@ function CopyBlock({ label, text, placeholder }: { label: string; text: string; 
   );
 }
 
+type FieldKey = "antiClient" | "alternatives" | "whyYouWin";
+
+function AlwaysEditableField({
+  label,
+  hint,
+  value,
+  onSave,
+  placeholder,
+}: {
+  label: string;
+  hint: string;
+  value: string;
+  onSave: (v: string) => void;
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState<string>(value ?? "");
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => { setDraft(value ?? ""); }, [value]);
+
+  // Auto-resize
+  useEffect(() => {
+    if (ref.current) {
+      ref.current.style.height = "auto";
+      ref.current.style.height = ref.current.scrollHeight + "px";
+    }
+  }, [draft]);
+
+  const commit = () => {
+    if ((draft ?? "") !== (value ?? "")) {
+      onSave(draft);
+      setSavedAt(Date.now());
+    }
+  };
+
+  const showSaved = savedAt && Date.now() - savedAt < 2500;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground block">
+          {label}
+        </label>
+        {showSaved && (
+          <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+            <CheckCircle2 className="h-3 w-3 text-accent" /> Saved
+          </span>
+        )}
+      </div>
+      <Textarea
+        ref={ref}
+        value={draft}
+        placeholder={placeholder}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        className="min-h-[64px] resize-none text-sm leading-relaxed bg-background/40 border-dashed focus-visible:bg-background"
+      />
+      <p className="text-xs text-muted-foreground mt-1.5 italic">{hint}</p>
+    </div>
+  );
+}
+
 export function CompetitiveAndMessagingSections() {
   const { strategy, setEnhanced } = useStrategyEditor();
   const ef = (strategy?.enhanced_foundation || {}) as any;
   const [open, setOpen] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [regenPositioning, setRegenPositioning] = useState(false);
+  const inferredOnceRef = useRef(false);
 
   const variations = ef.messagingVariations || {};
   const positioning: string = strategy?.positioning_statement || "";
@@ -59,9 +124,59 @@ export function CompetitiveAndMessagingSections() {
   const shortVersion = variations.short || (positioning ? positioning.slice(0, 160) : "");
   const elevator = variations.elevator || "";
 
-  const handleSaveField = (key: string, value: string) => {
+  // Infer initial values for empty competitive positioning fields and persist them.
+  useEffect(() => {
+    if (!strategy || inferredOnceRef.current) return;
+    const hasAny = ef.antiClient || ef.alternatives || ef.whyYouWin;
+    if (hasAny) { inferredOnceRef.current = true; return; }
+
+    const inferredAntiClient = strategy.ideal_client
+      ? `Founders who are NOT ${String(strategy.ideal_client).toLowerCase()}`
+      : "";
+    const inferredAlternatives = strategy.pain_point
+      ? "DIY approaches, doing nothing, or hiring generalist help"
+      : "";
+    const inferredWhyYouWin = strategy.positioning_statement || "";
+
+    if (inferredAntiClient || inferredAlternatives || inferredWhyYouWin) {
+      const next = {
+        ...ef,
+        antiClient: inferredAntiClient,
+        alternatives: inferredAlternatives,
+        whyYouWin: inferredWhyYouWin,
+      };
+      setEnhanced([], next);
+      inferredOnceRef.current = true;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [strategy?.id]);
+
+  const handleSaveField = (key: FieldKey, value: string) => {
     setEnhanced([key], value);
-    toast.success("Saved", { duration: 1500 });
+  };
+
+  const handleRegeneratePositioning = async () => {
+    setRegenPositioning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-competitive-positioning", {
+        body: { strategy },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const next = {
+        ...ef,
+        antiClient: data.antiClient || "",
+        alternatives: data.alternatives || "",
+        whyYouWin: data.whyYouWin || "",
+      };
+      setEnhanced([], next);
+      toast.success("Competitive positioning generated — review and refine to make it yours.");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Couldn't generate positioning", { description: e?.message });
+    } finally {
+      setRegenPositioning(false);
+    }
   };
 
   const handleRegenerate = async () => {
@@ -92,72 +207,53 @@ export function CompetitiveAndMessagingSections() {
       {/* Section 1 — Competitive Positioning */}
       <Card className="report-card border-border shadow-soft">
         <Collapsible open={open} onOpenChange={setOpen}>
-          <CollapsibleTrigger className="w-full flex items-start justify-between gap-4 p-7 text-left">
-            <div className="flex items-start gap-3">
+          <div className="w-full flex items-start justify-between gap-4 p-7">
+            <CollapsibleTrigger className="flex items-start gap-3 text-left flex-1 min-w-0">
               <div className="h-10 w-10 rounded-lg bg-accent-soft flex items-center justify-center shrink-0">
                 <Target className="h-5 w-5 text-accent" />
               </div>
-              <div>
+              <div className="flex-1">
                 <h3 className="font-display text-2xl tracking-[-0.01em]">How You Stand Out</h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   Define your competitive position — who you're for, who you're not for, and why clients choose you.
                 </p>
               </div>
-            </div>
-            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform shrink-0 mt-2 ${open ? "rotate-180" : ""}`} />
-          </CollapsibleTrigger>
+              <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform shrink-0 mt-2 ${open ? "rotate-180" : ""}`} />
+            </CollapsibleTrigger>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleRegeneratePositioning}
+              disabled={regenPositioning}
+              className="shrink-0 text-xs"
+            >
+              {regenPositioning ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
+              Regenerate
+            </Button>
+          </div>
           <CollapsibleContent>
             <div className="px-7 pb-7 space-y-6 border-t border-border pt-6">
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground block mb-2">
-                  Who is NOT your ideal client?
-                </label>
-                <div className="text-sm leading-relaxed">
-                  <EditableField
-                    value={ef.antiClient}
-                    onChange={(v) => handleSaveField("antiClient", v)}
-                    multiline
-                    placeholder="e.g. Founders who want quick fixes without doing the work"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1.5 italic">
-                  Being clear about who you don't serve makes your positioning stronger
-                </p>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground block mb-2">
-                  What are the alternatives to working with you?
-                </label>
-                <div className="text-sm leading-relaxed">
-                  <EditableField
-                    value={ef.alternatives}
-                    onChange={(v) => handleSaveField("alternatives", v)}
-                    multiline
-                    placeholder="e.g. DIY online courses, hiring a full-time CMO, doing nothing"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1.5 italic">
-                  Clients will compare you to these — know what you're up against
-                </p>
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-[0.2em] text-foreground block mb-2">
-                  When a client chooses you over alternatives, why?
-                </label>
-                <div className="text-sm leading-relaxed">
-                  <EditableField
-                    value={ef.whyYouWin}
-                    onChange={(v) => handleSaveField("whyYouWin", v)}
-                    multiline
-                    placeholder="e.g. I combine 10 years of real operator experience with a proven framework, not theory"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1.5 italic">
-                  This is your real differentiator — be ruthlessly specific
-                </p>
-              </div>
+              <AlwaysEditableField
+                label="Who is NOT your ideal client?"
+                hint="Being clear about who you don't serve makes your positioning stronger"
+                value={ef.antiClient || ""}
+                onSave={(v) => handleSaveField("antiClient", v)}
+                placeholder="e.g. Founders who want quick fixes without doing the work"
+              />
+              <AlwaysEditableField
+                label="What are the alternatives to working with you?"
+                hint="Clients will compare you to these — know what you're up against"
+                value={ef.alternatives || ""}
+                onSave={(v) => handleSaveField("alternatives", v)}
+                placeholder="e.g. DIY online courses, hiring a full-time CMO, doing nothing"
+              />
+              <AlwaysEditableField
+                label="When a client chooses you over alternatives, why?"
+                hint="This is your real differentiator — be ruthlessly specific"
+                value={ef.whyYouWin || ""}
+                onSave={(v) => handleSaveField("whyYouWin", v)}
+                placeholder="e.g. I combine 10 years of real operator experience with a proven framework, not theory"
+              />
             </div>
           </CollapsibleContent>
         </Collapsible>
