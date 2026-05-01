@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      beta_codes: {
+        Row: {
+          active: boolean | null
+          code: string
+          created_at: string | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          max_uses: number | null
+          uses_count: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          code: string
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          uses_count?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          code?: string
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          max_uses?: number | null
+          uses_count?: number | null
+        }
+        Relationships: []
+      }
       content_items: {
         Row: {
           body: string | null
@@ -185,33 +218,87 @@ export type Database = {
         }
         Relationships: []
       }
+      onboarding_responses: {
+        Row: {
+          completed_at: string | null
+          id: string
+          response: Json | null
+          step: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          response?: Json | null
+          step: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          response?: Json | null
+          step?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
+          beta_code_used: string | null
+          brand_assets: Json | null
           business_name: string | null
           created_at: string
           email: string | null
           email_settings: Json | null
           full_name: string | null
           id: string
+          industry: string | null
+          intended_use: Json | null
+          onboarding_completed: boolean | null
+          plan: string | null
+          referral_source: string | null
+          role: string | null
+          team_size: string | null
           updated_at: string
+          website_url: string | null
         }
         Insert: {
+          beta_code_used?: string | null
+          brand_assets?: Json | null
           business_name?: string | null
           created_at?: string
           email?: string | null
           email_settings?: Json | null
           full_name?: string | null
           id: string
+          industry?: string | null
+          intended_use?: Json | null
+          onboarding_completed?: boolean | null
+          plan?: string | null
+          referral_source?: string | null
+          role?: string | null
+          team_size?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Update: {
+          beta_code_used?: string | null
+          brand_assets?: Json | null
           business_name?: string | null
           created_at?: string
           email?: string | null
           email_settings?: Json | null
           full_name?: string | null
           id?: string
+          industry?: string | null
+          intended_use?: Json | null
+          onboarding_completed?: boolean | null
+          plan?: string | null
+          referral_source?: string | null
+          role?: string | null
+          team_size?: string | null
           updated_at?: string
+          website_url?: string | null
         }
         Relationships: []
       }
