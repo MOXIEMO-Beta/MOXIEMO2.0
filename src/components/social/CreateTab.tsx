@@ -984,10 +984,67 @@ export default function CreateTab({
                       : "text-emerald-600";
                   return (
                     <TabsContent key={p} value={p} className="space-y-3">
+                      {/* History link */}
+                      <div className="flex items-center justify-end">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              disabled={(postHistory[p]?.length ?? 0) === 0}
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+                            >
+                              <History className="h-3 w-3" /> History
+                              {postHistory[p]?.length > 0 && (
+                                <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px]">
+                                  {postHistory[p].length}
+                                </span>
+                              )}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent align="end" className="w-80 p-2">
+                            <p className="px-2 pb-1 text-xs font-semibold">Previous versions</p>
+                            <div className="max-h-72 space-y-1 overflow-y-auto">
+                              {(postHistory[p] ?? []).length === 0 ? (
+                                <p className="px-2 py-3 text-xs text-muted-foreground">
+                                  No previous versions yet.
+                                </p>
+                              ) : (
+                                postHistory[p].map((v, i) => (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => restoreVersion(p, i)}
+                                    className="block w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/40"
+                                  >
+                                    <span className="font-medium">
+                                      Version {i + 1}
+                                      {i === 0 ? " (original)" : ""}
+                                    </span>
+                                    <span className="block truncate text-muted-foreground">
+                                      {v.slice(0, 80) || "(empty)"}
+                                    </span>
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
                       <div className="relative">
                         <Textarea
+                          ref={(el) => {
+                            textareaRefs.current[p] = el;
+                          }}
                           value={text}
                           onChange={(e) => setContent((prev) => ({ ...prev, [p]: e.target.value }))}
+                          onMouseUp={() => handleTextareaSelection(p)}
+                          onTouchEnd={() => handleTextareaSelection(p)}
+                          onKeyUp={(e) => {
+                            if (e.shiftKey || e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              handleTextareaSelection(p);
+                            }
+                          }}
                           placeholder={`Write your ${PLATFORM_LABEL[p]} post…`}
                           rows={10}
                           className="resize-y"
@@ -995,6 +1052,53 @@ export default function CreateTab({
                         <div className={cn("absolute bottom-2 right-3 text-xs font-medium", counterColor)}>
                           {len} / {limit}
                         </div>
+                      </div>
+
+                      {/* AI instruction row */}
+                      <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2 py-1.5">
+                        <Bot className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <Input
+                          value={instructionInput[p]}
+                          onChange={(e) =>
+                            setInstructionInput((prev) => ({ ...prev, [p]: e.target.value }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && instructionInput[p].trim() && text.trim() && aiEditing === null) {
+                              e.preventDefault();
+                              void applyAiEdit({
+                                platform: p,
+                                action: "instruction",
+                                selectedText: text,
+                                fullPost: text,
+                                instruction: instructionInput[p].trim(),
+                              });
+                            }
+                          }}
+                          placeholder="Ask MOXIE to change something…"
+                          className="h-8 border-0 bg-transparent text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs"
+                          disabled={!instructionInput[p].trim() || !text.trim() || aiEditing !== null}
+                          onClick={() =>
+                            applyAiEdit({
+                              platform: p,
+                              action: "instruction",
+                              selectedText: text,
+                              fullPost: text,
+                              instruction: instructionInput[p].trim(),
+                            })
+                          }
+                        >
+                          {aiEditing === "instruction" ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          )}
+                          Apply
+                        </Button>
                       </div>
 
                       {/* Hashtag row */}
