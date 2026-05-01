@@ -87,14 +87,35 @@ export function ActionPlanTab() {
 
   return (
     <div className="space-y-6 report-page" style={{ pageBreakAfter: "always" }}>
-      <Card className="report-card p-7 border-border shadow-soft bg-foreground text-background">
-        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2">Quick start</div>
-        <h3 className="font-display text-3xl tracking-[-0.02em] mb-4">Your 4-week action plan</h3>
-        <div className="flex items-center gap-4">
-          <Progress value={overallPct} className="h-2 flex-1" />
-          <span className="font-display text-2xl">{overallPct}%</span>
+      <Card className="report-card p-7 border-border shadow-soft bg-foreground text-background" style={{ overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
+        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2" style={{ width: '100%', boxSizing: 'border-box' }}>Quick start</div>
+        <h3 className="font-display text-3xl tracking-[-0.02em] mb-4" style={{ width: '100%', boxSizing: 'border-box' }}>Your 4-week action plan</h3>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
+          <div style={{ flex: 1, minWidth: 0, height: '8px', background: 'hsl(var(--background) / 0.15)', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ width: `${Math.min(100, overallPct)}%`, height: '100%', background: 'hsl(var(--accent))', borderRadius: '4px', maxWidth: '100%' }} />
+          </div>
+          <span className="font-display text-2xl" style={{ flexShrink: 0 }}>{overallPct}%</span>
         </div>
-        <p className="text-sm text-background/70 mt-2">{totalDone} of {totalTasks} tasks complete</p>
+        <div style={{ width: '100%', overflow: 'hidden', boxSizing: 'border-box', marginTop: '12px' }}>
+          <div style={{ display: 'flex', gap: '4px', width: '100%', minWidth: 0 }}>
+            {weeks.map((w, i) => {
+              const wTasks = w?.tasks || [];
+              const wDone = wTasks.filter((t: any) => completion[t.id]).length;
+              const active = wTasks.length > 0 && wDone === wTasks.length;
+              const started = wDone > 0;
+              return (
+                <div key={i} style={{
+                  flex: 1,
+                  minWidth: 0,
+                  height: '4px',
+                  background: active || started ? 'hsl(var(--accent))' : 'hsl(var(--background) / 0.15)',
+                  borderRadius: '2px',
+                }} />
+              );
+            })}
+          </div>
+        </div>
+        <p className="text-sm text-background/70 mt-2" style={{ width: '100%', boxSizing: 'border-box' }}>{totalDone} of {totalTasks} tasks complete</p>
       </Card>
 
       <div className="space-y-3">
