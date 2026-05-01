@@ -192,7 +192,7 @@ export default function Email() {
         .from("email_sends")
         .select("*")
         .eq("user_id", user.id)
-        .order("sent_at", { ascending: false, nullsFirst: false }),
+        .order("sent_at", { ascending: false }),
       supabase
         .from("profiles")
         .select("email_settings, full_name")
