@@ -614,7 +614,8 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
             grid={monthGrid}
             postsByDay={postsByDay}
             dayRefs={dayRefs}
-            onSelectPost={openPanelWithReschedule}
+            onSelectPost={handleSelectPost}
+            onDayClick={handleDayClick}
             onAddAtDate={(d) => onCreateAtDate(d.toISOString())}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
@@ -626,11 +627,11 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
           <WeekView
             weekCursor={weekCursor}
             posts={filteredPosts}
-            onSelectPost={openPanelWithReschedule}
+            onSelectPost={handleSelectPost}
             onAddAtDate={(d) => onCreateAtDate(d.toISOString())}
           />
         ) : (
-          <ListView posts={filteredPosts} onSelectPost={openPanelWithReschedule} />
+          <ListView posts={filteredPosts} onSelectPost={handleSelectPost} />
         )}
 
         {/* Strategy coverage panel */}
