@@ -102,6 +102,13 @@ serve(async (req) => {
       role: userContext?.role,
     });
 
+    const anthropicMessages = Array.isArray(messages) && messages.length > 0
+      ? messages.map((m: any) => ({
+          role: m.role,
+          content: m.content,
+        }))
+      : [{ role: "user", content: "Start the discovery conversation." }];
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -114,10 +121,7 @@ serve(async (req) => {
         max_tokens: 1024,
         stream: true,
         system: systemPrompt,
-        messages: (messages || []).map((m: any) => ({
-          role: m.role,
-          content: m.content,
-        })),
+        messages: anthropicMessages,
       }),
     });
 

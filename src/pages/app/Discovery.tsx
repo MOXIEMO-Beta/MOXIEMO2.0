@@ -176,71 +176,94 @@ export default function Discovery() {
   async function streamReply(history: Msg[], sid: string) {
     setLoading(true);
     try {
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/discovery-chat`;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+        ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error("Missing Supabase environment variables");
+      }
+
+      const url = `${supabaseUrl}/functions/v1/discovery-chat`;
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token ?? supabaseKey;
+
       const resp = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          "Authorization": `Bearer ${authToken}`,
+          "apikey": supabaseKey,
         },
         body: JSON.stringify({ messages: history, userContext: userContextRef.current ?? undefined }),
       });
-      if (!resp.ok || !resp.body) {
-        if (resp.status === 429) toast.error("Rate limit. Please wait a moment.");
-        else if (resp.status === 402) toast.error("AI credits exhausted.");
-        else toast.error("Failed to reach MOXIE.");
-        return;
+
+      if (!resp.ok) {
+        const errorText = await resp.text();
+        console.error("Discovery chat error:", resp.status, errorText);
+        throw new Error(`Connection failed: ${resp.status} — ${errorText}`);
       }
+
+      if (!resp.body) {
+        throw new Error("No response body received");
+      }
+
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
-      let accumulated = "";
+      let assistantText = "";
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
-        let nl: number;
-        while ((nl = buffer.indexOf("\n")) !== -1) {
-          let line = buffer.slice(0, nl);
-          buffer = buffer.slice(nl + 1);
-          if (line.endsWith("\r")) line = line.slice(0, -1);
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
           if (!line.startsWith("data: ")) continue;
-          const json = line.slice(6).trim();
-          if (json === "[DONE]") continue;
+          const data = line.slice(6).trim();
+          if (data === "[DONE]") continue;
+
           try {
-            const parsed = JSON.parse(json);
-            const delta = parsed.choices?.[0]?.delta?.content;
-            if (delta) {
-              accumulated += delta;
+            const parsed = JSON.parse(data);
+            const chunk = parsed?.choices?.[0]?.delta?.content ?? "";
+            if (chunk) {
+              assistantText += chunk;
               setMessages((prev) => {
-                const copy = [...prev];
-                copy[copy.length - 1] = { role: "assistant", content: accumulated };
-                return copy;
+                const updated = [...prev];
+                updated[updated.length - 1] = { role: "assistant", content: assistantText };
+                return updated;
               });
             }
           } catch {
-            buffer = line + "\n" + buffer;
-            break;
+            // Skip malformed lines
           }
         }
       }
 
-      const finalAssistant: Msg = { role: "assistant", content: accumulated };
+      const isComplete = assistantText.includes("<STRATEGY_COMPLETE>") || assistantText.includes("<DISCOVERY_COMPLETE>");
+      const cleanText = assistantText.replace(/<STRATEGY_COMPLETE>|<DISCOVERY_COMPLETE>/g, "").trim();
+      const finalAssistant: Msg = { role: "assistant", content: cleanText };
       const newHistory = [...history, finalAssistant];
-      const isComplete = accumulated.includes("<DISCOVERY_COMPLETE>");
       if (isComplete) {
-        finalAssistant.content = accumulated.replace(/<DISCOVERY_COMPLETE>/g, "").trim();
         setMessages((prev) => {
           const copy = [...prev];
           copy[copy.length - 1] = finalAssistant;
           return copy;
         });
         setCompleted(true);
+      } else {
+        setMessages(newHistory);
       }
       await persist(newHistory, sid, isComplete);
       if (isComplete) await synthesize(newHistory);
+    } catch (e: any) {
+      console.error("streamReply error:", e);
+      toast.error("Couldn't reach MOXIE", {
+        description: e?.message ?? "Check your connection and try again",
+      });
     } finally {
       setLoading(false);
     }
