@@ -1338,6 +1338,62 @@ export default function CreateTab({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Floating AI selection toolbar */}
+      {selToolbar && (
+        <div
+          data-ai-toolbar
+          style={{
+            position: "absolute",
+            top: selToolbar.top,
+            left: selToolbar.left,
+            zIndex: 60,
+          }}
+          className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-lg"
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {([
+            { key: "improve", label: "Improve", icon: <Wand2 className="h-3 w-3" /> },
+            { key: "shorter", label: "Shorter" },
+            { key: "longer", label: "Longer" },
+            { key: "punchier", label: "Punchier" },
+            { key: "rewrite", label: "Rewrite" },
+          ] as const).map((b) => (
+            <Button
+              key={b.key}
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              disabled={aiEditing !== null}
+              onClick={() => {
+                const fullPost = content[selToolbar.platform];
+                void applyAiEdit({
+                  platform: selToolbar.platform,
+                  action: b.key,
+                  selectedText: selToolbar.text,
+                  fullPost,
+                  replaceRange: { start: selToolbar.start, end: selToolbar.end },
+                });
+              }}
+            >
+              {aiEditing === b.key ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                ("icon" in b ? b.icon : null)
+              )}
+              {b.label}
+            </Button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setSelToolbar(null)}
+            className="ml-1 rounded p-1 text-muted-foreground hover:bg-muted"
+            aria-label="Close"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
     </TooltipProvider>
   );
 }
