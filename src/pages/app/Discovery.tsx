@@ -15,11 +15,68 @@ import {
 
 type Msg = { role: "user" | "assistant"; content: string };
 
-const SECTIONS = ["Business Foundation", "Positioning", "Voice", "Content & Channel", "Goals & Capacity"];
+const SECTIONS = [
+  "Business Foundation",
+  "Positioning",
+  "Voice",
+  "Content & Channel",
+  "Goals & Capacity",
+  "Final Context (optional)",
+];
+const TOTAL_QUESTIONS = 15;
+const REQUIRED_QUESTIONS = 13;
 
 // Strip the hidden mode-tracking tag from assistant messages before displaying.
 const MODE_TAG_RE = /\n?\[MODE:(standard|coaching|placeholder)\]\s*\[Q:\d+\]\s*$/i;
 const stripModeTag = (text: string) => text.replace(MODE_TAG_RE, "").trimEnd();
+
+type UserContext = { firstName?: string; role?: string; businessName?: string };
+
+const REVENUE_OPTIONS = ["Under $100K", "$100K–$300K", "$300K–$600K", "$600K–$1M", "$1M–$2M", "$2M+"];
+const CHALLENGE_OPTIONS = [
+  "Getting visible to the right people",
+  "Converting leads into clients",
+  "Creating content consistently",
+  "Clarifying my message",
+  "Managing too many marketing tools",
+  "Not enough time for marketing",
+  "Not sure where to focus",
+];
+
+function isSkip(text: string) {
+  return /^\s*skip\b/i.test(text.trim());
+}
+
+function matchOption(text: string, options: string[]): string | undefined {
+  const t = text.toLowerCase().trim();
+  for (const opt of options) {
+    if (t.includes(opt.toLowerCase())) return opt;
+  }
+  return undefined;
+}
+
+// Walk the transcript: when an assistant message contains a Q14/Q15 cue,
+// the next user reply (if not a skip) is the answer.
+function extractOptionalAnswers(history: Msg[]): { revenueRange?: string; biggestChallenge?: string } {
+  let revenueRange: string | undefined;
+  let biggestChallenge: string | undefined;
+  for (let i = 0; i < history.length - 1; i++) {
+    const m = history[i];
+    if (m.role !== "assistant") continue;
+    const content = stripModeTag(m.content).toLowerCase();
+    const next = history[i + 1];
+    if (next?.role !== "user") continue;
+    const reply = next.content;
+    if (isSkip(reply)) continue;
+    if (!revenueRange && /annual revenue|revenue range|approximate annual/.test(content)) {
+      revenueRange = matchOption(reply, REVENUE_OPTIONS) || reply.trim().slice(0, 60);
+    }
+    if (!biggestChallenge && /biggest (marketing )?challenge/.test(content)) {
+      biggestChallenge = matchOption(reply, CHALLENGE_OPTIONS) || reply.trim().slice(0, 120);
+    }
+  }
+  return { revenueRange, biggestChallenge };
+}
 
 export default function Discovery() {
   const { user } = useAuth();
@@ -33,12 +90,17 @@ export default function Discovery() {
   const [synthesizing, setSynthesizing] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
+  const [userContext, setUserContext] = useState<UserContext | null>(null);
+  const userContextRef = useRef<UserContext | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // progress: count assistant questions answered = number of user messages
   const answered = messages.filter((m) => m.role === "user").length;
-  const progress = Math.min(100, Math.round((answered / 14) * 100));
-  const currentSection = Math.min(5, Math.floor(answered / 3) + 1);
+  const progress = Math.min(100, Math.round((answered / TOTAL_QUESTIONS) * 100));
+  // Sections 1-5 cover Q1-Q13 (~3 each); section 6 covers Q14-Q15 (optional).
+  const currentSection = answered >= REQUIRED_QUESTIONS
+    ? 6
+    : Math.min(5, Math.floor(answered / 3) + 1);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -68,6 +130,20 @@ export default function Discovery() {
   useEffect(() => {
     if (!user) return;
     (async () => {
+      // Fetch profile first so the system prompt is personalized.
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, full_name, business_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      const ctx: UserContext = {
+        firstName: (profile?.full_name || "").split(" ")[0] || "there",
+        role: profile?.role || undefined,
+        businessName: profile?.business_name || undefined,
+      };
+      setUserContext(ctx);
+      userContextRef.current = ctx;
+
       const { data } = await supabase.from("discovery_sessions").select("*").eq("user_id", user.id).maybeSingle();
       if (data) {
         setSessionId(data.id);
@@ -107,7 +183,7 @@ export default function Discovery() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, userContext: userContextRef.current ?? undefined }),
       });
       if (!resp.ok || !resp.body) {
         if (resp.status === 429) toast.error("Rate limit. Please wait a moment.");
@@ -183,11 +259,26 @@ export default function Discovery() {
     setSynthesizing(true);
     try {
       const transcript = history.map((m) => `${m.role === "user" ? "USER" : "MOXIE"}: ${m.content}`).join("\n\n");
-      const { data, error } = await supabase.functions.invoke("synthesize-strategy", { body: { transcript } });
+      // Extract the optional Q14 (revenue) and Q15 (challenge) answers from the transcript.
+      const optional = extractOptionalAnswers(history);
+      const { data, error } = await supabase.functions.invoke("synthesize-strategy", {
+        body: {
+          transcript,
+          revenueRange: optional.revenueRange,
+          biggestChallenge: optional.biggestChallenge,
+        },
+      });
       if (error) throw error;
       if (!user) return;
-      // upsert strategy
-      await supabase.from("strategies").upsert({ user_id: user.id, ...data, raw_foundation: data }, { onConflict: "user_id" });
+      // upsert strategy — preserve optional context inside raw_foundation
+      const rawFoundation = {
+        ...data,
+        revenueRange: optional.revenueRange,
+        biggestChallenge: optional.biggestChallenge,
+      };
+      await supabase
+        .from("strategies")
+        .upsert({ user_id: user.id, ...data, raw_foundation: rawFoundation }, { onConflict: "user_id" });
       toast.success("Your strategy is ready.");
       setTimeout(() => navigate("/app/strategy"), 1200);
     } catch (e: any) {
@@ -235,10 +326,13 @@ export default function Discovery() {
           <div className="flex items-center gap-3">
             <Sparkles className="h-4 w-4 text-accent" />
             <span className="text-sm font-medium">MOXIE Discovery</span>
-            <span className="text-xs text-muted-foreground">Section {currentSection} of 5 — {SECTIONS[currentSection - 1]}</span>
+            <span className="text-xs text-muted-foreground">Section {currentSection} of {SECTIONS.length} — {SECTIONS[currentSection - 1]}</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-muted-foreground">{answered}/14 answered</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {answered}/{TOTAL_QUESTIONS} answered
+              {answered >= REQUIRED_QUESTIONS && answered < TOTAL_QUESTIONS && " · bonus questions"}
+            </span>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5">
