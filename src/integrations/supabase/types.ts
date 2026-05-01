@@ -47,9 +47,100 @@ export type Database = {
         }
         Relationships: []
       }
+      calendar_ideas: {
+        Row: {
+          channel: string | null
+          converted: boolean
+          dismissed: boolean
+          generated_at: string
+          id: string
+          idea_text: string
+          idea_type: string | null
+          metadata: Json | null
+          pillar: string | null
+          user_id: string
+        }
+        Insert: {
+          channel?: string | null
+          converted?: boolean
+          dismissed?: boolean
+          generated_at?: string
+          id?: string
+          idea_text: string
+          idea_type?: string | null
+          metadata?: Json | null
+          pillar?: string | null
+          user_id: string
+        }
+        Update: {
+          channel?: string | null
+          converted?: boolean
+          dismissed?: boolean
+          generated_at?: string
+          id?: string
+          idea_text?: string
+          idea_type?: string | null
+          metadata?: Json | null
+          pillar?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      campaigns: {
+        Row: {
+          campaign_type: string | null
+          channels: string[] | null
+          content_plan: Json | null
+          created_at: string
+          end_date: string | null
+          goals: string | null
+          id: string
+          name: string
+          notes: string | null
+          start_date: string | null
+          status: string | null
+          theme: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          campaign_type?: string | null
+          channels?: string[] | null
+          content_plan?: Json | null
+          created_at?: string
+          end_date?: string | null
+          goals?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          campaign_type?: string | null
+          channels?: string[] | null
+          content_plan?: Json | null
+          created_at?: string
+          end_date?: string | null
+          goals?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          start_date?: string | null
+          status?: string | null
+          theme?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_items: {
         Row: {
           body: string | null
+          campaign_id: string | null
           content_type: string | null
           created_at: string
           engagement: Json
@@ -65,6 +156,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          campaign_id?: string | null
           content_type?: string | null
           created_at?: string
           engagement?: Json
@@ -80,6 +172,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          campaign_id?: string | null
           content_type?: string | null
           created_at?: string
           engagement?: Json
@@ -93,7 +186,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "content_items_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       discovery_sessions: {
         Row: {
@@ -137,6 +238,7 @@ export type Database = {
       email_sends: {
         Row: {
           body: string | null
+          campaign_id: string | null
           click_rate: number | null
           id: string
           open_rate: number | null
@@ -152,6 +254,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          campaign_id?: string | null
           click_rate?: number | null
           id?: string
           open_rate?: number | null
@@ -167,6 +270,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          campaign_id?: string | null
           click_rate?: number | null
           id?: string
           open_rate?: number | null
@@ -180,7 +284,15 @@ export type Database = {
           subject?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "email_sends_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       goal_entries: {
         Row: {
@@ -396,6 +508,7 @@ export type Database = {
       }
       social_posts: {
         Row: {
+          campaign_id: string | null
           canva_design_id: string | null
           content_by_platform: Json
           created_at: string
@@ -415,6 +528,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          campaign_id?: string | null
           canva_design_id?: string | null
           content_by_platform?: Json
           created_at?: string
@@ -434,6 +548,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          campaign_id?: string | null
           canva_design_id?: string | null
           content_by_platform?: Json
           created_at?: string
@@ -452,7 +567,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "social_posts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       strategies: {
         Row: {
