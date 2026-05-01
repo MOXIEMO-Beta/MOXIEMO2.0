@@ -236,8 +236,38 @@ export default function Social() {
           }}
         />
       )}
-      {activeTab === "library" && <ComingSoonTab label="Library" />}
-      
+      {activeTab === "library" && (
+        <LibraryTab
+          userId={user?.id ?? null}
+          onEditPost={(id) => {
+            setEditPostId(id);
+            const next = new URLSearchParams(searchParams);
+            next.set("editPostId", id);
+            setSearchParams(next, { replace: true });
+            setActiveTab("create");
+          }}
+          onUseImage={(url) => {
+            const next = new URLSearchParams(searchParams);
+            next.set("imageUrl", url);
+            setSearchParams(next, { replace: true });
+            setActiveTab("create");
+          }}
+          onUseTemplate={(body, personalize) => {
+            setCreatePrefill(body);
+            const next = new URLSearchParams(searchParams);
+            next.set("templateBody", body);
+            if (personalize) next.set("personalize", "1");
+            setSearchParams(next, { replace: true });
+            setActiveTab("create");
+          }}
+          onUseInspiration={(body) => {
+            const topic = `Inspired by: ${body.slice(0, 80)}`;
+            setCreatePrefill(topic);
+            setActiveTab("create");
+          }}
+          onCreateNew={() => setActiveTab("create")}
+        />
+      )}
       {activeTab === "reports" && <ComingSoonTab label="Reports" />}
     </div>
   );
