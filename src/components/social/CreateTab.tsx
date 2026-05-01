@@ -1327,6 +1327,7 @@ export default function CreateTab({
                   );
                 })}
               </Tabs>
+              </>
             )}
 
             {/* Media row */}
