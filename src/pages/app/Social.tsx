@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import CreateTab from "@/components/social/CreateTab";
 
 type SocialConnection = {
   id: string;
@@ -127,6 +128,22 @@ export default function Social() {
   // Pre-filled topic when navigating to Create tab from an idea
   const [createPrefill, setCreatePrefill] = useState<string>("");
 
+  // LinkedIn connection state shared across tabs
+  const [isLinkedInConnected, setIsLinkedInConnected] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("social_connections")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("platform", "linkedin")
+        .maybeSingle();
+      setIsLinkedInConnected(!!data);
+    })();
+  }, [user?.id]);
+
   // Handle ?connected=linkedin & ?error
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -183,7 +200,13 @@ export default function Social() {
       </div>
 
       {activeTab === "overview" && <OverviewTab userId={user?.id ?? null} onCreateFromIdea={goCreateWithIdea} onSwitchTab={setActiveTab} />}
-      {activeTab === "create" && <ComingSoonTab label="Create" prefill={createPrefill} />}
+      {activeTab === "create" && (
+        <CreateTab
+          userId={user?.id ?? null}
+          prefillTopic={createPrefill}
+          isLinkedInConnected={isLinkedInConnected}
+        />
+      )}
       {activeTab === "calendar" && <ComingSoonTab label="Calendar" />}
       {activeTab === "library" && <ComingSoonTab label="Library" />}
       {activeTab === "reports" && <ComingSoonTab label="Reports" />}
