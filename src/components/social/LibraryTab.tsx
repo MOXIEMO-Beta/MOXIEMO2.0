@@ -106,10 +106,11 @@ const SORT_LABELS: Record<SortKey, string> = {
   status: "Status",
 };
 
-const MOXIE_TEMPLATES: { id: string; title: string; body: string }[] = [
+const MOXIE_TEMPLATES: { id: string; title: string; bestFor: string; body: string }[] = [
   {
     id: "framework",
     title: "Framework post",
+    bestFor: "All founders",
     body: `Most [ideal clients] get [pain point] wrong.
 
 Here's what they miss:
@@ -125,6 +126,7 @@ Which of these resonates most with where you are right now?`,
   {
     id: "transformation",
     title: "Client transformation",
+    bestFor: "Coaches + Consultants",
     body: `[Client type] came to me [time period] ago.
 
 They were [pain point].
@@ -138,6 +140,7 @@ If you're still [pain point], this is your sign.`,
   {
     id: "unpopular",
     title: "Unpopular opinion",
+    bestFor: "All founders",
     body: `Unpopular opinion: [Contrarian take related to your positioning].
 
 Here's why I believe this:
@@ -147,6 +150,80 @@ Here's why I believe this:
 [Specific example or proof]
 
 Do you agree or disagree? Tell me below.`,
+  },
+  {
+    id: "expertise-tax",
+    title: "The Expertise Tax",
+    bestFor: "Consultants + Fractional Execs",
+    body: `You're leaving money on the table.
+
+Not because you lack expertise.
+Because no one can see it.
+
+[X years] of [expertise area] — and your online presence
+says nothing about what you actually know.
+
+Here's what that costs you:
+
+→ Prospects who can't tell you apart from someone
+  with half your experience
+→ Discovery calls where you spend 20 minutes
+  proving your credibility before the real conversation starts
+→ Clients who choose someone louder over someone better
+
+Your expertise isn't the problem.
+Your positioning is.
+
+What would change if your ideal clients could see
+exactly what you're capable of before they ever talk to you?`,
+  },
+  {
+    id: "tool-chaos",
+    title: "The Tool Chaos Reality",
+    bestFor: "All expertise-based founders",
+    body: `My marketing stack last year:
+
+[Tool 1]. [Tool 2]. [Tool 3].
+[Tool 4]. [Tool 5]. [Tool 6].
+
+Hours spent managing them: too many.
+Hours spent on actual strategy: not enough.
+Clients acquired from all that effort: [honest number].
+
+The problem wasn't the tools.
+It was that I was running the tools instead of running the business.
+
+The shift happened when I stopped asking
+"what tool do I need?" and started asking
+"what strategy should the tools serve?"
+
+What does your marketing stack actually look like right now?`,
+  },
+  {
+    id: "revenue-milestone",
+    title: "The Revenue Milestone Reframe",
+    bestFor: "$600K–2M founders",
+    body: `$[revenue milestone] felt like it would change everything.
+
+It did — just not in the way I expected.
+
+I thought hitting that number meant I'd finally feel like
+I had it figured out.
+
+Instead I felt:
+→ More visible but less clear on my message
+→ More clients but less sure who I actually wanted to serve
+→ More revenue but more time on things that drained me
+
+The messy middle is real.
+
+Revenue proves you can sell.
+It doesn't automatically give you positioning, clarity, or direction.
+
+That work is different — and it's the work most high-earners skip.
+
+Are you in the messy middle right now?
+What does it actually feel like from the inside?`,
   },
 ];
 
@@ -932,6 +1009,9 @@ function TemplatesSection({
               <Badge className="absolute right-3 top-3 bg-[#FFF0F0] text-[#E85D5D]">MOXIE</Badge>
               <div className="flex flex-1 flex-col gap-2 p-4 pt-5">
                 <p className="text-sm font-semibold text-foreground">{t.title}</p>
+                <span className="inline-flex w-fit items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  Best for: {t.bestFor}
+                </span>
                 <p className="line-clamp-6 whitespace-pre-line text-xs text-muted-foreground">{t.body}</p>
               </div>
               <div className="border-t border-border p-2">
