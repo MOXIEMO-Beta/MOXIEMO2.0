@@ -32,6 +32,52 @@ const stripModeTag = (text: string) => text.replace(MODE_TAG_RE, "").trimEnd();
 
 type UserContext = { firstName?: string; role?: string; businessName?: string };
 
+const REVENUE_OPTIONS = ["Under $100K", "$100K–$300K", "$300K–$600K", "$600K–$1M", "$1M–$2M", "$2M+"];
+const CHALLENGE_OPTIONS = [
+  "Getting visible to the right people",
+  "Converting leads into clients",
+  "Creating content consistently",
+  "Clarifying my message",
+  "Managing too many marketing tools",
+  "Not enough time for marketing",
+  "Not sure where to focus",
+];
+
+function isSkip(text: string) {
+  return /^\s*skip\b/i.test(text.trim());
+}
+
+function matchOption(text: string, options: string[]): string | undefined {
+  const t = text.toLowerCase().trim();
+  for (const opt of options) {
+    if (t.includes(opt.toLowerCase())) return opt;
+  }
+  return undefined;
+}
+
+// Walk the transcript: when an assistant message contains a Q14/Q15 cue,
+// the next user reply (if not a skip) is the answer.
+function extractOptionalAnswers(history: Msg[]): { revenueRange?: string; biggestChallenge?: string } {
+  let revenueRange: string | undefined;
+  let biggestChallenge: string | undefined;
+  for (let i = 0; i < history.length - 1; i++) {
+    const m = history[i];
+    if (m.role !== "assistant") continue;
+    const content = stripModeTag(m.content).toLowerCase();
+    const next = history[i + 1];
+    if (next?.role !== "user") continue;
+    const reply = next.content;
+    if (isSkip(reply)) continue;
+    if (!revenueRange && /annual revenue|revenue range|approximate annual/.test(content)) {
+      revenueRange = matchOption(reply, REVENUE_OPTIONS) || reply.trim().slice(0, 60);
+    }
+    if (!biggestChallenge && /biggest (marketing )?challenge/.test(content)) {
+      biggestChallenge = matchOption(reply, CHALLENGE_OPTIONS) || reply.trim().slice(0, 120);
+    }
+  }
+  return { revenueRange, biggestChallenge };
+}
+
 export default function Discovery() {
   const { user } = useAuth();
   const navigate = useNavigate();
