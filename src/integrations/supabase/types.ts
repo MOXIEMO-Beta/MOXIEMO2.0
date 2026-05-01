@@ -215,6 +215,59 @@ export type Database = {
         }
         Relationships: []
       }
+      social_analytics: {
+        Row: {
+          comments: number
+          engagement_rate: number
+          fetched_at: string
+          id: string
+          impressions: number
+          likes: number
+          platform: string
+          post_id: string | null
+          raw_data: Json
+          reach: number
+          shares: number
+          user_id: string
+        }
+        Insert: {
+          comments?: number
+          engagement_rate?: number
+          fetched_at?: string
+          id?: string
+          impressions?: number
+          likes?: number
+          platform: string
+          post_id?: string | null
+          raw_data?: Json
+          reach?: number
+          shares?: number
+          user_id: string
+        }
+        Update: {
+          comments?: number
+          engagement_rate?: number
+          fetched_at?: string
+          id?: string
+          impressions?: number
+          likes?: number
+          platform?: string
+          post_id?: string | null
+          raw_data?: Json
+          reach?: number
+          shares?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_analytics_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "social_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       social_connections: {
         Row: {
           access_token: string | null
@@ -250,6 +303,54 @@ export type Database = {
           profile_name?: string | null
           profile_url?: string | null
           refresh_token?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      social_posts: {
+        Row: {
+          canva_design_id: string | null
+          content_by_platform: Json
+          created_at: string
+          id: string
+          media_urls: Json
+          pillar: string | null
+          platform_post_ids: Json
+          platforms: string[]
+          published_at: string | null
+          scheduled_for: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          canva_design_id?: string | null
+          content_by_platform?: Json
+          created_at?: string
+          id?: string
+          media_urls?: Json
+          pillar?: string | null
+          platform_post_ids?: Json
+          platforms?: string[]
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          canva_design_id?: string | null
+          content_by_platform?: Json
+          created_at?: string
+          id?: string
+          media_urls?: Json
+          pillar?: string | null
+          platform_post_ids?: Json
+          platforms?: string[]
+          published_at?: string | null
+          scheduled_for?: string | null
+          status?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
