@@ -412,31 +412,6 @@ export default function Dashboard() {
   const completedSteps = setupSteps.filter((s) => s.done).length;
   const setupProgress = Math.round((completedSteps / setupSteps.length) * 100);
 
-  async function testConnection() {
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const { data: { session } } = await supabase.auth.getSession();
-      const resp = await fetch(`${supabaseUrl}/functions/v1/discovery-chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.access_token ?? supabaseKey}`,
-          apikey: supabaseKey ?? "",
-        },
-        body: JSON.stringify({ messages: [], userContext: { firstName: "Test", role: "Founder" } }),
-      });
-      if (!resp.ok) {
-        const text = await resp.text();
-        toast.error(`Connection test failed: ${resp.status}`, { description: text.slice(0, 200) });
-      } else {
-        toast.success(`Connection test passed: ${resp.status}`);
-      }
-    } catch (e: any) {
-      toast.error("Connection test threw an error", { description: e?.message });
-    }
-  }
-
   if (loading) {
     return (
       <div className="px-6 lg:px-10 py-12 max-w-7xl mx-auto">
@@ -571,17 +546,6 @@ export default function Dashboard() {
                         <ArrowRight className="h-4 w-4 text-accent flex-shrink-0 mt-1 group-hover:translate-x-0.5 transition" />
                       )}
                     </Link>
-                    {step.label === "Run MOXIE Discovery" && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={testConnection}
-                        className="ml-12 mt-1 h-7 px-2 text-xs"
-                      >
-                        Test connection
-                      </Button>
-                    )}
                   </li>
                 ))}
               </ol>
