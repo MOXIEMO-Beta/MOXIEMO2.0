@@ -22,6 +22,7 @@ import { ContentTab } from "@/components/strategy/tabs/ContentTab";
 import { ChannelsTab } from "@/components/strategy/tabs/ChannelsTab";
 import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
 import { ActionPlanTab } from "@/components/strategy/tabs/ActionPlanTab";
+import { CompetitiveAndMessagingSections } from "@/components/strategy/CompetitiveAndMessagingSections";
 
 const TAB_PLACEHOLDER = (label: string) => (
   <Card className="p-10 border-dashed border-border bg-background text-center">
@@ -810,6 +811,7 @@ function StrategyContent({ reportData }: { reportData?: any }) {
         <TabsContent value="metrics" className="mt-0"><MetricsTab /></TabsContent>
         <TabsContent value="action" className="mt-0"><ActionPlanTab /></TabsContent>
       </Tabs>
+      <CompetitiveAndMessagingSections />
       </div>
 
       <RefineSectionDialog
