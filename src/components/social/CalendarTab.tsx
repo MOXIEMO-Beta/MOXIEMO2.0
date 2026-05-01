@@ -879,6 +879,7 @@ function MonthGrid({
   postsByDay,
   dayRefs,
   onSelectPost,
+  onDayClick,
   onAddAtDate,
   onDragStart,
   onDragEnd,
@@ -891,6 +892,7 @@ function MonthGrid({
   postsByDay: Map<string, SocialPost[]>;
   dayRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   onSelectPost: (p: SocialPost) => void;
+  onDayClick: (d: Date) => void;
   onAddAtDate: (d: Date) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>, p: SocialPost) => void;
   onDragEnd: () => void;
@@ -922,11 +924,12 @@ function MonthGrid({
             <div
               key={key}
               ref={(el) => (dayRefs.current[key] = el)}
+              onClick={() => onDayClick(d)}
               onDragOver={(e) => onDragOverDay(e, key)}
               onDragLeave={() => null}
               onDrop={(e) => handleDropOnDay(e, d)}
               className={cn(
-                "group relative min-h-[110px] border-b border-r border-border p-1.5 text-xs",
+                "group relative min-h-[110px] cursor-pointer border-b border-r border-border p-1.5 text-xs hover:bg-muted/30",
                 !inMonth && "bg-muted/20 text-muted-foreground/50",
                 isDragOver && "ring-2 ring-inset ring-[#ff6b6b]",
               )}
@@ -949,13 +952,25 @@ function MonthGrid({
               </div>
               <div className="space-y-1">
                 {visible.map((p) => (
-                  <PostChip key={p.id} post={p} onClick={() => onSelectPost(p)} onDragStart={(e) => onDragStart(e, p)} onDragEnd={onDragEnd} />
+                  <PostChip
+                    key={p.id}
+                    post={p}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectPost(p);
+                    }}
+                    onDragStart={(e) => onDragStart(e, p)}
+                    onDragEnd={onDragEnd}
+                  />
                 ))}
                 {overflow > 0 && (
                   <button
                     type="button"
                     className="block w-full text-left text-[10px] text-muted-foreground hover:text-foreground"
-                    onClick={() => onSelectPost(dayPosts[2])}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectPost(dayPosts[2]);
+                    }}
                   >
                     + {overflow} more
                   </button>
@@ -964,7 +979,10 @@ function MonthGrid({
               {inMonth && dayPosts.length === 0 && (
                 <button
                   type="button"
-                  onClick={() => onAddAtDate(d)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddAtDate(d);
+                  }}
                   className="absolute bottom-1 right-1 hidden items-center gap-0.5 rounded border border-dashed border-border px-1.5 py-0.5 text-[9px] text-muted-foreground hover:border-[#ff6b6b] hover:text-[#ff6b6b] group-hover:flex"
                 >
                   <Plus className="h-2.5 w-2.5" /> Add
