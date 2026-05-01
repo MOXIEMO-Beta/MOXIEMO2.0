@@ -128,6 +128,22 @@ export default function Social() {
   // Pre-filled topic when navigating to Create tab from an idea
   const [createPrefill, setCreatePrefill] = useState<string>("");
 
+  // LinkedIn connection state shared across tabs
+  const [isLinkedInConnected, setIsLinkedInConnected] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("social_connections")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("platform", "linkedin")
+        .maybeSingle();
+      setIsLinkedInConnected(!!data);
+    })();
+  }, [user?.id]);
+
   // Handle ?connected=linkedin & ?error
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -188,7 +204,7 @@ export default function Social() {
         <CreateTab
           userId={user?.id ?? null}
           prefillTopic={createPrefill}
-          isLinkedInConnected={false /* set by overview load — see below */}
+          isLinkedInConnected={isLinkedInConnected}
         />
       )}
       {activeTab === "calendar" && <ComingSoonTab label="Calendar" />}
