@@ -226,7 +226,7 @@ export default function Dashboard() {
                   Set up your engine.
                 </h2>
                 <p className="text-background/70 text-lg font-light mb-7 max-w-md">
-                  Four steps. About 45 minutes total. Then MOXIE runs the rest.
+                  Four steps. About 15-20 minutes total. Then MOXIE runs the rest.
                 </p>
                 <div className="flex items-center gap-4 mb-2">
                   <div className="flex-1 h-1.5 rounded-full bg-background/15 overflow-hidden">
