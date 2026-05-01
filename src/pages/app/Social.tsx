@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import CreateTab from "@/components/social/CreateTab";
 import CalendarTab from "@/components/social/CalendarTab";
 import LibraryTab from "@/components/social/LibraryTab";
+import ReportsTab from "@/components/social/ReportsTab";
 
 type SocialConnection = {
   id: string;
@@ -268,7 +269,21 @@ export default function Social() {
           onCreateNew={() => setActiveTab("create")}
         />
       )}
-      {activeTab === "reports" && <ComingSoonTab label="Reports" />}
+      {activeTab === "reports" && (
+        <ReportsTab
+          userId={user?.id ?? null}
+          onSwitchTab={setActiveTab}
+          onRepurposePost={(topic) => {
+            setCreatePrefill(topic);
+          }}
+          onCreateWithPillar={(pillar) => {
+            setCreatePillar(pillar);
+            const next = new URLSearchParams(searchParams);
+            next.set("pillar", pillar);
+            setSearchParams(next, { replace: true });
+          }}
+        />
+      )}
     </div>
   );
 }
