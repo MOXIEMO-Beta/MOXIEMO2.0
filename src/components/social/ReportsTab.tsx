@@ -241,7 +241,7 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
     if (platformFilter === "all") return true;
     return (p.platforms || []).includes(platformFilter);
   };
-  const inRange = (iso: string | null, r = range) => {
+  const inRange = (iso: string | null, r: { from: Date; to: Date } = range) => {
     if (!iso) return false;
     const d = new Date(iso);
     return d >= r.from && d <= r.to;
