@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MoxieLogo } from "@/components/MoxieLogo";
-import { ArrowUp, Sparkles, CheckCircle2, Loader2, RotateCcw } from "lucide-react";
+import { ArrowUp, Sparkles, CheckCircle2, Loader2, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -24,6 +24,9 @@ const stripModeTag = (text: string) => text.replace(MODE_TAG_RE, "").trimEnd();
 export default function Discovery() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [welcomeName, setWelcomeName] = useState<string>("");
+  const [showWelcome, setShowWelcome] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,6 +43,26 @@ export default function Discovery() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!user) return;
+    const flag = searchParams.get("welcome") === "true";
+    const dismissed = sessionStorage.getItem("welcome_dismissed") === "true";
+    if (flag && !dismissed) {
+      setShowWelcome(true);
+      supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle().then(({ data }) => {
+        setWelcomeName((data?.full_name || "").split(" ")[0] || "");
+      });
+    }
+  }, [user, searchParams]);
+
+  function dismissWelcome() {
+    sessionStorage.setItem("welcome_dismissed", "true");
+    setShowWelcome(false);
+    const next = new URLSearchParams(searchParams);
+    next.delete("welcome");
+    setSearchParams(next, { replace: true });
+  }
 
   // load or start session
   useEffect(() => {
@@ -190,6 +213,22 @@ export default function Discovery() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+      {showWelcome && (
+        <div className="border-b border-border bg-accent/5 px-6 lg:px-10 py-4">
+          <div className="max-w-3xl mx-auto flex items-start gap-3">
+            <span className="text-xl">🎉</span>
+            <div className="flex-1">
+              <p className="font-medium">Welcome to MOXIE{welcomeName ? `, ${welcomeName}` : ""}!</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Your account is ready. The best place to start is your marketing strategy — everything in MOXIE flows from here. Let's build it together.
+              </p>
+            </div>
+            <button onClick={dismissWelcome} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
       {/* Top progress */}
       <div className="border-b border-border bg-background px-6 lg:px-10 py-4">
         <div className="flex items-center justify-between mb-3">
