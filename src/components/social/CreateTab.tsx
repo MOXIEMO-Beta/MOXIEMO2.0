@@ -26,6 +26,10 @@ import {
   Repeat2,
   Heart,
   Share2,
+  Wand2,
+  ArrowRight,
+  History,
+  Bot,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -59,6 +63,7 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
 type Strategy = {
@@ -187,6 +192,153 @@ export default function CreateTab({
   });
   const [hashtagsLoading, setHashtagsLoading] = useState<Platform | null>(null);
   const [activeComposerTab, setActiveComposerTab] = useState<Platform>("linkedin");
+
+  // AI editing — selection toolbar, instruction input, version history
+  const textareaRefs = useRef<Record<Platform, HTMLTextAreaElement | null>>({
+    linkedin: null,
+    facebook: null,
+    instagram: null,
+  });
+  const [selToolbar, setSelToolbar] = useState<{
+    platform: Platform;
+    top: number;
+    left: number;
+    start: number;
+    end: number;
+    text: string;
+  } | null>(null);
+  const [aiEditing, setAiEditing] = useState<string | null>(null); // action key while loading
+  const [instructionInput, setInstructionInput] = useState<Record<Platform, string>>({
+    linkedin: "",
+    facebook: "",
+    instagram: "",
+  });
+  const [postHistory, setPostHistory] = useState<Record<Platform, string[]>>({
+    linkedin: [],
+    facebook: [],
+    instagram: [],
+  });
+
+  function pushHistory(p: Platform, prevValue: string) {
+    if (prevValue === undefined || prevValue === null) return;
+    setPostHistory((prev) => {
+      const list = prev[p] ?? [];
+      // skip if identical to most recent
+      if (list[list.length - 1] === prevValue) return prev;
+      const next = [...list, prevValue];
+      while (next.length > 5) next.shift();
+      return { ...prev, [p]: next };
+    });
+  }
+
+  function restoreVersion(p: Platform, index: number) {
+    const list = postHistory[p] ?? [];
+    const v = list[index];
+    if (v === undefined) return;
+    pushHistory(p, content[p]);
+    setContent((prev) => ({ ...prev, [p]: v }));
+    toast.success("Version restored");
+  }
+
+  function handleTextareaSelection(p: Platform) {
+    const el = textareaRefs.current[p];
+    if (!el) return;
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    const sel = el.value.slice(start, end).trim();
+    if (!sel) {
+      setSelToolbar(null);
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    // approximate position: top of textarea + small offset, centered horizontally on cursor
+    const top = rect.top + window.scrollY - 44;
+    const left = rect.left + window.scrollX + Math.min(rect.width - 280, Math.max(0, rect.width / 2 - 140));
+    setSelToolbar({ platform: p, top, left, start, end, text: el.value.slice(start, end) });
+  }
+
+  // dismiss toolbar on outside click / escape
+  useEffect(() => {
+    if (!selToolbar) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setSelToolbar(null);
+    }
+    function onDown(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (target.closest("[data-ai-toolbar]")) return;
+      if (target.tagName === "TEXTAREA") return;
+      setSelToolbar(null);
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [selToolbar]);
+
+  function showUndoToast(p: Platform, previousValue: string) {
+    toast.success("✓ Applied — review the changes before publishing", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          setContent((prev) => ({ ...prev, [p]: previousValue }));
+        },
+      },
+    });
+  }
+
+  async function applyAiEdit(opts: {
+    platform: Platform;
+    action: "improve" | "shorter" | "longer" | "punchier" | "rewrite" | "instruction";
+    selectedText: string;
+    fullPost: string;
+    instruction?: string;
+    replaceRange?: { start: number; end: number } | null;
+  }) {
+    const { platform, action, selectedText, fullPost, instruction, replaceRange } = opts;
+    setAiEditing(action);
+    try {
+      const { data, error } = await supabase.functions.invoke("edit-social-post", {
+        body: {
+          action,
+          selectedText,
+          fullPost,
+          platform,
+          strategy: strategy ?? {},
+          instruction,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const newText: string = String(data?.text ?? "").trim();
+      if (!newText) throw new Error("Empty response");
+
+      const previous = content[platform];
+      pushHistory(platform, previous);
+
+      if (replaceRange) {
+        const next =
+          fullPost.slice(0, replaceRange.start) + newText + fullPost.slice(replaceRange.end);
+        setContent((prev) => ({ ...prev, [platform]: next }));
+        toast.success("✓ Updated", {
+          action: { label: "Undo", onClick: () => setContent((prev) => ({ ...prev, [platform]: previous })) },
+        });
+      } else {
+        setContent((prev) => ({ ...prev, [platform]: newText }));
+        showUndoToast(platform, previous);
+      }
+      setSelToolbar(null);
+      if (action === "instruction") {
+        setInstructionInput((prev) => ({ ...prev, [platform]: "" }));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Edit failed", { description: (err as Error).message });
+    } finally {
+      setAiEditing(null);
+    }
+  }
 
   // Media
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
@@ -317,6 +469,10 @@ export default function CreateTab({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const posts = (data?.posts ?? {}) as Record<string, string>;
+      // push previous versions to history before overwriting
+      for (const p of platforms) {
+        if (content[p]) pushHistory(p, content[p]);
+      }
       setContent((prev) => ({
         linkedin: platforms.includes("linkedin") ? posts.linkedin || prev.linkedin : prev.linkedin,
         facebook: platforms.includes("facebook") ? posts.facebook || prev.facebook : prev.facebook,
@@ -828,10 +984,67 @@ export default function CreateTab({
                       : "text-emerald-600";
                   return (
                     <TabsContent key={p} value={p} className="space-y-3">
+                      {/* History link */}
+                      <div className="flex items-center justify-end">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              disabled={(postHistory[p]?.length ?? 0) === 0}
+                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
+                            >
+                              <History className="h-3 w-3" /> History
+                              {postHistory[p]?.length > 0 && (
+                                <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px]">
+                                  {postHistory[p].length}
+                                </span>
+                              )}
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent align="end" className="w-80 p-2">
+                            <p className="px-2 pb-1 text-xs font-semibold">Previous versions</p>
+                            <div className="max-h-72 space-y-1 overflow-y-auto">
+                              {(postHistory[p] ?? []).length === 0 ? (
+                                <p className="px-2 py-3 text-xs text-muted-foreground">
+                                  No previous versions yet.
+                                </p>
+                              ) : (
+                                postHistory[p].map((v, i) => (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => restoreVersion(p, i)}
+                                    className="block w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/40"
+                                  >
+                                    <span className="font-medium">
+                                      Version {i + 1}
+                                      {i === 0 ? " (original)" : ""}
+                                    </span>
+                                    <span className="block truncate text-muted-foreground">
+                                      {v.slice(0, 80) || "(empty)"}
+                                    </span>
+                                  </button>
+                                ))
+                              )}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
                       <div className="relative">
                         <Textarea
+                          ref={(el) => {
+                            textareaRefs.current[p] = el;
+                          }}
                           value={text}
                           onChange={(e) => setContent((prev) => ({ ...prev, [p]: e.target.value }))}
+                          onMouseUp={() => handleTextareaSelection(p)}
+                          onTouchEnd={() => handleTextareaSelection(p)}
+                          onKeyUp={(e) => {
+                            if (e.shiftKey || e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
+                              handleTextareaSelection(p);
+                            }
+                          }}
                           placeholder={`Write your ${PLATFORM_LABEL[p]} post…`}
                           rows={10}
                           className="resize-y"
@@ -839,6 +1052,53 @@ export default function CreateTab({
                         <div className={cn("absolute bottom-2 right-3 text-xs font-medium", counterColor)}>
                           {len} / {limit}
                         </div>
+                      </div>
+
+                      {/* AI instruction row */}
+                      <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2 py-1.5">
+                        <Bot className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        <Input
+                          value={instructionInput[p]}
+                          onChange={(e) =>
+                            setInstructionInput((prev) => ({ ...prev, [p]: e.target.value }))
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && instructionInput[p].trim() && text.trim() && aiEditing === null) {
+                              e.preventDefault();
+                              void applyAiEdit({
+                                platform: p,
+                                action: "instruction",
+                                selectedText: text,
+                                fullPost: text,
+                                instruction: instructionInput[p].trim(),
+                              });
+                            }
+                          }}
+                          placeholder="Ask MOXIE to change something…"
+                          className="h-8 border-0 bg-transparent text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs"
+                          disabled={!instructionInput[p].trim() || !text.trim() || aiEditing !== null}
+                          onClick={() =>
+                            applyAiEdit({
+                              platform: p,
+                              action: "instruction",
+                              selectedText: text,
+                              fullPost: text,
+                              instruction: instructionInput[p].trim(),
+                            })
+                          }
+                        >
+                          {aiEditing === "instruction" ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          )}
+                          Apply
+                        </Button>
                       </div>
 
                       {/* Hashtag row */}
@@ -1078,6 +1338,62 @@ export default function CreateTab({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Floating AI selection toolbar */}
+      {selToolbar && (
+        <div
+          data-ai-toolbar
+          style={{
+            position: "absolute",
+            top: selToolbar.top,
+            left: selToolbar.left,
+            zIndex: 60,
+          }}
+          className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-lg"
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {([
+            { key: "improve", label: "Improve", icon: <Wand2 className="h-3 w-3" /> },
+            { key: "shorter", label: "Shorter" },
+            { key: "longer", label: "Longer" },
+            { key: "punchier", label: "Punchier" },
+            { key: "rewrite", label: "Rewrite" },
+          ] as const).map((b) => (
+            <Button
+              key={b.key}
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-xs"
+              disabled={aiEditing !== null}
+              onClick={() => {
+                const fullPost = content[selToolbar.platform];
+                void applyAiEdit({
+                  platform: selToolbar.platform,
+                  action: b.key,
+                  selectedText: selToolbar.text,
+                  fullPost,
+                  replaceRange: { start: selToolbar.start, end: selToolbar.end },
+                });
+              }}
+            >
+              {aiEditing === b.key ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                ("icon" in b ? b.icon : null)
+              )}
+              {b.label}
+            </Button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setSelToolbar(null)}
+            className="ml-1 rounded p-1 text-muted-foreground hover:bg-muted"
+            aria-label="Close"
+          >
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      )}
     </TooltipProvider>
   );
 }
