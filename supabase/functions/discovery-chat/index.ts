@@ -102,7 +102,7 @@ serve(async (req) => {
       role: userContext?.role,
     });
 
-    const anthopicMessages = Array.isArray(messages) && messages.length > 0
+    const anthropicMessages = Array.isArray(messages) && messages.length > 0
       ? messages.map((m: any) => ({
           role: m.role,
           content: m.content,
@@ -121,7 +121,7 @@ serve(async (req) => {
         max_tokens: 1024,
         stream: true,
         system: systemPrompt,
-        messages: anthopicMessages,
+        messages: anthropicMessages,
       }),
     });
 
