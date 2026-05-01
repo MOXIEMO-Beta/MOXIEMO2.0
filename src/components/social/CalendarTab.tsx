@@ -191,9 +191,10 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
   });
   const [pillarFilter, setPillarFilter] = useState<Record<string, boolean>>({});
 
-  // selected post side panel
-  const [selectedPost, setSelectedPost] = useState<SocialPost | null>(null);
-  const [rescheduleOpen, setRescheduleOpen] = useState(false);
+  // day side panel
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [rescheduleForId, setRescheduleForId] = useState<string | null>(null);
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -381,6 +382,15 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
   };
 
   /* side panel actions */
+  const handleDayClick = (date: Date) => {
+    setSelectedDate(date);
+    setSidePanelOpen(true);
+    setRescheduleForId(null);
+  };
+  const closePanel = () => {
+    setSidePanelOpen(false);
+    setRescheduleForId(null);
+  };
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this post?")) return;
     setActionLoading("delete");
@@ -392,7 +402,6 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     }
     toast.success("Post deleted");
     setPosts((arr) => arr.filter((p) => p.id !== id));
-    setSelectedPost(null);
   };
   const handlePublishNow = async (post: SocialPost) => {
     if (!userId) return;
@@ -413,34 +422,48 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     }
     toast.success("Published");
     fetchPosts();
-    setSelectedPost(null);
   };
   const handleReschedule = async () => {
-    if (!selectedPost || !rescheduleDate || !rescheduleTime) return;
+    if (!rescheduleForId || !rescheduleDate || !rescheduleTime) return;
     const iso = new Date(`${rescheduleDate}T${rescheduleTime}:00`).toISOString();
     setActionLoading("reschedule");
     const { error } = await supabase
       .from("social_posts")
       .update({ scheduled_for: iso, status: "scheduled" })
-      .eq("id", selectedPost.id);
+      .eq("id", rescheduleForId);
     setActionLoading(null);
     if (error) {
       toast.error("Couldn't reschedule");
       return;
     }
     toast.success("Rescheduled");
-    setRescheduleOpen(false);
+    setRescheduleForId(null);
     fetchPosts();
-    setSelectedPost(null);
   };
 
-  const openPanelWithReschedule = (p: SocialPost) => {
-    setSelectedPost(p);
+  const openReschedule = (p: SocialPost) => {
+    setRescheduleForId(p.id);
     const d = postDate(p) ?? new Date();
     setRescheduleDate(ymd(d));
     setRescheduleTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
-    setRescheduleOpen(false);
   };
+  // Clicking a post chip opens the same day panel as clicking the day cell.
+  const handleSelectPost = (p: SocialPost) => {
+    const d = postDate(p) ?? new Date();
+    handleDayClick(d);
+  };
+
+  const dayPosts = useMemo(() => {
+    if (!selectedDate) return [] as SocialPost[];
+    const key = ymd(selectedDate);
+    return posts
+      .filter((p) => {
+        const sk = p.scheduled_for ? ymd(new Date(p.scheduled_for)) : null;
+        const pk = p.published_at ? ymd(new Date(p.published_at)) : null;
+        return sk === key || pk === key;
+      })
+      .sort((a, b) => (postDate(a)?.getTime() ?? 0) - (postDate(b)?.getTime() ?? 0));
+  }, [selectedDate, posts]);
 
   /* mini calendar nav */
   const scrollToDay = (key: string) => {
