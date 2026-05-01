@@ -245,31 +245,48 @@ export default function CreateTab({
     facebook: false,
     instagram: false,
   });
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
-  const [placeholderFading, setPlaceholderFading] = useState(false);
-  const [placeholderPaused, setPlaceholderPaused] = useState(false);
+  const [suggestionsOpenFor, setSuggestionsOpenFor] = useState<Platform | null>(null);
+  const instructionRowRefs = useRef<Record<Platform, HTMLDivElement | null>>({
+    linkedin: null,
+    facebook: null,
+    instagram: null,
+  });
+  const instructionInputRefs = useRef<Record<Platform, HTMLInputElement | null>>({
+    linkedin: null,
+    facebook: null,
+    instagram: null,
+  });
 
-  const ROTATING_PLACEHOLDERS = [
-    "Ask MOXIE to change something… e.g. 'Make the hook more direct'",
-    "Try: 'Add a quote about clarity'",
-    "Try: 'Change the ending question to focus on revenue'",
-    "Try: 'Make this sound less formal'",
-    "Try: 'Add a client success example'",
-    "Try: 'Shorten the second paragraph'",
+  const ASK_MOXIE_SUGGESTIONS = [
+    "Make the hook more direct",
+    "Add a client success example",
+    "Change the ending question to focus on revenue",
+    "Make this sound less formal",
+    "Shorten the second paragraph",
+    "Add a statistic or data point",
+    "Make the opening line more provocative",
+    "Add a specific call to action",
   ];
 
-  // Rotate placeholder every 4s with fade
+  // Dismiss suggestions on outside click or Escape
   useEffect(() => {
-    if (placeholderPaused) return;
-    const id = setInterval(() => {
-      setPlaceholderFading(true);
-      setTimeout(() => {
-        setPlaceholderIndex((i) => (i + 1) % ROTATING_PLACEHOLDERS.length);
-        setPlaceholderFading(false);
-      }, 300);
-    }, 4000);
-    return () => clearInterval(id);
-  }, [placeholderPaused]);
+    if (!suggestionsOpenFor) return;
+    function handleClick(e: MouseEvent) {
+      const row = instructionRowRefs.current[suggestionsOpenFor!];
+      if (row && !row.contains(e.target as Node)) {
+        setSuggestionsOpenFor(null);
+      }
+    }
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setSuggestionsOpenFor(null);
+    }
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [suggestionsOpenFor]);
 
   // Auto-dismiss tip banner after 8s
   useEffect(() => {
@@ -1225,22 +1242,84 @@ export default function CreateTab({
                           style={{ fontSize: "11px", color: "#9b9faf" }}
                           className="-mt-1"
                         >
-                          💡 Select any text to edit it with MOXIE · Or use the command box below →
+                          💡 Select any text to edit it with MOXIE · Or click the command box below for suggestions →
                         </div>
                       )}
 
                       {/* AI instruction row */}
-                      <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2 py-1.5">
+                      <div
+                        ref={(el) => (instructionRowRefs.current[p] = el)}
+                        className="relative"
+                      >
+                        {suggestionsOpenFor === p && (
+                          <div
+                            className="absolute left-0 right-0 bottom-full mb-2 z-30 overflow-y-auto"
+                            style={{
+                              background: "#ffffff",
+                              border: "1px solid #ede8e0",
+                              borderRadius: "10px",
+                              boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+                              maxHeight: "200px",
+                            }}
+                          >
+                            <div
+                              style={{
+                                fontSize: "10px",
+                                color: "#9b9faf",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.08em",
+                                padding: "10px 12px 6px",
+                              }}
+                            >
+                              Try one of these:
+                            </div>
+                            {ASK_MOXIE_SUGGESTIONS.map((s) => (
+                              <button
+                                key={s}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  // prevent input blur before click handler runs
+                                  e.preventDefault();
+                                }}
+                                onClick={() => {
+                                  setInstructionInput((prev) => ({ ...prev, [p]: s }));
+                                  setSuggestionsOpenFor(null);
+                                  const el = instructionInputRefs.current[p];
+                                  if (el) {
+                                    requestAnimationFrame(() => {
+                                      el.focus();
+                                      const len = s.length;
+                                      try {
+                                        el.setSelectionRange(len, len);
+                                      } catch {}
+                                    });
+                                  }
+                                }}
+                                className="block w-full text-left transition-colors border-l-2 border-transparent hover:border-l-[#ff6b6b] hover:bg-[#fff5f5]"
+                                style={{
+                                  fontSize: "12px",
+                                  color: "#262833",
+                                  padding: "8px 12px",
+                                }}
+                              >
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2 py-1.5">
                         <Bot className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
                         <Input
+                          ref={(el) => (instructionInputRefs.current[p] = el)}
                           value={instructionInput[p]}
                           onChange={(e) =>
                             setInstructionInput((prev) => ({ ...prev, [p]: e.target.value }))
                           }
-                          onFocus={() => setPlaceholderPaused(true)}
+                          onFocus={() => setSuggestionsOpenFor(p)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && instructionInput[p].trim() && text.trim() && aiEditing === null) {
                               e.preventDefault();
+                              setSuggestionsOpenFor(null);
                               void applyAiEdit({
                                 platform: p,
                                 action: "instruction",
@@ -1250,26 +1329,24 @@ export default function CreateTab({
                               });
                             }
                           }}
-                          placeholder={ROTATING_PLACEHOLDERS[placeholderIndex]}
-                          className={cn(
-                            "h-8 border-0 bg-transparent text-xs focus-visible:ring-0 focus-visible:ring-offset-0 transition-opacity duration-300",
-                            placeholderFading && !instructionInput[p] && "placeholder:opacity-0",
-                          )}
+                          placeholder="Ask MOXIE to change something..."
+                          className="h-8 border-0 bg-transparent text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                         <Button
                           size="sm"
                           variant="ghost"
                           className="h-7 px-2 text-xs"
                           disabled={!instructionInput[p].trim() || !text.trim() || aiEditing !== null}
-                          onClick={() =>
+                          onClick={() => {
+                            setSuggestionsOpenFor(null);
                             applyAiEdit({
                               platform: p,
                               action: "instruction",
                               selectedText: text,
                               fullPost: text,
                               instruction: instructionInput[p].trim(),
-                            })
-                          }
+                            });
+                          }}
                         >
                           {aiEditing === "instruction" ? (
                             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -1278,6 +1355,7 @@ export default function CreateTab({
                           )}
                           Apply
                         </Button>
+                        </div>
                       </div>
 
                       {/* Hashtag row */}
