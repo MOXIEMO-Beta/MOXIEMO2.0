@@ -450,9 +450,11 @@ function OverviewTab({
         body: { strategy },
       });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      const ideas = (data?.ideas as PostIdea[]) ?? [];
-      if (ideas.length === 0) throw new Error("No ideas returned");
+      const ideas = (Array.isArray(data) ? data : data?.ideas ?? []) as PostIdea[];
+      if (ideas.length === 0) {
+        toast.error("Couldn't generate ideas", { description: "Try again in a moment" });
+        return;
+      }
       setAiIdeas(ideas);
       toast.success("Fresh ideas ready");
     } catch (err) {
