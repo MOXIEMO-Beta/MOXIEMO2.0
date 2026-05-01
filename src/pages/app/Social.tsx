@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import CreateTab from "@/components/social/CreateTab";
 
 type SocialConnection = {
   id: string;
@@ -183,7 +184,13 @@ export default function Social() {
       </div>
 
       {activeTab === "overview" && <OverviewTab userId={user?.id ?? null} onCreateFromIdea={goCreateWithIdea} onSwitchTab={setActiveTab} />}
-      {activeTab === "create" && <ComingSoonTab label="Create" prefill={createPrefill} />}
+      {activeTab === "create" && (
+        <CreateTab
+          userId={user?.id ?? null}
+          prefillTopic={createPrefill}
+          isLinkedInConnected={false /* set by overview load — see below */}
+        />
+      )}
       {activeTab === "calendar" && <ComingSoonTab label="Calendar" />}
       {activeTab === "library" && <ComingSoonTab label="Library" />}
       {activeTab === "reports" && <ComingSoonTab label="Reports" />}
