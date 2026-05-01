@@ -26,6 +26,10 @@ import {
   Repeat2,
   Heart,
   Share2,
+  Wand2,
+  ArrowRight,
+  History,
+  Bot,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
