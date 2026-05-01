@@ -4,6 +4,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const SYSTEM = `You are MOXIE, an AI Chief Marketing Officer generating social media content for an expertise-based founder.
+
+This founder sells their expertise — they may be a coach, consultant, fractional executive, or agency owner. Every post you write must:
+- Reflect their strategy, positioning, and voice
+- Speak to their ideal client's specific pain point
+- Sound like a thought leader, not a marketer
+- Build authority and trust with every word
+- Drive genuine engagement through specificity and questions`;
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -41,9 +50,7 @@ Deno.serve(async (req) => {
     }
 
     const s = strategy ?? {};
-    const prompt = `You are MOXIE, an AI Chief Marketing Officer generating social media posts.
-
-FOUNDER'S STRATEGY:
+    const prompt = `FOUNDER'S STRATEGY:
 Positioning: ${(s.positioning_statement as string) ?? "(not set)"}
 Ideal client: ${(s.ideal_client as string) ?? "(not set)"}
 Pain point: ${(s.pain_point as string) ?? "(not set)"}
@@ -88,6 +95,7 @@ For unrequested platforms, return an empty string.`;
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
         max_tokens: 2000,
+        system: SYSTEM,
         messages: [{ role: "user", content: prompt }],
       }),
     });
