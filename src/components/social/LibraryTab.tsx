@@ -126,7 +126,7 @@ Which of these resonates most with where you are right now?`,
   {
     id: "transformation",
     title: "Client transformation",
-    bestFor: "Coaches + Consultants",
+    bestFor: "All expertise-based founders",
     body: `[Client type] came to me [time period] ago.
 
 They were [pain point].
