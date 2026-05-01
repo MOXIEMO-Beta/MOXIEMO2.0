@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import CreateTab from "@/components/social/CreateTab";
 import CalendarTab from "@/components/social/CalendarTab";
 import LibraryTab from "@/components/social/LibraryTab";
+import ReportsTab from "@/components/social/ReportsTab";
 
 type SocialConnection = {
   id: string;
