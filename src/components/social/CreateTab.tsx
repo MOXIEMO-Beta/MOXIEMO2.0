@@ -1056,6 +1056,33 @@ export default function CreateTab({
                 Choose your focus, platforms, and format on the left to start composing.
               </div>
             ) : (
+              <>
+              {showTipBanner && (
+                <div
+                  role="status"
+                  className="relative flex items-start gap-3 rounded-md p-3 pr-10 animate-fade-in"
+                  style={{
+                    background: "#fff5f5",
+                    borderLeft: "4px solid #ff6b6b",
+                    color: "#262833",
+                    animation: "fade-in 300ms ease-in",
+                  }}
+                >
+                  <span aria-hidden className="text-lg leading-none">💡</span>
+                  <div className="flex-1 text-xs leading-relaxed">
+                    <div className="font-semibold mb-0.5">Pro tip: MOXIE can edit any part of your post</div>
+                    <div>Select any text to improve, shorten, or rewrite it. Or type a command below to change anything instantly.</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={dismissTipBanner}
+                    className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium hover:bg-white/60"
+                    style={{ color: "#262833" }}
+                  >
+                    Got it <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
               <Tabs
                 value={activeComposerTab}
                 onValueChange={(v) => setActiveComposerTab(v as Platform)}
@@ -1088,6 +1115,9 @@ export default function CreateTab({
                           <PopoverTrigger asChild>
                             <button
                               type="button"
+                              onClick={() =>
+                                setHistoryPulse((prev) => ({ ...prev, [p]: false }))
+                              }
                               disabled={(postHistory[p]?.length ?? 0) === 0}
                               className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
                             >
@@ -1096,6 +1126,16 @@ export default function CreateTab({
                                 <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px]">
                                   {postHistory[p].length}
                                 </span>
+                              )}
+                              {historyPulse[p] && (
+                                <span
+                                  aria-hidden
+                                  className="ml-1 inline-block h-1.5 w-1.5 rounded-full"
+                                  style={{
+                                    backgroundColor: "#ff6b6b",
+                                    animation: "moxie-pulse 800ms ease-in-out 3",
+                                  }}
+                                />
                               )}
                             </button>
                           </PopoverTrigger>
@@ -1135,7 +1175,18 @@ export default function CreateTab({
                             textareaRefs.current[p] = el;
                           }}
                           value={text}
-                          onChange={(e) => setContent((prev) => ({ ...prev, [p]: e.target.value }))}
+                          onChange={(e) => {
+                            setContent((prev) => ({ ...prev, [p]: e.target.value }));
+                            if (!hasEdited[p]) {
+                              setHasEdited((prev) => ({ ...prev, [p]: true }));
+                              if (text && !focusHint[p]) {
+                                setFocusHint((prev) => ({ ...prev, [p]: true }));
+                                setTimeout(() => {
+                                  setFocusHint((prev) => ({ ...prev, [p]: false }));
+                                }, 2000);
+                              }
+                            }
+                          }}
                           onMouseUp={() => handleTextareaSelection(p)}
                           onTouchEnd={() => handleTextareaSelection(p)}
                           onKeyUp={(e) => {
@@ -1145,12 +1196,38 @@ export default function CreateTab({
                           }}
                           placeholder={`Write your ${PLATFORM_LABEL[p]} post…`}
                           rows={10}
-                          className="resize-y"
+                          className={cn(
+                            "resize-y transition-colors duration-500",
+                            textareaFlash[p] && "bg-[#fff0f0]",
+                          )}
                         />
                         <div className={cn("absolute bottom-2 right-3 text-xs font-medium", counterColor)}>
                           {len} / {limit}
                         </div>
+                        {focusHint[p] && (
+                          <div
+                            className="pointer-events-none absolute right-2 top-2 rounded-md border bg-white px-2.5 py-1.5 shadow-sm animate-fade-in"
+                            style={{
+                              borderColor: "#ff6b6b",
+                              fontSize: "12px",
+                              color: "#262833",
+                            }}
+                          >
+                            <div className="font-medium">✨ Try selecting text</div>
+                            <div className="text-[11px] text-muted-foreground">to edit with MOXIE</div>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Persistent helper hint (after tip banner dismissed) */}
+                      {tipDismissed && (
+                        <div
+                          style={{ fontSize: "11px", color: "#9b9faf" }}
+                          className="-mt-1"
+                        >
+                          💡 Select any text to edit it with MOXIE · Or use the command box below →
+                        </div>
+                      )}
 
                       {/* AI instruction row */}
                       <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2 py-1.5">
@@ -1160,6 +1237,7 @@ export default function CreateTab({
                           onChange={(e) =>
                             setInstructionInput((prev) => ({ ...prev, [p]: e.target.value }))
                           }
+                          onFocus={() => setPlaceholderPaused(true)}
                           onKeyDown={(e) => {
                             if (e.key === "Enter" && instructionInput[p].trim() && text.trim() && aiEditing === null) {
                               e.preventDefault();
@@ -1172,8 +1250,11 @@ export default function CreateTab({
                               });
                             }
                           }}
-                          placeholder="Ask MOXIE to change something…"
-                          className="h-8 border-0 bg-transparent text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
+                          placeholder={ROTATING_PLACEHOLDERS[placeholderIndex]}
+                          className={cn(
+                            "h-8 border-0 bg-transparent text-xs focus-visible:ring-0 focus-visible:ring-offset-0 transition-opacity duration-300",
+                            placeholderFading && !instructionInput[p] && "placeholder:opacity-0",
+                          )}
                         />
                         <Button
                           size="sm"
