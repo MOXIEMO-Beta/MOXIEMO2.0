@@ -469,6 +469,10 @@ export default function CreateTab({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const posts = (data?.posts ?? {}) as Record<string, string>;
+      // push previous versions to history before overwriting
+      for (const p of platforms) {
+        if (content[p]) pushHistory(p, content[p]);
+      }
       setContent((prev) => ({
         linkedin: platforms.includes("linkedin") ? posts.linkedin || prev.linkedin : prev.linkedin,
         facebook: platforms.includes("facebook") ? posts.facebook || prev.facebook : prev.facebook,
