@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import CreateTab from "@/components/social/CreateTab";
+import CalendarTab from "@/components/social/CalendarTab";
 
 type SocialConnection = {
   id: string;
@@ -127,6 +128,9 @@ export default function Social() {
 
   // Pre-filled topic when navigating to Create tab from an idea
   const [createPrefill, setCreatePrefill] = useState<string>("");
+  const [createScheduleDate, setCreateScheduleDate] = useState<string>("");
+  const [createPillar, setCreatePillar] = useState<string>("");
+  const [editPostId, setEditPostId] = useState<string>("");
 
   // LinkedIn connection state shared across tabs
   const [isLinkedInConnected, setIsLinkedInConnected] = useState<boolean>(false);
@@ -207,7 +211,30 @@ export default function Social() {
           isLinkedInConnected={isLinkedInConnected}
         />
       )}
-      {activeTab === "calendar" && <ComingSoonTab label="Calendar" />}
+      {activeTab === "calendar" && (
+        <CalendarTab
+          userId={user?.id ?? null}
+          onEditPost={(id) => {
+            setEditPostId(id);
+            const next = new URLSearchParams(searchParams);
+            next.set("editPostId", id);
+            setSearchParams(next, { replace: true });
+            setActiveTab("create");
+          }}
+          onCreateAtDate={(iso, pillar) => {
+            setCreateScheduleDate(iso);
+            if (pillar) setCreatePillar(pillar);
+            const next = new URLSearchParams(searchParams);
+            next.set("scheduleDate", iso.slice(0, 10));
+            if (pillar) next.set("pillar", pillar);
+            setSearchParams(next, { replace: true });
+            setActiveTab("create");
+          }}
+          onImportFromContent={() => {
+            toast.info("Content import coming soon");
+          }}
+        />
+      )}
       {activeTab === "library" && <ComingSoonTab label="Library" />}
       {activeTab === "reports" && <ComingSoonTab label="Reports" />}
     </div>
