@@ -22,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import CreateTab from "@/components/social/CreateTab";
 import CalendarTab from "@/components/social/CalendarTab";
+import LibraryTab from "@/components/social/LibraryTab";
 
 type SocialConnection = {
   id: string;
@@ -236,6 +237,7 @@ export default function Social() {
         />
       )}
       {activeTab === "library" && <ComingSoonTab label="Library" />}
+      
       {activeTab === "reports" && <ComingSoonTab label="Reports" />}
     </div>
   );
