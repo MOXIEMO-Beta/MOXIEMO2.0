@@ -26,6 +26,7 @@ import ComingSoon from "./pages/app/ComingSoon.tsx";
 import Goals from "./pages/app/Goals.tsx";
 import Social from "./pages/app/Social.tsx";
 import Email from "./pages/app/Email.tsx";
+import Onboarding from "./pages/onboarding/Onboarding.tsx";
 import { AuthProvider } from "./hooks/useAuth.tsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/community" element={<Community />} />
             <Route path="/about" element={<About />} />
+            <Route path="/onboarding" element={<ProtectedRoute requireOnboarding={false}><Onboarding /></ProtectedRoute>} />
             <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route index element={<Dashboard />} />
               <Route path="discovery" element={<Discovery />} />
