@@ -193,6 +193,153 @@ export default function CreateTab({
   const [hashtagsLoading, setHashtagsLoading] = useState<Platform | null>(null);
   const [activeComposerTab, setActiveComposerTab] = useState<Platform>("linkedin");
 
+  // AI editing — selection toolbar, instruction input, version history
+  const textareaRefs = useRef<Record<Platform, HTMLTextAreaElement | null>>({
+    linkedin: null,
+    facebook: null,
+    instagram: null,
+  });
+  const [selToolbar, setSelToolbar] = useState<{
+    platform: Platform;
+    top: number;
+    left: number;
+    start: number;
+    end: number;
+    text: string;
+  } | null>(null);
+  const [aiEditing, setAiEditing] = useState<string | null>(null); // action key while loading
+  const [instructionInput, setInstructionInput] = useState<Record<Platform, string>>({
+    linkedin: "",
+    facebook: "",
+    instagram: "",
+  });
+  const [postHistory, setPostHistory] = useState<Record<Platform, string[]>>({
+    linkedin: [],
+    facebook: [],
+    instagram: [],
+  });
+
+  function pushHistory(p: Platform, prevValue: string) {
+    if (prevValue === undefined || prevValue === null) return;
+    setPostHistory((prev) => {
+      const list = prev[p] ?? [];
+      // skip if identical to most recent
+      if (list[list.length - 1] === prevValue) return prev;
+      const next = [...list, prevValue];
+      while (next.length > 5) next.shift();
+      return { ...prev, [p]: next };
+    });
+  }
+
+  function restoreVersion(p: Platform, index: number) {
+    const list = postHistory[p] ?? [];
+    const v = list[index];
+    if (v === undefined) return;
+    pushHistory(p, content[p]);
+    setContent((prev) => ({ ...prev, [p]: v }));
+    toast.success("Version restored");
+  }
+
+  function handleTextareaSelection(p: Platform) {
+    const el = textareaRefs.current[p];
+    if (!el) return;
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    const sel = el.value.slice(start, end).trim();
+    if (!sel) {
+      setSelToolbar(null);
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    // approximate position: top of textarea + small offset, centered horizontally on cursor
+    const top = rect.top + window.scrollY - 44;
+    const left = rect.left + window.scrollX + Math.min(rect.width - 280, Math.max(0, rect.width / 2 - 140));
+    setSelToolbar({ platform: p, top, left, start, end, text: el.value.slice(start, end) });
+  }
+
+  // dismiss toolbar on outside click / escape
+  useEffect(() => {
+    if (!selToolbar) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setSelToolbar(null);
+    }
+    function onDown(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (target.closest("[data-ai-toolbar]")) return;
+      if (target.tagName === "TEXTAREA") return;
+      setSelToolbar(null);
+    }
+    document.addEventListener("keydown", onKey);
+    document.addEventListener("mousedown", onDown);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("mousedown", onDown);
+    };
+  }, [selToolbar]);
+
+  function showUndoToast(p: Platform, previousValue: string) {
+    toast.success("✓ Applied — review the changes before publishing", {
+      action: {
+        label: "Undo",
+        onClick: () => {
+          setContent((prev) => ({ ...prev, [p]: previousValue }));
+        },
+      },
+    });
+  }
+
+  async function applyAiEdit(opts: {
+    platform: Platform;
+    action: "improve" | "shorter" | "longer" | "punchier" | "rewrite" | "instruction";
+    selectedText: string;
+    fullPost: string;
+    instruction?: string;
+    replaceRange?: { start: number; end: number } | null;
+  }) {
+    const { platform, action, selectedText, fullPost, instruction, replaceRange } = opts;
+    setAiEditing(action);
+    try {
+      const { data, error } = await supabase.functions.invoke("edit-social-post", {
+        body: {
+          action,
+          selectedText,
+          fullPost,
+          platform,
+          strategy: strategy ?? {},
+          instruction,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const newText: string = String(data?.text ?? "").trim();
+      if (!newText) throw new Error("Empty response");
+
+      const previous = content[platform];
+      pushHistory(platform, previous);
+
+      if (replaceRange) {
+        const next =
+          fullPost.slice(0, replaceRange.start) + newText + fullPost.slice(replaceRange.end);
+        setContent((prev) => ({ ...prev, [platform]: next }));
+        toast.success("✓ Updated", {
+          action: { label: "Undo", onClick: () => setContent((prev) => ({ ...prev, [platform]: previous })) },
+        });
+      } else {
+        setContent((prev) => ({ ...prev, [platform]: newText }));
+        showUndoToast(platform, previous);
+      }
+      setSelToolbar(null);
+      if (action === "instruction") {
+        setInstructionInput((prev) => ({ ...prev, [platform]: "" }));
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Edit failed", { description: (err as Error).message });
+    } finally {
+      setAiEditing(null);
+    }
+  }
+
   // Media
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
