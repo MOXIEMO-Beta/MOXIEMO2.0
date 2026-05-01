@@ -219,6 +219,89 @@ export default function CreateTab({
     instagram: [],
   });
 
+  // ---------- Discoverability cues ----------
+  const [showTipBanner, setShowTipBanner] = useState(false);
+  const [tipDismissed, setTipDismissed] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return sessionStorage.getItem("moxie_tip_seen") === "true";
+  });
+  const [hasEdited, setHasEdited] = useState<Record<Platform, boolean>>({
+    linkedin: false,
+    facebook: false,
+    instagram: false,
+  });
+  const [focusHint, setFocusHint] = useState<Record<Platform, boolean>>({
+    linkedin: false,
+    facebook: false,
+    instagram: false,
+  });
+  const [textareaFlash, setTextareaFlash] = useState<Record<Platform, boolean>>({
+    linkedin: false,
+    facebook: false,
+    instagram: false,
+  });
+  const [historyPulse, setHistoryPulse] = useState<Record<Platform, boolean>>({
+    linkedin: false,
+    facebook: false,
+    instagram: false,
+  });
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [placeholderFading, setPlaceholderFading] = useState(false);
+  const [placeholderPaused, setPlaceholderPaused] = useState(false);
+
+  const ROTATING_PLACEHOLDERS = [
+    "Ask MOXIE to change something… e.g. 'Make the hook more direct'",
+    "Try: 'Add a quote about clarity'",
+    "Try: 'Change the ending question to focus on revenue'",
+    "Try: 'Make this sound less formal'",
+    "Try: 'Add a client success example'",
+    "Try: 'Shorten the second paragraph'",
+  ];
+
+  // Rotate placeholder every 4s with fade
+  useEffect(() => {
+    if (placeholderPaused) return;
+    const id = setInterval(() => {
+      setPlaceholderFading(true);
+      setTimeout(() => {
+        setPlaceholderIndex((i) => (i + 1) % ROTATING_PLACEHOLDERS.length);
+        setPlaceholderFading(false);
+      }, 300);
+    }, 4000);
+    return () => clearInterval(id);
+  }, [placeholderPaused]);
+
+  // Auto-dismiss tip banner after 8s
+  useEffect(() => {
+    if (!showTipBanner) return;
+    const id = setTimeout(() => {
+      setShowTipBanner(false);
+      setTipDismissed(true);
+      sessionStorage.setItem("moxie_tip_seen", "true");
+    }, 8000);
+    return () => clearTimeout(id);
+  }, [showTipBanner]);
+
+  function dismissTipBanner() {
+    setShowTipBanner(false);
+    setTipDismissed(true);
+    sessionStorage.setItem("moxie_tip_seen", "true");
+    triggerFirstSentenceHighlight();
+  }
+
+  function triggerFirstSentenceHighlight() {
+    if (typeof window === "undefined") return;
+    if (sessionStorage.getItem("moxie_first_highlight_seen") === "true") return;
+    sessionStorage.setItem("moxie_first_highlight_seen", "true");
+    setTimeout(() => {
+      const p = activeComposerTab;
+      setTextareaFlash((prev) => ({ ...prev, [p]: true }));
+      setTimeout(() => {
+        setTextareaFlash((prev) => ({ ...prev, [p]: false }));
+      }, 2000);
+    }, 3000);
+  }
+
   function pushHistory(p: Platform, prevValue: string) {
     if (prevValue === undefined || prevValue === null) return;
     setPostHistory((prev) => {
@@ -329,6 +412,8 @@ export default function CreateTab({
         showUndoToast(platform, previous);
       }
       setSelToolbar(null);
+      // History pulse — signals new saved version
+      setHistoryPulse((prev) => ({ ...prev, [platform]: true }));
       if (action === "instruction") {
         setInstructionInput((prev) => ({ ...prev, [platform]: "" }));
       }
