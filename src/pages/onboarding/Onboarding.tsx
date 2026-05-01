@@ -129,7 +129,7 @@ export default function Onboarding() {
         { onConflict: "user_id,step" },
       );
       if (profileUpdate && Object.keys(profileUpdate).length) {
-        await supabase.from("profiles").update(profileUpdate).eq("id", user.id);
+        await supabase.from("profiles").update(profileUpdate as any).eq("id", user.id);
       }
     } finally {
       setSaving(false);
