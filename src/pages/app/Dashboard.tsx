@@ -267,6 +267,21 @@ export default function Dashboard() {
                           {step.label}
                         </div>
                         <div className="text-xs text-muted-foreground mt-0.5">{step.desc}</div>
+                        {step.label === "Run MOXIE Discovery" && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              testConnection();
+                            }}
+                            className="mt-2 h-7 px-2 text-xs"
+                          >
+                            Test connection
+                          </Button>
+                        )}
                       </div>
                       {step.active && (
                         <ArrowRight className="h-4 w-4 text-accent flex-shrink-0 mt-1 group-hover:translate-x-0.5 transition" />
