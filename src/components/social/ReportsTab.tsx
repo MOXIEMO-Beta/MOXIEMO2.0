@@ -410,6 +410,12 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
 
   const activePlatformCount = platformBreakdown.filter((p) => p.postCount > 0).length;
 
+  // Total published count (across all time, not just range) for unlock progress
+  const totalPublishedAll = useMemo(
+    () => posts.filter((p) => p.status === "published").length,
+    [posts],
+  );
+
   // MOXIE recommendations
   const recommendations = useMemo(() => {
     const recs: { icon: string; title: string; insight: string; action: string; tab: "create" | "calendar" | "library"; pillar?: string }[] = [];
@@ -647,10 +653,15 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="space-y-1 p-4">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Posts published</p>
-          <p className="text-2xl font-semibold text-foreground">{publishedNow}</p>
           {publishedNow === 0 ? (
-            <p className="text-xs text-muted-foreground">Start publishing to see data</p>
-          ) : deltaPct !== null ? (
+            <>
+              <p className="text-3xl font-semibold text-muted-foreground/60">—</p>
+              <p className="text-xs text-muted-foreground">Publish your first post to start tracking</p>
+            </>
+          ) : (
+            <>
+              <p className="text-2xl font-semibold text-foreground">{publishedNow}</p>
+              {deltaPct !== null ? (
             <p
               className={cn(
                 "flex items-center gap-1 text-xs",
@@ -660,8 +671,10 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
               {delta >= 0 ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
               {Math.abs(deltaPct)}% vs {prevPublishedCount} last period
             </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">vs 0 last period</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">vs 0 last period</p>
+              )}
+            </>
           )}
         </Card>
 
@@ -674,20 +687,25 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
             </>
           ) : (
             <>
-              <p className="flex items-center gap-1.5 text-2xl font-semibold text-muted-foreground">
-                — <Lock className="h-3.5 w-3.5" />
-              </p>
-              <p className="text-xs text-muted-foreground">Connects after first publish</p>
+              <p className="text-3xl font-semibold text-muted-foreground/60">—</p>
+              <p className="text-xs text-muted-foreground">Engagement data appears after publishing</p>
             </>
           )}
         </Card>
 
         <Card className="space-y-1 p-4">
           <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Avg engagement rate</p>
-          <p className="text-2xl font-semibold text-foreground">
-            {avgEngRate !== null ? `${avgEngRate.toFixed(1)}%` : "—"}
-          </p>
-          <p className="text-xs text-muted-foreground">Industry avg: 2-3% for B2B</p>
+          {avgEngRate !== null ? (
+            <>
+              <p className="text-2xl font-semibold text-foreground">{avgEngRate.toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">Industry avg: 2-3% for B2B</p>
+            </>
+          ) : (
+            <>
+              <p className="text-3xl font-semibold text-muted-foreground/60">—</p>
+              <p className="text-xs text-muted-foreground">Industry avg for B2B founders: 2–3%</p>
+            </>
+          )}
         </Card>
 
         <Card className="space-y-1 p-4">
@@ -714,7 +732,10 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
               </div>
             </>
           ) : (
-            <p className="text-xs text-muted-foreground">Publish posts to find your top performer</p>
+            <>
+              <p className="text-3xl font-semibold text-muted-foreground/60">—</p>
+              <p className="text-xs text-muted-foreground">Your best post will appear here</p>
+            </>
           )}
         </Card>
       </section>
@@ -727,16 +748,50 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
         </div>
         <Card className="p-4">
           {publishedPosts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-              <BarChart3 className="h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
-                No published posts yet in this period.
-                <br />
-                Your consistency chart will appear here once you start publishing.
-              </p>
-              <Button size="sm" onClick={() => onSwitchTab("create")} className="gap-1">
-                <Plus className="h-3.5 w-3.5" /> Create your first post
-              </Button>
+            <div className="space-y-4">
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={[
+                      { week: "W1", placeholder: 2 },
+                      { week: "W2", placeholder: 4 },
+                      { week: "W3", placeholder: 3 },
+                      { week: "W4", placeholder: 5 },
+                    ]}
+                    margin={{ top: 16, right: 12, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="week" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={12} domain={[0, Math.max(targetFreq + 1, 6)]} />
+                    <ReferenceLine
+                      y={targetFreq}
+                      stroke="#ff6b6b"
+                      strokeDasharray="4 4"
+                      label={{ value: `Your target: ${targetFreq}/wk`, position: "insideTopRight", fill: "#ff6b6b", fontSize: 11 }}
+                    />
+                    <Bar
+                      dataKey="placeholder"
+                      fill="transparent"
+                      stroke="hsl(var(--border))"
+                      strokeWidth={1.5}
+                      strokeDasharray="3 3"
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-col items-start gap-2 rounded-lg border border-accent/30 bg-accent/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-2 text-sm text-foreground">
+                  <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                  <span>
+                    Your consistency chart builds as you publish. Aim for{" "}
+                    <span className="font-semibold">{targetFreq} posts/week</span> based on your strategy.
+                  </span>
+                </div>
+                <Button size="sm" onClick={() => onSwitchTab("create")} className="gap-1 shrink-0">
+                  <Plus className="h-3.5 w-3.5" /> Schedule your first post →
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="h-64 w-full">
@@ -775,13 +830,46 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
         </div>
         <Card className="overflow-hidden">
           {sortedRows.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-              <BarChart3 className="h-8 w-8 text-muted-foreground/40" />
-              <p className="text-sm font-medium text-foreground">No published posts to analyze yet</p>
-              <p className="text-xs text-muted-foreground">Publish your first post to start tracking performance.</p>
-              <Button size="sm" onClick={() => onSwitchTab("create")} className="gap-1">
-                <Plus className="h-3.5 w-3.5" /> Create a post
-              </Button>
+            <div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="border-b border-border bg-muted/30 text-xs uppercase tracking-wider text-muted-foreground">
+                    <tr>
+                      <th className="w-8 px-3 py-2"></th>
+                      <th className="px-3 py-2 text-left">Platform</th>
+                      <th className="px-3 py-2 text-left">Post preview</th>
+                      <th className="px-3 py-2 text-left">Pillar</th>
+                      <th className="px-3 py-2 text-left">Published</th>
+                      <th className="px-3 py-2 text-right">Likes</th>
+                      <th className="px-3 py-2 text-right">Comments</th>
+                      <th className="px-3 py-2 text-right">Shares</th>
+                      <th className="px-3 py-2 text-right">Eng. rate</th>
+                      <th className="px-3 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[0, 1, 2].map((i) => (
+                      <tr key={i} className="border-b border-border/50">
+                        {Array.from({ length: 10 }).map((_, j) => (
+                          <td key={j} className="px-3 py-3">
+                            <div className="h-3 w-full animate-pulse rounded bg-muted" />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                <BarChart3 className="h-8 w-8 text-accent" />
+                <p className="text-sm font-medium text-foreground">No published posts yet</p>
+                <p className="max-w-sm text-xs text-muted-foreground">
+                  Publish your first post and log your metrics to see performance data here.
+                </p>
+                <Button size="sm" onClick={() => onSwitchTab("create")} className="mt-1 gap-1">
+                  <Plus className="h-3.5 w-3.5" /> Create a post →
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -938,11 +1026,44 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
         </div>
         <Card className="p-4">
           {pillarPerf.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              {pillars.length === 0
-                ? "Tag your posts with content pillars in the Create tab to see which themes resonate most."
-                : "Post more content to see which pillars resonate most with your audience."}
-            </p>
+            <div className="space-y-4">
+              {pillars.length > 0 ? (
+                <div className="space-y-2">
+                  {pillars.map((pillar, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <div className="w-32 shrink-0 truncate text-xs font-medium text-foreground" title={pillar}>
+                        {pillar}
+                      </div>
+                      <div className="relative h-6 flex-1 rounded border border-dashed border-border bg-muted/20" />
+                      <div className="w-12 shrink-0 text-right text-xs text-muted-foreground">—</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  Add content pillars in your strategy to see them here.
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Post and tag content by pillar to see which themes resonate most with your audience.
+              </p>
+              <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
+                <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-accent">
+                  <Sparkles className="h-4 w-4" /> MOXIE Insight
+                </div>
+                <p className="text-sm text-foreground">
+                  Tag your posts with content pillars as you publish. MOXIE will show you which themes drive the most engagement for your specific audience.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-3 gap-1"
+                  onClick={() => onSwitchTab("create")}
+                >
+                  <Plus className="h-3.5 w-3.5" /> Create a pillar-tagged post →
+                </Button>
+              </div>
+            </div>
           ) : (
             <div className="space-y-3">
               <div style={{ height: Math.max(120, pillarPerf.length * 44) }}>
@@ -1037,6 +1158,23 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
               <p className="text-xs text-muted-foreground">Best times: 1 PM · 3 PM ET</p>
             </div>
           </div>
+          {totalPublishedAll < 10 && (
+            <div className="space-y-1.5 border-t border-border pt-4">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-foreground">{totalPublishedAll} of 10 posts published</span>
+                <span className="text-muted-foreground">{Math.round((totalPublishedAll / 10) * 100)}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-accent transition-all"
+                  style={{ width: `${Math.min(100, (totalPublishedAll / 10) * 100)}%` }}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Publish 10 posts to unlock your personalized best times based on YOUR audience data.
+              </p>
+            </div>
+          )}
         </Card>
       </section>
 
@@ -1045,7 +1183,7 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
         <div>
           <h3 className="text-sm font-semibold text-foreground">Platform breakdown</h3>
         </div>
-        <div className={cn("grid gap-3", activePlatformCount > 1 ? "md:grid-cols-3" : "md:grid-cols-1")}>
+        <div className="grid gap-3 md:grid-cols-3">
           {platformBreakdown.map((p) => {
             const isLinkedIn = p.platform === "linkedin";
             const pending = !isLinkedIn;
@@ -1063,7 +1201,7 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
                   )}
                 </div>
                 <div className="space-y-0.5 text-sm">
-                  <p className="text-foreground">{p.postCount} posts</p>
+                  <p className="text-foreground">{p.postCount} posts published</p>
                   <p className="text-muted-foreground">
                     {pending ? "— (pending)" : p.avgRate !== null ? `${p.avgRate.toFixed(1)}% avg eng.` : "— avg eng."}
                   </p>
@@ -1086,21 +1224,32 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
           <h3 className="text-sm font-semibold text-foreground">MOXIE Recommendations</h3>
           <p className="text-xs text-muted-foreground">Based on your strategy and performance data</p>
         </div>
-        {publishedPosts.length < 5 ? (
-          <Card className="space-y-3 p-5 text-center">
-            <p className="text-sm text-foreground">
-              ✨ Publish at least 5 posts to unlock personalized MOXIE recommendations.
-            </p>
-            <p className="text-xs text-muted-foreground">{publishedPosts.length} / 5 posts published</p>
-            <div className="mx-auto h-2 w-full max-w-xs overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full bg-accent transition-all"
-                style={{ width: `${Math.min(100, (publishedPosts.length / 5) * 100)}%` }}
-              />
+        {totalPublishedAll < 5 ? (
+          <Card className="space-y-4 p-6">
+            <div className="flex items-center gap-2 text-sm font-semibold text-accent">
+              <Sparkles className="h-4 w-4" /> MOXIE Recommendations unlock as you post
             </div>
+            <p className="text-sm text-foreground">
+              Publish <span className="font-semibold">5 posts</span> to get your first personalized recommendations.
+            </p>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-medium text-foreground">{totalPublishedAll} / 5 posts published</span>
+                <span className="text-muted-foreground">{Math.round((totalPublishedAll / 5) * 100)}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-accent transition-all"
+                  style={{ width: `${Math.min(100, (totalPublishedAll / 5) * 100)}%` }}
+                />
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              MOXIE will analyze your content and tell you exactly what to do more of, less of, and differently.
+            </p>
             <div>
               <Button size="sm" onClick={() => onSwitchTab("create")} className="gap-1">
-                <Plus className="h-3.5 w-3.5" /> Create a post
+                <Plus className="h-3.5 w-3.5" /> Create your first post →
               </Button>
             </div>
           </Card>
