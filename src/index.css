@@ -138,6 +138,22 @@
   .shadow-lift { box-shadow: var(--shadow-lift); }
 }
 
+/* Freedom underline pulse */
+.freedom-underline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 3px;
+  border-radius: 2px;
+  background: hsl(var(--accent));
+  animation: freedom-pulse 2s ease-in-out infinite;
+}
+@keyframes freedom-pulse {
+  0%, 100% { opacity: 0.45; transform: scaleX(0.85); }
+  50% { opacity: 1; transform: scaleX(1); }
+}
+
 /* PDF export sizing — A4 page constraints for #moxie-strategy-report */
 #moxie-strategy-report .report-page {
   min-height: 1123px;
