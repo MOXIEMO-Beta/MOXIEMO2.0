@@ -23,7 +23,7 @@ const SECTIONS = [
   "Goals & Capacity",
   "Final Context (optional)",
 ];
-const TOTAL_QUESTIONS = 15;
+const TOTAL_QUESTIONS = 16;
 const REQUIRED_QUESTIONS = 13;
 
 // Strip the hidden mode-tracking tag from assistant messages before displaying.
@@ -96,6 +96,10 @@ export default function Discovery() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [inlineError, setInlineError] = useState<string | null>(null);
   const lastHistoryRef = useRef<Msg[] | null>(null);
+  const [synthFailed, setSynthFailed] = useState(false);
+  const lastSynthHistoryRef = useRef<Msg[] | null>(null);
+  const [cooldown, setCooldown] = useState(false);
+  const autoRetryRef = useRef<number | null>(null);
 
   // progress: count assistant questions answered = number of user messages
   const answered = messages.filter((m) => m.role === "user").length;
@@ -287,17 +291,32 @@ export default function Discovery() {
           return prev;
         });
       }
-      const message = typeof e?.message === "string" && e.message.includes("MOXIE")
-        ? e.message
-        : "MOXIE had a moment — tap Send again to continue.";
+      const raw = typeof e?.message === "string" ? e.message : "";
+      const message = raw.includes("MOXIE")
+        ? raw
+        : "MOXIE is thinking — just a moment...";
       setInlineError(message);
+      // Auto-retry after 3s for the "thinking" message, no user tap required.
+      if (message.includes("thinking") && lastHistoryRef.current && sid) {
+        if (autoRetryRef.current) window.clearTimeout(autoRetryRef.current);
+        autoRetryRef.current = window.setTimeout(() => {
+          autoRetryRef.current = null;
+          if (lastHistoryRef.current) {
+            setInlineError(null);
+            streamReply(lastHistoryRef.current, sid);
+          }
+        }, 3000);
+      }
     } finally {
       setLoading(false);
+      // 800ms cooldown so users can't fire the next question before the previous call clears.
+      setCooldown(true);
+      window.setTimeout(() => setCooldown(false), 800);
     }
   }
 
   async function send() {
-    if (loading || !sessionId) return;
+    if (loading || cooldown || !sessionId) return;
     const text = input.trim();
 
     // Retry path: previous attempt failed and the user message is already in history.
@@ -317,6 +336,14 @@ export default function Discovery() {
 
   async function synthesize(history: Msg[]) {
     setSynthesizing(true);
+    setSynthFailed(false);
+    lastSynthHistoryRef.current = history;
+    // Save discovery answers BEFORE calling Anthropic so they're never lost on failure.
+    try {
+      await persist(history, sessionId!, true);
+    } catch (saveErr) {
+      console.error("pre-synth persist failed:", saveErr);
+    }
     try {
       const transcript = history.map((m) => `${m.role === "user" ? "USER" : "MOXIE"}: ${m.content}`).join("\n\n");
       // Extract the optional Q14 (revenue) and Q15 (challenge) answers from the transcript.
@@ -390,16 +417,24 @@ export default function Discovery() {
       await supabase
         .from("strategies")
         .upsert({ user_id: user.id, ...data, raw_foundation: rawFoundation }, { onConflict: "user_id" });
+      setSynthFailed(false);
       toast.success("Your strategy is ready.");
       setTimeout(() => navigate("/app/strategy"), 1200);
     } catch (e: any) {
       console.error("synthesize error:", e);
-      toast.error("Strategy generation took longer than expected.", {
-        description: "Your answers are saved — click 'Generate Strategy' to try again.",
+      setSynthFailed(true);
+      toast.error("Strategy generation hit a snag — your answers are saved.", {
+        description: "Click 'Generate Strategy' to try again.",
       });
     } finally {
       setSynthesizing(false);
     }
+  }
+
+  async function retrySynthesize() {
+    const h = lastSynthHistoryRef.current ?? messages;
+    setSynthFailed(false);
+    await synthesize(h);
   }
 
   async function restart() {
@@ -515,9 +550,20 @@ export default function Discovery() {
           )}
           {completed && !synthesizing && (
             <div className="flex items-center justify-center pt-4">
-              <Button onClick={() => navigate("/app/strategy")} className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
-                <CheckCircle2 className="mr-2 h-4 w-4 text-accent" /> View your strategy
-              </Button>
+              {synthFailed ? (
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-sm text-muted-foreground text-center max-w-md">
+                    Strategy generation hit a snag — your answers are saved. Click below to try again.
+                  </p>
+                  <Button onClick={retrySynthesize} className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
+                    <Sparkles className="mr-2 h-4 w-4 text-accent" /> Generate Strategy
+                  </Button>
+                </div>
+              ) : (
+                <Button onClick={() => navigate("/app/strategy")} className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
+                  <CheckCircle2 className="mr-2 h-4 w-4 text-accent" /> View your strategy
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -545,7 +591,7 @@ export default function Discovery() {
                 rows={1}
                 className="resize-none border-0 bg-transparent focus-visible:ring-0 min-h-[44px] max-h-40 text-[15px]"
               />
-              <Button onClick={send} disabled={loading || (!input.trim() && !inlineError)} size="icon" className="h-9 w-9 rounded-xl bg-foreground hover:bg-foreground/90 text-background flex-shrink-0">
+              <Button onClick={send} disabled={loading || cooldown || (!input.trim() && !inlineError)} size="icon" className="h-9 w-9 rounded-xl bg-foreground hover:bg-foreground/90 text-background flex-shrink-0">
                 <ArrowUp className="h-4 w-4" />
               </Button>
             </div>

@@ -161,12 +161,13 @@ serve(async (req) => {
       }
     }
 
-    // Retry transient failures once, but do not retry 429 token-per-minute limits.
-    // Retrying 429s immediately consumes more quota and can keep the user stuck.
+    // Retry transient failures and 429 rate limits with exponential backoff:
+    // attempt 1 → wait 2s → attempt 2 → wait 5s → attempt 3.
     let response: Response | null = null;
     let lastStatus = 0;
     let lastErrText = "";
-    const maxAttempts = 2;
+    const backoffMs = [2000, 5000];
+    const maxAttempts = 3;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const r = await callAnthropic(30000);
@@ -178,41 +179,31 @@ serve(async (req) => {
         lastErrText = await r.text().catch(() => "");
         console.error(`Anthropic error (attempt ${attempt}):`, r.status, lastErrText);
 
-        if (r.status === 429) {
-          return streamClientError(
-            "MOXIE is busy right now — wait a few seconds and tap Send again.",
-            r.status,
-            lastErrText
-          );
-        }
-
-        // Don't retry on non-retryable client errors.
-        if (r.status >= 400 && r.status < 500) {
-          break;
-        }
+        // Retry 429 (rate limit) and 5xx. Other 4xx are not retryable.
+        const retryable = r.status === 429 || r.status >= 500;
+        if (!retryable) break;
 
         if (attempt < maxAttempts) {
           const retryAfterHeader = r.headers.get("retry-after");
           const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : NaN;
           const baseDelay = !isNaN(retryAfterSec) && retryAfterSec > 0
             ? Math.min(retryAfterSec * 1000, 8000)
-            : Math.min(1000 * Math.pow(2, attempt - 1), 4000);
-          const jitter = Math.floor(Math.random() * 500);
+            : backoffMs[attempt - 1];
+          const jitter = Math.floor(Math.random() * 400);
           await new Promise((res) => setTimeout(res, baseDelay + jitter));
         }
       } catch (err) {
         console.warn(`discovery-chat attempt ${attempt} threw:`, String(err));
         lastErrText = String(err);
         if (attempt < maxAttempts) {
-          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 4000) + Math.floor(Math.random() * 500);
-          await new Promise((res) => setTimeout(res, delay));
+          await new Promise((res) => setTimeout(res, backoffMs[attempt - 1] + Math.floor(Math.random() * 400)));
         }
       }
     }
 
     if (!response) {
       return streamClientError(
-        "MOXIE had a moment — tap Send again to continue.",
+        "MOXIE is thinking — just a moment...",
         lastStatus,
         lastErrText
       );
