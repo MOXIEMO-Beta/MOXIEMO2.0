@@ -88,25 +88,25 @@ export default function PlanTab({ ctx }: { ctx: any }) {
   }
 
   function dayDots(d: Date) {
-    const dots: { color: string; key: string }[] = [];
+    const dots: { color: string; key: string; label: string }[] = [];
     socialPosts.forEach((p: any) => {
       const iso = p.scheduled_for ?? p.published_at;
       if (!iso) return;
       if (new Date(iso).toDateString() !== d.toDateString()) return;
       (p.platforms ?? []).forEach((pl: string) => {
-        if (pl === "linkedin") dots.push({ color: "bg-blue-500", key: `li-${p.id}` });
-        else if (pl === "instagram") dots.push({ color: "bg-purple-500", key: `ig-${p.id}` });
-        else if (pl === "facebook") dots.push({ color: "bg-blue-700", key: `fb-${p.id}` });
+        if (pl === "linkedin") dots.push({ color: "bg-blue-500", key: `li-${p.id}`, label: "LinkedIn" });
+        else if (pl === "instagram") dots.push({ color: "bg-purple-500", key: `ig-${p.id}`, label: "Instagram" });
+        else if (pl === "facebook") dots.push({ color: "bg-blue-700", key: `fb-${p.id}`, label: "Facebook" });
       });
     });
     emailSends.forEach((e: any) => {
       const iso = e.scheduled_for ?? e.sent_at;
       if (!iso) return;
-      if (new Date(iso).toDateString() === d.toDateString()) dots.push({ color: "bg-accent", key: `em-${e.id}` });
+      if (new Date(iso).toDateString() === d.toDateString()) dots.push({ color: "bg-accent", key: `em-${e.id}`, label: "Email" });
     });
     contentItems.forEach((c: any) => {
       if (c.status !== "draft") return;
-      if (new Date(c.created_at).toDateString() === d.toDateString()) dots.push({ color: "bg-muted-foreground", key: `dr-${c.id}` });
+      if (new Date(c.created_at).toDateString() === d.toDateString()) dots.push({ color: "bg-muted-foreground", key: `dr-${c.id}`, label: "Draft" });
     });
     return dots;
   }
@@ -172,16 +172,28 @@ export default function PlanTab({ ctx }: { ctx: any }) {
               const dots = inMonth ? dayDots(date) : [];
               const isWeekday = date.getDay() !== 0 && date.getDay() !== 6;
               const empty = dots.length === 0;
-              const camp = inMonth && empty && isWeekday ? activeCampaignForDate(campaigns ?? [], date) : null;
+              const inCampaign = inMonth ? activeCampaignForDate(campaigns ?? [], date) : null;
+              const camp = empty && isWeekday ? inCampaign : null;
               return (
                 <div
                   key={idx}
-                  className={`relative group bg-card min-h-[64px] p-1.5 ${inMonth ? "" : "opacity-40"}`}
+                  className={`relative group min-h-[64px] p-1.5 ${inMonth ? "" : "opacity-40"} ${inCampaign ? "bg-accent-soft" : "bg-card"}`}
                 >
                   <div className="text-[10px] text-muted-foreground mb-1">{date.getDate()}</div>
                   {dots.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {dots.slice(0, 6).map(d => <span key={d.key} className={`w-1.5 h-1.5 rounded-full ${d.color}`} />)}
+                    <div className="flex flex-col gap-1">
+                      {dots.slice(0, 3).map(d => (
+                        <span
+                          key={d.key}
+                          className={`text-[9px] leading-tight px-1 py-0.5 rounded text-white truncate ${d.color}`}
+                          title={d.label}
+                        >
+                          {d.label}
+                        </span>
+                      ))}
+                      {dots.length > 3 && (
+                        <span className="text-[9px] text-muted-foreground">+{dots.length - 3}</span>
+                      )}
                     </div>
                   )}
                   {empty && inMonth && isWeekday && (
@@ -205,10 +217,11 @@ export default function PlanTab({ ctx }: { ctx: any }) {
                           setTab("schedule");
                         }
                       }}
-                      className={`absolute inset-0 opacity-0 group-hover:opacity-100 ${camp ? "bg-accent/10" : "bg-accent/5"} text-[10px] text-accent font-medium flex items-center justify-center px-1 text-center`}
+                      className={`w-full text-[10px] text-accent font-medium flex flex-col items-center justify-center px-1 py-1 rounded text-center truncate ${camp ? "bg-accent-soft border border-accent/30 hover:bg-accent/20" : "bg-accent/5 border border-dashed border-accent/30 hover:bg-accent/10"} transition-colors`}
                       title={camp ? `Fill gap — ${camp.name}` : "Fill gap"}
                     >
-                      {camp ? <span className="truncate">Fill gap — {camp.name}</span> : "Fill gap"}
+                      <span className="truncate w-full">Fill gap</span>
+                      {camp && <span className="truncate w-full text-[9px] opacity-80">{camp.name}</span>}
                     </button>
                   )}
                 </div>
