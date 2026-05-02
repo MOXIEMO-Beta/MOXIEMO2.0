@@ -1,0 +1,55 @@
+const stats = [
+  { v: "18+", l: "hrs back per week" },
+  { v: "4–6", l: "tools eliminated" },
+  { v: "20 min", l: "to full strategy" },
+  { v: "$93K", l: "saved annually" },
+];
+
+export function StatsBar() {
+  return (
+    <div
+      className="rounded-2xl bg-[#f8f8f8]"
+      style={{ padding: "60px 80px" }}
+    >
+      <div className="text-center mb-10">
+        <h2 className="font-bold text-foreground" style={{ fontSize: 28 }}>
+          The numbers don't lie.
+        </h2>
+        <p
+          className="text-muted-foreground mt-3 mx-auto"
+          style={{ fontSize: 16, maxWidth: 560 }}
+        >
+          Every founder who runs MOXIE Discovery gets a strategy that runs their entire platform. Here's what that looks like at scale.
+        </p>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0">
+        {stats.map((s, i) => (
+          <div
+            key={s.l}
+            className="text-center flex flex-col items-center justify-center relative md:px-6"
+          >
+            {i > 0 && (
+              <span
+                aria-hidden
+                className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2"
+                style={{ width: 1, height: 40, background: "#e0e0e0" }}
+              />
+            )}
+            <div
+              className="font-bold leading-none mb-3"
+              style={{ color: "#ff6b6b", fontSize: 64 }}
+            >
+              {s.v}
+            </div>
+            <div
+              className="text-muted-foreground font-semibold uppercase"
+              style={{ fontSize: 12, letterSpacing: "1.5px" }}
+            >
+              {s.l}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
