@@ -478,13 +478,6 @@ export default function Discovery() {
             <div className="hidden" />
           )}
           {completed && !synthesizing && (
-            <div className="flex items-center justify-center pt-2">
-              <Button variant="outline" onClick={() => synthesize(messages)} className="h-9 rounded-lg">
-                <RotateCcw className="mr-2 h-4 w-4" /> Generate Strategy
-              </Button>
-            </div>
-          )}
-          {completed && !synthesizing && (
             <div className="flex items-center justify-center pt-4">
               <Button onClick={() => navigate("/app/strategy")} className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
                 <CheckCircle2 className="mr-2 h-4 w-4 text-accent" /> View your strategy
