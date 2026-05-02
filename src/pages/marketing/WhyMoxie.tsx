@@ -55,6 +55,10 @@ export default function WhyMoxie() {
 
         {/* Failed solutions */}
         <section>
+          <StatsBar />
+        </section>
+
+        <section>
           <div className="text-center mb-14">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">What you've already tried.</h2>
             <p className="text-muted-foreground text-lg font-light max-w-2xl mx-auto">And exactly why none of it stuck.</p>
@@ -82,11 +86,6 @@ export default function WhyMoxie() {
               </Card>
             ))}
           </div>
-        </section>
-
-        {/* Stats proof bar */}
-        <section>
-          <StatsBar />
         </section>
 
         {/* Why now */}
