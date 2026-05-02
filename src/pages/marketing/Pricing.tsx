@@ -7,39 +7,39 @@ import { StatsBar } from "@/components/StatsBar";
 
 const tiers = [
   {
-    name: "Starter",
-    price: "$129",
+    name: "Foundation",
+    price: "$79",
     sub: "/month",
-    annual: "or $1,290/year (save $258)",
-    desc: "For solo coaches starting to systematize marketing.",
-    features: ["Complete AI strategic discovery", "Marketing strategy foundation", "90-day content calendar", "Email marketing (up to 5,000 subscribers)", "Social publishing (LinkedIn + 1 platform)", "Content creation (10 pieces/month)", "Basic analytics dashboard", "Standard support (24-hour response)"],
+    annual: "or $790/year (save $158)",
+    desc: "For founders ready to build a real marketing strategy and stop winging it.",
+    features: ["Complete AI strategic discovery", "Marketing strategy foundation", "Marketing Planner access", "Email marketing (up to 2,500 subscribers)", "Social publishing (LinkedIn + 1 platform)", "Content creation (20 pieces/month)", "Basic analytics dashboard", "Standard support (24-hour response)"],
     replaces: "ConvertKit + Buffer + scheduling tool",
     savings: "~$60/mo + 12 hours/week",
     cta: "Start free discovery",
     featured: false,
   },
   {
-    name: "Professional",
-    price: "$179",
+    name: "Growth",
+    price: "$129",
     sub: "/month",
-    annual: "or $1,790/year (save $358)",
-    desc: "For established coaches and consultants scaling to $1M+.",
-    features: ["Everything in Starter", "Unlimited subscribers", "Social: LinkedIn + Instagram + Facebook", "Unlimited content creation", "Advanced analytics (attribution + ROI)", "Campaign sequences (launches, evergreen)", "Lead magnet creation", "Priority support (12-hour response)", "Quarterly strategy refinement calls"],
+    annual: "or $1,290/year (save $258)",
+    desc: "For established founders scaling their expertise to $1M+.",
+    features: ["Everything in Foundation", "Unlimited subscribers", "Social: LinkedIn + Instagram + Facebook", "Unlimited content creation", "Campaign builder (launches, sequences, evergreen)", "Advanced analytics (attribution + ROI)", "Lead magnet creation", "Priority support (12-hour response)", "Quarterly strategy refinement calls"],
     replaces: "ConvertKit + Buffer + Kajabi + scheduling",
     savings: "~$372/mo + 18 hours/week",
     cta: "Start free discovery",
     featured: true,
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    sub: "",
-    annual: "Starting at $499/month",
-    desc: "For agencies and multi-coach practices.",
-    features: ["Everything in Professional", "Team collaboration (5+ users)", "White-label options", "Custom integrations", "Dedicated account manager", "White-glove migration", "Monthly strategy sessions", "Custom feature development", "SLA guarantees"],
+    name: "Scale",
+    price: "$189",
+    sub: "/month",
+    annual: "or $1,890/year (save $378)",
+    desc: "For agencies and multi-brand operators running at full capacity.",
+    features: ["Everything in Growth", "Team collaboration (up to 5 users)", "Multiple brand workspaces", "Custom integrations", "Dedicated account manager", "White-glove onboarding + migration", "Monthly strategy check-in calls", "SLA guarantees", "Priority feature requests"],
     replaces: "Full martech stack",
     savings: "$1,000+/mo + team capacity",
-    cta: "Book enterprise demo",
+    cta: "Get started",
     featured: false,
   },
 ];
@@ -63,6 +63,17 @@ export default function Pricing() {
       <div className="space-y-24">
         {/* Tiers */}
         <section>
+          {/* Founding Member Banner */}
+          <div className="mb-8 rounded-xl p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6" style={{ backgroundColor: "#ff6b6b", color: "#ffffff" }}>
+            <div className="flex-1">
+              <p className="text-xs font-bold uppercase tracking-[1.5px] mb-2 opacity-90">🎉  Founding Members — Limited Spots</p>
+              <h3 className="text-2xl md:text-3xl font-bold mb-2">Join now and get the Foundation plan free — forever.</h3>
+              <p className="text-sm md:text-base opacity-95 font-light">We're personally onboarding every founding member with a 1:1 kickoff call. Founding members get full platform access at no cost. Locked in before prices increase.</p>
+            </div>
+            <Button asChild className="h-12 px-6 rounded-full font-semibold bg-white hover:bg-white/90 text-foreground whitespace-nowrap">
+              <Link to="/auth">Join as a Founding Member →</Link>
+            </Button>
+          </div>
           <div className="grid md:grid-cols-3 gap-6">
             {tiers.map((t) => (
               <Card key={t.name} className={`p-8 border-border shadow-soft flex flex-col ${t.featured ? "border-accent shadow-lift bg-card relative ring-1 ring-accent" : "bg-card"}`}>
