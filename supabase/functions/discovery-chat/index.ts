@@ -11,6 +11,33 @@ function stripModeTag(text: string): string {
   return text.replace(MODE_TAG_RE, "").trimEnd();
 }
 
+function streamClientError(message: string, upstreamStatus = 0, detail = ""): Response {
+  const encoder = new TextEncoder();
+  const payload = JSON.stringify({
+    type: "error",
+    message,
+    upstream_status: upstreamStatus,
+    detail: detail.slice(0, 300),
+  });
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+      controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    },
+  });
+}
+
 const OPENING_BY_ROLE: Record<string, (n: string) => string> = {
   "Founder": (n) => `Hey ${n}, I'm MOXIE, your AI CMO. Let's build the marketing foundation for your business. I'll ask you 15 questions and turn your answers into a complete strategy. Takes about 15-20 minutes. Ready?`,
   "Consultant": (n) => `Hey ${n}, I'm MOXIE. Let's create a strategy that positions your consulting expertise and drives qualified leads. 15 questions, about 15-20 minutes, and you'll have a complete marketing foundation. Let's go.`,
@@ -134,11 +161,12 @@ serve(async (req) => {
       }
     }
 
-    // Retry up to 3 times with exponential backoff, honoring retry-after on 429/529
+    // Retry transient failures once, but do not retry 429 token-per-minute limits.
+    // Retrying 429s immediately consumes more quota and can keep the user stuck.
     let response: Response | null = null;
     let lastStatus = 0;
     let lastErrText = "";
-    const maxAttempts = 3;
+    const maxAttempts = 2;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         const r = await callAnthropic(30000);
@@ -150,8 +178,16 @@ serve(async (req) => {
         lastErrText = await r.text().catch(() => "");
         console.error(`Anthropic error (attempt ${attempt}):`, r.status, lastErrText);
 
-        // Don't retry on non-retryable client errors (except 429)
-        if (r.status >= 400 && r.status < 500 && r.status !== 429) {
+        if (r.status === 429) {
+          return streamClientError(
+            "MOXIE is busy right now — wait a few seconds and tap Send again.",
+            r.status,
+            lastErrText
+          );
+        }
+
+        // Don't retry on non-retryable client errors.
+        if (r.status >= 400 && r.status < 500) {
           break;
         }
 
@@ -175,14 +211,10 @@ serve(async (req) => {
     }
 
     if (!response) {
-      // Surface 429 as 429 so the client shows the friendly inline retry message
-      const status = lastStatus === 429 ? 429 : 503;
-      const message = status === 429
-        ? "MOXIE is busy right now — wait a few seconds and tap Send again."
-        : "MOXIE had a moment — tap Send again to continue.";
-      return new Response(
-        JSON.stringify({ error: message, upstream_status: lastStatus, detail: lastErrText.slice(0, 300) }),
-        { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      return streamClientError(
+        "MOXIE had a moment — tap Send again to continue.",
+        lastStatus,
+        lastErrText
       );
     }
 
