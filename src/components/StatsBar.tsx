@@ -37,7 +37,7 @@ export function StatsBar() {
             )}
             <div
               className="font-bold leading-none mb-3"
-              style={{ color: "#ff6b6b", fontSize: 64 }}
+              style={{ color: "#ff6b6b", fontSize: 64, whiteSpace: "nowrap", verticalAlign: "middle" }}
             >
               {s.v}
             </div>
