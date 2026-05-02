@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MoxieLogo } from "@/components/MoxieLogo";
 import { SiteHeader } from "@/components/SiteHeader";
+import { StatsBar } from "@/components/StatsBar";
 import { ArrowRight, Check, MessageSquare, Target, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { WaitlistForm } from "@/components/WaitlistForm";
@@ -81,21 +82,9 @@ export default function Index() {
       </section>
 
       {/* SECTION 2 — STATS BAR */}
-      <section className="bg-[#f8f8f8] py-[60px] border-y border-border">
+      <section className="py-[100px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x divide-border">
-            {[
-              { v: "18+", l: "hrs back per week" },
-              { v: "4–6", l: "tools eliminated" },
-              { v: "20 min", l: "to full strategy" },
-              { v: "$93K", l: "saved annually" },
-            ].map((s) => (
-              <div key={s.l} className="text-center md:px-6">
-                <div className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-1.5">{s.v}</div>
-                <div className="text-sm text-muted-foreground">{s.l}</div>
-              </div>
-            ))}
-          </div>
+          <StatsBar />
         </div>
       </section>
 

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 import { MarketingPage } from "./MarketingPage";
+import { StatsBar } from "@/components/StatsBar";
 
 const tiers = [
   {
@@ -95,6 +96,11 @@ export default function Pricing() {
               </Card>
             ))}
           </div>
+        </section>
+
+        {/* Universal features */}
+        <section>
+          <StatsBar />
         </section>
 
         {/* Universal features */}
