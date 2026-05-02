@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MoxieLogo } from "@/components/MoxieLogo";
 import { SiteHeader } from "@/components/SiteHeader";
+import { StatsBar } from "@/components/StatsBar";
 import { ArrowRight, Check, MessageSquare, Target, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { WaitlistForm } from "@/components/WaitlistForm";
