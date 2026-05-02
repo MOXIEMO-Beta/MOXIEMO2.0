@@ -55,7 +55,7 @@ Return only the post copy. No preamble.`;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { topic, platform, contentType, strategy, mode, text } = await req.json();
+    const { topic, platform, contentType, strategy, mode, text, existing, instruction } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
@@ -95,6 +95,35 @@ Deno.serve(async (req) => {
       const data = await res.json();
       const hashtags = data.content?.[0]?.text?.trim() ?? "";
       return new Response(JSON.stringify({ hashtags }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (mode === "refine") {
+      if (!existing || !instruction) {
+        return new Response(JSON.stringify({ error: "existing and instruction required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const refinePrompt = `Here is a piece of ${platform ?? "content"} (${contentType ?? "post"}):\n\n"""\n${existing}\n"""\n\nApply this refinement instruction from the user:\n"${instruction}"\n\nReturn ONLY the revised content. No preamble. Match the same format as the original (plain text or HTML).`;
+      const res = await callClaude(SYSTEM, refinePrompt, 1500);
+      if (!res.ok) {
+        if (res.status === 429)
+          return new Response(JSON.stringify({ error: "Rate limit reached. Try again shortly." }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        const t = await res.text();
+        console.error("refine AI error", res.status, t);
+        return new Response(JSON.stringify({ error: "AI gateway error" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const data = await res.json();
+      const body = data.content?.[0]?.text?.trim() ?? "";
+      return new Response(JSON.stringify({ body }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
