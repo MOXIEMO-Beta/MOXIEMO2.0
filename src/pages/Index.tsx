@@ -2,34 +2,60 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MoxieLogo } from "@/components/MoxieLogo";
 import { SiteHeader } from "@/components/SiteHeader";
-import { ArrowRight, Clock, Layers, Compass, Check, Mail, Calendar, FileText, BarChart3, Users } from "lucide-react";
+import { ArrowRight, Check, MessageSquare, Target, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { WaitlistForm } from "@/components/WaitlistForm";
+import dashboardImg from "@/assets/home-dashboard.png";
+import plannerImg from "@/assets/home-planner.png";
+import contentImg from "@/assets/home-content.png";
+import strategyImg from "@/assets/home-strategy.png";
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="inline-block text-xs font-bold uppercase tracking-[0.22em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">
+      {children}
+    </div>
+  );
+}
+
+function ProductShot({ src, alt, className = "" }: { src: string; alt: string; className?: string }) {
+  return (
+    <div
+      className={`rounded-2xl overflow-hidden bg-card border border-border ${className}`}
+      style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.12)" }}
+    >
+      <div className="flex items-center gap-1.5 px-4 py-2.5 bg-muted/60 border-b border-border">
+        <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+        <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+      </div>
+      <img src={src} alt={alt} className="w-full h-auto block" loading="lazy" />
+    </div>
+  );
+}
 
 export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-6 pt-20 pb-16 text-center relative">
-          <h1 className="text-5xl md:text-7xl lg:text-[88px] font-bold leading-[1.05] tracking-[-0.035em] mb-8 max-w-5xl mx-auto text-foreground">
-            Stop managing marketing tools. <span className="text-gradient-coral">Start marketing your business.</span>
+      {/* SECTION 1 — HERO */}
+      <section className="bg-background pt-28 md:pt-32 pb-24">
+        <div className="max-w-[860px] mx-auto px-6 text-center">
+          <SectionLabel>Your AI CMO is ready</SectionLabel>
+          <h1 className="text-5xl md:text-7xl lg:text-[88px] font-bold leading-[1.05] tracking-[-0.035em] mb-8 text-foreground">
+            Stop managing tools.
+            <br />
+            Start running your business.
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 leading-relaxed">
+          <p className="text-lg md:text-xl text-muted-foreground max-w-[600px] mx-auto mb-10 leading-relaxed">
             MOXIE is your AI Chief Marketing Officer — building your strategy, generating your content, and publishing across every channel. One platform. Confident marketing.
-          </p>
-          <p className="text-sm md:text-base text-muted-foreground/80 max-w-xl mx-auto mb-10 leading-relaxed">
-            Built for founders selling their expertise — coaches, consultants, fractional executives, and agency owners earning $600K–$2M.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
             <Button
               size="lg"
-              className="bg-foreground hover:bg-foreground/90 text-background h-12 px-7 rounded-full text-base font-semibold"
-              onClick={() => {
-                document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 px-7 rounded-full text-base font-semibold"
+              onClick={() => document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth", block: "start" })}
             >
               Join the founding member waitlist <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -38,117 +64,155 @@ export default function Index() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground/80">Founding members get full access — free, forever.</p>
+        </div>
 
-          {/* Hero visual — product card */}
-          <div className="relative max-w-5xl mx-auto mt-16">
-            <Card className="p-2 border-border shadow-lift bg-card overflow-hidden rounded-2xl">
-              <div className="rounded-xl bg-foreground p-10 md:p-14 text-background text-left">
-                <div className="text-xs text-accent mb-5 font-semibold tracking-wider uppercase">MOXIE Discovery — Section 1 of 5</div>
-                <p className="text-2xl md:text-3xl font-semibold mb-6 leading-tight tracking-tight">"What transformation do you help clients achieve?"</p>
-                <div className="text-sm text-background/60">MOXIE adapts as you answer — coaching when unclear, placeholders when stuck.</div>
-              </div>
-            </Card>
-          </div>
+        <div className="max-w-[85%] mx-auto px-6 mt-16">
+          <ProductShot src={dashboardImg} alt="MOXIE Dashboard" />
         </div>
       </section>
 
-      {/* Waitlist */}
-      <section className="py-20 border-b border-border bg-muted/20">
+      {/* SECTION 2 — STATS BAR */}
+      <section className="bg-[#f8f8f8] py-[60px] border-y border-border">
         <div className="max-w-6xl mx-auto px-6">
-          <WaitlistForm />
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section className="border-y border-border bg-muted/30">
-        <div className="max-w-6xl mx-auto px-6 py-14 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[
-            { v: "18+", l: "hrs back per week" },
-            { v: "4–6", l: "tools eliminated" },
-            { v: "45m", l: "to full strategy" },
-            { v: "$93K", l: "saved annually" },
-          ].map((s) => (
-            <div key={s.l}>
-              <div className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-1">{s.v}</div>
-              <div className="text-sm text-muted-foreground">{s.l}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Platform overview */}
-      <section id="platform" className="py-28">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16 max-w-3xl mx-auto">
-            <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">The platform</div>
-            <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-[-0.04em] mb-6 leading-[1.02]">Everything you need. <span className="text-muted-foreground">One place.</span></h2>
-            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed font-light">Strategy, content, calendar, analytics — all wired to one source of truth about your business.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x divide-border">
             {[
-              { icon: Compass, t: "Strategy", d: "AI-built positioning, pillars, voice, and goals — alive in every workflow." },
-              { icon: FileText, t: "Content", d: "Generate emails, posts, captions in your voice. Edit. Approve. Schedule." },
-              { icon: Calendar, t: "Calendar", d: "Plan a quarter in minutes. See cadence, gaps, and channel mix at a glance." },
-              { icon: Mail, t: "Email", d: "Sequences and broadcasts that already match your strategy and audience." },
-              { icon: BarChart3, t: "Analytics", d: "What's working, what's not — explained against your strategic goals." },
-              { icon: Users, t: "Audience", d: "One contact list, one truth. Behavior-aware. No more re-tagging across tools." },
+              { v: "18+", l: "hrs back per week" },
+              { v: "4–6", l: "tools eliminated" },
+              { v: "20 min", l: "to full strategy" },
+              { v: "$93K", l: "saved annually" },
             ].map((s) => (
-              <Card key={s.t} className="p-7 border-border rounded-2xl hover:shadow-card transition group">
-                <div className="h-11 w-11 rounded-xl bg-accent-soft flex items-center justify-center mb-5 group-hover:bg-accent transition">
-                  <s.icon className="h-5 w-5 text-accent group-hover:text-accent-foreground transition" />
-                </div>
-                <h3 className="font-semibold text-lg mb-2 tracking-tight">{s.t}</h3>
-                <p className="text-[15px] text-muted-foreground leading-relaxed">{s.d}</p>
-              </Card>
+              <div key={s.l} className="text-center md:px-6">
+                <div className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-1.5">{s.v}</div>
+                <div className="text-sm text-muted-foreground">{s.l}</div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* How */}
-      <section id="how" className="py-28 bg-muted/40 border-y border-border">
+      {/* SECTION 3 — HOW IT WORKS */}
+      <section className="py-[100px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16 max-w-3xl mx-auto">
-            <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">How it works</div>
-            <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-[-0.04em] leading-[1.02]">Scattered to strategic <span className="text-gradient-coral">in 45 minutes.</span></h2>
+            <SectionLabel>How it works</SectionLabel>
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-[-0.04em] leading-[1.02]">
+              Scattered to strategic
+              <br />
+              <span className="text-gradient-coral">in 20 minutes.</span>
+            </h2>
           </div>
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-3 gap-6">
             {[
-              { n: "01", icon: Compass, t: "MOXIE Discovery", d: "A guided conversation extracts your positioning, voice, audience, and goals." },
-              { n: "02", icon: Layers, t: "Strategy synthesized", d: "Positioning, pillars, voice, channels, metrics — connected, not a PDF." },
-              { n: "03", icon: Clock, t: "Execution embedded", d: "Every tool already knows your strategy. Approve, edit, publish." },
+              { n: "01", icon: MessageSquare, t: "MOXIE Discovery", d: "A guided 20-minute conversation extracts your positioning, voice, audience, and goals.", img: strategyImg, alt: "Discovery chat" },
+              { n: "02", icon: Target, t: "Strategy synthesized", d: "Positioning, pillars, voice, channels, and metrics — connected to everything, not a static PDF.", img: strategyImg, alt: "Strategy positioning" },
+              { n: "03", icon: Zap, t: "Execution embedded", d: "Every tool already knows your strategy. Generate content, plan campaigns, send emails. Approve, edit, publish.", img: plannerImg, alt: "Marketing planner" },
             ].map((s) => (
-              <Card key={s.n} className="p-7 border-border rounded-2xl bg-card hover:shadow-card transition">
+              <Card key={s.n} className="p-7 border-border rounded-2xl bg-card hover:shadow-card transition flex flex-col">
                 <div className="text-sm font-semibold text-accent mb-4">{s.n}</div>
                 <s.icon className="h-5 w-5 text-foreground mb-4" />
                 <h3 className="font-semibold text-lg mb-2 tracking-tight">{s.t}</h3>
-                <p className="text-[15px] text-muted-foreground leading-relaxed">{s.d}</p>
+                <p className="text-[15px] text-muted-foreground leading-relaxed mb-6">{s.d}</p>
+                <div className="mt-auto rounded-xl overflow-hidden border border-border" style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.08)" }}>
+                  <img src={s.img} alt={s.alt} className="w-full h-40 object-cover object-top" loading="lazy" />
+                </div>
               </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Why */}
-      <section id="why" className="py-28">
+      {/* SECTION 4 — PLATFORM FEATURE SHOWCASE */}
+      <section className="py-[100px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
+          <div className="text-center mb-20 max-w-3xl mx-auto">
+            <SectionLabel>The platform</SectionLabel>
+            <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-[-0.04em] mb-6 leading-[1.02]">
+              Everything you need.
+              <br />
+              <span className="text-muted-foreground">One place.</span>
+            </h2>
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed font-light">
+              Strategy, content, calendar, analytics — all wired to one source of truth about your business.
+            </p>
+          </div>
+
+          {/* Row 1 — Strategy (image left, copy right) */}
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center mb-24">
+            <ProductShot src={strategyImg} alt="MOXIE Strategy positioning statement" />
             <div>
-              <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">Why MOXIE</div>
-              <h2 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-[-0.04em] mb-6 leading-[1.02]">You became a coach to help people. <span className="text-muted-foreground">Not to run a tool stack.</span></h2>
-              <p className="text-lg md:text-xl text-muted-foreground leading-relaxed font-light">ConvertKit, Buffer, Kajabi, Calendly, Dubsado, GA. 20 hours a week. The "messy middle" deserves better than Frankenstein stacks or enterprise bloat.</p>
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-accent mb-4">Strategy</div>
+              <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-[-0.03em] mb-5 leading-[1.1]">
+                Your foundation. Built in minutes.
+              </h3>
+              <p className="text-[17px] md:text-[18px] text-muted-foreground leading-[1.7] mb-6">
+                MOXIE runs a guided discovery, then synthesizes your complete marketing strategy — positioning, voice, content pillars, channel plan. It scores your strategy and tells you exactly what to strengthen.
+              </p>
+              <div className="inline-flex items-baseline gap-2 px-4 py-2.5 rounded-full bg-accent-soft">
+                <span className="text-2xl font-bold text-accent">97/100</span>
+                <span className="text-sm text-foreground/70">strategy strength — out of the box</span>
+              </div>
             </div>
-            <Card className="p-8 border-border rounded-2xl bg-card">
-              <div className="space-y-4">
+          </div>
+
+          {/* Row 2 — Content (copy left, image right) */}
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center mb-24">
+            <div className="md:order-1 order-2">
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-accent mb-4">Content</div>
+              <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-[-0.03em] mb-5 leading-[1.1]">
+                Content that sounds like you. Every time.
+              </h3>
+              <p className="text-[17px] md:text-[18px] text-muted-foreground leading-[1.7]">
+                Generate LinkedIn posts, newsletters, captions, and long-form content anchored to your strategy. Pick a content pillar, describe your idea, and MOXIE writes in your voice — not generic AI output.
+              </p>
+            </div>
+            <div className="md:order-2 order-1">
+              <ProductShot src={contentImg} alt="MOXIE Content creator" />
+            </div>
+          </div>
+
+          {/* Row 3 — Marketing Planner (image left, copy right) */}
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
+            <ProductShot src={plannerImg} alt="MOXIE Marketing Planner" />
+            <div>
+              <div className="text-xs font-bold uppercase tracking-[0.22em] text-accent mb-4">Marketing Planner</div>
+              <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-[-0.03em] mb-5 leading-[1.1]">
+                See your whole quarter at a glance.
+              </h3>
+              <p className="text-[17px] md:text-[18px] text-muted-foreground leading-[1.7]">
+                Build campaigns across LinkedIn, email, Instagram, and Facebook. MOXIE populates your calendar with content slots, flags gaps, and keeps everything tied back to your strategy goals.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5 — WHY MOXIE */}
+      <section className="py-[100px] bg-[#f8f8f8] border-y border-border">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="max-w-[480px]">
+              <SectionLabel>Why MOXIE</SectionLabel>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.035em] mb-6 leading-[1.05] text-foreground">
+                You became a founder to build something. Not to run a tool stack.
+              </h2>
+              <p className="text-[17px] md:text-[18px] text-muted-foreground leading-[1.7]">
+                ConvertKit. Buffer. Kajabi. Calendly. Dubsado. GA. 20 hours a week on tools that don't talk to each other. The "messy middle" deserves better than Frankenstein stacks or enterprise bloat.
+              </p>
+            </div>
+            <Card className="p-8 md:p-10 border-border rounded-2xl bg-card" style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.08)" }}>
+              <div className="space-y-5">
                 {[
                   "End fragmentation — replace tools, never integrate",
                   "Strategy embedded in execution, not a static PDF",
-                  "Built for $600K-$2M operators, not startups or enterprises",
+                  "Built for $600K–$2M operators, not startups or enterprises",
                   "Honest urgency over hype — real ROI, no exaggeration",
+                  "Your voice in every output — not generic AI slop",
                 ].map((t) => (
                   <div key={t} className="flex gap-3">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <span className="text-[15px]">{t}</span>
+                    <div className="h-6 w-6 rounded-full bg-accent-soft flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="h-3.5 w-3.5 text-accent" />
+                    </div>
+                    <span className="text-[15px] md:text-base leading-relaxed">{t}</span>
                   </div>
                 ))}
               </div>
@@ -157,23 +221,39 @@ export default function Index() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section id="pricing" className="py-24 bg-muted/40 border-t border-border">
-        <div className="max-w-4xl mx-auto px-6">
-          <Card className="p-12 md:p-20 bg-foreground text-background border-0 text-center relative overflow-hidden rounded-3xl">
-            <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-accent/30 blur-3xl" />
-            <div className="relative">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-[1.1]">Get your identity back.</h2>
-              <p className="text-background/70 mb-8 max-w-lg mx-auto text-lg">Stop running tools. Start running a business.</p>
-              <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 px-8 rounded-full text-base font-semibold">
-                <Link to="/auth">Begin discovery <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-            </div>
-          </Card>
+      {/* SECTION 6 — FOUNDING MEMBER CTA */}
+      <section className="py-[100px] bg-foreground text-background">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <div className="inline-block text-xs font-bold uppercase tracking-[0.22em] text-accent mb-6 px-4 py-2 rounded-full bg-accent/15">
+            Founding members
+          </div>
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.035em] mb-5 leading-[1.05]">
+            Be a MOXIE Founding Member.
+          </h2>
+          <p className="text-lg md:text-xl text-background/70 max-w-2xl mx-auto mb-10 leading-relaxed">
+            Join the beta and get full platform access — free, forever. We're personally onboarding every founding member with a 1:1 kickoff call.
+          </p>
+
+          <ul className="grid sm:grid-cols-2 gap-3 max-w-2xl mx-auto mb-12 text-left">
+            {[
+              "Full platform access — free forever",
+              "Locked-in rate before prices increase",
+              "Personal onboarding call with the founder",
+              "Shape the product with your feedback",
+            ].map((perk) => (
+              <li key={perk} className="flex gap-2.5 items-start text-[15px]">
+                <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                <span>{perk}</span>
+              </li>
+            ))}
+          </ul>
+
+          <WaitlistForm />
         </div>
       </section>
 
-      <footer className="border-t border-border py-10">
+      {/* FOOTER */}
+      <footer className="border-t border-border py-10 bg-background">
         <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
           <MoxieLogo />
           <p className="text-xs text-muted-foreground">© 2026 MOXIE. One platform. Confident marketing.</p>
