@@ -769,6 +769,60 @@ export type Database = {
         }
         Relationships: []
       }
+      waitlist: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          beta_code_sent: string | null
+          company_name: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          notes: string | null
+          referral_source: string | null
+          role: string | null
+          scheduled_call_at: string | null
+          status: string | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          beta_code_sent?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          notes?: string | null
+          referral_source?: string | null
+          role?: string | null
+          scheduled_call_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          beta_code_sent?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          referral_source?: string | null
+          role?: string | null
+          scheduled_call_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
