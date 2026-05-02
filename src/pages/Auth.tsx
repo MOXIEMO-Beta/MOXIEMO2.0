@@ -132,6 +132,13 @@ export default function Auth() {
               {mode === "signup" ? "Sign in" : "Create account"}
             </button>
           </p>
+
+          <p className="mt-6 text-xs text-muted-foreground text-center leading-relaxed">
+            By signing up you agree to our{" "}
+            <Link to="/terms" className="underline hover:text-foreground">Terms of Service</Link>{" "}
+            and{" "}
+            <Link to="/privacy" className="underline hover:text-foreground">Privacy Policy</Link>.
+          </p>
           </>
           )}
         </div>
