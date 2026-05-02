@@ -10,10 +10,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Plus, Target, Sparkles, Loader2, Pause, CheckCircle2, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Target, Sparkles, Loader2, Pause, CheckCircle2, MoreHorizontal, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { asArray, fmtShort, ymd } from "./helpers";
+import { asArray, fmtShort, ymd, generateCampaignSlots, campaignSlotProgress, campaignSlotCounts } from "./helpers";
 
 const TYPES = [
   { value: "quarterly", label: "Quarterly theme" },
@@ -100,14 +100,15 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
 }
 
 function CampaignCard({ c, ctx, onOpen }: any) {
-  const linkedPosts = ctx.socialPosts.filter((p: any) => p.campaign_id === c.id);
-  const linkedEmails = ctx.emailSends.filter((e: any) => e.campaign_id === c.id);
-  const linkedContent = ctx.contentItems.filter((x: any) => x.campaign_id === c.id);
-  const total = linkedPosts.length + linkedEmails.length + linkedContent.length;
-  const done = linkedPosts.filter((p: any) => p.status === "published").length
-    + linkedEmails.filter((e: any) => e.status === "sent").length;
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  const counts = campaignSlotCounts(c);
+  const { pct, filled, total } = campaignSlotProgress(c);
   const channels = c.channels ?? [];
+  const summaryParts: string[] = [];
+  if (counts.linkedin) summaryParts.push(`${counts.linkedin} linkedin`);
+  if (counts.email) summaryParts.push(`${counts.email} email`);
+  if (counts.instagram) summaryParts.push(`${counts.instagram} instagram`);
+  if (counts.facebook) summaryParts.push(`${counts.facebook} facebook`);
+  const summary = summaryParts.length > 0 ? summaryParts.join(" · ") : "0 posts scheduled";
 
   return (
     <Card className="p-5 shadow-soft border-border">
@@ -123,15 +124,25 @@ function CampaignCard({ c, ctx, onOpen }: any) {
       <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-2">
         <div className="h-full bg-accent" style={{ width: `${pct}%` }} />
       </div>
-      <div className="text-xs text-muted-foreground mb-3">{pct}% complete</div>
+      <div className="text-xs text-muted-foreground mb-3">
+        {pct}% of slots filled {total > 0 && <span>· {filled}/{total}</span>}
+      </div>
       <div className="flex gap-1 flex-wrap mb-3">
         {channels.map((ch: string) => <Badge key={ch} variant="outline" className="text-[10px]">{ch}</Badge>)}
       </div>
-      <div className="text-xs text-muted-foreground mb-4">
-        {linkedPosts.length} posts · {linkedEmails.length} emails · {linkedContent.length} content
-      </div>
-      <div className="flex gap-2">
+      <div className="text-xs text-muted-foreground mb-4">{summary}</div>
+      <div className="flex gap-2 flex-wrap">
         <Button size="sm" onClick={onOpen}>Open campaign <ArrowRight className="w-3 h-3" /></Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            if (c.start_date) ctx.setScheduleAnchor(new Date(c.start_date));
+            ctx.setTab("schedule");
+          }}
+        >
+          <CalendarDays className="w-3 h-3" /> View in Planner <ArrowRight className="w-3 h-3" />
+        </Button>
       </div>
     </Card>
   );
@@ -198,6 +209,12 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     if (!user) return;
     setCreating(true);
     try {
+      const slots = generateCampaignSlots({
+        start_date: startDate || null,
+        end_date: endDate || null,
+        channels: selectedChannels,
+        targets,
+      });
       const { error } = await supabase.from("campaigns").insert({
         user_id: user.id,
         name, theme, goals,
@@ -205,11 +222,11 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         start_date: startDate || null,
         end_date: endDate || null,
         channels: selectedChannels,
-        status: "planned",
-        content_plan: { weeks: plan, targets },
+        status: "active",
+        content_plan: { weeks: plan, targets, slots },
       });
       if (error) throw error;
-      toast.success("Campaign created");
+      toast.success("Campaign created", { description: `${slots.length} content slots added to your planner.` });
       onCreated();
     } catch (e: any) {
       toast.error("Could not save campaign", { description: e.message });
