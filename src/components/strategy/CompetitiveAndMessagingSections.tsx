@@ -117,12 +117,26 @@ export function CompetitiveAndMessagingSections() {
   const [regenPositioning, setRegenPositioning] = useState(false);
   const inferredOnceRef = useRef(false);
 
-  const variations = ef.messagingVariations || {};
+  // Support both new shape (messagingVariations) and the shape produced by
+  // synthesize-strategy (positioningVariations: { short, tweet, elevator }).
+  const messagingVars = ef.messagingVariations || {};
+  const positioningVars = ef.positioningVariations || {};
   const positioning: string = strategy?.positioning_statement || "";
   const firstSentence = positioning ? (positioning.match(/^[^.!?]+[.!?]?/)?.[0] || positioning).trim() : "";
-  const oneLiner = variations.oneliner || firstSentence;
-  const shortVersion = variations.short || (positioning ? positioning.slice(0, 160) : "");
-  const elevator = variations.elevator || "";
+  const oneLiner =
+    messagingVars.oneliner ||
+    positioningVars.tweet ||
+    positioningVars.short ||
+    firstSentence;
+  const shortVersion =
+    messagingVars.short ||
+    positioningVars.short ||
+    (positioning ? positioning.slice(0, 160) : "");
+  const elevator =
+    messagingVars.elevator ||
+    positioningVars.elevator ||
+    ef.elevator_pitch ||
+    "";
 
   // Infer initial values for empty competitive positioning fields and persist them.
   useEffect(() => {
