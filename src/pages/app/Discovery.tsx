@@ -550,9 +550,20 @@ export default function Discovery() {
           )}
           {completed && !synthesizing && (
             <div className="flex items-center justify-center pt-4">
-              <Button onClick={() => navigate("/app/strategy")} className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
-                <CheckCircle2 className="mr-2 h-4 w-4 text-accent" /> View your strategy
-              </Button>
+              {synthFailed ? (
+                <div className="flex flex-col items-center gap-3">
+                  <p className="text-sm text-muted-foreground text-center max-w-md">
+                    Strategy generation hit a snag — your answers are saved. Click below to try again.
+                  </p>
+                  <Button onClick={retrySynthesize} className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
+                    <Sparkles className="mr-2 h-4 w-4 text-accent" /> Generate Strategy
+                  </Button>
+                </div>
+              ) : (
+                <Button onClick={() => navigate("/app/strategy")} className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
+                  <CheckCircle2 className="mr-2 h-4 w-4 text-accent" /> View your strategy
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -580,7 +591,7 @@ export default function Discovery() {
                 rows={1}
                 className="resize-none border-0 bg-transparent focus-visible:ring-0 min-h-[44px] max-h-40 text-[15px]"
               />
-              <Button onClick={send} disabled={loading || (!input.trim() && !inlineError)} size="icon" className="h-9 w-9 rounded-xl bg-foreground hover:bg-foreground/90 text-background flex-shrink-0">
+              <Button onClick={send} disabled={loading || cooldown || (!input.trim() && !inlineError)} size="icon" className="h-9 w-9 rounded-xl bg-foreground hover:bg-foreground/90 text-background flex-shrink-0">
                 <ArrowUp className="h-4 w-4" />
               </Button>
             </div>
