@@ -285,14 +285,65 @@ export default function Discovery() {
       const transcript = history.map((m) => `${m.role === "user" ? "USER" : "MOXIE"}: ${m.content}`).join("\n\n");
       // Extract the optional Q14 (revenue) and Q15 (challenge) answers from the transcript.
       const optional = extractOptionalAnswers(history);
-      const { data, error } = await supabase.functions.invoke("synthesize-strategy", {
-        body: {
+
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+        ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      if (!supabaseUrl || !supabaseKey) throw new Error("Missing Supabase environment variables");
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token ?? supabaseKey;
+
+      const resp = await fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`,
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({
           transcript,
           revenueRange: optional.revenueRange,
           biggestChallenge: optional.biggestChallenge,
-        },
+        }),
       });
-      if (error) throw error;
+
+      if (!resp.ok || !resp.body) {
+        const errText = !resp.ok ? await resp.text().catch(() => "") : "no body";
+        throw new Error(`Synthesis request failed: ${resp.status} ${errText}`);
+      }
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let data: any = null;
+      let streamError: string | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (!payload) continue;
+          try {
+            const evt = JSON.parse(payload);
+            if (evt.type === "complete") {
+              data = evt.strategy;
+            } else if (evt.type === "error") {
+              streamError = evt.message || "Stream error";
+            }
+            // 'progress' events keep the UI alive; nothing else to do.
+          } catch {
+            // ignore non-JSON heartbeat lines
+          }
+        }
+      }
+
+      if (streamError) throw new Error(streamError);
+      if (!data) throw new Error("Stream ended before strategy was generated");
       if (!user) return;
       // upsert strategy — preserve optional context inside raw_foundation
       const rawFoundation = {
@@ -306,7 +357,10 @@ export default function Discovery() {
       toast.success("Your strategy is ready.");
       setTimeout(() => navigate("/app/strategy"), 1200);
     } catch (e: any) {
-      toast.error("Couldn't synthesize strategy. " + (e.message || ""));
+      console.error("synthesize error:", e);
+      toast.error("Strategy generation took longer than expected.", {
+        description: "Your answers are saved — click 'Generate Strategy' to try again.",
+      });
     } finally {
       setSynthesizing(false);
     }
@@ -406,7 +460,28 @@ export default function Discovery() {
           {synthesizing && (
             <div className="flex items-center gap-3 justify-center text-sm text-muted-foreground py-6">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />
-              Synthesizing your strategy…
+              <span className="inline-flex items-center gap-1">
+                MOXIE is building your strategy
+                <span className="inline-flex gap-0.5 ml-1">
+                  <span className="h-1 w-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="h-1 w-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="h-1 w-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "300ms" }} />
+                </span>
+              </span>
+            </div>
+          )}
+          {completed && !synthesizing && (
+            <></>
+          )}
+          {/* keep original completed button below */}
+          {false && (
+            <div className="hidden" />
+          )}
+          {completed && !synthesizing && (
+            <div className="flex items-center justify-center pt-2">
+              <Button variant="outline" onClick={() => synthesize(messages)} className="h-9 rounded-lg">
+                <RotateCcw className="mr-2 h-4 w-4" /> Generate Strategy
+              </Button>
             </div>
           )}
           {completed && !synthesizing && (
