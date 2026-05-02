@@ -29,6 +29,9 @@ import Email from "./pages/app/Email.tsx";
 import Onboarding from "./pages/onboarding/Onboarding.tsx";
 import { AuthProvider } from "./hooks/useAuth.tsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
+import Terms from "./pages/Terms.tsx";
+import Privacy from "./pages/Privacy.tsx";
+import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 
 const queryClient = new QueryClient();
 
@@ -50,18 +53,20 @@ const App = () => (
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/community" element={<Community />} />
             <Route path="/about" element={<About />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<Privacy />} />
             <Route path="/onboarding" element={<ProtectedRoute requireOnboarding={false}><Onboarding /></ProtectedRoute>} />
             <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-              <Route index element={<Dashboard />} />
-              <Route path="discovery" element={<Discovery />} />
-              <Route path="strategy" element={<Strategy />} />
-              <Route path="content" element={<Content />} />
-              <Route path="calendar" element={<CalendarPage />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="goals" element={<Goals />} />
-              <Route path="email" element={<Email />} />
-              <Route path="social" element={<Social />} />
+              <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
+              <Route path="discovery" element={<ErrorBoundary><Discovery /></ErrorBoundary>} />
+              <Route path="strategy" element={<ErrorBoundary><Strategy /></ErrorBoundary>} />
+              <Route path="content" element={<ErrorBoundary><Content /></ErrorBoundary>} />
+              <Route path="calendar" element={<ErrorBoundary><CalendarPage /></ErrorBoundary>} />
+              <Route path="analytics" element={<ErrorBoundary><Analytics /></ErrorBoundary>} />
+              <Route path="settings" element={<ErrorBoundary><Settings /></ErrorBoundary>} />
+              <Route path="goals" element={<ErrorBoundary><Goals /></ErrorBoundary>} />
+              <Route path="email" element={<ErrorBoundary><Email /></ErrorBoundary>} />
+              <Route path="social" element={<ErrorBoundary><Social /></ErrorBoundary>} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
