@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import { StatsBar } from "@/components/StatsBar";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Check } from "lucide-react";
