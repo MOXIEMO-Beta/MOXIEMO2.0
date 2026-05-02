@@ -866,13 +866,92 @@ export default function Strategy() {
   const [strategy, setStrategy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { reportData, isLoading, error } = useReportData();
+  const [recoverableSession, setRecoverableSession] = useState<{ id: string; messageCount: number } | null>(null);
+  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle().then(({ data }) => {
-      setStrategy(data); setLoading(false);
-    });
+    (async () => {
+      const { data: strat } = await supabase
+        .from("strategies")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setStrategy(strat);
+      if (!strat) {
+        const { data: sess } = await supabase
+          .from("discovery_sessions")
+          .select("id, messages, updated_at")
+          .eq("user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const msgs = Array.isArray((sess as any)?.messages) ? (sess as any).messages : [];
+        if (sess && msgs.length > 0) {
+          setRecoverableSession({ id: (sess as any).id, messageCount: msgs.length });
+        }
+      }
+      setLoading(false);
+    })();
   }, [user]);
+
+  const handleGenerateFromSession = async () => {
+    if (!recoverableSession) return;
+    setGenerating(true);
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token ?? supabaseKey;
+      const resp = await fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${authToken}`,
+          "apikey": supabaseKey,
+        },
+        body: JSON.stringify({ sessionId: recoverableSession.id }),
+      });
+      if (!resp.ok || !resp.body) throw new Error(`Synthesis failed: ${resp.status}`);
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let data: any = null;
+      let streamError: string | null = null;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          if (!payload) continue;
+          try {
+            const evt = JSON.parse(payload);
+            if (evt.type === "complete") data = evt.strategy;
+            else if (evt.type === "error") streamError = evt.message || "Stream error";
+          } catch { /* heartbeat */ }
+        }
+      }
+      if (streamError) throw new Error(streamError);
+      if (!data) throw new Error("Stream ended before strategy was generated");
+      const { error: upsertErr } = await supabase
+        .from("strategies")
+        .upsert({ ...data, user_id: user!.id }, { onConflict: "user_id" });
+      if (upsertErr) throw upsertErr;
+      toast.success("Strategy generated");
+      const { data: fresh } = await supabase.from("strategies").select("*").eq("user_id", user!.id).maybeSingle();
+      setStrategy(fresh);
+      setRecoverableSession(null);
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Couldn't generate strategy", { description: e?.message || "Try again in a moment." });
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   if (isLoading) return <p className="p-10 text-muted-foreground">Loading strategy...</p>;
   if (error) return <p className="p-10 text-destructive">Error: {error.message}</p>;
@@ -883,11 +962,35 @@ export default function Strategy() {
     return (
       <div className="px-6 lg:px-10 py-16 max-w-3xl mx-auto text-center">
         <div className="h-16 w-16 rounded-2xl bg-foreground mx-auto mb-6 flex items-center justify-center"><Compass className="h-7 w-7 text-accent" /></div>
-        <h1 className="font-display text-4xl mb-3">No strategy yet</h1>
-        <p className="text-muted-foreground mb-8">Run MOXIE Discovery to extract your positioning, voice, and content foundation.</p>
-        <Button asChild className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
-          <Link to="/app/discovery"><Sparkles className="mr-2 h-4 w-4 text-accent" /> Begin discovery</Link>
-        </Button>
+        {recoverableSession ? (
+          <>
+            <h1 className="font-display text-4xl mb-3">Your Discovery is ready</h1>
+            <p className="text-muted-foreground mb-8">
+              We found your previous Discovery conversation ({recoverableSession.messageCount} messages). Generate your strategy now — no need to redo Discovery.
+            </p>
+            <div className="flex gap-3 justify-center flex-wrap">
+              <Button
+                onClick={handleGenerateFromSession}
+                disabled={generating}
+                className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg"
+              >
+                {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                {generating ? "Generating…" : "Generate My Strategy"}
+              </Button>
+              <Button asChild variant="outline" className="h-11 rounded-lg">
+                <Link to="/app/discovery">Review Discovery</Link>
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <h1 className="font-display text-4xl mb-3">No strategy yet</h1>
+            <p className="text-muted-foreground mb-8">Run MOXIE Discovery to extract your positioning, voice, and content foundation.</p>
+            <Button asChild className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
+              <Link to="/app/discovery"><Sparkles className="mr-2 h-4 w-4 text-accent" /> Begin discovery</Link>
+            </Button>
+          </>
+        )}
       </div>
     );
   }
