@@ -164,22 +164,16 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                         style={{ gridTemplateColumns: "100px repeat(7, minmax(0, 1fr))", gap: 2 }}
                       >
                         <div />
-                        {Array.from({ length: 7 }, (_, i) => i).map((i) => {
-                          if (i !== startCol) return <div key={i} />;
-                          return (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => navigate("/app/calendar?tab=campaigns")}
-                              style={{ gridColumn: `span ${span} / span ${span}` }}
-                              className="h-6 px-2 rounded-md bg-accent text-accent-foreground text-[11px] font-medium flex items-center gap-1.5 truncate hover:bg-accent/90 transition-colors text-left"
-                              title={`${c.name} · ${fmtShort(new Date(c.start_date))} – ${fmtShort(new Date(c.end_date))}`}
-                            >
-                              <Target className="w-3 h-3 shrink-0" />
-                              <span className="truncate">{c.name}</span>
-                            </button>
-                          );
-                        })}
+                        <button
+                          type="button"
+                          onClick={() => navigate("/app/calendar?tab=campaigns")}
+                          style={{ gridColumnStart: startCol + 2, gridColumnEnd: `span ${span}` }}
+                          className="h-6 px-2 rounded-md bg-accent text-accent-foreground text-[11px] font-medium flex items-center gap-1.5 truncate hover:bg-accent/90 transition-colors text-left"
+                          title={`${c.name} · ${fmtShort(new Date(c.start_date))} – ${fmtShort(new Date(c.end_date))}`}
+                        >
+                          <Target className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{c.name}</span>
+                        </button>
                       </div>
                     );
                   })}
