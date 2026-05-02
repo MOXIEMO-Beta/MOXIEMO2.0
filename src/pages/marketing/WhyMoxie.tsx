@@ -27,6 +27,32 @@ export default function WhyMoxie() {
       subtitle="You've tried VAs, Zapier, HubSpot, all-in-one platforms, and generic AI. They all failed for the same reason: they didn't start with strategy."
     >
       <div className="space-y-24">
+        {/* Differences */}
+        <section>
+          <div className="text-center mb-14">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">What makes MOXIE unreplicable.</h2>
+            <p className="text-muted-foreground text-lg font-light max-w-2xl mx-auto">Five differences nobody else can copy without rebuilding from the ground up.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {differences.map((d, i) => (
+              <Card key={d.t} className="p-7 border-border shadow-soft">
+                <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-3">Difference {i + 1}</div>
+                <h3 className="font-bold text-xl mb-4 tracking-tight">{d.t}</h3>
+                <div className="space-y-3 text-sm">
+                  <div className="flex gap-3">
+                    <X className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div><span className="font-semibold">Everyone else:</span> <span className="text-muted-foreground font-light">{d.them}</span></div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+                    <div><span className="font-semibold">MOXIE:</span> <span className="font-light">{d.us}</span></div>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+
         {/* Failed solutions */}
         <section>
           <div className="text-center mb-14">
@@ -61,32 +87,6 @@ export default function WhyMoxie() {
         {/* Stats proof bar */}
         <section>
           <StatsBar />
-        </section>
-
-        {/* Differences */}
-        <section>
-          <div className="text-center mb-14">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">What makes MOXIE unreplicable.</h2>
-            <p className="text-muted-foreground text-lg font-light max-w-2xl mx-auto">Five differences nobody else can copy without rebuilding from the ground up.</p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {differences.map((d, i) => (
-              <Card key={d.t} className="p-7 border-border shadow-soft">
-                <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-3">Difference {i + 1}</div>
-                <h3 className="font-bold text-xl mb-4 tracking-tight">{d.t}</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex gap-3">
-                    <X className="h-5 w-5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                    <div><span className="font-semibold">Everyone else:</span> <span className="text-muted-foreground font-light">{d.them}</span></div>
-                  </div>
-                  <div className="flex gap-3">
-                    <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <div><span className="font-semibold">MOXIE:</span> <span className="font-light">{d.us}</span></div>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
         </section>
 
         {/* Why now */}
