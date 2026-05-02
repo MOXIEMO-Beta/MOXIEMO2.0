@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Plus, Target } from "lucide-react";
-import { quarterRange, currentQuarter, nextQuarters, isBetween, asArray, fmtShort, addDays, startOfWeek, ymd } from "./helpers";
+import { quarterRange, currentQuarter, nextQuarters, isBetween, asArray, fmtShort, addDays, startOfWeek, ymd, activeCampaignForDate, campaignSlotProgress, campaignSlotCounts } from "./helpers";
 
 export default function PlanTab({ ctx }: { ctx: any }) {
   const { strategy, socialPosts, contentItems, emailSends, campaigns, loading, setTab, setScheduleAnchor, setCampaignSeed } = ctx;
@@ -23,15 +23,37 @@ export default function PlanTab({ ctx }: { ctx: any }) {
   // Quarterly roadmap
   const quarterCards = quarters.map((Q, i) => {
     const { start, end } = quarterRange(Q.year, Q.q);
-    const postsCount = socialPosts.filter((p: any) => isBetween(p.scheduled_for ?? p.published_at, start, end)).length;
-    const emailsCount = emailSends.filter((e: any) => isBetween(e.scheduled_for ?? e.sent_at, start, end)).length;
     const isCurrent = Q.year === cq.year && Q.q === cq.q;
-    const themeRaw = themes[i] as any;
-    const themeText = typeof themeRaw === "string" ? themeRaw : (themeRaw?.theme ?? themeRaw?.title ?? themeRaw?.name ?? `Quarter ${Q.q} focus`);
     const now = new Date();
-    const total = end.getTime() - start.getTime();
-    const elapsed = Math.max(0, Math.min(total, now.getTime() - start.getTime()));
-    const pct = isCurrent ? Math.round((elapsed / total) * 100) : (now > end ? 100 : 0);
+
+    // Find a campaign whose date range overlaps this quarter
+    const quarterCampaign = (campaigns ?? []).find((c: any) => {
+      if (!c.start_date || !c.end_date) return false;
+      const s = new Date(c.start_date);
+      const e = new Date(c.end_date);
+      return s <= end && e >= start;
+    });
+
+    let themeText: string;
+    let postsCount: number;
+    let emailsCount: number;
+    let pct: number;
+
+    if (quarterCampaign) {
+      themeText = quarterCampaign.name;
+      const counts = campaignSlotCounts(quarterCampaign);
+      postsCount = (counts.linkedin ?? 0) + (counts.instagram ?? 0) + (counts.facebook ?? 0);
+      emailsCount = counts.email ?? 0;
+      pct = campaignSlotProgress(quarterCampaign).pct;
+    } else {
+      const themeRaw = themes[i] as any;
+      themeText = typeof themeRaw === "string" ? themeRaw : (themeRaw?.theme ?? themeRaw?.title ?? themeRaw?.name ?? `Quarter ${Q.q} focus`);
+      postsCount = socialPosts.filter((p: any) => isBetween(p.scheduled_for ?? p.published_at, start, end)).length;
+      emailsCount = emailSends.filter((e: any) => isBetween(e.scheduled_for ?? e.sent_at, start, end)).length;
+      const total = end.getTime() - start.getTime();
+      const elapsed = Math.max(0, Math.min(total, now.getTime() - start.getTime()));
+      pct = isCurrent ? Math.round((elapsed / total) * 100) : (now > end ? 100 : 0);
+    }
 
     return (
       <Card key={`${Q.year}-${Q.q}`} className="min-w-[280px] w-[280px] p-5 shadow-soft border-border">
@@ -150,6 +172,7 @@ export default function PlanTab({ ctx }: { ctx: any }) {
               const dots = inMonth ? dayDots(date) : [];
               const isWeekday = date.getDay() !== 0 && date.getDay() !== 6;
               const empty = dots.length === 0;
+              const camp = inMonth && empty && isWeekday ? activeCampaignForDate(campaigns ?? [], date) : null;
               return (
                 <div
                   key={idx}
@@ -163,10 +186,29 @@ export default function PlanTab({ ctx }: { ctx: any }) {
                   )}
                   {empty && inMonth && isWeekday && (
                     <button
-                      onClick={() => { setScheduleAnchor(date); setTab("schedule"); }}
-                      className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-accent/5 text-[10px] text-accent font-medium flex items-center justify-center"
+                      onClick={() => {
+                        if (camp) {
+                          const platform = (camp.channels?.[0] === "linkedin" ? "LinkedIn Post"
+                            : camp.channels?.[0] === "email" ? "Newsletter Section"
+                            : camp.channels?.[0] === "instagram" ? "Instagram Caption"
+                            : camp.channels?.[0] === "facebook" ? "Facebook Post"
+                            : "LinkedIn Post");
+                          const params = new URLSearchParams({
+                            platform,
+                            campaign: camp.name,
+                            campaignId: camp.id,
+                            date: ymd(date),
+                          });
+                          window.location.href = `/app/content?${params.toString()}`;
+                        } else {
+                          setScheduleAnchor(date);
+                          setTab("schedule");
+                        }
+                      }}
+                      className={`absolute inset-0 opacity-0 group-hover:opacity-100 ${camp ? "bg-accent/10" : "bg-accent/5"} text-[10px] text-accent font-medium flex items-center justify-center px-1 text-center`}
+                      title={camp ? `Fill gap — ${camp.name}` : "Fill gap"}
                     >
-                      Fill gap
+                      {camp ? <span className="truncate">Fill gap — {camp.name}</span> : "Fill gap"}
                     </button>
                   )}
                 </div>

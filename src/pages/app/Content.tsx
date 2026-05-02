@@ -44,7 +44,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import RichTextEditor from "@/components/email/RichTextEditor";
 
 type ContentItem = {
@@ -120,6 +120,7 @@ function firstName(full: string | null | undefined): string {
 
 export default function Content() {
   const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [strategy, setStrategy] = useState<any>(null);
   const [profile, setProfile] = useState<{ full_name: string | null; business_name: string | null; email: string | null } | null>(null);
   const [items, setItems] = useState<ContentItem[]>([]);
@@ -145,6 +146,25 @@ export default function Content() {
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const outputRef = useRef<HTMLDivElement | null>(null);
+
+  // Pre-fill from URL params (e.g. when navigating from a campaign slot)
+  useEffect(() => {
+    const qpPlatform = searchParams.get("platform");
+    const qpCampaign = searchParams.get("campaign");
+    const qpDate = searchParams.get("date");
+    if (!qpPlatform && !qpCampaign) return;
+    if (qpPlatform && PLATFORMS.some((p) => p.value === qpPlatform)) {
+      setPlatform(qpPlatform);
+    }
+    if (qpCampaign) {
+      const dateNote = qpDate ? ` running around ${qpDate}` : "";
+      const note = `This content is for the ${qpCampaign} campaign${dateNote}. Generate accordingly.`;
+      setTopic((prev) => (prev ? prev : note));
+    }
+    // Clear params so they don't re-apply on refresh
+    setSearchParams({}, { replace: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!generating) return;
