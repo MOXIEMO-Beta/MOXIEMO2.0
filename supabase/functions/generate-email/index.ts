@@ -11,7 +11,9 @@ Your user sells their expertise — coaching, consulting, fractional services, o
 
 Never sign off as MOXIE. Always use the founder's name.
 Never use buzzwords the founder has listed as anti-positioning.
-Always match the voice attributes provided.`;
+Always match the voice attributes provided.
+
+CRITICAL OUTPUT FORMAT: Return ONLY valid JSON with no markdown formatting, no code fences, no backticks, and no preamble. Raw JSON only. The "body" field must contain HTML directly — never wrap it in code fences or markdown.`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -148,24 +150,39 @@ The CTA button href must be the literal string [ADD YOUR CALENDAR LINK HERE] so 
     }
 
     const aiData = await aiRes.json();
-    const text = (aiData.content?.[0]?.text ?? "").trim();
+    const rawText = (aiData.content?.[0]?.text ?? "").trim();
+
+    function stripFences(s: string): string {
+      return s
+        .replace(/^```(?:json|html)?\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .trim();
+    }
+
+    const cleaned = stripFences(rawText);
     let parsed: { subject: string; body: string; preview_text?: string } = {
       subject: "",
       body: "",
     };
     try {
-      parsed = JSON.parse(text);
+      parsed = JSON.parse(cleaned);
     } catch {
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
+      const start = cleaned.indexOf("{");
+      const end = cleaned.lastIndexOf("}");
+      if (start !== -1 && end > start) {
         try {
-          parsed = JSON.parse(jsonMatch[0]);
+          parsed = JSON.parse(cleaned.substring(start, end + 1));
         } catch {
-          parsed = { subject: "Your weekly newsletter", body: text };
+          parsed = { subject: "Your weekly newsletter", body: cleaned };
         }
       } else {
-        parsed = { subject: "Your weekly newsletter", body: text };
+        parsed = { subject: "Your weekly newsletter", body: cleaned };
       }
+    }
+
+    // Defensive: if body itself was returned wrapped in fences, strip them
+    if (typeof parsed.body === "string") {
+      parsed.body = stripFences(parsed.body);
     }
 
     return new Response(JSON.stringify(parsed), {
