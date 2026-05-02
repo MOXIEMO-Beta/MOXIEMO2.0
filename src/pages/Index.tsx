@@ -44,9 +44,18 @@ export default function Index() {
         <div className="max-w-[860px] mx-auto px-6 text-center">
           <SectionLabel>Your AI CMO is ready</SectionLabel>
           <h1 className="text-5xl md:text-7xl lg:text-[88px] font-bold leading-[1.05] tracking-[-0.035em] mb-8 text-foreground">
-            Stop managing tools.
-            <br />
-            Start running your business.
+            Stop managing marketing tools.{" "}
+            <span style={{ color: "#ff6b6b" }}>Start</span>{" "}
+            <span
+              style={{
+                background: "linear-gradient(90deg, #ff6b6b, #ff9a3c)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              marketing your business.
+            </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-[600px] mx-auto mb-10 leading-relaxed">
             MOXIE is your AI Chief Marketing Officer — building your strategy, generating your content, and publishing across every channel. One platform. Confident marketing.
