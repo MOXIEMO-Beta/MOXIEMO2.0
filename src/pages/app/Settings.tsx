@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -6,18 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { ArrowRight, Shield } from "lucide-react";
 
 export default function Settings() {
   const { user } = useAuth();
   const [name, setName] = useState("");
   const [business, setBusiness] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
       setName(data?.full_name || "");
       setBusiness(data?.business_name || "");
+      setIsAdmin(Boolean((data as any)?.is_admin));
     });
   }, [user]);
 
@@ -49,6 +53,26 @@ export default function Settings() {
           {saving ? "Saving…" : "Save changes"}
         </Button>
       </Card>
+
+      {isAdmin && (
+        <div className="mt-10">
+          <div className="text-xs uppercase tracking-[0.2em] font-semibold text-muted-foreground mb-3 flex items-center gap-2">
+            <Shield className="h-3.5 w-3.5" /> Admin
+          </div>
+          <Card className="p-5 border-border shadow-soft">
+            <Link
+              to="/app/admin/waitlist"
+              className="flex items-center justify-between gap-4 group"
+            >
+              <div>
+                <div className="font-semibold group-hover:text-accent transition">Waitlist Admin →</div>
+                <div className="text-sm text-muted-foreground">Manage founding member applications</div>
+              </div>
+              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition" />
+            </Link>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { MoxieLogo } from "@/components/MoxieLogo";
 import { SiteHeader } from "@/components/SiteHeader";
 import { ArrowRight, Clock, Layers, Compass, Check, Mail, Calendar, FileText, BarChart3, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { WaitlistForm } from "@/components/WaitlistForm";
 
 export default function Index() {
   return (
@@ -14,17 +15,29 @@ export default function Index() {
       <section className="relative overflow-hidden">
         <div className="max-w-6xl mx-auto px-6 pt-20 pb-16 text-center relative">
           <h1 className="text-5xl md:text-7xl lg:text-[88px] font-bold leading-[1.05] tracking-[-0.035em] mb-8 max-w-5xl mx-auto text-foreground">
-            Outpace everyone with the <span className="text-gradient-coral">best AI marketing platform</span>
+            Stop managing marketing tools. <span className="text-gradient-coral">Start marketing your business.</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Exponential execution that scales your business impact and replaces the six tools you're juggling today.
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-6 leading-relaxed">
+            MOXIE is your AI Chief Marketing Officer — building your strategy, generating your content, and publishing across every channel. One platform. Confident marketing.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-6">
-            <Button asChild size="lg" className="bg-foreground hover:bg-foreground/90 text-background h-12 px-7 rounded-full text-base font-semibold">
-              <Link to="/auth">Get started <ArrowRight className="ml-2 h-4 w-4" /></Link>
+          <p className="text-sm md:text-base text-muted-foreground/80 max-w-xl mx-auto mb-10 leading-relaxed">
+            Built for founders selling their expertise — coaches, consultants, fractional executives, and agency owners earning $600K–$2M.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
+            <Button
+              size="lg"
+              className="bg-foreground hover:bg-foreground/90 text-background h-12 px-7 rounded-full text-base font-semibold"
+              onClick={() => {
+                document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              Join the founding member waitlist <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button asChild size="lg" variant="ghost" className="h-12 px-6 rounded-full text-base font-semibold">
+              <Link to="/auth">Sign in <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground/80">No credit card needed ✦ Unlimited time on Free plan</p>
+          <p className="text-xs text-muted-foreground/80">Founding members get full access — free, forever.</p>
 
           {/* Hero visual — product card */}
           <div className="relative max-w-5xl mx-auto mt-16">
@@ -36,6 +49,13 @@ export default function Index() {
               </div>
             </Card>
           </div>
+        </div>
+      </section>
+
+      {/* Waitlist */}
+      <section className="py-20 border-b border-border bg-muted/20">
+        <div className="max-w-6xl mx-auto px-6">
+          <WaitlistForm />
         </div>
       </section>
 
