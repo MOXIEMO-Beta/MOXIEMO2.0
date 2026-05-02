@@ -6,6 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const ZOOM_LINK = "https://scheduler.zoom.us/klmg-ltd/moxie-beta-kickoff";
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -38,16 +40,27 @@ serve(async (req) => {
       throw dbError;
     }
 
+    console.log("✓ Saved to waitlist:", email);
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+    console.log("RESEND_API_KEY present:", !!RESEND_API_KEY);
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY missing");
+      return new Response(JSON.stringify({ success: true, warning: "saved_but_email_skipped" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Email 1 — Confirmation to applicant
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    console.log("Sending confirmation email to:", email);
+    try {
+      const applicantRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
         from: "Karee at MOXIE <hello@mail.buildwithmoxie.co>",
         reply_to: "karee@studiosbagency.com",
         to: [email],
@@ -62,7 +75,7 @@ serve(async (req) => {
               Click below to pick a time that works for you:
             </p>
             <p style="margin: 0 0 24px;">
-              <a href="https://scheduler.zoom.us/klmg-ltd/moxie-beta-kickoff" style="display: inline-block; background: #111; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Schedule your founding member call →</a>
+              <a href="${ZOOM_LINK}" style="display: inline-block; background: #111; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Schedule your founding member call →</a>
             </p>
             <p style="font-size: 14px; color: #555; line-height: 1.6; margin: 0 0 24px;">
               Can't find a time? Just reply to this email and we'll work something out.
@@ -74,17 +87,27 @@ serve(async (req) => {
             </p>
           </div>
         `,
-      }),
-    });
+        }),
+      });
+      const applicantData = await applicantRes.json().catch(() => ({}));
+      console.log("Applicant email response:", applicantRes.status, JSON.stringify(applicantData));
+      if (!applicantRes.ok) {
+        console.error("Applicant email failed:", applicantRes.status, JSON.stringify(applicantData));
+      }
+    } catch (e) {
+      console.error("Applicant email threw:", e);
+    }
 
     // Email 2 — Internal notification
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    console.log("Sending admin notification to: karee@studiosbagency.com");
+    try {
+      const adminRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
         from: "MOXIE Waitlist <hello@mail.buildwithmoxie.co>",
         to: ["karee@studiosbagency.com"],
         subject: `New waitlist signup: ${name}`,
@@ -104,8 +127,16 @@ serve(async (req) => {
             </p>
           </div>
         `,
-      }),
-    });
+        }),
+      });
+      const adminData = await adminRes.json().catch(() => ({}));
+      console.log("Admin email response:", adminRes.status, JSON.stringify(adminData));
+      if (!adminRes.ok) {
+        console.error("Admin email failed:", adminRes.status, JSON.stringify(adminData));
+      }
+    } catch (e) {
+      console.error("Admin email threw:", e);
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
