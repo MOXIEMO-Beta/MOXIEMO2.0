@@ -125,17 +125,8 @@ export default function Platform() {
         </section>
 
         {/* SECTION 4 — Stats bar */}
-        <section className="bg-[#f8f8f8] border-y border-border -mx-6 px-6" style={{ paddingTop: 60, paddingBottom: 60 }}>
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0 md:divide-x divide-border">
-              {stats.map((s) => (
-                <div key={s.l} className="text-center md:px-6">
-                  <div className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-1.5">{s.v}</div>
-                  <div className="text-sm text-muted-foreground">{s.l}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <section>
+          <StatsBar />
         </section>
 
         {/* SECTION 5 — Migration + Security */}
