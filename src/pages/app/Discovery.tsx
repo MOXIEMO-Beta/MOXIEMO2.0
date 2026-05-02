@@ -221,6 +221,7 @@ export default function Discovery() {
       const decoder = new TextDecoder();
       let buffer = "";
       let assistantText = "";
+      let streamError: string | null = null;
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
       placeholderAdded = true;
 
@@ -238,6 +239,10 @@ export default function Discovery() {
 
           try {
             const parsed = JSON.parse(data);
+            if (parsed?.type === "error") {
+              streamError = parsed.message || "MOXIE had a moment — tap Send again to continue.";
+              continue;
+            }
             const chunk = parsed?.choices?.[0]?.delta?.content ?? "";
             if (chunk) {
               assistantText += chunk;
@@ -251,6 +256,7 @@ export default function Discovery() {
             // Skip malformed lines
           }
         }
+        if (streamError) throw new Error(streamError);
       }
 
       const isComplete = assistantText.includes("<STRATEGY_COMPLETE>") || assistantText.includes("<DISCOVERY_COMPLETE>");
@@ -275,13 +281,16 @@ export default function Discovery() {
       // Roll back the empty assistant placeholder so the UI doesn't show a blank bubble.
       if (placeholderAdded) {
         setMessages((prev) => {
-          if (prev.length && prev[prev.length - 1].role === "assistant" && prev[prev.length - 1].content === "") {
+          if (prev.length && prev[prev.length - 1].role === "assistant") {
             return prev.slice(0, -1);
           }
           return prev;
         });
       }
-      setInlineError("MOXIE had a moment — tap Send again to continue.");
+      const message = typeof e?.message === "string" && e.message.includes("MOXIE")
+        ? e.message
+        : "MOXIE had a moment — tap Send again to continue.";
+      setInlineError(message);
     } finally {
       setLoading(false);
     }
