@@ -1,42 +1,103 @@
-import { Card } from "@/components/ui/card";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+import PlanTab from "@/components/calendar/PlanTab";
+import ScheduleTab from "@/components/calendar/ScheduleTab";
+import CampaignsTab from "@/components/calendar/CampaignsTab";
+import IdeasTab from "@/components/calendar/IdeasTab";
 
-const days = Array.from({ length: 28 }, (_, i) => i + 1);
-const scheduled: Record<number, { ch: string; title: string }[]> = {
-  3: [{ ch: "LinkedIn", title: "Hidden cost post" }],
-  5: [{ ch: "Email", title: "$600K hustle" }],
-  8: [{ ch: "LinkedIn", title: "VA questions" }],
-  10: [{ ch: "LinkedIn", title: "Tool fragmentation" }],
-  12: [{ ch: "Email", title: "18-hour audit" }],
-  15: [{ ch: "LinkedIn", title: "Strategic CEO" }],
-  17: [{ ch: "LinkedIn", title: "Identity reclamation" }],
-  22: [{ ch: "Email", title: "Newsletter" }],
-  24: [{ ch: "LinkedIn", title: "Case study" }],
+const TABS = ["plan", "schedule", "campaigns", "ideas"] as const;
+type TabKey = (typeof TABS)[number];
+const LABELS: Record<TabKey, string> = {
+  plan: "Plan", schedule: "Schedule", campaigns: "Campaigns", ideas: "Ideas",
 };
 
 export default function CalendarPage() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [tab, setTab] = useState<TabKey>("plan");
+  const [loading, setLoading] = useState(true);
+
+  const [strategy, setStrategy] = useState<any>(null);
+  const [socialPosts, setSocialPosts] = useState<any[]>([]);
+  const [contentItems, setContentItems] = useState<any[]>([]);
+  const [emailSends, setEmailSends] = useState<any[]>([]);
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [socialConnections, setSocialConnections] = useState<any[]>([]);
+  const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [ideas, setIdeas] = useState<any[]>([]);
+
+  // Sub-state to allow Plan -> Schedule navigation with a date filter
+  const [scheduleAnchor, setScheduleAnchor] = useState<Date | null>(null);
+  const [campaignSeed, setCampaignSeed] = useState<any>(null);
+
+  const refresh = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const r = await Promise.allSettled([
+      supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
+      supabase.from("social_posts").select("*").eq("user_id", user.id),
+      supabase.from("content_items").select("*").eq("user_id", user.id),
+      supabase.from("email_sends").select("*").eq("user_id", user.id),
+      supabase.from("campaigns").select("*").eq("user_id", user.id).order("start_date", { ascending: false }),
+      supabase.from("social_connections").select("*").eq("user_id", user.id),
+      supabase.from("subscribers").select("id").eq("user_id", user.id).limit(1),
+      supabase.from("calendar_ideas").select("*").eq("user_id", user.id).eq("dismissed", false).order("generated_at", { ascending: false }),
+    ]);
+    const get = (i: number) => r[i].status === "fulfilled" ? (r[i] as any).value?.data : null;
+    setStrategy(get(0));
+    setSocialPosts(get(1) ?? []);
+    setContentItems(get(2) ?? []);
+    setEmailSends(get(3) ?? []);
+    setCampaigns(get(4) ?? []);
+    setSocialConnections(get(5) ?? []);
+    setSubscribers(get(6) ?? []);
+    setIdeas(get(7) ?? []);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  const ctx = useMemo(() => ({
+    strategy, socialPosts, contentItems, emailSends, campaigns,
+    socialConnections, subscribers, ideas, loading, refresh,
+    user, navigate,
+    setTab, setScheduleAnchor, setCampaignSeed,
+    scheduleAnchor, campaignSeed,
+  }), [strategy, socialPosts, contentItems, emailSends, campaigns, socialConnections, subscribers, ideas, loading, refresh, user, navigate, scheduleAnchor, campaignSeed]);
+
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
-      <div className="mb-8">
+    <div className="px-6 lg:px-10 py-8 max-w-7xl mx-auto">
+      <div className="mb-6">
         <h1 className="font-display text-4xl mb-2">Calendar</h1>
-        <p className="text-muted-foreground">30-day view of everything scheduled across your channels.</p>
+        <p className="text-muted-foreground">Plan, schedule, and run campaigns across every channel.</p>
       </div>
-      <Card className="p-4 border-border shadow-soft">
-        <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
-          {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
-            <div key={d} className="bg-muted px-3 py-2 text-xs font-medium text-muted-foreground">{d}</div>
-          ))}
-          {days.map((d) => (
-            <div key={d} className="bg-card min-h-[110px] p-2 text-xs">
-              <div className="text-muted-foreground mb-1.5">{d}</div>
-              <div className="space-y-1">
-                {(scheduled[d] || []).map((s, i) => (
-                  <div key={i} className="rounded-md bg-accent-soft text-accent px-1.5 py-1 truncate font-medium">{s.title}</div>
-                ))}
-              </div>
-            </div>
+
+      {/* Tab nav */}
+      <div className="border-b border-border mb-6">
+        <div className="flex gap-1">
+          {TABS.map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={cn(
+                "px-4 py-2.5 text-sm font-medium transition-colors relative",
+                tab === t ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {LABELS[t]}
+              {tab === t && <span className="absolute left-0 right-0 -bottom-px h-0.5 bg-accent" />}
+            </button>
           ))}
         </div>
-      </Card>
+      </div>
+
+      {tab === "plan" && <PlanTab ctx={ctx} />}
+      {tab === "schedule" && <ScheduleTab ctx={ctx} />}
+      {tab === "campaigns" && <CampaignsTab ctx={ctx} />}
+      {tab === "ideas" && <IdeasTab ctx={ctx} />}
     </div>
   );
 }

@@ -145,7 +145,7 @@ export default function Analytics() {
     const span = range.to.getTime() - range.from.getTime();
     const to = new Date(range.from.getTime() - 1);
     const from = new Date(to.getTime() - span);
-    return { from, to };
+    return { from, to, label: "previous period" };
   }, [range]);
 
   useEffect(() => {
