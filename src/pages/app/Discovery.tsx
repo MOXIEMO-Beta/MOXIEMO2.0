@@ -221,6 +221,7 @@ export default function Discovery() {
       const decoder = new TextDecoder();
       let buffer = "";
       let assistantText = "";
+      let streamError: string | null = null;
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
       placeholderAdded = true;
 
@@ -239,7 +240,8 @@ export default function Discovery() {
           try {
             const parsed = JSON.parse(data);
             if (parsed?.type === "error") {
-              throw new Error(parsed.message || "MOXIE had a moment — tap Send again to continue.");
+              streamError = parsed.message || "MOXIE had a moment — tap Send again to continue.";
+              continue;
             }
             const chunk = parsed?.choices?.[0]?.delta?.content ?? "";
             if (chunk) {
@@ -254,6 +256,7 @@ export default function Discovery() {
             // Skip malformed lines
           }
         }
+        if (streamError) throw new Error(streamError);
       }
 
       const isComplete = assistantText.includes("<STRATEGY_COMPLETE>") || assistantText.includes("<DISCOVERY_COMPLETE>");
