@@ -109,26 +109,48 @@ serve(async (req) => {
         }))
       : [{ role: "user", content: "Start the discovery conversation." }];
 
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 1024,
-        stream: true,
-        system: systemPrompt,
-        messages: anthropicMessages,
-      }),
-    });
+    async function callAnthropic(timeoutMs: number): Promise<Response> {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-5",
+            max_tokens: 1024,
+            stream: true,
+            system: systemPrompt,
+            messages: anthropicMessages,
+          }),
+          signal: controller.signal,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error("Anthropic error:", response.status, error);
-      throw new Error(`Anthropic API error: ${response.status}`);
+    // Try once, retry once on failure or timeout
+    let response: Response;
+    try {
+      response = await callAnthropic(30000);
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        console.error("Anthropic error (attempt 1):", response.status, errText);
+        throw new Error(`Anthropic API error: ${response.status}`);
+      }
+    } catch (firstErr) {
+      console.warn("discovery-chat: first attempt failed, retrying once:", String(firstErr));
+      response = await callAnthropic(30000);
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        console.error("Anthropic error (attempt 2):", response.status, errText);
+        throw new Error(`Anthropic API error after retry: ${response.status}`);
+      }
     }
 
     const encoder = new TextEncoder();
