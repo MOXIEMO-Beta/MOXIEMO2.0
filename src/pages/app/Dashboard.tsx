@@ -385,7 +385,7 @@ export default function Dashboard() {
       done: discoveryComplete,
       active: !discoveryComplete,
       to: "/app/discovery",
-      desc: "30-min conversation that extracts your foundation",
+      desc: "20-min conversation that extracts your foundation",
     },
     {
       label: "Review your Strategy",
@@ -399,7 +399,7 @@ export default function Dashboard() {
       done: socialPosts.length + contentItems.length > 0,
       active: hasStrategy && socialPosts.length + contentItems.length === 0,
       to: "/app/content",
-      desc: "A week of strategy-aligned posts in minutes",
+      desc: "Strategy-aligned content, ready in minutes",
     },
     {
       label: "Schedule your calendar",
