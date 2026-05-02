@@ -97,6 +97,7 @@ export default function Discovery() {
 
   // progress: count assistant questions answered = number of user messages
   const answered = messages.filter((m) => m.role === "user").length;
+  const answeredDisplay = Math.min(answered, TOTAL_QUESTIONS);
   const progress = Math.min(100, Math.round((answered / TOTAL_QUESTIONS) * 100));
   // Sections 1-5 cover Q1-Q13 (~3 each); section 6 covers Q14-Q15 (optional).
   const currentSection = answered >= REQUIRED_QUESTIONS
@@ -408,7 +409,7 @@ export default function Discovery() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium text-muted-foreground">
-              {answered}/{TOTAL_QUESTIONS} answered
+              {answeredDisplay}/{TOTAL_QUESTIONS} answered
               {answered >= REQUIRED_QUESTIONS && answered < TOTAL_QUESTIONS && " · bonus questions"}
             </span>
             <AlertDialog>
