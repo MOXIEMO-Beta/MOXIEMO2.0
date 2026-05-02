@@ -14,7 +14,7 @@ const workspace: NavItem[] = [
 
 const execute: NavItem[] = [
   { title: "Content", url: "/app/content", icon: FileText },
-  { title: "Calendar", url: "/app/calendar", icon: CalendarDays },
+  { title: "Marketing Planner", url: "/app/calendar", icon: CalendarDays },
   { title: "Email", url: "/app/email", icon: Mail },
   { title: "Social", url: "/app/social", icon: Share2 },
 ];
