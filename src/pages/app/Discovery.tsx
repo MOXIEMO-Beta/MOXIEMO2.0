@@ -80,6 +80,7 @@ function extractOptionalAnswers(history: Msg[]): { revenueRange?: string; bigges
 
 export default function Discovery() {
   const { user } = useAuth();
+  const userId = user?.id;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [welcomeName, setWelcomeName] = useState<string>("");
@@ -116,7 +117,7 @@ export default function Discovery() {
         setWelcomeName((data?.full_name || "").split(" ")[0] || "");
       });
     }
-  }, [user, searchParams]);
+  }, [userId, searchParams]);
 
   function dismissWelcome() {
     sessionStorage.setItem("welcome_dismissed", "true");
@@ -128,7 +129,7 @@ export default function Discovery() {
 
   // load or start session
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     (async () => {
       // Fetch profile first so the system prompt is personalized.
       const { data: profile } = await supabase
@@ -160,7 +161,7 @@ export default function Discovery() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [userId]);
 
   async function startConversation(sid: string) {
     await streamReply([], sid);
