@@ -103,11 +103,72 @@ function computeStrength(transcript: string, parsed: any) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { transcript, revenueRange, biggestChallenge } = await req.json();
+    const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
-    let userContent = "Discovery transcript:\n\n" + transcript;
+    // Source of truth = discovery_sessions.messages. Fall back to client transcript if DB read fails.
+    let transcript: string = incomingTranscript || "";
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL");
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+      const authHeader = req.headers.get("Authorization") || "";
+      if (supabaseUrl && serviceKey && authHeader) {
+        // Identify user from JWT
+        const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+          headers: { Authorization: authHeader, apikey: serviceKey },
+        });
+        if (userRes.ok) {
+          const u = await userRes.json();
+          const userId = u?.id;
+          if (userId) {
+            // Find the most recent session (or the one passed in)
+            const query = sessionId
+              ? `id=eq.${sessionId}&select=messages,status`
+              : `user_id=eq.${userId}&order=updated_at.desc&limit=1&select=id,messages,status`;
+            const sessRes = await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?${query}`, {
+              headers: {
+                apikey: serviceKey,
+                Authorization: `Bearer ${serviceKey}`,
+              },
+            });
+            if (sessRes.ok) {
+              const rows = await sessRes.json();
+              const session = Array.isArray(rows) ? rows[0] : rows;
+              const messages: Array<{ role: string; content: string }> = session?.messages ?? [];
+              if (Array.isArray(messages) && messages.length > 0) {
+                transcript = messages
+                  .map((m) => `${m.role === "user" ? "USER" : "MOXIE"}: ${m.content}`)
+                  .join("\n\n");
+              }
+              // Mark session completed if not already
+              const sid = session?.id ?? sessionId;
+              if (sid && session?.status !== "completed") {
+                await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?id=eq.${sid}`, {
+                  method: "PATCH",
+                  headers: {
+                    apikey: serviceKey,
+                    Authorization: `Bearer ${serviceKey}`,
+                    "Content-Type": "application/json",
+                    Prefer: "return=minimal",
+                  },
+                  body: JSON.stringify({ status: "completed", completed_at: new Date().toISOString() }),
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load discovery_sessions.messages, using client transcript:", e);
+    }
+
+    if (!transcript) throw new Error("No discovery transcript available");
+
+    let userContent =
+      "Here is a founder's complete Discovery conversation with MOXIE.\n" +
+      "Extract and synthesize their full marketing strategy from their answers below.\n\n" +
+      "Discovery transcript:\n\n" + transcript;
     if (revenueRange) userContent += `\n\nFounder's revenue stage: ${revenueRange}`;
     if (biggestChallenge) userContent += `\nBiggest marketing challenge: ${biggestChallenge}`;
 
