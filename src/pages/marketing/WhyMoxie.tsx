@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { X, Check } from "lucide-react";
 import { MarketingPage } from "./MarketingPage";
 import { StatsBar } from "@/components/StatsBar";
+import whyMoxieBanner from "@/assets/why-moxie-banner.png";
 
 const failed = [
   { t: "Hired a VA", tried: "Brought on a virtual assistant to manage tools, post content, coordinate marketing.", happened: "Week 1–2 training on 6 platforms. Week 3–6 they seem to be getting it. Week 7–8 they quit. You're back to managing everything — plus you're behind on campaigns.", why: "The problem wasn't capacity. It was system complexity. Adding a person to chaos doesn't eliminate chaos." },
@@ -27,6 +28,15 @@ export default function WhyMoxie() {
       subtitle="You've tried VAs, Zapier, HubSpot, all-in-one platforms, and generic AI. They all failed for the same reason: they didn't start with strategy."
     >
       <div className="space-y-24">
+        <section>
+          <img
+            src={whyMoxieBanner}
+            alt="Why not try MOXIE — features overview"
+            className="w-full h-auto rounded-2xl shadow-soft"
+            loading="lazy"
+          />
+        </section>
+
         {/* Differences */}
         <section>
           <div className="text-center mb-14">
