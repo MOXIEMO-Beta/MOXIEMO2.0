@@ -393,6 +393,7 @@ export type Database = {
           id: string
           industry: string | null
           intended_use: Json | null
+          is_admin: boolean | null
           onboarding_completed: boolean | null
           plan: string | null
           referral_source: string | null
@@ -412,6 +413,7 @@ export type Database = {
           id: string
           industry?: string | null
           intended_use?: Json | null
+          is_admin?: boolean | null
           onboarding_completed?: boolean | null
           plan?: string | null
           referral_source?: string | null
@@ -431,6 +433,7 @@ export type Database = {
           id?: string
           industry?: string | null
           intended_use?: Json | null
+          is_admin?: boolean | null
           onboarding_completed?: boolean | null
           plan?: string | null
           referral_source?: string | null
