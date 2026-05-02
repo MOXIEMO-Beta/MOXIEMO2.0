@@ -30,6 +30,21 @@ function buildPrompt(opts: {
     ? s.content_pillars.join(", ")
     : (s.content_pillars ?? "");
 
+  const richFormats = new Set(["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"]);
+  const isRich = richFormats.has(opts.platform);
+  const lengthHint: Record<string, string> = {
+    "LinkedIn Post": "1200-1800 chars, line breaks, hook under 60 chars",
+    "Instagram Caption": "800-1500 chars, conversational, line breaks between thoughts",
+    "Facebook Post": "600-1200 chars, conversational",
+    "X / Twitter": "Under 280 chars total. Punchy. No fluff.",
+    "Newsletter Section": "300-500 words. One focused idea.",
+    "Long-Form Article": "800-1500 words with clear structure (intro, body, conclusion).",
+    "Standalone Newsletter (full)": "500-900 words. Greeting, body with subheads, sign-off.",
+  };
+  const formatHint = isRich
+    ? "Return formatted HTML using <h1>, <h2>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <hr>. No <html> or <body> wrappers. No code fences."
+    : "Return only plain text. No markdown, no HTML, no code fences.";
+
   return `BRAND STRATEGY CONTEXT:
 Positioning: ${s.positioning_statement ?? "(not set)"}
 Ideal client: ${s.ideal_client ?? "(not set)"}
@@ -45,11 +60,12 @@ Requirements:
 - Match the voice attributes exactly
 - Address the ideal client's pain point naturally
 - Never use the anti-positioning language
-- Format for ${opts.platform} (LinkedIn: 1200-1800 chars, line breaks, hook under 60 chars)
+- Format for ${opts.platform}: ${lengthHint[opts.platform] ?? "appropriate length and tone for the platform"}
 - End with a specific engagement question
 - Do not include hashtags unless asked
+- ${formatHint}
 
-Return only the post copy. No preamble.`;
+Return only the post content. No preamble, no explanation.`;
 }
 
 Deno.serve(async (req) => {
