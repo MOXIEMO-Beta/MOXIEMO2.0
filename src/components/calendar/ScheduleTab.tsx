@@ -379,14 +379,18 @@ function FragmentRow({ label, days, cellItems, chipClass, onItem, onAdd, campaig
               camp ? (
                 <button
                   onClick={() => onAdd(d)}
-                  className="w-full h-full opacity-60 group-hover:opacity-100 text-[10px] text-accent flex flex-col items-center justify-center px-1 truncate"
+                  className="w-full h-full text-[10px] text-accent flex flex-col items-center justify-center px-1 truncate rounded bg-accent-soft border border-accent/30 hover:bg-accent/20 transition-colors"
                   title={`Fill gap — ${camp.name}`}
                 >
-                  <span className="truncate w-full text-center">Fill gap</span>
+                  <span className="truncate w-full text-center font-medium">Fill gap</span>
                   <span className="truncate w-full text-center text-[9px] opacity-80">{camp.name}</span>
                 </button>
               ) : (
-                <button onClick={() => onAdd(d)} className="w-full h-full opacity-0 group-hover:opacity-100 text-[11px] text-accent flex items-center justify-center">
+                <button
+                  onClick={() => onAdd(d)}
+                  className="w-full h-full text-[10px] text-muted-foreground hover:text-accent hover:bg-accent-soft flex items-center justify-center rounded border border-dashed border-border transition-colors"
+                  title="Add content"
+                >
                   <Plus className="w-3 h-3" />
                 </button>
               )
