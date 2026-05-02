@@ -94,6 +94,8 @@ export default function Discovery() {
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const userContextRef = useRef<UserContext | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [inlineError, setInlineError] = useState<string | null>(null);
+  const lastHistoryRef = useRef<Msg[] | null>(null);
 
   // progress: count assistant questions answered = number of user messages
   const answered = messages.filter((m) => m.role === "user").length;
