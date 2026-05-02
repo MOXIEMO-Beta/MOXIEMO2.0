@@ -518,6 +518,14 @@ export default function Discovery() {
       {!completed && (
         <div className="border-t border-border bg-background px-4 lg:px-10 py-4">
           <div className="max-w-3xl mx-auto">
+            {inlineError && (
+              <div
+                role="status"
+                className="mb-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-300"
+              >
+                {inlineError}
+              </div>
+            )}
             <div className="flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-soft focus-within:border-foreground/30 transition">
               <Textarea
                 value={input}
@@ -528,7 +536,7 @@ export default function Discovery() {
                 rows={1}
                 className="resize-none border-0 bg-transparent focus-visible:ring-0 min-h-[44px] max-h-40 text-[15px]"
               />
-              <Button onClick={send} disabled={loading || !input.trim()} size="icon" className="h-9 w-9 rounded-xl bg-foreground hover:bg-foreground/90 text-background flex-shrink-0">
+              <Button onClick={send} disabled={loading || (!input.trim() && !inlineError)} size="icon" className="h-9 w-9 rounded-xl bg-foreground hover:bg-foreground/90 text-background flex-shrink-0">
                 <ArrowUp className="h-4 w-4" />
               </Button>
             </div>
