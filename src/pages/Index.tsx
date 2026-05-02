@@ -41,7 +41,7 @@ export default function Index() {
       <SiteHeader />
 
       {/* SECTION 1 — HERO */}
-      <section className="bg-background pt-28 md:pt-32 pb-24">
+      <section className="bg-background pt-28 md:pt-32 pb-16">
         <div className="max-w-[860px] mx-auto px-6 text-center">
           <SectionLabel>Your AI CMO is ready</SectionLabel>
           <h1 className="text-5xl md:text-7xl lg:text-[88px] font-bold leading-[1.05] tracking-[-0.035em] mb-8 text-foreground">
@@ -82,14 +82,14 @@ export default function Index() {
       </section>
 
       {/* SECTION 2 — STATS BAR */}
-      <section className="py-[100px] bg-background">
+      <section className="py-[60px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
           <StatsBar />
         </div>
       </section>
 
       {/* SECTION 3 — HOW IT WORKS */}
-      <section className="py-[100px] bg-background">
+      <section className="py-[70px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16 max-w-3xl mx-auto">
             <SectionLabel>How it works</SectionLabel>
