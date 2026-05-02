@@ -62,7 +62,7 @@ serve(async (req) => {
               Click below to pick a time that works for you:
             </p>
             <p style="margin: 0 0 24px;">
-              <a href="https://cal.com/karee-moxie" style="display: inline-block; background: #111; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Schedule your founding member call →</a>
+              <a href="https://scheduler.zoom.us/klmg-ltd/moxie-beta-kickoff" style="display: inline-block; background: #111; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Schedule your founding member call →</a>
             </p>
             <p style="font-size: 14px; color: #555; line-height: 1.6; margin: 0 0 24px;">
               Can't find a time? Just reply to this email and we'll work something out.
