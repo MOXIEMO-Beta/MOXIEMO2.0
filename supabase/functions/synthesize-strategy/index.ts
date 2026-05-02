@@ -285,6 +285,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
         max_tokens: 8192,
+        stream: true,
         system: SYSTEM,
         messages: [{ role: "user", content: userContent }],
         tools: [{
@@ -301,24 +302,94 @@ Deno.serve(async (req) => {
       console.error("Synth error", res.status, t);
       return new Response(JSON.stringify({ error: "AI error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    const data = await res.json();
-    const toolUse = Array.isArray(data?.content)
-      ? data.content.find((b: any) => b?.type === "tool_use")
-      : null;
-    const parsed: any = toolUse?.input ?? {};
 
-    // Compute strength score from transcript + synthesized fields.
-    try {
-      const strength = computeStrength(transcript || "", parsed);
-      parsed.strength_score = strength.score;
-      parsed.strength_breakdown = strength.breakdown;
-      parsed.weak_areas = strength.weak_areas;
-      parsed.strong_areas = strength.strong_areas;
-    } catch (e) {
-      console.error("strength scoring failed", e);
-    }
+    const encoder = new TextEncoder();
+    const decoder = new TextDecoder();
 
-    return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = res.body!.getReader();
+        let buffer = "";
+        let toolJson = "";
+        const sendEvent = (obj: any) => {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
+        };
+
+        // Heartbeat to keep the connection alive while Anthropic generates.
+        const heartbeat = setInterval(() => {
+          try {
+            controller.enqueue(encoder.encode(`: ping\n\n`));
+          } catch {
+            // controller already closed
+          }
+        }, 10000);
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const dataStr = line.slice(6).trim();
+              if (!dataStr || dataStr === "[DONE]") continue;
+              try {
+                const evt = JSON.parse(dataStr);
+                if (evt.type === "content_block_delta") {
+                  const d = evt.delta;
+                  if (d?.type === "input_json_delta" && typeof d.partial_json === "string") {
+                    toolJson += d.partial_json;
+                    sendEvent({ type: "progress", bytes: toolJson.length });
+                  }
+                }
+              } catch {
+                // ignore malformed line
+              }
+            }
+          }
+
+          let parsed: any = {};
+          try {
+            parsed = toolJson ? JSON.parse(toolJson) : {};
+          } catch (e) {
+            console.error("Failed to parse tool json", e, toolJson.slice(0, 500));
+            sendEvent({ type: "error", message: "Failed to parse strategy output" });
+            controller.close();
+            return;
+          }
+
+          try {
+            const strength = computeStrength(transcript || "", parsed);
+            parsed.strength_score = strength.score;
+            parsed.strength_breakdown = strength.breakdown;
+            parsed.weak_areas = strength.weak_areas;
+            parsed.strong_areas = strength.strong_areas;
+          } catch (e) {
+            console.error("strength scoring failed", e);
+          }
+
+          sendEvent({ type: "complete", strategy: parsed });
+        } catch (e) {
+          console.error("stream error", e);
+          try { sendEvent({ type: "error", message: String(e) }); } catch {}
+        } finally {
+          clearInterval(heartbeat);
+          try { reader.releaseLock(); } catch {}
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+      },
+    });
   } catch (e) {
     console.error(e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
