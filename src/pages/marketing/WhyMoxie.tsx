@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { X, Check } from "lucide-react";
 import { MarketingPage } from "./MarketingPage";
+import { StatsBar } from "@/components/StatsBar";
 
 const failed = [
   { t: "Hired a VA", tried: "Brought on a virtual assistant to manage tools, post content, coordinate marketing.", happened: "Week 1–2 training on 6 platforms. Week 3–6 they seem to be getting it. Week 7–8 they quit. You're back to managing everything — plus you're behind on campaigns.", why: "The problem wasn't capacity. It was system complexity. Adding a person to chaos doesn't eliminate chaos." },
@@ -55,6 +56,11 @@ export default function WhyMoxie() {
               </Card>
             ))}
           </div>
+        </section>
+
+        {/* Stats proof bar */}
+        <section>
+          <StatsBar />
         </section>
 
         {/* Differences */}
