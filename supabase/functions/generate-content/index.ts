@@ -153,7 +153,8 @@ Deno.serve(async (req) => {
 
     const prompt = buildPrompt({ topic, platform, contentType, strategy });
 
-    const res = await callClaude(SYSTEM, prompt, 1024);
+    const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"].includes(platform);
+    const res = await callClaude(SYSTEM, prompt, longForm ? 3000 : 1024);
 
     if (!res.ok) {
       if (res.status === 429)
