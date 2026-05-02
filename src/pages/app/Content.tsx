@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
@@ -31,18 +30,22 @@ import {
   Instagram,
   Loader2,
   Sparkles,
-  Save,
   Send,
   Pencil,
   Trash2,
   ArrowRight,
+  ArrowUp,
   FileText,
-  ThumbsUp,
-  MessageCircle,
-  Repeat2,
-  Globe2,
+  Mail,
+  Twitter,
+  Newspaper,
+  Copy as CopyIcon,
+  Check,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import RichTextEditor from "@/components/email/RichTextEditor";
 
 type ContentItem = {
   id: string;
@@ -59,23 +62,39 @@ type ContentItem = {
 };
 
 const PLATFORMS = [
-  { value: "LinkedIn Post", label: "LinkedIn Post", icon: Linkedin },
-  { value: "Facebook Post", label: "Facebook Post", icon: Facebook },
-  { value: "Instagram Caption", label: "Instagram Caption", icon: Instagram },
+  { value: "LinkedIn Post", icon: Linkedin, limit: 3000 },
+  { value: "Instagram Caption", icon: Instagram, limit: 2200 },
+  { value: "Facebook Post", icon: Facebook, limit: 63206 },
+  { value: "X / Twitter", icon: Twitter, limit: 280 },
+  { value: "Newsletter Section", icon: Mail, limit: null },
+  { value: "Long-Form Article", icon: Newspaper, limit: null },
+  { value: "Standalone Newsletter (full)", icon: Mail, limit: null },
 ];
 
 const CONTENT_TYPES = [
+  "My take / Opinion",
   "Educational",
-  "Personal Story",
-  "Poll",
-  "Case Study",
-  "CTA",
+  "Client story / Case study",
+  "Trending topic / News reaction",
+  "Behind the scenes",
+  "Personal story",
+  "Promotional",
 ];
+
+const RICH_PLATFORMS = new Set([
+  "Newsletter Section",
+  "Long-Form Article",
+  "Standalone Newsletter (full)",
+]);
 
 function platformIcon(platform: string | null) {
   const p = PLATFORMS.find((x) => x.value === platform);
   const Icon = p?.icon ?? FileText;
   return <Icon className="h-5 w-5 text-foreground" />;
+}
+
+function platformLimit(platform: string | null): number | null {
+  return PLATFORMS.find((p) => p.value === platform)?.limit ?? null;
 }
 
 function toLocalInputValue(iso: string | null): string {
@@ -86,6 +105,19 @@ function toLocalInputValue(iso: string | null): string {
   return local.toISOString().slice(0, 16);
 }
 
+function htmlToPlain(s: string): string {
+  if (!s) return "";
+  if (!/<[a-z][\s\S]*>/i.test(s)) return s;
+  const div = document.createElement("div");
+  div.innerHTML = s;
+  return (div.textContent || div.innerText || "").trim();
+}
+
+function firstName(full: string | null | undefined): string {
+  if (!full) return "";
+  return full.trim().split(/\s+/)[0] || "";
+}
+
 export default function Content() {
   const { user } = useAuth();
   const [strategy, setStrategy] = useState<any>(null);
@@ -93,17 +125,32 @@ export default function Content() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Generate tab state
+  // Generate state
   const [topic, setTopic] = useState("");
   const [platform, setPlatform] = useState(PLATFORMS[0].value);
   const [contentType, setContentType] = useState(CONTENT_TYPES[0]);
+  const [activePillar, setActivePillar] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [generated, setGenerated] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [showHashtags, setShowHashtags] = useState(true);
-  const [hashtagLoading, setHashtagLoading] = useState(false);
+  const [originalGenerated, setOriginalGenerated] = useState("");
+  const [lockedMeta, setLockedMeta] = useState<{ platform: string; contentType: string } | null>(null);
+  const [refineText, setRefineText] = useState("");
+  const [refining, setRefining] = useState(false);
+
+  const [copyState, setCopyState] = useState(false);
+  const [savedState, setSavedState] = useState(false);
+  const [queuedState, setQueuedState] = useState(false);
+  const [savingAction, setSavingAction] = useState(false);
+  const [dotCount, setDotCount] = useState(1);
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const outputRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!generating) return;
+    const i = setInterval(() => setDotCount((c) => (c % 3) + 1), 400);
+    return () => clearInterval(i);
+  }, [generating]);
 
   useEffect(() => {
     if (!user) return;
@@ -149,20 +196,48 @@ export default function Content() {
   );
   const drafts = useMemo(() => items.filter((i) => i.status === "draft"), [items]);
 
+  const pillars: string[] = useMemo(() => {
+    const raw = strategy?.content_pillars;
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw
+        .map((p: any) => (typeof p === "string" ? p : p?.name ?? p?.title ?? ""))
+        .filter(Boolean)
+        .slice(0, 5);
+    }
+    return [];
+  }, [strategy]);
+
+  const fname = firstName(profile?.full_name);
+  const greeting = fname
+    ? `What would you like to write today, ${fname}?`
+    : "What would you like to write today?";
+
+  async function runGeneration(opts: { topic: string; platform: string; contentType: string; pillar: string | null }) {
+    const augmentedTopic = opts.pillar
+      ? `${opts.topic}\n\n[Angle this through my content pillar: ${opts.pillar}]`
+      : opts.topic;
+    const { data, error } = await supabase.functions.invoke("generate-content", {
+      body: { topic: augmentedTopic, platform: opts.platform, contentType: opts.contentType, strategy },
+    });
+    if (error) throw error;
+    if ((data as any)?.error) throw new Error((data as any).error);
+    return ((data as any).body ?? "") as string;
+  }
+
   async function handleGenerate() {
     if (!topic.trim()) {
-      toast.error("Add a topic first");
+      toast.error("Add an idea first");
       return;
     }
     setGenerating(true);
-    setShowHashtags(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-content", {
-        body: { topic, platform, contentType, strategy },
-      });
-      if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
-      setGenerated((data as any).body ?? "");
+      const body = await runGeneration({ topic, platform, contentType, pillar: activePillar });
+      setGenerated(body);
+      setOriginalGenerated(body);
+      setLockedMeta({ platform, contentType });
+      setRefineText("");
+      setTimeout(() => outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (e: any) {
       console.error(e);
       toast.error("Couldn't generate", { description: e?.message ?? "Try again." });
@@ -171,36 +246,60 @@ export default function Content() {
     }
   }
 
-  async function handleGenerateHashtags() {
-    if (!generated.trim()) return;
-    setHashtagLoading(true);
+  async function handleRegenerate() {
+    if (!lockedMeta) return;
+    setGenerating(true);
+    try {
+      const body = await runGeneration({ topic, platform: lockedMeta.platform, contentType: lockedMeta.contentType, pillar: activePillar });
+      setGenerated(body);
+      setOriginalGenerated(body);
+      setRefineText("");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Couldn't regenerate", { description: e?.message ?? "Try again." });
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleRefine() {
+    const instruction = refineText.trim();
+    if (!instruction || !generated.trim() || !lockedMeta) return;
+    setRefining(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-content", {
-        body: { mode: "hashtags", text: generated },
+        body: {
+          mode: "refine",
+          existing: generated,
+          instruction,
+          platform: lockedMeta.platform,
+          contentType: lockedMeta.contentType,
+          strategy,
+        },
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      const tags = ((data as any).hashtags ?? "").trim();
-      if (tags) setGenerated((prev) => `${prev.trimEnd()}\n\n${tags}`);
-      setShowHashtags(false);
+      const body = ((data as any).body ?? "") as string;
+      if (body) setGenerated(body);
+      setRefineText("");
     } catch (e: any) {
       console.error(e);
-      toast.error("Couldn't generate hashtags", { description: e?.message ?? "Try again." });
+      toast.error("Couldn't refine", { description: e?.message ?? "Try again." });
     } finally {
-      setHashtagLoading(false);
+      setRefining(false);
     }
   }
 
   async function saveItem(status: "draft" | "queued") {
-    if (!user || !generated.trim()) return;
-    setSaving(true);
+    if (!user || !generated.trim() || !lockedMeta) return;
+    setSavingAction(true);
     try {
       const { data, error } = await supabase
         .from("content_items")
         .insert({
           user_id: user.id,
-          platform,
-          content_type: contentType,
+          platform: lockedMeta.platform,
+          content_type: lockedMeta.contentType,
           topic,
           body: generated,
           status,
@@ -209,14 +308,28 @@ export default function Content() {
         .single();
       if (error) throw error;
       setItems((prev) => [data as ContentItem, ...prev]);
-      toast.success(status === "draft" ? "Saved as draft" : "Added to queue");
-      setGenerated("");
-      setTopic("");
+      if (status === "draft") {
+        setSavedState(true);
+        setTimeout(() => setSavedState(false), 2000);
+      } else {
+        setQueuedState(true);
+        setTimeout(() => setQueuedState(false), 2000);
+      }
     } catch (e: any) {
       console.error(e);
       toast.error("Couldn't save", { description: e?.message ?? "Try again." });
     } finally {
-      setSaving(false);
+      setSavingAction(false);
+    }
+  }
+
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(htmlToPlain(generated));
+      setCopyState(true);
+      setTimeout(() => setCopyState(false), 2000);
+    } catch (e) {
+      toast.error("Couldn't copy");
     }
   }
 
@@ -245,12 +358,19 @@ export default function Content() {
     setDeleteId(null);
   }
 
+  const isRich = lockedMeta && RICH_PLATFORMS.has(lockedMeta.platform);
+  const charCount = useMemo(() => htmlToPlain(generated).length, [generated]);
+  const limit = lockedMeta ? platformLimit(lockedMeta.platform) : null;
+  const nearLimit = limit !== null && charCount >= limit * 0.85;
+
   return (
     <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
       <div className="mb-8">
-        <h1 className="font-display text-4xl mb-2">Content</h1>
-        <p className="text-muted-foreground">
-          Strategy-aligned posts, generated and queued — ready to publish.
+        <h1 className="font-display text-4xl md:text-5xl tracking-tight mb-3 leading-[1.1]">
+          {greeting}
+        </h1>
+        <p className="text-base text-muted-foreground">
+          Your strategy is loaded. Just bring the idea.
         </p>
       </div>
 
@@ -267,22 +387,48 @@ export default function Content() {
 
         {/* GENERATE */}
         <TabsContent value="generate" className="space-y-6">
-          <Card className="p-6 border-border shadow-soft space-y-4">
+          <Card className="p-6 border-border shadow-soft space-y-5">
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">
-                What do you want to write about?
+                What's the idea?
               </label>
-              <p className="text-xs text-muted-foreground mb-2">
-                Be specific — include your angle, the audience insight, or a client story you want to reference.
+              <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                A take from an article you read, something a client said, a hot opinion, a story — bring anything. MOXIE will shape it into content that sounds like you.
               </p>
               <Textarea
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                placeholder="e.g. why most operators struggle to delegate — add as much context as you want. The more detail you give MOXIE, the more on-brand your output will be."
+                placeholder="e.g. I just read that 80% of small businesses overpay in taxes because their expenses aren't categorized in real time — I want to write about this from my POV..."
                 rows={4}
                 className="resize-y min-h-[100px]"
               />
             </div>
+
+            {pillars.length > 0 && (
+              <div>
+                <div className="text-xs text-muted-foreground mb-2">Anchor to a content pillar →</div>
+                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+                  {pillars.map((p) => {
+                    const active = activePillar === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setActivePillar(active ? null : p)}
+                        className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
+                          active
+                            ? "border-accent text-accent bg-accent-soft/40"
+                            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Platform</label>
@@ -290,7 +436,7 @@ export default function Content() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PLATFORMS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                      <SelectItem key={p.value} value={p.value}>{p.value}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -307,48 +453,144 @@ export default function Content() {
                 </Select>
               </div>
             </div>
+
             <Button
               onClick={handleGenerate}
               disabled={generating}
               className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg"
             >
               {generating ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> MOXIE is writing{".".repeat(dotCount)}</>
               ) : (
                 <><Sparkles className="mr-2 h-4 w-4" /> Generate with MOXIE</>
               )}
             </Button>
           </Card>
 
-          {(generated || generating) && (
-            <div className="max-w-[560px] mx-auto w-full space-y-4">
-              <LinkedInPreview
-                profile={profile}
-                generated={generated}
-                onChange={setGenerated}
-                generating={generating}
-                showHashtags={showHashtags && !!generated && !generated.includes("#")}
-                onGenerateHashtags={handleGenerateHashtags}
-                onDismissHashtags={() => setShowHashtags(false)}
-                hashtagLoading={hashtagLoading}
-              />
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => saveItem("draft")}
-                  disabled={saving || !generated.trim()}
-                  className="flex-1"
-                >
-                  <Save className="mr-2 h-4 w-4" /> Save as Draft
-                </Button>
-                <Button
-                  onClick={() => saveItem("queued")}
-                  disabled={saving || !generated.trim()}
-                  className="flex-1 bg-foreground text-background hover:bg-foreground/90"
-                >
-                  <ArrowRight className="mr-2 h-4 w-4" /> Add to Queue
-                </Button>
-              </div>
+          {generated && lockedMeta && (
+            <div ref={outputRef} className="space-y-3 animate-in slide-in-from-bottom-4 fade-in duration-300">
+              {!strategy && (
+                <Card className="p-3 border-dashed border-border bg-accent-soft/20 text-xs text-muted-foreground flex items-center justify-between gap-3">
+                  <span>Connect your strategy to make this sound more like you →</span>
+                  <Link to="/app/discovery" className="text-accent font-medium hover:underline shrink-0">
+                    Complete Discovery
+                  </Link>
+                </Card>
+              )}
+
+              <Card className="border-border shadow-soft overflow-hidden">
+                {/* Top bar */}
+                <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/30">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-1 rounded-full bg-background border border-border">
+                      {platformIcon(lockedMeta.platform)}
+                      <span className="truncate">{lockedMeta.platform}</span>
+                    </span>
+                    <span className="text-[11px] font-medium px-2 py-1 rounded-full bg-background border border-border whitespace-nowrap">
+                      {lockedMeta.contentType}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className={`text-xs tabular-nums ${nearLimit ? "text-accent font-medium" : "text-muted-foreground"}`}>
+                      {charCount.toLocaleString()}{limit ? ` / ${limit.toLocaleString()}` : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleRegenerate}
+                      disabled={generating}
+                      className="text-xs text-accent font-medium hover:underline inline-flex items-center gap-1 disabled:opacity-50"
+                    >
+                      {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RotateCcw className="h-3 w-3" />}
+                      Regenerate
+                    </button>
+                  </div>
+                </div>
+
+                {/* Content area */}
+                {isRich ? (
+                  <div className="bg-white">
+                    <RichTextEditor
+                      content={generated}
+                      onChange={setGenerated}
+                    />
+                  </div>
+                ) : (
+                  <div className="p-4">
+                    <Textarea
+                      value={generated}
+                      onChange={(e) => setGenerated(e.target.value)}
+                      rows={14}
+                      className="resize-y min-h-[280px] text-sm leading-relaxed border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent"
+                    />
+                    {limit !== null && charCount >= limit && (
+                      <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <div className="flex-1 h-px bg-border" />
+                        <span>{lockedMeta.platform.split(" ")[0]} limit · {limit.toLocaleString()}</span>
+                        <div className="flex-1 h-px bg-border" />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Action row */}
+                <div className="flex flex-col sm:flex-row gap-2 px-4 py-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleCopy}
+                    disabled={!generated.trim()}
+                  >
+                    {copyState ? <><Check className="mr-2 h-4 w-4" /> Copied!</> : <><CopyIcon className="mr-2 h-4 w-4" /> Copy</>}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => saveItem("draft")}
+                    disabled={savingAction || !generated.trim()}
+                  >
+                    {savedState ? <><Check className="mr-2 h-4 w-4" /> Saved to Drafts</> : "Save to Drafts"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => saveItem("queued")}
+                    disabled={savingAction || !generated.trim()}
+                  >
+                    {queuedState ? <><Check className="mr-2 h-4 w-4" /> Added to Queue</> : "Add to Queue"}
+                  </Button>
+                </div>
+
+                {/* Refine row */}
+                <div className="px-4 py-3 border-t border-border bg-muted/20">
+                  <div className="text-[11px] text-muted-foreground mb-1.5">
+                    Not quite right? Tell MOXIE what to adjust →
+                  </div>
+                  <div className="relative">
+                    <Input
+                      value={refineText}
+                      onChange={(e) => setRefineText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleRefine();
+                        }
+                      }}
+                      disabled={refining}
+                      placeholder="e.g. make it shorter, add a question at the end, make the hook punchier..."
+                      className="h-9 pr-10 text-sm bg-background border-border"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRefine}
+                      disabled={refining || !refineText.trim()}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 inline-flex items-center justify-center rounded-md text-accent hover:bg-accent-soft/40 disabled:opacity-40"
+                      aria-label="Send refinement"
+                    >
+                      {refining ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowUp className="h-3.5 w-3.5" />}
+                    </button>
+                  </div>
+                </div>
+              </Card>
             </div>
           )}
         </TabsContent>
@@ -372,7 +614,7 @@ export default function Content() {
                       {it.content_type && <><span>•</span><span>{it.content_type}</span></>}
                     </div>
                     <div className="text-sm text-foreground line-clamp-2 mb-3">
-                      {(it.body ?? "").slice(0, 80)}{(it.body ?? "").length > 80 ? "…" : ""}
+                      {htmlToPlain(it.body ?? "").slice(0, 80)}{(htmlToPlain(it.body ?? "")).length > 80 ? "…" : ""}
                     </div>
                     <div className="flex items-center gap-3 flex-wrap">
                       <Input
@@ -429,7 +671,7 @@ export default function Content() {
                       {it.content_type && <><span>•</span><span>{it.content_type}</span></>}
                     </div>
                     <div className="text-sm text-foreground line-clamp-2 mb-3">
-                      {(it.body ?? "").slice(0, 80)}{(it.body ?? "").length > 80 ? "…" : ""}
+                      {htmlToPlain(it.body ?? "").slice(0, 80)}{(htmlToPlain(it.body ?? "")).length > 80 ? "…" : ""}
                     </div>
                     <DraftEditor item={it} onPatch={patchItem} />
                     <div className="flex items-center gap-2 flex-wrap mt-3">
@@ -496,110 +738,6 @@ function EmptyState({ message }: { message: string }) {
     <Card className="p-10 border-dashed border-border bg-background text-center text-sm text-muted-foreground">
       {message}
     </Card>
-  );
-}
-
-function getInitials(name: string | null | undefined, fallback: string | null | undefined) {
-  const src = (name && name.trim()) || (fallback && fallback.trim()) || "?";
-  const parts = src.split(/\s+/).filter(Boolean);
-  const letters = parts.length >= 2 ? parts[0][0] + parts[1][0] : src.slice(0, 2);
-  return letters.toUpperCase();
-}
-
-function LinkedInPreview({
-  profile,
-  generated,
-  onChange,
-  generating,
-  showHashtags,
-  onGenerateHashtags,
-  onDismissHashtags,
-  hashtagLoading,
-}: {
-  profile: { full_name: string | null; business_name: string | null; email: string | null } | null;
-  generated: string;
-  onChange: (v: string) => void;
-  generating: boolean;
-  showHashtags: boolean;
-  onGenerateHashtags: () => void;
-  onDismissHashtags: () => void;
-  hashtagLoading: boolean;
-}) {
-  const fullName = profile?.full_name || "Your Name";
-  const businessName = profile?.business_name || "Your business";
-  const initials = getInitials(profile?.full_name, profile?.email);
-
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-4 text-gray-900">
-      {/* Header */}
-      <div className="flex items-start gap-3">
-        <div className="h-12 w-12 rounded-full bg-accent text-accent-foreground flex items-center justify-center font-semibold text-sm flex-shrink-0">
-          {initials}
-        </div>
-        <div className="min-w-0">
-          <div className="font-semibold text-[15px] leading-tight text-gray-900">{fullName}</div>
-          <div className="text-[13px] text-gray-600 leading-tight mt-0.5">{businessName}</div>
-          <div className="text-[11px] text-gray-500 leading-tight mt-0.5 flex items-center gap-1">
-            Just now · <Globe2 className="h-3 w-3" />
-          </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="mt-3">
-        <Textarea
-          value={generated}
-          onChange={(e) => onChange(e.target.value)}
-          rows={12}
-          placeholder={generating ? "Generating…" : ""}
-          className="resize-y border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-[14px] leading-relaxed text-gray-900 whitespace-pre-wrap bg-transparent min-h-[260px]"
-        />
-      </div>
-
-      {/* Hashtag suggestion */}
-      {showHashtags && (
-        <div className="mt-2 flex items-center gap-2 flex-wrap text-[13px] text-gray-600 border-t border-gray-100 pt-3">
-          <Sparkles className="h-3.5 w-3.5 text-accent" />
-          <span>Add hashtags?</span>
-          <button
-            type="button"
-            onClick={onGenerateHashtags}
-            disabled={hashtagLoading}
-            className="text-accent font-medium hover:underline disabled:opacity-60 inline-flex items-center gap-1"
-          >
-            {hashtagLoading ? (
-              <><Loader2 className="h-3 w-3 animate-spin" /> Generating…</>
-            ) : (
-              "Generate hashtags"
-            )}
-          </button>
-          <span className="text-gray-300">·</span>
-          <button
-            type="button"
-            onClick={onDismissHashtags}
-            className="text-gray-500 hover:underline"
-          >
-            No thanks
-          </button>
-        </div>
-      )}
-
-      {/* Action bar */}
-      <div className="mt-3 border-t border-gray-200 pt-2 grid grid-cols-4 gap-1">
-        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
-          <ThumbsUp className="h-4 w-4" /> Like
-        </button>
-        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
-          <MessageCircle className="h-4 w-4" /> Comment
-        </button>
-        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
-          <Repeat2 className="h-4 w-4" /> Repost
-        </button>
-        <button type="button" className="flex items-center justify-center gap-1.5 py-2 rounded-md text-[13px] text-gray-600 hover:bg-gray-50">
-          <Send className="h-4 w-4" /> Send
-        </button>
-      </div>
-    </div>
   );
 }
 

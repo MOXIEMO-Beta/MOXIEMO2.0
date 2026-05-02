@@ -30,6 +30,21 @@ function buildPrompt(opts: {
     ? s.content_pillars.join(", ")
     : (s.content_pillars ?? "");
 
+  const richFormats = new Set(["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"]);
+  const isRich = richFormats.has(opts.platform);
+  const lengthHint: Record<string, string> = {
+    "LinkedIn Post": "1200-1800 chars, line breaks, hook under 60 chars",
+    "Instagram Caption": "800-1500 chars, conversational, line breaks between thoughts",
+    "Facebook Post": "600-1200 chars, conversational",
+    "X / Twitter": "Under 280 chars total. Punchy. No fluff.",
+    "Newsletter Section": "300-500 words. One focused idea.",
+    "Long-Form Article": "800-1500 words with clear structure (intro, body, conclusion).",
+    "Standalone Newsletter (full)": "500-900 words. Greeting, body with subheads, sign-off.",
+  };
+  const formatHint = isRich
+    ? "Return formatted HTML using <h1>, <h2>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <hr>. No <html> or <body> wrappers. No code fences."
+    : "Return only plain text. No markdown, no HTML, no code fences.";
+
   return `BRAND STRATEGY CONTEXT:
 Positioning: ${s.positioning_statement ?? "(not set)"}
 Ideal client: ${s.ideal_client ?? "(not set)"}
@@ -45,17 +60,18 @@ Requirements:
 - Match the voice attributes exactly
 - Address the ideal client's pain point naturally
 - Never use the anti-positioning language
-- Format for ${opts.platform} (LinkedIn: 1200-1800 chars, line breaks, hook under 60 chars)
+- Format for ${opts.platform}: ${lengthHint[opts.platform] ?? "appropriate length and tone for the platform"}
 - End with a specific engagement question
 - Do not include hashtags unless asked
+- ${formatHint}
 
-Return only the post copy. No preamble.`;
+Return only the post content. No preamble, no explanation.`;
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { topic, platform, contentType, strategy, mode, text } = await req.json();
+    const { topic, platform, contentType, strategy, mode, text, existing, instruction } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
@@ -99,6 +115,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (mode === "refine") {
+      if (!existing || !instruction) {
+        return new Response(JSON.stringify({ error: "existing and instruction required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const refinePrompt = `Here is a piece of ${platform ?? "content"} (${contentType ?? "post"}):\n\n"""\n${existing}\n"""\n\nApply this refinement instruction from the user:\n"${instruction}"\n\nReturn ONLY the revised content. No preamble. Match the same format as the original (plain text or HTML).`;
+      const res = await callClaude(SYSTEM, refinePrompt, 1500);
+      if (!res.ok) {
+        if (res.status === 429)
+          return new Response(JSON.stringify({ error: "Rate limit reached. Try again shortly." }), {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        const t = await res.text();
+        console.error("refine AI error", res.status, t);
+        return new Response(JSON.stringify({ error: "AI gateway error" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const data = await res.json();
+      const body = data.content?.[0]?.text?.trim() ?? "";
+      return new Response(JSON.stringify({ body }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!topic || !platform || !contentType) {
       return new Response(JSON.stringify({ error: "topic, platform, contentType required" }), {
         status: 400,
@@ -108,7 +153,8 @@ Deno.serve(async (req) => {
 
     const prompt = buildPrompt({ topic, platform, contentType, strategy });
 
-    const res = await callClaude(SYSTEM, prompt, 1024);
+    const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"].includes(platform);
+    const res = await callClaude(SYSTEM, prompt, longForm ? 3000 : 1024);
 
     if (!res.ok) {
       if (res.status === 429)
