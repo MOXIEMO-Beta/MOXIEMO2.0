@@ -134,23 +134,56 @@ serve(async (req) => {
       }
     }
 
-    // Try once, retry once on failure or timeout
-    let response: Response;
-    try {
-      response = await callAnthropic(30000);
-      if (!response.ok) {
-        const errText = await response.text().catch(() => "");
-        console.error("Anthropic error (attempt 1):", response.status, errText);
-        throw new Error(`Anthropic API error: ${response.status}`);
+    // Retry up to 3 times with exponential backoff, honoring retry-after on 429/529
+    let response: Response | null = null;
+    let lastStatus = 0;
+    let lastErrText = "";
+    const maxAttempts = 3;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const r = await callAnthropic(30000);
+        if (r.ok) {
+          response = r;
+          break;
+        }
+        lastStatus = r.status;
+        lastErrText = await r.text().catch(() => "");
+        console.error(`Anthropic error (attempt ${attempt}):`, r.status, lastErrText);
+
+        // Don't retry on non-retryable client errors (except 429)
+        if (r.status >= 400 && r.status < 500 && r.status !== 429) {
+          break;
+        }
+
+        if (attempt < maxAttempts) {
+          const retryAfterHeader = r.headers.get("retry-after");
+          const retryAfterSec = retryAfterHeader ? parseInt(retryAfterHeader, 10) : NaN;
+          const baseDelay = !isNaN(retryAfterSec) && retryAfterSec > 0
+            ? Math.min(retryAfterSec * 1000, 8000)
+            : Math.min(1000 * Math.pow(2, attempt - 1), 4000);
+          const jitter = Math.floor(Math.random() * 500);
+          await new Promise((res) => setTimeout(res, baseDelay + jitter));
+        }
+      } catch (err) {
+        console.warn(`discovery-chat attempt ${attempt} threw:`, String(err));
+        lastErrText = String(err);
+        if (attempt < maxAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 4000) + Math.floor(Math.random() * 500);
+          await new Promise((res) => setTimeout(res, delay));
+        }
       }
-    } catch (firstErr) {
-      console.warn("discovery-chat: first attempt failed, retrying once:", String(firstErr));
-      response = await callAnthropic(30000);
-      if (!response.ok) {
-        const errText = await response.text().catch(() => "");
-        console.error("Anthropic error (attempt 2):", response.status, errText);
-        throw new Error(`Anthropic API error after retry: ${response.status}`);
-      }
+    }
+
+    if (!response) {
+      // Surface 429 as 429 so the client shows the friendly inline retry message
+      const status = lastStatus === 429 ? 429 : 503;
+      const message = status === 429
+        ? "MOXIE is busy right now — wait a few seconds and tap Send again."
+        : "MOXIE had a moment — tap Send again to continue.";
+      return new Response(
+        JSON.stringify({ error: message, upstream_status: lastStatus, detail: lastErrText.slice(0, 300) }),
+        { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const encoder = new TextEncoder();
