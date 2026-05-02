@@ -179,6 +179,11 @@ export default function Discovery() {
 
   async function streamReply(history: Msg[], sid: string) {
     setLoading(true);
+    setInlineError(null);
+    lastHistoryRef.current = history;
+    // Track whether we've already added the placeholder assistant message,
+    // so we can roll it back on error.
+    let placeholderAdded = false;
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -217,6 +222,7 @@ export default function Discovery() {
       let buffer = "";
       let assistantText = "";
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+      placeholderAdded = true;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -263,20 +269,38 @@ export default function Discovery() {
       }
       await persist(newHistory, sid, isComplete);
       if (isComplete) await synthesize(newHistory);
+      lastHistoryRef.current = null;
     } catch (e: any) {
       console.error("streamReply error:", e);
-      toast.error("Couldn't reach MOXIE", {
-        description: e?.message ?? "Check your connection and try again",
-      });
+      // Roll back the empty assistant placeholder so the UI doesn't show a blank bubble.
+      if (placeholderAdded) {
+        setMessages((prev) => {
+          if (prev.length && prev[prev.length - 1].role === "assistant" && prev[prev.length - 1].content === "") {
+            return prev.slice(0, -1);
+          }
+          return prev;
+        });
+      }
+      setInlineError("MOXIE had a moment — tap Send again to continue.");
     } finally {
       setLoading(false);
     }
   }
 
   async function send() {
+    if (loading || !sessionId) return;
     const text = input.trim();
-    if (!text || loading || !sessionId) return;
+
+    // Retry path: previous attempt failed and the user message is already in history.
+    if (!text && lastHistoryRef.current) {
+      setInlineError(null);
+      await streamReply(lastHistoryRef.current, sessionId);
+      return;
+    }
+
+    if (!text) return;
     setInput("");
+    setInlineError(null);
     const next: Msg[] = [...messages, { role: "user", content: text }];
     setMessages(next);
     await streamReply(next, sessionId);
