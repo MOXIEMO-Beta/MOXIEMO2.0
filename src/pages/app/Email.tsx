@@ -249,9 +249,41 @@ export default function Email() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      if (data?.subject) setSubject(data.subject);
-      if (data?.body) setBody(data.body);
-      if (data?.preview_text) setPreviewText(data.preview_text);
+
+      // Defensive parse: if the function returned a raw string (possibly
+      // wrapped in markdown fences), normalize into { subject, body, preview_text }.
+      let payload: { subject?: string; body?: string; preview_text?: string } = {};
+      if (typeof data === "string") {
+        const cleaned = (data as string)
+          .replace(/^```(?:json|html)?\s*/i, "")
+          .replace(/```\s*$/i, "")
+          .trim();
+        try {
+          payload = JSON.parse(cleaned);
+        } catch {
+          const s = cleaned.indexOf("{");
+          const e = cleaned.lastIndexOf("}");
+          if (s !== -1 && e > s) {
+            try { payload = JSON.parse(cleaned.substring(s, e + 1)); } catch { payload = { body: cleaned }; }
+          } else {
+            payload = { body: cleaned };
+          }
+        }
+      } else if (data && typeof data === "object") {
+        payload = data as typeof payload;
+      }
+
+      // If body is still wrapped in fences, strip them
+      if (typeof payload.body === "string") {
+        payload.body = payload.body
+          .replace(/^```(?:json|html)?\s*/i, "")
+          .replace(/```\s*$/i, "")
+          .trim();
+      }
+
+      if (payload.subject) setSubject(payload.subject);
+      if (payload.body) setBody(payload.body);
+      if (payload.preview_text) setPreviewText(payload.preview_text);
       setShowGenPanel(false);
       toast.success("Draft ready — personalize the brackets before sending");
     } catch (err: unknown) {
