@@ -212,19 +212,56 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
               {Array.from({ length: monthCells }, (_, i) => addDays(monthFirstWeek, i)).map((d, i) => {
                 const inMonth = d.getMonth() === anchor.getMonth();
                 const items = inMonth ? dayItems(d) : [];
-                const dotColors = (ch: string) => ch === "linkedin" ? "bg-blue-500" : ch === "instagram" ? "bg-purple-500" : ch === "facebook" ? "bg-blue-700" : ch === "email" ? "bg-accent" : "bg-muted-foreground";
+                const camp = inMonth ? activeCampaignForDate(campaigns ?? [], d) : null;
+                const pillClass = (ch: string) =>
+                  ch === "linkedin" ? "bg-blue-50 text-blue-700 border-blue-200"
+                  : ch === "instagram" ? "bg-purple-50 text-purple-700 border-purple-200"
+                  : ch === "facebook" ? "bg-blue-50 text-blue-800 border-blue-300"
+                  : ch === "email" ? "bg-accent-soft text-accent border-accent/30"
+                  : "bg-muted text-muted-foreground border-border";
+                const pillLabel = (ch: string) =>
+                  ch === "linkedin" ? "LinkedIn"
+                  : ch === "instagram" ? "Instagram"
+                  : ch === "facebook" ? "Facebook"
+                  : ch === "email" ? "Email"
+                  : "Content";
                 return (
                   <button
                     key={i}
-                    className={cn("bg-card min-h-[72px] p-1.5 text-left", inMonth ? "" : "opacity-40 cursor-default")}
+                    className={cn("bg-card min-h-[84px] p-1.5 text-left relative flex flex-col", inMonth ? "" : "opacity-40 cursor-default")}
                     onClick={() => inMonth && items.length > 0 && setOpenItem({ _kind: "day", date: d, items })}
                   >
-                    <div className="text-[10px] text-muted-foreground mb-1">{d.getDate()}</div>
-                    <div className="flex flex-wrap gap-1">
-                      {items.slice(0, 8).map((it, idx) => {
+                    {camp && (
+                      <div
+                        className="absolute top-0 left-0 right-0 h-1 bg-accent"
+                        title={`${camp.name} (${fmtShort(new Date(camp.start_date))} – ${fmtShort(new Date(camp.end_date))})`}
+                      />
+                    )}
+                    <div className="flex items-center justify-between mb-1 mt-1">
+                      <div className="text-[10px] text-muted-foreground">{d.getDate()}</div>
+                      {camp && (
+                        <div className="text-[8px] text-accent font-medium truncate max-w-[60%]" title={camp.name}>
+                          {camp.name}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-0.5">
+                      {items.slice(0, 3).map((it, idx) => {
                         const ch = it._kind === "email" ? "email" : it._kind === "content" ? "content" : (it.platforms?.[0] ?? "linkedin");
-                        return <span key={idx} className={`w-1.5 h-1.5 rounded-full ${dotColors(ch)}`} />;
+                        return (
+                          <span
+                            key={idx}
+                            className={cn("text-[9px] px-1 py-0.5 rounded border truncate max-w-full", pillClass(ch))}
+                          >
+                            {pillLabel(ch)}
+                          </span>
+                        );
                       })}
+                      {items.length > 3 && (
+                        <span className="text-[9px] px-1 py-0.5 rounded border bg-muted text-muted-foreground border-border">
+                          +{items.length - 3}
+                        </span>
+                      )}
                     </div>
                   </button>
                 );
