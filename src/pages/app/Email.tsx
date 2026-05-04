@@ -276,9 +276,26 @@ export default function Email() {
       // If body is still wrapped in fences, strip them
       if (typeof payload.body === "string") {
         payload.body = payload.body
-          .replace(/^```(?:json|html)?\s*/i, "")
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/i, "")
           .replace(/```\s*$/i, "")
           .trim();
+      }
+
+      // Sometimes the model dumps the entire JSON object into `body`
+      // (e.g. body = '{"subject":"...","body":"<p>...</p>"}'). Detect
+      // that case and unwrap so the editor renders real HTML, not JSON.
+      if (typeof payload.body === "string" && payload.body.startsWith("{")) {
+        try {
+          const inner = JSON.parse(payload.body);
+          if (inner && typeof inner === "object" && typeof inner.body === "string") {
+            if (!payload.subject && typeof inner.subject === "string") payload.subject = inner.subject;
+            if (!payload.preview_text && typeof inner.preview_text === "string") payload.preview_text = inner.preview_text;
+            payload.body = inner.body;
+          }
+        } catch {
+          /* leave as-is */
+        }
       }
 
       if (payload.subject) setSubject(payload.subject);
