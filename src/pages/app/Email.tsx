@@ -355,6 +355,10 @@ export default function Email() {
     setSelectedIds(new Set());
     setSendMode("now");
     setShowGenPanel(true);
+    setCtaEnabled(false);
+    setCtaLabel("");
+    setCtaUrl("");
+    setCtaStyle("coral");
   }
 
   async function doSendNow() {
