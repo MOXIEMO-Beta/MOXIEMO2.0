@@ -178,6 +178,33 @@ export default function Email() {
     [],
   );
 
+  // Suggested CTA label from strategy
+  const suggestedCtaLabel = useMemo(() => {
+    const channel = (strategy?.["primary_channel" as keyof Strategy] as string | undefined) || "";
+    const success = (strategy?.["success_definition" as keyof Strategy] as string | undefined) || "";
+    if (channel?.toLowerCase().includes("call") || success?.toLowerCase().includes("call")) {
+      return "Book a discovery call";
+    }
+    return "Book a discovery call";
+  }, [strategy]);
+
+  function buildCtaHtml(): string {
+    if (!ctaEnabled || !ctaLabel.trim() || !ctaUrl.trim()) return "";
+    const bg = ctaStyle === "coral" ? "#ff6b6b" : "#262833";
+    return `<p style="text-align:center;margin:24px 0;"><a href="${ctaUrl.trim()}" style="display:inline-block;background:${bg};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">${ctaLabel.trim()}</a></p>`;
+  }
+
+  function bodyWithCta(): string {
+    const cta = buildCtaHtml();
+    if (!cta) return body;
+    // Insert before final signature paragraph (—Name) if present, else append
+    const sigMatch = body.match(/<p>—[^<]*<\/p>\s*$/);
+    if (sigMatch) {
+      return body.replace(sigMatch[0], cta + sigMatch[0]);
+    }
+    return body + cta;
+  }
+
   // Tomorrow as min for date picker
   const minScheduleDate = useMemo(() => {
     const t = new Date();
