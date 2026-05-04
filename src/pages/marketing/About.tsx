@@ -1,5 +1,13 @@
+import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { MarketingPage } from "./MarketingPage";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { SiteHeader } from "@/components/SiteHeader";
+import { MoxieLogo } from "@/components/MoxieLogo";
+import kareeHeadshot from "@/assets/karee-headshot.png";
+import kareeBranson from "@/assets/karee-branson.png";
+import kareeTable from "@/assets/karee-table.png";
+import kareeQuote from "@/assets/karee-quote.png";
 
 const values = [
   { n: "01", t: "End fragmentation, don't add to it.", d: "Every feature should reduce tools, not add layers. We're not making better integrations — we're replacing fragmented systems entirely.", filter: "Does this end fragmentation or perpetuate it?" },
@@ -15,45 +23,124 @@ const vision = [
   { y: "2030", t: "Year 5", d: "Free 1,500 service businesses from tool chaos, proving consolidation beats fragmentation as the industry standard." },
 ];
 
+const credentials = ["Brand Strategist", "JD/MBA", "Goldman Sachs 10KSB Scholar", "HBJ 40 Under 40"];
+
+const photoShadow = { boxShadow: "0 8px 40px rgba(0,0,0,0.10)" };
+
 export default function About() {
   return (
-    <MarketingPage
-      eyebrow="About"
-      title="Ending the tool fragmentation era."
-      subtitle="MOXIE exists because brilliant entrepreneurs deserve to be strategic leaders — not exhausted system administrators."
-    >
-      <div className="space-y-24">
-        {/* Founder story */}
-        <section className="grid md:grid-cols-[1fr_2fr] gap-10">
-          <div>
-            <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-3">Why MOXIE exists</div>
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight">14 years watching brilliant people drown in tool chaos.</h2>
+    <div className="min-h-screen bg-background flex flex-col">
+      <SiteHeader />
+
+      {/* HERO */}
+      <section className="border-b border-border">
+        <div className="max-w-7xl mx-auto px-6 py-20 md:py-24 grid md:grid-cols-5 gap-12 items-center">
+          <div className="md:col-span-3 order-2 md:order-1">
+            <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">
+              About
+            </div>
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.02] tracking-[-0.04em] mb-6 text-foreground">
+              Ending the tool fragmentation era.
+            </h1>
+            <p className="text-lg md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-light">
+              MOXIE exists because brilliant entrepreneurs deserve to be strategic leaders — not exhausted system administrators.
+            </p>
           </div>
-          <div className="space-y-5 text-muted-foreground font-light leading-relaxed">
-            <p>I've spent 14 years in marketing and branding, working with hundreds of founders. Brilliant people — exceptional at coaching, consulting, transforming lives — coming to me drowning in marketing chaos. Six, seven, sometimes eight different tools.</p>
-            <p className="italic text-foreground">"I thought these tools were supposed to make marketing easier. Instead, I spend all my time managing the tools and have no time left to actually market."</p>
-            <p>And what broke my heart: <span className="font-semibold text-foreground">they thought it was their fault.</span></p>
-            <p>But the problem wasn't them. Every tool was built to solve ONE piece of the puzzle, with no thought to how it fits into a complete system. Email tools don't talk to social tools. Social tools don't inform strategy. Strategy? That's something founders are supposed to figure out themselves, then manually execute across 6 disconnected platforms.</p>
-            <p>Even with 14 years of expertise, I was living it too — searching for the perfect stack, building Zapier integrations that broke, spending weekends "just catching up." If I was struggling, what chance did my clients have?</p>
-            <p className="font-medium text-foreground">That's when the insight hit: the problem isn't that we need better tools. It's that we're approaching marketing backwards.</p>
-            <p>What founders need is to start with strategy — and build execution systems that flow from it. Not a consultant's PDF you manually execute. A living system where strategy guides every tool automatically.</p>
-            <p className="text-foreground font-medium">That's why MOXIE exists. Not to be another tool in the stack — to be the comprehensive system that gives you back your strategic identity.</p>
-            <p className="pt-3 text-sm">— Karee Laing, Founder</p>
+          <div className="md:col-span-2 order-1 md:order-2">
+            <div className="rounded-2xl overflow-hidden border-l-4 border-accent" style={photoShadow}>
+              <img src={kareeHeadshot} alt="Karee Laing, Founder of MOXIE" className="w-full h-auto object-cover" loading="eager" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-3 text-center md:text-left">
+              Karee Laing — Founder, Brand Strategist, 4x Entrepreneur
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <main className="flex-1 w-full">
+        {/* FOUNDER STORY */}
+        <section className="max-w-6xl mx-auto px-6 py-24">
+          <div className="grid md:grid-cols-5 gap-12 items-start">
+            <div className="md:col-span-2">
+              <div className="rounded-2xl overflow-hidden" style={photoShadow}>
+                <img src={kareeBranson} alt="Karee Laing alongside Richard Branson" className="w-full h-auto object-cover" loading="lazy" />
+              </div>
+              <p className="text-xs text-muted-foreground mt-3 italic">Building alongside the best.</p>
+            </div>
+            <div className="md:col-span-3">
+              <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-3">Why MOXIE exists</div>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight mb-6">14 years watching brilliant people drown in tool chaos.</h2>
+              <div className="space-y-5 text-muted-foreground font-light leading-relaxed">
+                <p>I've spent 14 years in marketing and branding, working with hundreds of founders. Brilliant people — exceptional at coaching, consulting, transforming lives — coming to me drowning in marketing chaos. Six, seven, sometimes eight different tools.</p>
+                <p className="italic text-foreground">"I thought these tools were supposed to make marketing easier. Instead, I spend all my time managing the tools and have no time left to actually market."</p>
+                <p>And what broke my heart: <span className="font-semibold text-foreground">they thought it was their fault.</span></p>
+                <p>But the problem wasn't them. Every tool was built to solve ONE piece of the puzzle, with no thought to how it fits into a complete system. Email tools don't talk to social tools. Social tools don't inform strategy. Strategy? That's something founders are supposed to figure out themselves, then manually execute across 6 disconnected platforms.</p>
+                <p>Even with 14 years of expertise, I was living it too — searching for the perfect stack, building Zapier integrations that broke, spending weekends "just catching up." If I was struggling, what chance did my clients have?</p>
+                <p className="font-medium text-foreground">That's when the insight hit: the problem isn't that we need better tools. It's that we're approaching marketing backwards.</p>
+                <p>What founders need is to start with strategy — and build execution systems that flow from it. Not a consultant's PDF you manually execute. A living system where strategy guides every tool automatically.</p>
+                <p className="text-foreground font-medium">That's why MOXIE exists. Not to be another tool in the stack — to be the comprehensive system that gives you back your strategic identity.</p>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-border">
+                <div className="font-display text-2xl mb-1">— Karee Laing</div>
+                <div className="text-sm text-muted-foreground mb-3">Founder, MOXIE</div>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.15em] font-bold text-muted-foreground">
+                  {credentials.map((c, i) => (
+                    <span key={c} className="flex items-center gap-2">
+                      {i > 0 && <span className="text-accent">•</span>}
+                      <span>{c}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Mission */}
-        <section className="bg-foreground text-background -mx-6 px-6 md:-mx-12 md:px-12 py-16 rounded-3xl">
-          <div className="max-w-3xl mx-auto text-center">
-            <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-4">Our mission</div>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight mb-6">We're ending the tool fragmentation era — turning exhausted operators into strategic marketers who actually grow revenue.</h2>
-            <p className="text-background/70 font-light leading-relaxed">In five years, we want "tool fragmentation" to feel as outdated as fax machines. The default answer should be: <em>just use MOXIE.</em></p>
+        {/* PERSONAL SECTION */}
+        <section className="bg-[#f8f8f8]">
+          <div className="max-w-6xl mx-auto px-6 py-24">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-14 leading-[1.1]">
+              Built from experience.<br />Not just ambition.
+            </h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div>
+                <div className="rounded-2xl overflow-hidden aspect-[4/5]" style={photoShadow}>
+                  <img src={kareeTable} alt="Karee at The Table dinner" className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <p className="text-xs text-muted-foreground mt-3 italic">The Table — curated dinners for women founders in Houston</p>
+              </div>
+              <div>
+                <div className="rounded-2xl overflow-hidden aspect-[4/5]" style={photoShadow}>
+                  <img src={kareeQuote} alt="Karee Laing quote" className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <p className="text-xs text-muted-foreground mt-3 italic">15+ years. Hundreds of founders. One recurring problem.</p>
+              </div>
+              <div className="rounded-2xl bg-[#101116] text-white p-8 md:p-10 flex flex-col justify-center aspect-[4/5]" style={photoShadow}>
+                <div className="font-display text-6xl text-accent leading-none mb-4">"</div>
+                <p className="text-2xl md:text-3xl italic font-light leading-snug mb-6">
+                  You're not missing knowledge. You're missing a system.
+                </p>
+                <p className="text-sm text-white/70 font-medium">That's why MOXIE exists.</p>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Values */}
-        <section>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-14">What guides every decision.</h2>
+        {/* MISSION */}
+        <section className="max-w-6xl mx-auto px-6 py-24">
+          <div className="bg-foreground text-background px-6 md:px-12 py-16 rounded-3xl">
+            <div className="max-w-3xl mx-auto text-center">
+              <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-4">Our mission</div>
+              <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight mb-6">We're ending the tool fragmentation era — turning exhausted operators into strategic marketers who actually grow revenue.</h2>
+              <p className="text-background/70 font-light leading-relaxed">In five years, we want "tool fragmentation" to feel as outdated as fax machines. The default answer should be: <em>just use MOXIE.</em></p>
+            </div>
+          </div>
+        </section>
+
+        {/* VALUES */}
+        <section className="max-w-6xl mx-auto px-6 py-12 pb-24">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-14">The rules we never break.</h2>
           <div className="grid md:grid-cols-2 gap-6">
             {values.map((v) => (
               <Card key={v.n} className="p-8 border-border shadow-soft">
@@ -69,9 +156,12 @@ export default function About() {
           </div>
         </section>
 
-        {/* Vision */}
-        <section>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-14">Where we're going.</h2>
+        {/* VISION */}
+        <section className="max-w-6xl mx-auto px-6 pb-24">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-4">Where we're going.</h2>
+          <p className="text-center italic text-accent font-medium mb-12">
+            We measure success in hours returned and tools eliminated — not vanity metrics.
+          </p>
           <div className="grid md:grid-cols-3 gap-6">
             {vision.map((v) => (
               <Card key={v.y} className="p-8 border-border shadow-soft text-center">
@@ -83,7 +173,48 @@ export default function About() {
           </div>
           <p className="text-center mt-10 italic text-muted-foreground font-light max-w-2xl mx-auto">"I'm a strategist again, not an operator." That's the North Star.</p>
         </section>
-      </div>
-    </MarketingPage>
+
+        {/* FOUNDER CTA */}
+        <section className="max-w-6xl mx-auto px-6 pb-24">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-4xl md:text-6xl font-bold tracking-tight leading-[1.05] mb-6">This is personal.</h2>
+              <p className="text-lg text-muted-foreground font-light leading-relaxed mb-6">
+                I built the system I needed when I was overwhelmed, exhausted, and Googling "content ideas" at 11 PM. This is for every founder who is brilliant at what they do but wants marketing to take 30 minutes, not 5 hours.
+              </p>
+              <Link to="/auth" className="inline-flex items-center gap-2 text-accent font-semibold text-lg hover:gap-3 transition-all">
+                Start your MOXIE Discovery <ArrowRight className="h-5 w-5" />
+              </Link>
+            </div>
+            <div>
+              <div
+                className="rounded-2xl overflow-hidden"
+                style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.10), 0 0 0 4px hsl(var(--accent) / 0.12)" }}
+              >
+                <img src={kareeHeadshot} alt="Karee Laing" className="w-full h-auto object-cover aspect-square object-[center_20%]" loading="lazy" />
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* FINAL CTA */}
+      <section className="border-t border-border bg-muted/40 py-20">
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-[1.1]">Ready when you are.</h2>
+          <p className="text-muted-foreground mb-7 text-lg">Start your MOXIE Discovery in under a minute.</p>
+          <Button asChild size="lg" className="bg-foreground hover:bg-foreground/90 text-background h-12 px-8 rounded-full font-semibold">
+            <Link to="/auth">Get started <ArrowRight className="ml-2 h-4 w-4" /></Link>
+          </Button>
+        </div>
+      </section>
+
+      <footer className="border-t border-border py-10">
+        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
+          <MoxieLogo />
+          <p className="text-xs text-muted-foreground">© 2026 MOXIE. One platform. Confident marketing.</p>
+        </div>
+      </footer>
+    </div>
   );
 }
