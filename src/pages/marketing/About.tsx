@@ -96,9 +96,9 @@ export default function About() {
                 className="text-accent font-bold mb-3 uppercase"
                 style={{ fontSize: "13px", letterSpacing: "2px" }}
               >
-                This is personal
+                Why MOXIE exists
               </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight mb-6">14 years watching brilliant people drown in tool chaos.</h2>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight mb-6">This is personal.</h2>
               <div className="space-y-5 text-muted-foreground font-light leading-relaxed">
                 <p>I've lived the Monday night tool panic. You know the one where it's 9 PM and you need to prep and schedule the Tuesday morning newsletter, but first you have to pull the list from your website, check Analytics for what performed best, find that graphic in Canva, copy the caption from Claude, and format it all while updating the CTA. Two hours later, you've sent one email.</p>
                 <p>I've spent 14 years in marketing. I should know better. But I was still drowning in tools, building Zapier automations at 11 PM, wondering why marketing felt like IT work instead of strategy. If I was struggling, what about the founders I work with? The ones building real businesses, whether it's coaching practices, consulting firms, or service companies who never signed up to become software administrators.</p>
