@@ -464,6 +464,7 @@ export default function RichTextEditor({
 
         <LinkButton editor={editor} />
         <ColorPopover editor={editor} />
+        <ImageButton editor={editor} />
 
         <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -492,6 +493,8 @@ export default function RichTextEditor({
         </ToolbarButton>
         <CtaPopover editor={editor} />
       </div>
+
+      <ImageResizeControls editor={editor} />
 
       <div className="bg-white" data-placeholder={placeholder}>
         <EditorContent editor={editor} />
