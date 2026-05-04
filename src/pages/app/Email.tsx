@@ -1470,7 +1470,7 @@ export default function Email() {
               <div
                 className="text-sm text-gray-700 whitespace-pre-wrap"
                 dangerouslySetInnerHTML={{
-                  __html: body || "<p>Body preview...</p>",
+                  __html: bodyWithCta() || "<p>Body preview...</p>",
                 }}
               />
             </div>
