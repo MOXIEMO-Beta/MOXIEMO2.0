@@ -3,7 +3,17 @@ import { Instagram, Facebook, Linkedin } from "lucide-react";
 import { MoxieLogo } from "@/components/MoxieLogo";
 
 const ComingSoonBadge = () => (
-  <span className="ml-2 inline-block rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+  <span
+    className="inline-block rounded-full bg-accent text-white uppercase font-semibold align-middle"
+    style={{
+      fontSize: "10px",
+      letterSpacing: "0.5px",
+      padding: "2px 8px",
+      marginLeft: "8px",
+      backgroundColor: "#ff6b6b",
+      color: "#ffffff",
+    }}
+  >
     Coming Soon
   </span>
 );
@@ -23,23 +33,24 @@ export function SiteFooter() {
           <div>
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4">Product</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/platform" className="hover:text-foreground">How It Works</Link></li>
-              <li><Link to="/platform" className="hover:text-foreground">Features</Link></li>
+              <li><Link to="/platform" className="hover:text-foreground">Platform</Link></li>
+              <li><Link to="/solutions" className="hover:text-foreground">Solutions</Link></li>
+              <li><Link to="/why-moxie" className="hover:text-foreground">Why MOXIE</Link></li>
               <li><Link to="/pricing" className="hover:text-foreground">Pricing</Link></li>
-              <li><Link to="/pricing#faq" className="hover:text-foreground">FAQ</Link></li>
+              <li><Link to="/community" className="hover:text-foreground">Community</Link></li>
+              <li><Link to="/about" className="hover:text-foreground">About</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4">Company</h4>
+            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4">Resources</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/about" className="hover:text-foreground">About</Link></li>
               <li>
-                <Link to="/blog" className="hover:text-foreground">Blog</Link>
+                <span className="text-muted-foreground">Building with MOXIE</span>
                 <ComingSoonBadge />
               </li>
               <li>
-                <Link to="/resources" className="hover:text-foreground">Resources</Link>
+                <span className="text-muted-foreground">Resources</span>
                 <ComingSoonBadge />
               </li>
               <li><a href="mailto:hello@buildwithmoxie.co" className="hover:text-foreground">Contact</a></li>
