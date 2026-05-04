@@ -64,14 +64,13 @@ export default function About() {
           <div className="grid md:grid-cols-2 gap-12 items-start">
             <div>
               <div
-                className="rounded-2xl overflow-hidden"
+                className="rounded-2xl overflow-hidden bg-muted"
                 style={{ ...photoShadow, borderRadius: "16px" }}
               >
                 <img
                   src={kareePersonal}
                   alt="Karee Laing"
-                  className="w-full object-cover"
-                  style={{ height: "520px", objectPosition: "top" }}
+                  className="w-full h-auto block"
                   loading="lazy"
                 />
               </div>
