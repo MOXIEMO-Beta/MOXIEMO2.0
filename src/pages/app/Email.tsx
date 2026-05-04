@@ -100,6 +100,8 @@ type Strategy = {
   anti_positioning?: string | null;
   content_pillars?: unknown;
   content_themes?: unknown;
+  primary_channel?: string | null;
+  success_definition?: string | null;
 };
 
 type SendMode = "now" | "schedule" | "queue";
