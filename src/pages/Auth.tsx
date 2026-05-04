@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,13 @@ import { ArrowRight, Mail } from "lucide-react";
 export default function Auth() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [mode, setMode] = useState<"signin" | "signup">("signup");
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get("mode") === "signin" ? "signin" : "signup";
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
+  useEffect(() => {
+    const m = searchParams.get("mode");
+    setMode(m === "signin" ? "signin" : "signup");
+  }, [searchParams]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
@@ -94,21 +100,61 @@ export default function Auth() {
         <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
         <Link to="/" className="relative z-10">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-background flex items-center justify-center">
-              <div className="h-2.5 w-2.5 rounded-full bg-accent" />
-            </div>
-            <span className="font-display text-2xl">moxie</span>
-          </div>
+          <MoxieLogo variant="light" />
         </Link>
         <div className="relative z-10 max-w-md">
-          <h2 className="font-display text-5xl leading-tight mb-6">Your AI Chief Marketing Officer.</h2>
-          <p className="text-background/70 text-lg leading-relaxed">Strategy first. Execution embedded. Replace 6 tools with one platform built for the messy middle.</p>
+          {mode === "signup" ? (
+            <>
+              <span
+                className="inline-block mb-6 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider"
+                style={{ background: "#ff6b6b", color: "#fff", letterSpacing: "1.5px" }}
+              >
+                Founding Member Access
+              </span>
+              <h2 className="font-display text-5xl leading-tight mb-6">
+                Your AI Chief<br />Marketing Officer.
+              </h2>
+              <p
+                className="italic"
+                style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, lineHeight: 1.7 }}
+              >
+                "You don't need more content ideas.<br />
+                You need a system that makes<br />
+                marketing inevitable."
+                <br />
+                <span className="not-italic">— MOXIE</span>
+              </p>
+            </>
+          ) : (
+            <>
+              <h2 className="font-display text-5xl leading-tight mb-6">Welcome back.</h2>
+              <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 18, lineHeight: 1.6 }}>
+                Sign in to continue building<br />your marketing engine.
+              </p>
+              <p
+                className="italic mt-6"
+                style={{ color: "rgba(255,255,255,0.65)", fontSize: 15, lineHeight: 1.7 }}
+              >
+                "Consistency compounds.<br />
+                Every time you log in,<br />
+                you're building something real."
+                <br />
+                <span className="not-italic">— MOXIE</span>
+              </p>
+            </>
+          )}
           <div className="mt-12 grid grid-cols-3 gap-4 text-sm">
             <div><div className="font-display text-3xl text-accent">18+</div><div className="text-background/60">hrs back per week</div></div>
-            <div><div className="font-display text-3xl text-accent">4-6</div><div className="text-background/60">tools replaced</div></div>
-            <div><div className="font-display text-3xl text-accent">45m</div><div className="text-background/60">to full strategy</div></div>
+            <div><div className="font-display text-3xl text-accent">4–6</div><div className="text-background/60">tools replaced</div></div>
+            <div><div className="font-display text-3xl text-accent">20 min</div><div className="text-background/60">to full strategy</div></div>
           </div>
+          {mode === "signup" && (
+            <ul className="mt-10 space-y-2" style={{ color: "rgba(255,255,255,0.75)", fontSize: 13 }}>
+              <li><span style={{ color: "#ff6b6b" }}>✓</span> Free for founding members — forever</li>
+              <li><span style={{ color: "#ff6b6b" }}>✓</span> Personal 1:1 onboarding call</li>
+              <li><span style={{ color: "#ff6b6b" }}>✓</span> Locked-in rate before prices increase</li>
+            </ul>
+          )}
         </div>
       </div>
 
@@ -138,7 +184,7 @@ export default function Auth() {
           ) : (
           <>
           <h1 className="font-display text-4xl mb-2">{mode === "signup" ? "Get started" : "Welcome back"}</h1>
-          <p className="text-muted-foreground mb-8">{mode === "signup" ? "Create your account in 30 seconds." : "Sign in to your workspace."}</p>
+          <p className="text-muted-foreground mb-8">{mode === "signup" ? "Join as a founding member. Free forever." : "Sign in to continue building."}</p>
 
           <form onSubmit={submit} className="space-y-4">
             {mode === "signup" && (
@@ -162,8 +208,17 @@ export default function Auth() {
                 </Link>
               </div>
             )}
-            <Button type="submit" disabled={loading} className="w-full h-11 bg-foreground text-background hover:bg-foreground/90 rounded-lg">
-              {loading ? "Working…" : mode === "signup" ? "Create account" : "Sign in"} <ArrowRight className="ml-2 h-4 w-4" />
+            <Button
+              type="submit"
+              disabled={loading}
+              className={
+                mode === "signup"
+                  ? "w-full h-11 text-white hover:opacity-90 rounded-lg"
+                  : "w-full h-11 bg-foreground text-background hover:bg-foreground/90 rounded-lg"
+              }
+              style={mode === "signup" ? { background: "#ff6b6b" } : undefined}
+            >
+              {loading ? "Working…" : mode === "signup" ? "Create my account" : "Sign in"} <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </form>
 
@@ -197,10 +252,25 @@ export default function Auth() {
           </Button>
 
           <p className="mt-6 text-sm text-muted-foreground text-center">
-            {mode === "signup" ? "Already have an account?" : "New here?"}{" "}
-            <button onClick={() => setMode(mode === "signup" ? "signin" : "signup")} className="text-foreground font-medium hover:text-accent">
-              {mode === "signup" ? "Sign in" : "Create account"}
-            </button>
+            {mode === "signup" ? (
+              <>
+                Already have an account?{" "}
+                <button onClick={() => setMode("signin")} className="text-foreground font-bold hover:text-accent">
+                  Sign in
+                </button>
+              </>
+            ) : (
+              <>
+                New to MOXIE?{" "}
+                <button
+                  onClick={() => setMode("signup")}
+                  className="font-bold hover:opacity-80"
+                  style={{ color: "#ff6b6b" }}
+                >
+                  Get started free →
+                </button>
+              </>
+            )}
           </p>
 
           <p className="mt-6 text-xs text-muted-foreground text-center leading-relaxed">
