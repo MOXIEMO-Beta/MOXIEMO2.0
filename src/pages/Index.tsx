@@ -42,7 +42,7 @@ export default function Index() {
 
       {/* SECTION 1 — HERO */}
       <section className="bg-background pt-28 md:pt-32 pb-16">
-        <div className="max-w-[860px] mx-auto px-6 text-center">
+        <div className="max-w-[1100px] mx-auto px-6 text-center">
           <SectionLabel>Your AI CMO is ready</SectionLabel>
           <h1 className="max-w-[1100px] mx-auto text-5xl md:text-7xl lg:text-[88px] font-bold leading-[1.05] tracking-[-0.035em] mb-8 text-foreground">
             Stop managing marketing tools.{" "}
