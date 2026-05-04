@@ -31,7 +31,7 @@ export default function WhyMoxie() {
       subtitle="You've tried VAs, Zapier, HubSpot, all-in-one platforms, and generic AI. They all failed for the same reason: they didn't start with strategy."
     >
       <div className="space-y-24">
-        <section className="bg-background -mx-6 md:-mx-12 px-6 md:px-12" style={{ paddingTop: "80px", paddingBottom: "80px" }}>
+        <section className="bg-background -mx-6 md:-mx-12 px-6 md:px-12" style={{ paddingTop: "16px", paddingBottom: "80px" }}>
           <img
             src={isThisRightForYou}
             alt="Is MOXIE right for you? Comparison of who it's for and not for."
