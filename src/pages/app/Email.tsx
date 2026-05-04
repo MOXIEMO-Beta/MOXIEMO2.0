@@ -182,11 +182,9 @@ export default function Email() {
 
   // Suggested CTA label from strategy
   const suggestedCtaLabel = useMemo(() => {
-    const channel = (strategy?.["primary_channel" as keyof Strategy] as string | undefined) || "";
-    const success = (strategy?.["success_definition" as keyof Strategy] as string | undefined) || "";
-    if (channel?.toLowerCase().includes("call") || success?.toLowerCase().includes("call")) {
-      return "Book a discovery call";
-    }
+    const channel = strategy?.primary_channel || "";
+    const success = strategy?.success_definition || "";
+    void channel; void success;
     return "Book a discovery call";
   }, [strategy]);
 
