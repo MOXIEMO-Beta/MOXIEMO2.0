@@ -2,7 +2,10 @@ import { Card } from "@/components/ui/card";
 import { X, Check } from "lucide-react";
 import { MarketingPage } from "./MarketingPage";
 import { StatsBar } from "@/components/StatsBar";
-import whyMoxieBanner from "@/assets/why-moxie-banner.png";
+import isThisRightForYou from "@/assets/is-this-right-for-you.png";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 const failed = [
   { t: "Hired a VA", tried: "Brought on a virtual assistant to manage tools, post content, coordinate marketing.", happened: "Week 1–2 training on 6 platforms. Week 3–6 they seem to be getting it. Week 7–8 they quit. You're back to managing everything — plus you're behind on campaigns.", why: "The problem wasn't capacity. It was system complexity. Adding a person to chaos doesn't eliminate chaos." },
@@ -28,13 +31,20 @@ export default function WhyMoxie() {
       subtitle="You've tried VAs, Zapier, HubSpot, all-in-one platforms, and generic AI. They all failed for the same reason: they didn't start with strategy."
     >
       <div className="space-y-24">
-        <section>
+        <section className="bg-background -mx-6 md:-mx-12 px-6 md:px-12" style={{ paddingTop: "80px", paddingBottom: "80px" }}>
           <img
-            src={whyMoxieBanner}
-            alt="Why not try MOXIE — features overview"
-            className="w-full h-auto rounded-2xl shadow-soft"
+            src={isThisRightForYou}
+            alt="Is MOXIE right for you? Comparison of who it's for and not for."
+            className="w-full h-auto mx-auto block"
+            style={{ maxWidth: "960px", borderRadius: "16px", boxShadow: "0 8px 40px rgba(0,0,0,0.08)" }}
             loading="lazy"
           />
+          <div className="mt-10 flex flex-col items-center gap-3">
+            <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 px-8 rounded-full font-semibold">
+              <Link to="/auth">Start free discovery <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+            <p className="text-sm text-muted-foreground text-center">No credit card required. Founding members get full access free.</p>
+          </div>
         </section>
 
         {/* Differences */}
