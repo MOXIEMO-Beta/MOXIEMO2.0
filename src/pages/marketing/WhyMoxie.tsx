@@ -2,7 +2,6 @@ import { Card } from "@/components/ui/card";
 import { X, Check } from "lucide-react";
 import { MarketingPage } from "./MarketingPage";
 import { StatsBar } from "@/components/StatsBar";
-import isThisRightForYou from "@/assets/is-this-right-for-you.png";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -23,6 +22,23 @@ const differences = [
   { t: "AI that knows your business", them: "Generic AI that needs prompting. Generic outputs.", us: "AI trained on your strategic foundation. Knows your voice, your positioning, your audience. Sounds like you wrote it." },
 ];
 
+const forYou = [
+  { t: "You're building a real business", d: "Not a side hobby. You're serious about growth and you need marketing that actually works." },
+  { t: "You're done using 6 different tools", d: "Tired of paying for all the tools without direction, a strategy and a roadmap. You want one system that does it all." },
+  { t: "You need strategy AND execution", d: "You don't just want \"post ideas\", you need a complete marketing roadmap, the content to execute it, and the tools to schedule it." },
+  { t: "You're ready to show up consistently", d: "Moxie can write, schedule, and plan everything, but you still need to approve and post. If you're ready to execute, Moxie handles the rest." },
+  { t: "You value your time more than anything", d: "You'd rather spend 15 minutes reviewing content than 5 hours creating it from scratch." },
+  { t: "You can't afford a $10K/month agency", d: "You need agency-level strategy and execution at a price that actually makes sense for a small business." },
+];
+
+const notForYou = [
+  { t: "You want someone to run your marketing FOR you", d: "Moxie creates everything, but you review and approve. If you want 100% hands-off done-for-you, hire an agency." },
+  { t: "You're not ready to commit to execution", d: "Moxie can build a perfect 90-day plan, but if you never log in and post, nothing happens. The system works when you do." },
+  { t: "You just want \"content ideas\"", d: "Moxie is a full marketing operating system. If you only need a Pinterest board of post ideas, this is overkill." },
+  { t: "You expect results without strategy", d: "Moxie is built strategy-first. If you just want to \"post and hope,\" we're not the right fit." },
+  { t: "You're not willing to invest a minimum of $79/month", d: "If you're looking for free tools or can't commit to investing in your marketing, Moxie isn't for you right now." },
+];
+
 export default function WhyMoxie() {
   return (
     <MarketingPage
@@ -31,15 +47,61 @@ export default function WhyMoxie() {
       subtitle="You've tried VAs, Zapier, HubSpot, all-in-one platforms, and generic AI. They all failed for the same reason: they didn't start with strategy."
     >
       <div className="space-y-24">
-        <section className="bg-background -mx-6 md:-mx-12 px-6 md:px-12" style={{ paddingTop: "16px", paddingBottom: "80px" }}>
-          <img
-            src={isThisRightForYou}
-            alt="Is MOXIE right for you? Comparison of who it's for and not for."
-            className="w-full h-auto mx-auto block"
-            style={{ maxWidth: "960px", borderRadius: "16px", boxShadow: "0 8px 40px rgba(0,0,0,0.08)" }}
-            loading="lazy"
-          />
-          <div className="mt-10 flex flex-col items-center gap-3">
+        <section className="-mx-6 md:-mx-12 px-6 md:px-12" style={{ paddingTop: "16px", paddingBottom: "40px" }}>
+          <div className="text-center mb-12">
+            <div className="text-xs font-bold uppercase tracking-[0.25em] text-accent mb-4">Who is MOXIE for?</div>
+            <h2 className="text-4xl md:text-6xl font-bold tracking-[-0.03em] leading-[1.05]">
+              Is This <span className="italic text-accent">Right</span> For You?
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+            {/* For you */}
+            <Card className="overflow-hidden border-border shadow-soft">
+              <div className="bg-accent text-accent-foreground px-6 py-5 flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-background/95 flex items-center justify-center">
+                  <Check className="h-5 w-5 text-accent" strokeWidth={3} />
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold">This Is For You If…</h3>
+              </div>
+              <ul className="divide-y divide-border">
+                {forYou.map((item) => (
+                  <li key={item.t} className="px-6 py-5 flex gap-4">
+                    <div className="h-7 w-7 rounded-full bg-accent-soft flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="h-4 w-4 text-accent" strokeWidth={3} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-base mb-1 tracking-tight">{item.t}</h4>
+                      <p className="text-sm text-muted-foreground font-light leading-relaxed">{item.d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+
+            {/* Not for you */}
+            <Card className="overflow-hidden border-border shadow-soft">
+              <div className="bg-foreground text-background px-6 py-5 flex items-center gap-3">
+                <div className="h-9 w-9 rounded-full bg-background/95 flex items-center justify-center">
+                  <X className="h-5 w-5 text-foreground" strokeWidth={3} />
+                </div>
+                <h3 className="text-xl md:text-2xl font-bold">This Is NOT For You If…</h3>
+              </div>
+              <ul className="divide-y divide-border">
+                {notForYou.map((item) => (
+                  <li key={item.t} className="px-6 py-5 flex gap-4">
+                    <div className="h-7 w-7 rounded-full bg-foreground flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <X className="h-4 w-4 text-background" strokeWidth={3} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-base mb-1 tracking-tight">{item.t}</h4>
+                      <p className="text-sm text-muted-foreground font-light leading-relaxed">{item.d}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </div>
+          <div className="mt-12 flex flex-col items-center gap-3">
             <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 px-8 rounded-full font-semibold">
               <Link to="/auth">Start free discovery <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
