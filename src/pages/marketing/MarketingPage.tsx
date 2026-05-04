@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
-import { MoxieLogo } from "@/components/MoxieLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 
@@ -39,12 +39,7 @@ export function MarketingPage({ eyebrow, title, subtitle, children }: MarketingP
           </Button>
         </div>
       </section>
-      <footer className="border-t border-border py-10">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <MoxieLogo />
-          <p className="text-xs text-muted-foreground">© 2026 MOXIE. One platform. Confident marketing.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { MoxieLogo } from "@/components/MoxieLogo";
 import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 import { StatsBar } from "@/components/StatsBar";
 import { ArrowRight, Check, MessageSquare, Target, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -251,12 +251,7 @@ export default function Index() {
       </section>
 
       {/* FOOTER */}
-      <footer className="border-t border-border py-10 bg-background">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <MoxieLogo />
-          <p className="text-xs text-muted-foreground">© 2026 MOXIE. One platform. Confident marketing.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
