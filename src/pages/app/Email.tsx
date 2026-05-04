@@ -111,6 +111,11 @@ export default function Email() {
   const [previewText, setPreviewText] = useState("");
   const [generating, setGenerating] = useState(false);
   const [showGenPanel, setShowGenPanel] = useState(true);
+  // CTA block (appended to body at send time)
+  const [ctaEnabled, setCtaEnabled] = useState(false);
+  const [ctaLabel, setCtaLabel] = useState("");
+  const [ctaUrl, setCtaUrl] = useState("");
+  const [ctaStyle, setCtaStyle] = useState<"coral" | "dark">("coral");
   const [sending, setSending] = useState(false);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
