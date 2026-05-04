@@ -5,6 +5,7 @@ import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
+import TiptapImage from "@tiptap/extension-image";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Bold,
   Italic,
@@ -29,6 +32,7 @@ import {
   Minus,
   MousePointerClick,
   Palette,
+  Image as ImageIconLucide,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -193,6 +197,120 @@ function CtaPopover({ editor }: { editor: Editor }) {
   );
 }
 
+function ImageButton({ editor }: { editor: Editor }) {
+  const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<"upload" | "url">("upload");
+  const [url, setUrl] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function insertImage(src: string) {
+    editor
+      .chain()
+      .focus()
+      .setImage({ src })
+      .run();
+    // Apply default 100% width via attributes
+    setTimeout(() => {
+      editor
+        .chain()
+        .focus()
+        .updateAttributes("image", { width: "100%" })
+        .run();
+    }, 0);
+    setOpen(false);
+    setUrl("");
+  }
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const ok = ["image/jpeg", "image/png", "image/gif", "image/webp"].includes(file.type);
+    if (!ok) {
+      alert("Please choose a JPG, PNG, GIF, or WEBP image.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Image must be 5MB or smaller.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => insertImage(String(reader.result));
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <>
+      <ToolbarButton onClick={() => setOpen(true)} title="Insert image">
+        <ImageIconLucide className="h-4 w-4" />
+      </ToolbarButton>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Insert image</DialogTitle>
+          </DialogHeader>
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "upload" | "url")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload">Upload</TabsTrigger>
+              <TabsTrigger value="url">URL</TabsTrigger>
+            </TabsList>
+            <TabsContent value="upload" className="space-y-3 pt-3">
+              <Label className="text-xs">Choose an image (max 5MB)</Label>
+              <Input
+                ref={fileRef}
+                type="file"
+                accept=".jpg,.jpeg,.png,.gif,.webp,image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleFile}
+              />
+            </TabsContent>
+            <TabsContent value="url" className="space-y-3 pt-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Image URL</Label>
+                <Input
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={() => url.trim() && insertImage(url.trim())}
+              >
+                Insert
+              </Button>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+function ImageResizeControls({ editor }: { editor: Editor }) {
+  if (!editor.isActive("image")) return null;
+  const current = (editor.getAttributes("image").width as string) || "100%";
+  const set = (w: string) =>
+    editor.chain().focus().updateAttributes("image", { width: w }).run();
+  return (
+    <div className="flex items-center gap-1 border-t border-border bg-muted/30 px-3 py-1.5 text-xs">
+      <span className="text-muted-foreground mr-1">Image width:</span>
+      {(["50%", "75%", "100%"] as const).map((w) => (
+        <button
+          key={w}
+          type="button"
+          onClick={() => set(w)}
+          className={cn(
+            "rounded px-2 py-0.5 hover:bg-muted",
+            current === w && "bg-foreground text-background hover:bg-foreground",
+          )}
+        >
+          {w}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function RichTextEditor({
   content,
   onChange,
@@ -217,6 +335,14 @@ export default function RichTextEditor({
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       TextStyle,
       Color,
+      TiptapImage.configure({
+        inline: false,
+        allowBase64: true,
+        HTMLAttributes: {
+          class: "rounded max-w-full h-auto cursor-pointer",
+          style: "height:auto;",
+        },
+      }),
     ],
     content: content || "",
     onUpdate: ({ editor }) => {
@@ -338,6 +464,7 @@ export default function RichTextEditor({
 
         <LinkButton editor={editor} />
         <ColorPopover editor={editor} />
+        <ImageButton editor={editor} />
 
         <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -366,6 +493,8 @@ export default function RichTextEditor({
         </ToolbarButton>
         <CtaPopover editor={editor} />
       </div>
+
+      <ImageResizeControls editor={editor} />
 
       <div className="bg-white" data-placeholder={placeholder}>
         <EditorContent editor={editor} />

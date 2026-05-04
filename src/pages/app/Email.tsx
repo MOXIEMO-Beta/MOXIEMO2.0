@@ -100,6 +100,8 @@ type Strategy = {
   anti_positioning?: string | null;
   content_pillars?: unknown;
   content_themes?: unknown;
+  primary_channel?: string | null;
+  success_definition?: string | null;
 };
 
 type SendMode = "now" | "schedule" | "queue";
@@ -111,6 +113,11 @@ export default function Email() {
   const [previewText, setPreviewText] = useState("");
   const [generating, setGenerating] = useState(false);
   const [showGenPanel, setShowGenPanel] = useState(true);
+  // CTA block (appended to body at send time)
+  const [ctaEnabled, setCtaEnabled] = useState(false);
+  const [ctaLabel, setCtaLabel] = useState("");
+  const [ctaUrl, setCtaUrl] = useState("");
+  const [ctaStyle, setCtaStyle] = useState<"coral" | "dark">("coral");
   const [sending, setSending] = useState(false);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -173,6 +180,31 @@ export default function Email() {
     [],
   );
 
+  // Suggested CTA label from strategy
+  const suggestedCtaLabel = useMemo(() => {
+    const channel = strategy?.primary_channel || "";
+    const success = strategy?.success_definition || "";
+    void channel; void success;
+    return "Book a discovery call";
+  }, [strategy]);
+
+  function buildCtaHtml(): string {
+    if (!ctaEnabled || !ctaLabel.trim() || !ctaUrl.trim()) return "";
+    const bg = ctaStyle === "coral" ? "#ff6b6b" : "#262833";
+    return `<p style="text-align:center;margin:24px 0;"><a href="${ctaUrl.trim()}" style="display:inline-block;background:${bg};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">${ctaLabel.trim()}</a></p>`;
+  }
+
+  function bodyWithCta(): string {
+    const cta = buildCtaHtml();
+    if (!cta) return body;
+    // Insert before final signature paragraph (—Name) if present, else append
+    const sigMatch = body.match(/<p>—[^<]*<\/p>\s*$/);
+    if (sigMatch) {
+      return body.replace(sigMatch[0], cta + sigMatch[0]);
+    }
+    return body + cta;
+  }
+
   // Tomorrow as min for date picker
   const minScheduleDate = useMemo(() => {
     const t = new Date();
@@ -201,7 +233,7 @@ export default function Email() {
       supabase
         .from("strategies")
         .select(
-          "positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning, content_pillars, content_themes",
+          "positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning, content_pillars, content_themes, primary_channel, success_definition",
         )
         .eq("user_id", user.id)
         .maybeSingle(),
@@ -350,12 +382,17 @@ export default function Email() {
     setSelectedIds(new Set());
     setSendMode("now");
     setShowGenPanel(true);
+    setCtaEnabled(false);
+    setCtaLabel("");
+    setCtaUrl("");
+    setCtaStyle("coral");
   }
 
   async function doSendNow() {
     setSending(true);
     try {
-      const payload: Record<string, unknown> = { subject, body };
+      const finalBody = bodyWithCta();
+      const payload: Record<string, unknown> = { subject, body: finalBody };
       if (audienceMode === "selected") {
         payload.subscriber_ids = Array.from(selectedIds);
       } else if (audienceMode === "segment" && sendSegmentIds.length > 0) {
@@ -416,7 +453,7 @@ export default function Email() {
     const { error } = await supabase.from("email_sends").insert({
       user_id: user.id,
       subject,
-      body,
+      body: bodyWithCta(),
       status: "scheduled",
       scheduled_for: dt.toISOString(),
       segment: segmentValue,
@@ -443,7 +480,7 @@ export default function Email() {
     const { error } = await supabase.from("email_sends").insert({
       user_id: user.id,
       subject,
-      body,
+      body: bodyWithCta(),
       status: "queued",
       segment: segmentValue,
       recipient_ids: sendRecipientIds,
@@ -1314,6 +1351,82 @@ export default function Email() {
               placeholder="Write your newsletter..."
             />
           </div>
+
+          {/* CTA Block */}
+          <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Call to action
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={ctaEnabled}
+                  onCheckedChange={(v) => setCtaEnabled(Boolean(v))}
+                />
+                <span>Include a button</span>
+              </label>
+            </div>
+            {ctaEnabled && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Button label</Label>
+                  <Input
+                    value={ctaLabel}
+                    onChange={(e) => setCtaLabel(e.target.value)}
+                    placeholder={`e.g. ${suggestedCtaLabel}, Download the guide, Learn more`}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Button URL</Label>
+                  <Input
+                    value={ctaUrl}
+                    onChange={(e) => setCtaUrl(e.target.value)}
+                    placeholder="https://"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Button style</Label>
+                  <div className="inline-flex rounded-md border bg-background p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setCtaStyle("coral")}
+                      className={`px-3 py-1 text-xs rounded ${
+                        ctaStyle === "coral" ? "bg-[#ff6b6b] text-white" : "text-muted-foreground"
+                      }`}
+                    >
+                      Coral (primary)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCtaStyle("dark")}
+                      className={`px-3 py-1 text-xs rounded ${
+                        ctaStyle === "dark" ? "bg-[#262833] text-white" : "text-muted-foreground"
+                      }`}
+                    >
+                      Dark (secondary)
+                    </button>
+                  </div>
+                </div>
+                <div className="rounded-md border bg-white p-4 text-center">
+                  <a
+                    href={ctaUrl || "#"}
+                    onClick={(e) => e.preventDefault()}
+                    style={{
+                      display: "inline-block",
+                      background: ctaStyle === "coral" ? "#ff6b6b" : "#262833",
+                      color: "white",
+                      padding: "12px 24px",
+                      borderRadius: 8,
+                      textDecoration: "none",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {ctaLabel.trim() || suggestedCtaLabel}
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -1355,7 +1468,7 @@ export default function Email() {
               <div
                 className="text-sm text-gray-700 whitespace-pre-wrap"
                 dangerouslySetInnerHTML={{
-                  __html: body || "<p>Body preview...</p>",
+                  __html: bodyWithCta() || "<p>Body preview...</p>",
                 }}
               />
             </div>

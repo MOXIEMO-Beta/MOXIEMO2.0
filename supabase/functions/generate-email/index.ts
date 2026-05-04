@@ -103,19 +103,21 @@ Return ONLY valid JSON:
 {
   "subject": "Subject line under 50 chars — curiosity-driven, no clickbait",
   "preview_text": "Preview text under 90 chars shown in inbox",
-  "body": "Full HTML email body matching the email type instructions above. Use <h2> for headers, <p> for paragraphs. End with a coral CTA button: <a href='[ADD YOUR CALENDAR LINK HERE]' style='display:inline-block;background:#ff6b6b;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;'>Book a Discovery Call</a>"
+  "body": "Full HTML email body matching the email type instructions above. Use <h2> for headers, <p> for paragraphs. End with the closing line and signature only — NO call-to-action button, booking link, or closing CTA. The user adds their own CTA separately."
 }
 
 SIGNATURE RULE:
 Always end the email with the sender's actual name, never "MOXIE".
-Use this exact format for the closing (placed AFTER the CTA button):
+Use this exact format for the closing line:
 <p>—${senderName}</p>
 
 Never use "—MOXIE", "The MOXIE Team", or any variation of MOXIE as a signature.
 MOXIE is the tool, not the sender. The human founder is the sender.
 
-CTA LINK RULE:
-The CTA button href must be the literal string [ADD YOUR CALENDAR LINK HERE] so the user knows to replace it before sending.`;
+CTA RULE:
+Do NOT include any call-to-action button, booking link, or closing CTA in the email body.
+End the email body with the closing line (signature) only.
+The user will add their own CTA separately in the editor.`;
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
