@@ -5,7 +5,7 @@ import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import { TextStyle } from "@tiptap/extension-text-style";
 import { Color } from "@tiptap/extension-color";
-import Image from "@tiptap/extension-image";
+import TiptapImage from "@tiptap/extension-image";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,7 @@ import {
   Minus,
   MousePointerClick,
   Palette,
-  Image as ImageIcon,
+  Image as ImageIconLucide,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
