@@ -172,28 +172,6 @@ export default function About() {
           <p className="text-center mt-10 italic text-muted-foreground font-light max-w-2xl mx-auto">"I'm a strategist again, not an operator." That's the North Star.</p>
         </section>
 
-        {/* FOUNDER CTA */}
-        <section className="max-w-6xl mx-auto px-6 pb-24">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-4xl md:text-6xl font-bold tracking-tight leading-[1.05] mb-6">This is personal.</h2>
-              <p className="text-lg text-muted-foreground font-light leading-relaxed mb-6">
-                I built the system I needed when I was overwhelmed, exhausted, and Googling "content ideas" at 11 PM. This is for every founder who is brilliant at what they do but wants marketing to take 30 minutes, not 5 hours.
-              </p>
-              <Link to="/auth" className="inline-flex items-center gap-2 text-accent font-semibold text-lg hover:gap-3 transition-all">
-                Start your MOXIE Discovery <ArrowRight className="h-5 w-5" />
-              </Link>
-            </div>
-            <div>
-              <div
-                className="rounded-2xl overflow-hidden"
-                style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.10), 0 0 0 4px hsl(var(--accent) / 0.12)" }}
-              >
-                <img src={kareeHeadshot} alt="Karee Laing" className="w-full h-auto object-cover aspect-square object-[center_20%]" loading="lazy" />
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* FINAL CTA */}
