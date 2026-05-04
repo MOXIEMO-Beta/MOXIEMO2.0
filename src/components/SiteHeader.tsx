@@ -47,7 +47,7 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-3">
           <Link
-            to="/auth"
+            to="/auth?mode=signin"
             className="hidden sm:inline text-[15px] font-medium text-foreground/70 hover:text-foreground px-2"
           >
             Sign in
@@ -56,7 +56,7 @@ export function SiteHeader() {
             asChild
             className="bg-foreground hover:bg-foreground/90 text-background h-10 px-5 rounded-full font-semibold text-[15px]"
           >
-            <Link to="/auth">
+            <Link to="/auth?mode=signup">
               Get started <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </Button>
