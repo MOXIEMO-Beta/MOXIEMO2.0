@@ -1353,6 +1353,82 @@ export default function Email() {
               placeholder="Write your newsletter..."
             />
           </div>
+
+          {/* CTA Block */}
+          <div className="space-y-3 rounded-lg border bg-muted/20 p-4">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Call to action
+              </div>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <Checkbox
+                  checked={ctaEnabled}
+                  onCheckedChange={(v) => setCtaEnabled(Boolean(v))}
+                />
+                <span>Include a button</span>
+              </label>
+            </div>
+            {ctaEnabled && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Button label</Label>
+                  <Input
+                    value={ctaLabel}
+                    onChange={(e) => setCtaLabel(e.target.value)}
+                    placeholder={`e.g. ${suggestedCtaLabel}, Download the guide, Learn more`}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Button URL</Label>
+                  <Input
+                    value={ctaUrl}
+                    onChange={(e) => setCtaUrl(e.target.value)}
+                    placeholder="https://"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Button style</Label>
+                  <div className="inline-flex rounded-md border bg-background p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setCtaStyle("coral")}
+                      className={`px-3 py-1 text-xs rounded ${
+                        ctaStyle === "coral" ? "bg-[#ff6b6b] text-white" : "text-muted-foreground"
+                      }`}
+                    >
+                      Coral (primary)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCtaStyle("dark")}
+                      className={`px-3 py-1 text-xs rounded ${
+                        ctaStyle === "dark" ? "bg-[#262833] text-white" : "text-muted-foreground"
+                      }`}
+                    >
+                      Dark (secondary)
+                    </button>
+                  </div>
+                </div>
+                <div className="rounded-md border bg-white p-4 text-center">
+                  <a
+                    href={ctaUrl || "#"}
+                    onClick={(e) => e.preventDefault()}
+                    style={{
+                      display: "inline-block",
+                      background: ctaStyle === "coral" ? "#ff6b6b" : "#262833",
+                      color: "white",
+                      padding: "12px 24px",
+                      borderRadius: 8,
+                      textDecoration: "none",
+                      fontWeight: 700,
+                    }}
+                  >
+                    {ctaLabel.trim() || suggestedCtaLabel}
+                  </a>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
