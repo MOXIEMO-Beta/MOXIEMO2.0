@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
-import { MoxieLogo } from "@/components/MoxieLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import kareeHeadshot from "@/assets/karee-headshot.png";
 import kareeBranson from "@/assets/karee-branson.png";
 import kareeTable from "@/assets/karee-table.png";
@@ -185,12 +185,7 @@ export default function About() {
         </div>
       </section>
 
-      <footer className="border-t border-border py-10">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <MoxieLogo />
-          <p className="text-xs text-muted-foreground">© 2026 MOXIE. One platform. Confident marketing.</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
