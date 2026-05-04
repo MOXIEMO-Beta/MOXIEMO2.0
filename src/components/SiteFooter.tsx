@@ -51,17 +51,7 @@ export function SiteFooter() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/privacy" className="hover:text-foreground">Privacy</Link></li>
               <li><Link to="/terms" className="hover:text-foreground">Terms</Link></li>
-              {/* TODO: add legal page routes */}
-              <li>
-                <a
-                  href="https://buildwithmoxie.co/data-deletion"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-foreground"
-                >
-                  Data Deletion
-                </a>
-              </li>
+              <li><Link to="/data-deletion" className="hover:text-foreground">Data Deletion</Link></li>
             </ul>
           </div>
         </div>
