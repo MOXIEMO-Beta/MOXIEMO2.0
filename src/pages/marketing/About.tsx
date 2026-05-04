@@ -60,15 +60,43 @@ export default function About() {
       <main className="flex-1 w-full">
         {/* FOUNDER STORY */}
         <section className="max-w-6xl mx-auto px-6 py-24">
-          <div className="grid md:grid-cols-5 gap-12 items-start">
-            <div className="md:col-span-2">
-              <div className="rounded-2xl overflow-hidden" style={photoShadow}>
-                <img src={kareeBranson} alt="Karee Laing alongside Richard Branson" className="w-full h-auto object-cover" loading="lazy" />
+          <div className="grid md:grid-cols-2 gap-12 items-start">
+            <div>
+              <div
+                className="rounded-2xl overflow-hidden"
+                style={{ ...photoShadow, borderRadius: "16px" }}
+              >
+                <img
+                  src={kareeBranson}
+                  alt="Karee Laing"
+                  className="w-full object-cover"
+                  style={{ height: "520px", objectPosition: "top" }}
+                  loading="lazy"
+                />
               </div>
-              <p className="text-xs text-muted-foreground mt-3 italic">Building alongside the best.</p>
+              <div style={{ marginTop: "12px" }}>
+                <div className="text-foreground" style={{ fontSize: "15px", fontWeight: 400 }}>— Karee Laing</div>
+                <div className="text-muted-foreground" style={{ fontSize: "14px", marginTop: "2px" }}>Founder, MOXIE</div>
+                <div
+                  className="text-accent"
+                  style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", marginTop: "10px" }}
+                >
+                  {credentials.map((c, i) => (
+                    <span key={c}>
+                      {i > 0 && <span className="text-muted-foreground"> • </span>}
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="md:col-span-3">
-              <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-3">Why MOXIE exists</div>
+            <div>
+              <div
+                className="text-accent font-bold mb-3 uppercase"
+                style={{ fontSize: "13px", letterSpacing: "2px" }}
+              >
+                This is personal
+              </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight mb-6">14 years watching brilliant people drown in tool chaos.</h2>
               <div className="space-y-5 text-muted-foreground font-light leading-relaxed">
                 <p>I've lived the Monday night tool panic. You know the one where it's 9 PM and you need to prep and schedule the Tuesday morning newsletter, but first you have to pull the list from your website, check Analytics for what performed best, find that graphic in Canva, copy the caption from Claude, and format it all while updating the CTA. Two hours later, you've sent one email.</p>
@@ -77,19 +105,6 @@ export default function About() {
                 <p className="text-foreground font-medium">That's the real problem. It's not too many tools, and the issue is that every tool jumps straight to execution without fully asking the strategic questions: Who are you? Who do you serve? What makes you different? What's your actual narrative? You can't build a business that lasts on random posts and duct-taped automations.</p>
                 <p>So, I built MOXIE — your AI CMO. Not another tool to manage, but your actual Chief Marketing Officer. The one who asks the strategic questions, creates your foundation, then executes it consistently so you can get back to building the business you actually started. Because you didn't become a founder to be a system administrator. You became one to build a legacy.</p>
                 <p className="text-foreground font-medium">MOXIE gives you the marketing brain to do it.</p>
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-border">
-                <div className="font-display text-2xl mb-1">— Karee Laing</div>
-                <div className="text-sm text-muted-foreground mb-3">Founder, MOXIE</div>
-                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase tracking-[0.15em] font-bold text-muted-foreground">
-                  {credentials.map((c, i) => (
-                    <span key={c} className="flex items-center gap-2">
-                      {i > 0 && <span className="text-accent">•</span>}
-                      <span>{c}</span>
-                    </span>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
