@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import kareeHeadshot from "@/assets/karee-headshot.png";
 import kareeBranson from "@/assets/karee-branson.png";
+import kareePersonal from "@/assets/karee-personal.png";
 import kareeTable from "@/assets/karee-table.png";
 import kareeQuote from "@/assets/karee-quote.png";
 
@@ -67,7 +68,7 @@ export default function About() {
                 style={{ ...photoShadow, borderRadius: "16px" }}
               >
                 <img
-                  src={kareeBranson}
+                  src={kareePersonal}
                   alt="Karee Laing"
                   className="w-full object-cover"
                   style={{ height: "520px", objectPosition: "top" }}
