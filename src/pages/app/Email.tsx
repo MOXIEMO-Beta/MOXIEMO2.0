@@ -393,7 +393,8 @@ export default function Email() {
   async function doSendNow() {
     setSending(true);
     try {
-      const payload: Record<string, unknown> = { subject, body };
+      const finalBody = bodyWithCta();
+      const payload: Record<string, unknown> = { subject, body: finalBody };
       if (audienceMode === "selected") {
         payload.subscriber_ids = Array.from(selectedIds);
       } else if (audienceMode === "segment" && sendSegmentIds.length > 0) {
@@ -454,7 +455,7 @@ export default function Email() {
     const { error } = await supabase.from("email_sends").insert({
       user_id: user.id,
       subject,
-      body,
+      body: bodyWithCta(),
       status: "scheduled",
       scheduled_for: dt.toISOString(),
       segment: segmentValue,
@@ -481,7 +482,7 @@ export default function Email() {
     const { error } = await supabase.from("email_sends").insert({
       user_id: user.id,
       subject,
-      body,
+      body: bodyWithCta(),
       status: "queued",
       segment: segmentValue,
       recipient_ids: sendRecipientIds,
