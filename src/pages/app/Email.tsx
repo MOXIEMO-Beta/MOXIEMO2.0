@@ -235,7 +235,7 @@ export default function Email() {
       supabase
         .from("strategies")
         .select(
-          "positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning, content_pillars, content_themes",
+          "positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning, content_pillars, content_themes, primary_channel, success_definition",
         )
         .eq("user_id", user.id)
         .maybeSingle(),
