@@ -32,7 +32,7 @@ import {
   Minus,
   MousePointerClick,
   Palette,
-  ImageIcon,
+  Image as ImageIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
