@@ -63,6 +63,64 @@ import {
 import GeneratePanel, { type GenerateParams } from "@/components/email/GeneratePanel";
 import SegmentsManager, { type Segment, PRESET_COLORS } from "@/components/email/SegmentsManager";
 
+const CTA_COLOR_PRESETS: Array<{ name: string; hex: string }> = [
+  { name: "Coral", hex: "#ff6b6b" },
+  { name: "Dark", hex: "#101116" },
+  { name: "White", hex: "#ffffff" },
+  { name: "Navy", hex: "#1a3a5c" },
+  { name: "Forest", hex: "#2d6a4f" },
+  { name: "Purple", hex: "#6b4fbb" },
+  { name: "Gold", hex: "#c9a84c" },
+  { name: "Slate", hex: "#4a5568" },
+];
+
+function ColorPickerRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{label}</Label>
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5">
+          {CTA_COLOR_PRESETS.map((c) => {
+            const selected = value.toLowerCase() === c.hex.toLowerCase();
+            return (
+              <button
+                key={c.hex}
+                type="button"
+                title={`${c.name} ${c.hex}`}
+                onClick={() => onChange(c.hex)}
+                className={`h-6 w-6 rounded-full border transition ${
+                  selected ? "ring-2 ring-offset-2 ring-foreground" : ""
+                }`}
+                style={{
+                  background: c.hex,
+                  borderColor: c.hex.toLowerCase() === "#ffffff" ? "#d1d5db" : "transparent",
+                }}
+              />
+            );
+          })}
+        </div>
+        <Input
+          value={value}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange(v.startsWith("#") ? v : `#${v}`);
+          }}
+          maxLength={7}
+          className="h-8 w-28 font-mono text-xs uppercase"
+        />
+      </div>
+    </div>
+  );
+}
+
 type Subscriber = {
   id: string;
   email: string;
