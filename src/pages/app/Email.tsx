@@ -1423,37 +1423,24 @@ export default function Email() {
                     placeholder="https://"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Button style</Label>
-                  <div className="inline-flex rounded-md border bg-background p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setCtaStyle("coral")}
-                      className={`px-3 py-1 text-xs rounded ${
-                        ctaStyle === "coral" ? "bg-[#ff6b6b] text-white" : "text-muted-foreground"
-                      }`}
-                    >
-                      Coral (primary)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCtaStyle("dark")}
-                      className={`px-3 py-1 text-xs rounded ${
-                        ctaStyle === "dark" ? "bg-[#262833] text-white" : "text-muted-foreground"
-                      }`}
-                    >
-                      Dark (secondary)
-                    </button>
-                  </div>
-                </div>
+                <ColorPickerRow
+                  label="Button color"
+                  value={ctaBgColor}
+                  onChange={setCtaBgColor}
+                />
+                <ColorPickerRow
+                  label="Button text color"
+                  value={ctaTextColor}
+                  onChange={setCtaTextColor}
+                />
                 <div className="rounded-md border bg-white p-4 text-center">
                   <a
                     href={ctaUrl || "#"}
                     onClick={(e) => e.preventDefault()}
                     style={{
                       display: "inline-block",
-                      background: ctaStyle === "coral" ? "#ff6b6b" : "#262833",
-                      color: "white",
+                      background: ctaBgColor,
+                      color: ctaTextColor,
                       padding: "12px 24px",
                       borderRadius: 8,
                       textDecoration: "none",
