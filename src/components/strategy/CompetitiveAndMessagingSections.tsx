@@ -117,6 +117,15 @@ export function CompetitiveAndMessagingSections() {
   const [regenPositioning, setRegenPositioning] = useState(false);
   const inferredOnceRef = useRef(false);
 
+  // TEMP debug: confirm which fields the strategy actually exposes for messaging cards.
+  // Remove once verified.
+  // eslint-disable-next-line no-console
+  console.log('[Messaging] Full strategy object:', strategy);
+  // eslint-disable-next-line no-console
+  console.log('[Messaging] raw_foundation:', strategy?.raw_foundation);
+  // eslint-disable-next-line no-console
+  console.log('[Messaging] enhanced_foundation:', strategy?.enhanced_foundation);
+
   // Support both new shape (messagingVariations) and the shape produced by
   // synthesize-strategy (positioningVariations: { short, tweet, elevator }).
   const messagingVars = ef.messagingVariations || {};
@@ -136,6 +145,8 @@ export function CompetitiveAndMessagingSections() {
     messagingVars.elevator ||
     positioningVars.elevator ||
     ef.elevator_pitch ||
+    ef.elevatorPitch ||
+    ef.positioningBreakdown?.elevator ||
     "";
 
   // Infer initial values for empty competitive positioning fields and persist them.
