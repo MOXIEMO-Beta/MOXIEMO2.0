@@ -17,14 +17,6 @@ const FEATURED: Resource[] = [
   { type: "Template", title: "The Messaging Vault", description: "One-liner, elevator pitch, bio, and email signature — all written from your Brand Architecture." },
 ];
 
-const EXTRA: Resource[] = [
-  { type: "Template", title: "The Discovery Question Bank", description: "16 questions to extract your complete brand foundation — use it yourself or with clients." },
-  { type: "Framework", title: "The Content Pillar Builder", description: "Define 4-5 content themes that align to your positioning and keep you out of content paralysis." },
-  { type: "Guide", title: "The Tool Stack Audit", description: "Identify exactly which tools to cut, which to keep, and what MOXIE replaces in your current stack." },
-];
-
-const ALL = [...FEATURED, ...EXTRA];
-
 type PackTag = "Framework" | "Prompt" | "Guide" | "Toolkit" | "Checklist";
 type Pack = { tag: PackTag; title: string; description: string; button: string; link: string };
 
@@ -223,29 +215,6 @@ function FeaturedCarousel() {
         <button onClick={() => scrollBy(1)} aria-label="Next" className="h-10 w-10 rounded-full bg-accent text-white flex items-center justify-center hover:bg-accent/90">
           <ArrowRight className="h-4 w-4" />
         </button>
-      </div>
-    </div>
-  );
-}
-
-function CategorySection({ label, items }: { label: string; items: Resource[] }) {
-  return (
-    <div>
-      <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-foreground mb-4">{label}</h3>
-      <div className="grid sm:grid-cols-2 gap-5">
-        {items.map((r) => (
-          <div key={r.title} className="rounded-xl bg-card border border-border shadow-sm p-5 flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-accent-soft flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-accent" />
-              </div>
-              <span className="text-accent text-xs font-bold uppercase tracking-wider">{r.type}</span>
-            </div>
-            <h4 className="text-base font-bold text-foreground leading-snug">{r.title}</h4>
-            <p className="text-sm text-muted-foreground line-clamp-2">{r.description}</p>
-            <div className="mt-auto pt-2"><ComingSoonPill /></div>
-          </div>
-        ))}
       </div>
     </div>
   );
