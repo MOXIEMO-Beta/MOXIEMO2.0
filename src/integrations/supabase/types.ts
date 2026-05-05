@@ -47,6 +47,24 @@ export type Database = {
         }
         Relationships: []
       }
+      blog_waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       calendar_ideas: {
         Row: {
           channel: string | null
@@ -441,6 +459,24 @@ export type Database = {
           team_size?: string | null
           updated_at?: string
           website_url?: string | null
+        }
+        Relationships: []
+      }
+      resources_waitlist: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
         }
         Relationships: []
       }
