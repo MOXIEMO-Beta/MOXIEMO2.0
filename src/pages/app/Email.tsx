@@ -117,7 +117,8 @@ export default function Email() {
   const [ctaEnabled, setCtaEnabled] = useState(false);
   const [ctaLabel, setCtaLabel] = useState("");
   const [ctaUrl, setCtaUrl] = useState("");
-  const [ctaStyle, setCtaStyle] = useState<"coral" | "dark">("coral");
+  const [ctaBgColor, setCtaBgColor] = useState<string>("#ff6b6b");
+  const [ctaTextColor, setCtaTextColor] = useState<string>("#ffffff");
   const [sending, setSending] = useState(false);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -152,6 +153,11 @@ export default function Email() {
   const [scheduleTime, setScheduleTime] = useState<string>("09:00");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [lastSent, setLastSent] = useState<null | { subject: string; count: number; sentAt: string }>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleTz, setScheduleTz] = useState<string>(
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
 
   const activeSubscribers = useMemo(
     () => subscribers.filter((s) => s.status === "active"),
@@ -190,8 +196,9 @@ export default function Email() {
 
   function buildCtaHtml(): string {
     if (!ctaEnabled || !ctaLabel.trim() || !ctaUrl.trim()) return "";
-    const bg = ctaStyle === "coral" ? "#ff6b6b" : "#262833";
-    return `<p style="text-align:center;margin:24px 0;"><a href="${ctaUrl.trim()}" style="display:inline-block;background:${bg};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">${ctaLabel.trim()}</a></p>`;
+    const bg = ctaBgColor;
+    const fg = ctaTextColor;
+    return `<p style="text-align:center;margin:24px 0;"><a href="${ctaUrl.trim()}" style="display:inline-block;background:${bg};color:${fg};padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">${ctaLabel.trim()}</a></p>`;
   }
 
   function bodyWithCta(): string {
@@ -385,7 +392,8 @@ export default function Email() {
     setCtaEnabled(false);
     setCtaLabel("");
     setCtaUrl("");
-    setCtaStyle("coral");
+    setCtaBgColor("#ff6b6b");
+    setCtaTextColor("#ffffff");
   }
 
   async function doSendNow() {
