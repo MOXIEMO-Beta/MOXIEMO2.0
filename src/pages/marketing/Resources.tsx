@@ -17,14 +17,109 @@ const FEATURED: Resource[] = [
   { type: "Template", title: "The Messaging Vault", description: "One-liner, elevator pitch, bio, and email signature — all written from your Brand Architecture." },
 ];
 
-const EXTRA: Resource[] = [
-  { type: "Template", title: "The Discovery Question Bank", description: "16 questions to extract your complete brand foundation — use it yourself or with clients." },
-  { type: "Framework", title: "The Content Pillar Builder", description: "Define 4-5 content themes that align to your positioning and keep you out of content paralysis." },
-  { type: "Guide", title: "The Tool Stack Audit", description: "Identify exactly which tools to cut, which to keep, and what MOXIE replaces in your current stack." },
+type PackTag = "Framework" | "Prompt" | "Guide" | "Toolkit" | "Checklist";
+type Pack = { tag: PackTag; title: string; description: string; button: string; link: string };
+
+const PACKS: Pack[] = [
+  { tag: "Framework", title: "Website Copy Framework", description: "The structure behind high-converting websites. The exact prompts and frameworks used to build CRO-optimized headlines, CTA formulas, and audience-specific copy templates.", button: "Download the Website Copy Framework", link: "https://docs.google.com/document/d/1MgD_HoUD2espAiVOFWzYbIljnfAFHCUW/" },
+  { tag: "Framework", title: "Pitch Deck Framework", description: "Build decks investors can't ignore. Our full pitch deck framework — including deep research prompts, structure templates, and storytelling cues designed to win attention and funding.", button: "Access the Pitch Deck Framework", link: "https://docs.google.com/document/d/1XTIoxRfB_1YmwuS5TAogepWJ2oOOdzSN/" },
+  { tag: "Prompt", title: "ChatGPT Founder Brain Prompt", description: "Train ChatGPT to think like you. Turn your AI into a second brain that remembers context, challenges your thinking, and co-creates with your style.", button: "Activate the Founder Brain Prompt", link: "https://docs.google.com/document/d/1th60TQINSbN9Lc-64uoNesqR-0AvLtrc/" },
+  { tag: "Prompt", title: "Market Size Prompt", description: "Validate your market with precision. A guided prompt for calculating TAM, SAM, and SOM — ideal for investor decks, pitch prep, or understanding your growth ceiling.", button: "Run the Market Size Prompt", link: "https://docs.google.com/document/d/1RPUJm3t7FSVObS9c9jsWQXMV7LwdjCq6/" },
+  { tag: "Prompt", title: "Competitor Prompt", description: "Know your landscape before you build. A single, powerful prompt for ChatGPT or Gemini that reveals competitor insights, positioning angles, and market opportunities.", button: "Download the Competitor Prompt", link: "https://docs.google.com/document/d/1caAfroIxpoe94FCL5zAEK-zLqz1OFmoB/" },
+  { tag: "Guide", title: "How To Create A Brand With AI", description: "From concept to creation — all inside AI. A full step-by-step system for building brands with AI, including prompts, tools, and real examples that show what's possible when creativity meets strategy.", button: "Unlock the Brand Creation Framework", link: "https://docs.google.com/document/d/1X5sNKNe-693r9S068M1uNgiF4zqPXALq/" },
+  { tag: "Toolkit", title: "Marketing Checklist", description: "Your AI-assisted marketing playbook. A complete list of how to market your brand — with prompts, strategies, and AI shortcuts for faster, smarter execution.", button: "Get the Marketing Checklist", link: "https://designhiro.com/marketing-checklist/" },
+  { tag: "Toolkit", title: "Content Custom GPTs", description: "Generate ideas that go viral — on purpose. Includes two custom GPTs: one for crafting viral hooks and another for refining storytelling scripts built to convert.", button: "Try the Content GPTs", link: "https://designhiro.com/content-custom-gpts/" },
+  { tag: "Checklist", title: "Business Stage Checklist With AI Tools", description: "Every stage. Every advantage. This checklist maps every phase of building a business — and the AI tools that give you leverage at each step.", button: "Access the Business Stage Checklist", link: "https://designhiro.com/business-stage-checklist-with-ai-tools/" },
+  { tag: "Guide", title: "AI Tools Guide", description: "The exact AI stack behind modern creative teams. Explore the tools actually used — from research and branding to mockups and MVPs — and learn how to integrate them into your daily build process.", button: "Explore the Tools Guide", link: "https://designhiro.com/ai-tools-guide/" },
+  { tag: "Framework", title: "Deep Research Framework", description: "Research like a strategist, not a student. Learn how to prompt AI for true insight — validating demand, analyzing competitors, and surfacing pricing models that make sense for your market.", button: "Get the Deep Research Framework", link: "https://designhiro.com/deep-research-framework/" },
+  { tag: "Framework", title: "How To Find A Business Idea With AI", description: "AI won't hand you a million-dollar idea — but it can help you discover one. This framework shows you how to use AI to identify market gaps, validate ideas, and uncover opportunities worth building.", button: "Get the Idea Discovery Framework", link: "https://designhiro.com/how-to-find-a-business-idea-with-ai/" },
+  { tag: "Toolkit", title: "Branding Prompts", description: "Turn AI into your brand architect. The exact prompts used to build brand identity — from tone and color to logos, visual direction, and messaging. Design a brand that feels intentional, not automated.", button: "Access the Branding Toolkit", link: "https://designhiro.com/branding-prompts/" },
+  { tag: "Guide", title: "High-Performance ChatGPT Setup", description: "Build your AI to think like a founder. A step-by-step guide to configure ChatGPT as your strategist, co-founder, and creative coach — for high-performance leaders who want sharper output and less mental friction.", button: "Download Your Setup Guide", link: "https://designhiro.com/high-performance-chatgpt-setup/" },
+  { tag: "Prompt", title: "AI Thought Partner Prompts", description: "Stop outsourcing your ideas — sharpen them. These prompts transform AI from a yes-machine into your boldest creative challenger. Push your thinking further, question assumptions, and unlock new directions for your brand or business.", button: "Unlock the Thought Partner Prompts", link: "https://designhiro.com/ai-thought-partner-prompts/" },
 ];
 
-const ALL = [...FEATURED, ...EXTRA];
-const byType = (t: Resource["type"]) => ALL.filter((r) => r.type === t).slice(0, 2);
+const FILTERS: Array<"All" | PackTag> = ["All", "Prompt", "Framework", "Guide", "Toolkit", "Checklist"];
+
+function PromptPacksSection() {
+  const [filter, setFilter] = useState<"All" | PackTag>("All");
+  return (
+    <section style={{ background: "#f8f8f8" }} className="py-20">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-10">
+          <div className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-accent mb-5 px-4 py-2 rounded-full bg-accent-soft">
+            AI Prompt Packs & Toolkits
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-[-0.03em] leading-[1.1] text-foreground mb-5">
+            AI systems and tools for founders,<br />builders, and strategic thinkers.
+          </h2>
+          <p className="text-base md:text-lg text-muted-foreground max-w-[640px] mx-auto leading-relaxed">
+            The exact prompts, frameworks, and toolkits to turn ideas into execution — with clarity, speed, and strategy. Free for everyone. No signup required.
+          </p>
+        </div>
+
+        <div className="flex gap-2 overflow-x-auto pb-2 mb-8 justify-start md:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {FILTERS.map((f) => {
+            const active = filter === f;
+            return (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors border ${
+                  active ? "bg-accent text-white border-accent" : "bg-white text-foreground border-border hover:border-accent/50"
+                }`}
+              >
+                {f}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+          {PACKS.map((p) => {
+            const hidden = filter !== "All" && p.tag !== filter;
+            return (
+              <div
+                key={p.title}
+                style={{ display: hidden ? "none" : "flex", boxShadow: "0 4px 20px rgba(0,0,0,0.07)", borderRadius: 16 }}
+                className="bg-white p-6 flex-col justify-between h-full"
+              >
+                <div>
+                  <div className="text-accent font-bold mb-3" style={{ fontSize: 11, letterSpacing: "1.5px", textTransform: "uppercase" }}>
+                    {p.tag}
+                  </div>
+                  <h3 className="text-[18px] font-bold text-foreground leading-snug mb-3">{p.title}</h3>
+                  <p className="text-muted-foreground" style={{ fontSize: 14, lineHeight: 1.7 }}>{p.description}</p>
+                </div>
+                <a
+                  href={p.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 block text-center transition-colors hover:bg-accent hover:text-white"
+                  style={{
+                    border: "1.5px solid #ff6b6b",
+                    color: "#ff6b6b",
+                    background: "transparent",
+                    borderRadius: 40,
+                    padding: "12px 20px",
+                    fontSize: 11,
+                    letterSpacing: "1.5px",
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    width: "100%",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "#ff6b6b"; e.currentTarget.style.color = "#ffffff"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#ff6b6b"; }}
+                >
+                  {p.button}
+                </a>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function ComingSoonPill() {
   return (
@@ -125,29 +220,6 @@ function FeaturedCarousel() {
   );
 }
 
-function CategorySection({ label, items }: { label: string; items: Resource[] }) {
-  return (
-    <div>
-      <h3 className="text-xs font-bold uppercase tracking-[0.25em] text-foreground mb-4">{label}</h3>
-      <div className="grid sm:grid-cols-2 gap-5">
-        {items.map((r) => (
-          <div key={r.title} className="rounded-xl bg-card border border-border shadow-sm p-5 flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-accent-soft flex items-center justify-center">
-                <Sparkles className="h-5 w-5 text-accent" />
-              </div>
-              <span className="text-accent text-xs font-bold uppercase tracking-wider">{r.type}</span>
-            </div>
-            <h4 className="text-base font-bold text-foreground leading-snug">{r.title}</h4>
-            <p className="text-sm text-muted-foreground line-clamp-2">{r.description}</p>
-            <div className="mt-auto pt-2"><ComingSoonPill /></div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function Resources() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -169,12 +241,9 @@ export default function Resources() {
 
       <main className="max-w-6xl mx-auto px-6 py-14 w-full space-y-16">
         <FeaturedCarousel />
-
-        <CategorySection label="Templates" items={byType("Template")} />
-        <CategorySection label="Guides" items={byType("Guide")} />
-        <CategorySection label="Frameworks" items={byType("Framework")} />
-        <CategorySection label="Toolkits" items={byType("Toolkit")} />
       </main>
+
+      <PromptPacksSection />
 
       <section className="bg-[#101116] py-20">
         <div className="max-w-3xl mx-auto px-6 text-center">
