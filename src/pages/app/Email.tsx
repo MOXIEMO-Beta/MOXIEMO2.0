@@ -35,6 +35,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -1582,14 +1589,42 @@ export default function Email() {
               </Button>
             </div>
           ) : !showSendPanel ? (
-            <Button
-              onClick={openSendPanel}
-              disabled={activeSubscribers.length === 0 || needsSetup}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-              size="lg"
-            >
-              <Send className="h-4 w-4" /> Send email
-            </Button>
+            <div className="space-y-3">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={saveDraft}
+                  disabled={sending || (!subject.trim() && !body.trim())}
+                  className="sm:order-1 order-3"
+                >
+                  Save as Draft
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!subject.trim() || !body.trim()) {
+                      toast.error("Add a subject and body first");
+                      return;
+                    }
+                    setScheduleOpen(true);
+                  }}
+                  disabled={activeSubscribers.length === 0 || needsSetup}
+                  className="sm:order-2 order-2"
+                >
+                  <CalendarDays className="h-4 w-4" /> Schedule
+                </Button>
+                <Button
+                  onClick={openSendPanel}
+                  disabled={activeSubscribers.length === 0 || needsSetup}
+                  className="bg-orange-600 hover:bg-orange-700 text-white sm:order-3 order-1"
+                >
+                  <Send className="h-4 w-4" /> Send now
+                </Button>
+              </div>
+              {draftSavedAt && (
+                <p className="text-xs text-green-700 text-right">Saved to drafts</p>
+              )}
+            </div>
           ) : (
             <div className="relative rounded-lg border bg-muted/30 p-4 space-y-4">
               {sending && (
