@@ -213,6 +213,16 @@ Deno.serve(async (req) => {
                         elevator: { type: "string", description: "Conversational 'You know how...' format" },
                       },
                     },
+                    messagingVariations: {
+                      type: "object",
+                      description: "Reusable messaging in three formats. Always populate all three.",
+                      properties: {
+                        oneliner: { type: "string", description: "One-liner for bios and introductions (under 15 words)" },
+                        short: { type: "string", description: "Short version for social bios, max 160 chars" },
+                        elevator: { type: "string", description: "Natural, confident 3-4 sentence networking introduction written in first person, conversational tone, not salesy. Should answer 'what do you do?' at a dinner party — not a boardroom." },
+                      },
+                      required: ["oneliner", "short", "elevator"],
+                    },
                     brandArchetype: {
                       type: "object",
                       properties: {
