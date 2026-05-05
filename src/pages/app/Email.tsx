@@ -35,6 +35,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -62,6 +69,64 @@ import {
 } from "lucide-react";
 import GeneratePanel, { type GenerateParams } from "@/components/email/GeneratePanel";
 import SegmentsManager, { type Segment, PRESET_COLORS } from "@/components/email/SegmentsManager";
+
+const CTA_COLOR_PRESETS: Array<{ name: string; hex: string }> = [
+  { name: "Coral", hex: "#ff6b6b" },
+  { name: "Dark", hex: "#101116" },
+  { name: "White", hex: "#ffffff" },
+  { name: "Navy", hex: "#1a3a5c" },
+  { name: "Forest", hex: "#2d6a4f" },
+  { name: "Purple", hex: "#6b4fbb" },
+  { name: "Gold", hex: "#c9a84c" },
+  { name: "Slate", hex: "#4a5568" },
+];
+
+function ColorPickerRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs">{label}</Label>
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5">
+          {CTA_COLOR_PRESETS.map((c) => {
+            const selected = value.toLowerCase() === c.hex.toLowerCase();
+            return (
+              <button
+                key={c.hex}
+                type="button"
+                title={`${c.name} ${c.hex}`}
+                onClick={() => onChange(c.hex)}
+                className={`h-6 w-6 rounded-full border transition ${
+                  selected ? "ring-2 ring-offset-2 ring-foreground" : ""
+                }`}
+                style={{
+                  background: c.hex,
+                  borderColor: c.hex.toLowerCase() === "#ffffff" ? "#d1d5db" : "transparent",
+                }}
+              />
+            );
+          })}
+        </div>
+        <Input
+          value={value}
+          onChange={(e) => {
+            const v = e.target.value;
+            onChange(v.startsWith("#") ? v : `#${v}`);
+          }}
+          maxLength={7}
+          className="h-8 w-28 font-mono text-xs uppercase"
+        />
+      </div>
+    </div>
+  );
+}
 
 type Subscriber = {
   id: string;
@@ -117,7 +182,8 @@ export default function Email() {
   const [ctaEnabled, setCtaEnabled] = useState(false);
   const [ctaLabel, setCtaLabel] = useState("");
   const [ctaUrl, setCtaUrl] = useState("");
-  const [ctaStyle, setCtaStyle] = useState<"coral" | "dark">("coral");
+  const [ctaBgColor, setCtaBgColor] = useState<string>("#ff6b6b");
+  const [ctaTextColor, setCtaTextColor] = useState<string>("#ffffff");
   const [sending, setSending] = useState(false);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
@@ -152,6 +218,11 @@ export default function Email() {
   const [scheduleTime, setScheduleTime] = useState<string>("09:00");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [lastSent, setLastSent] = useState<null | { subject: string; count: number; sentAt: string }>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [scheduleTz, setScheduleTz] = useState<string>(
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
+  const [draftSavedAt, setDraftSavedAt] = useState<number | null>(null);
 
   const activeSubscribers = useMemo(
     () => subscribers.filter((s) => s.status === "active"),
@@ -190,8 +261,9 @@ export default function Email() {
 
   function buildCtaHtml(): string {
     if (!ctaEnabled || !ctaLabel.trim() || !ctaUrl.trim()) return "";
-    const bg = ctaStyle === "coral" ? "#ff6b6b" : "#262833";
-    return `<p style="text-align:center;margin:24px 0;"><a href="${ctaUrl.trim()}" style="display:inline-block;background:${bg};color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">${ctaLabel.trim()}</a></p>`;
+    const bg = ctaBgColor;
+    const fg = ctaTextColor;
+    return `<p style="text-align:center;margin:24px 0;"><a href="${ctaUrl.trim()}" style="display:inline-block;background:${bg};color:${fg};padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">${ctaLabel.trim()}</a></p>`;
   }
 
   function bodyWithCta(): string {
@@ -385,7 +457,8 @@ export default function Email() {
     setCtaEnabled(false);
     setCtaLabel("");
     setCtaUrl("");
-    setCtaStyle("coral");
+    setCtaBgColor("#ff6b6b");
+    setCtaTextColor("#ffffff");
   }
 
   async function doSendNow() {
@@ -493,6 +566,37 @@ export default function Email() {
     }
     toast.success("Saved to queue");
     resetCompose();
+    loadAll();
+  }
+
+  // Save current compose state as a draft (queued, no scheduled time)
+  async function saveDraft() {
+    if (!user) return;
+    if (!subject.trim() && !body.trim()) {
+      toast.error("Nothing to save yet");
+      return;
+    }
+    setSending(true);
+    const segmentValue =
+      audienceMode === "segment" && sendSegmentIds.length > 0
+        ? sendSegmentIds.join(",")
+        : "all";
+    const { error } = await supabase.from("email_sends").insert({
+      user_id: user.id,
+      subject: subject || "(untitled draft)",
+      body: bodyWithCta(),
+      status: "draft",
+      segment: segmentValue,
+      recipient_ids: sendRecipientIds,
+      recipient_count: sendRecipientIds.length,
+    });
+    setSending(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setDraftSavedAt(Date.now());
+    setTimeout(() => setDraftSavedAt(null), 2000);
     loadAll();
   }
 
@@ -1384,37 +1488,24 @@ export default function Email() {
                     placeholder="https://"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Button style</Label>
-                  <div className="inline-flex rounded-md border bg-background p-0.5">
-                    <button
-                      type="button"
-                      onClick={() => setCtaStyle("coral")}
-                      className={`px-3 py-1 text-xs rounded ${
-                        ctaStyle === "coral" ? "bg-[#ff6b6b] text-white" : "text-muted-foreground"
-                      }`}
-                    >
-                      Coral (primary)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCtaStyle("dark")}
-                      className={`px-3 py-1 text-xs rounded ${
-                        ctaStyle === "dark" ? "bg-[#262833] text-white" : "text-muted-foreground"
-                      }`}
-                    >
-                      Dark (secondary)
-                    </button>
-                  </div>
-                </div>
+                <ColorPickerRow
+                  label="Button color"
+                  value={ctaBgColor}
+                  onChange={setCtaBgColor}
+                />
+                <ColorPickerRow
+                  label="Button text color"
+                  value={ctaTextColor}
+                  onChange={setCtaTextColor}
+                />
                 <div className="rounded-md border bg-white p-4 text-center">
                   <a
                     href={ctaUrl || "#"}
                     onClick={(e) => e.preventDefault()}
                     style={{
                       display: "inline-block",
-                      background: ctaStyle === "coral" ? "#ff6b6b" : "#262833",
-                      color: "white",
+                      background: ctaBgColor,
+                      color: ctaTextColor,
                       padding: "12px 24px",
                       borderRadius: 8,
                       textDecoration: "none",
@@ -1498,14 +1589,42 @@ export default function Email() {
               </Button>
             </div>
           ) : !showSendPanel ? (
-            <Button
-              onClick={openSendPanel}
-              disabled={activeSubscribers.length === 0 || needsSetup}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white"
-              size="lg"
-            >
-              <Send className="h-4 w-4" /> Send email
-            </Button>
+            <div className="space-y-3">
+              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={saveDraft}
+                  disabled={sending || (!subject.trim() && !body.trim())}
+                  className="sm:order-1 order-3"
+                >
+                  Save as Draft
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!subject.trim() || !body.trim()) {
+                      toast.error("Add a subject and body first");
+                      return;
+                    }
+                    setScheduleOpen(true);
+                  }}
+                  disabled={activeSubscribers.length === 0 || needsSetup}
+                  className="sm:order-2 order-2"
+                >
+                  <CalendarDays className="h-4 w-4" /> Schedule
+                </Button>
+                <Button
+                  onClick={openSendPanel}
+                  disabled={activeSubscribers.length === 0 || needsSetup}
+                  className="bg-orange-600 hover:bg-orange-700 text-white sm:order-3 order-1"
+                >
+                  <Send className="h-4 w-4" /> Send now
+                </Button>
+              </div>
+              {draftSavedAt && (
+                <p className="text-xs text-green-700 text-right">Saved to drafts</p>
+              )}
+            </div>
           ) : (
             <div className="relative rounded-lg border bg-muted/30 p-4 space-y-4">
               {sending && (
@@ -1829,6 +1948,75 @@ export default function Email() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Schedule modal */}
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-orange-600" /> Schedule send
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Date</Label>
+                <Input
+                  type="date"
+                  value={scheduleDate}
+                  min={minScheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Time</Label>
+                <select
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  {Array.from({ length: 48 }).map((_, i) => {
+                    const h = String(Math.floor(i / 2)).padStart(2, "0");
+                    const m = i % 2 === 0 ? "00" : "30";
+                    const v = `${h}:${m}`;
+                    return (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Timezone</Label>
+              <Input
+                value={scheduleTz}
+                onChange={(e) => setScheduleTz(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setScheduleOpen(false)}
+              className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline mr-auto"
+            >
+              Cancel
+            </button>
+            <Button
+              onClick={async () => {
+                await saveScheduled();
+                setScheduleOpen(false);
+              }}
+              disabled={sending || !scheduleDate}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Schedule send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
