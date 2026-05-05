@@ -504,6 +504,37 @@ export default function Email() {
     loadAll();
   }
 
+  // Save current compose state as a draft (queued, no scheduled time)
+  async function saveDraft() {
+    if (!user) return;
+    if (!subject.trim() && !body.trim()) {
+      toast.error("Nothing to save yet");
+      return;
+    }
+    setSending(true);
+    const segmentValue =
+      audienceMode === "segment" && sendSegmentIds.length > 0
+        ? sendSegmentIds.join(",")
+        : "all";
+    const { error } = await supabase.from("email_sends").insert({
+      user_id: user.id,
+      subject: subject || "(untitled draft)",
+      body: bodyWithCta(),
+      status: "draft",
+      segment: segmentValue,
+      recipient_ids: sendRecipientIds,
+      recipient_count: sendRecipientIds.length,
+    });
+    setSending(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setDraftSavedAt(Date.now());
+    setTimeout(() => setDraftSavedAt(null), 2000);
+    loadAll();
+  }
+
   // Send a previously queued/scheduled email straight away
   async function sendFromLog(item: EmailSend) {
     if (!item.subject || !item.body) {
