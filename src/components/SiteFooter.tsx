@@ -2,22 +2,6 @@ import { Link } from "react-router-dom";
 import { Instagram, Facebook, Linkedin } from "lucide-react";
 import { MoxieLogo } from "@/components/MoxieLogo";
 
-const ComingSoonBadge = () => (
-  <span
-    className="inline-block rounded-full bg-accent text-white uppercase font-semibold align-middle"
-    style={{
-      fontSize: "10px",
-      letterSpacing: "0.5px",
-      padding: "2px 8px",
-      marginLeft: "8px",
-      backgroundColor: "#ff6b6b",
-      color: "#ffffff",
-    }}
-  >
-    Coming Soon
-  </span>
-);
-
 export function SiteFooter() {
   return (
     <footer className="border-t border-border py-12 bg-background">
@@ -45,14 +29,8 @@ export function SiteFooter() {
           <div>
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4">Resources</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li>
-                <span className="text-muted-foreground">Building with MOXIE</span>
-                <ComingSoonBadge />
-              </li>
-              <li>
-                <span className="text-muted-foreground">Resources</span>
-                <ComingSoonBadge />
-              </li>
+              <li><Link to="/blog" className="hover:text-foreground">Building with MOXIE</Link></li>
+              <li><Link to="/resources" className="hover:text-foreground">Resources</Link></li>
               <li><a href="mailto:hello@buildwithmoxie.co" className="hover:text-foreground">Contact</a></li>
             </ul>
           </div>
