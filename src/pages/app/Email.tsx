@@ -1948,6 +1948,75 @@ export default function Email() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Schedule modal */}
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-orange-600" /> Schedule send
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label className="text-xs">Date</Label>
+                <Input
+                  type="date"
+                  value={scheduleDate}
+                  min={minScheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Time</Label>
+                <select
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                >
+                  {Array.from({ length: 48 }).map((_, i) => {
+                    const h = String(Math.floor(i / 2)).padStart(2, "0");
+                    const m = i % 2 === 0 ? "00" : "30";
+                    const v = `${h}:${m}`;
+                    return (
+                      <option key={v} value={v}>
+                        {v}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Timezone</Label>
+              <Input
+                value={scheduleTz}
+                onChange={(e) => setScheduleTz(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setScheduleOpen(false)}
+              className="text-sm text-muted-foreground hover:text-foreground underline-offset-4 hover:underline mr-auto"
+            >
+              Cancel
+            </button>
+            <Button
+              onClick={async () => {
+                await saveScheduled();
+                setScheduleOpen(false);
+              }}
+              disabled={sending || !scheduleDate}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+            >
+              Schedule send
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
