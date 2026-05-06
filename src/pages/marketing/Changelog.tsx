@@ -2,7 +2,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Link } from "react-router-dom";
 
-type TagKind = "New Feature" | "Improvement" | "Bug Fix" | "Coming Soon";
+type TagKind = "New Feature" | "Improvement" | "Bug Fix" | "Coming Soon" | "Brand Update";
 
 interface Entry {
   date: string;
@@ -10,11 +10,25 @@ interface Entry {
   headline: string;
   body: string;
   closing?: string;
+  links?: { label: string; href?: string }[];
 }
 
 const DISCORD_URL = "https://discord.gg/BGRj8PxW";
 
 const entries: Entry[] = [
+  {
+    date: "MAY 6, 2026",
+    tag: "Brand Update",
+    headline: "We're now MOXIEMO. Here's why we made the move.",
+    body:
+      "Something I've always believed: the best founders communicate in real time, even when the news is inconvenient. So here's what happened this week — and why I think it makes MOXIEMO a stronger brand than MOXIE ever was.\n\nWhile preparing for our founding member launch, I did a routine trademark search. What came back gave me pause. The word \"MOXIE\" in Class 042 — the exact category that covers SaaS platforms — already has a live registered trademark held by another company. There was also a marketing platform called joinmoxie.com operating in an adjacent space. Two real risks. One clear decision.\n\nThe name needed to evolve.\n\nHere's the thing about catching this before launch rather than after: it's a gift. No confused users. No press with the wrong name. No cease and desist arriving six months from now when there's real momentum to protect. We caught it at day zero. The cost of the change was a few hours of work and a $13 domain purchase. The alternative — fighting a trademark dispute while trying to build a company — would have cost infinitely more.\n\nSo we searched MOXIEMO on the USPTO database. No results. Clean across every class. We acquired buildwithmoxiemo.com within the hour.\n\nAnd here's what I discovered in the process: MOXIEMO is actually a better name. MOXIE was bold but generic. MOXIEMO carries the same energy and adds a meaning — your Marketing Officer, your mock CMO, the MO behind your marketing system. The name does part of the sales job now. That's not a consolation prize. That's an upgrade.\n\nThe platform hasn't changed. The strategy hasn't changed. The founding member promise hasn't changed. The logo evolved — same coral mark, new wordmark. The URL is new. The social handles are new. Everything that matters is exactly the same.\n\nIf you saved buildwithmoxie.co anywhere, it will redirect to the new home. If you followed the old social handles, please find us at the new ones linked below.\n\nThis is what building in public looks like. Not just the wins. The pivots too.",
+    closing: "— Karee",
+    links: [
+      { label: "New home: buildwithmoxiemo.com", href: "https://buildwithmoxiemo.com" },
+      { label: "Instagram: @buildwithmoxiemo", href: "https://www.instagram.com/buildwithmoxiemo" },
+      { label: "LinkedIn: linkedin.com/company/moxiemo", href: "https://www.linkedin.com/company/moxiemo" },
+    ],
+  },
   {
     date: "MAY 5, 2026",
     tag: "New Feature",
@@ -79,7 +93,15 @@ function TagPill({ tag }: { tag: TagKind }) {
     "Improvement": "bg-[#101116] text-white border border-transparent",
     "Bug Fix": "bg-[#c9a84c] text-white border border-transparent",
     "Coming Soon": "bg-muted text-foreground border border-dashed border-muted-foreground/50",
+    "Brand Update": "bg-transparent text-[#101116] border-[1.5px] border-[#101116]",
   };
+  if (tag === "Brand Update") {
+    return (
+      <span className="inline-flex items-center px-3 py-1 rounded-[20px] text-[11px] font-semibold uppercase tracking-[1px] bg-transparent text-[#101116] border-[1.5px] border-[#101116]">
+        {tag}
+      </span>
+    );
+  }
   return (
     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${styles[tag]}`}>
       {tag}
@@ -131,11 +153,26 @@ export default function Changelog() {
                 <h2 className="text-[20px] font-bold text-foreground mb-3 leading-snug">
                   {e.headline}
                 </h2>
-                <p className="text-[16px] text-muted-foreground leading-[1.8]">
-                  {e.body}
-                </p>
+                {e.body.split("\n\n").map((para, idx) => (
+                  <p key={idx} className="text-[16px] text-muted-foreground leading-[1.8] mb-4 last:mb-0">
+                    {para}
+                  </p>
+                ))}
                 {e.closing && (
                   <p className="mt-4 italic text-muted-foreground text-[15px]">{e.closing}</p>
+                )}
+                {e.links && (
+                  <div className="mt-4 space-y-1">
+                    {e.links.map((l, idx) => (
+                      l.href ? (
+                        <a key={idx} href={l.href} target="_blank" rel="noopener noreferrer" className="block text-[13px] text-muted-foreground hover:text-foreground">
+                          {l.label}
+                        </a>
+                      ) : (
+                        <p key={idx} className="text-[13px] text-muted-foreground">{l.label}</p>
+                      )
+                    ))}
+                  </div>
                 )}
               </article>
             ))}
