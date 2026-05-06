@@ -83,7 +83,7 @@ const faqGroups: FaqGroup[] = [
 ];
 
 function FaqSection() {
-  const [openKey, setOpenKey] = useState<string>("0-0");
+  const [openKey, setOpenKey] = useState<string>("");
   return (
     <section className="bg-white" style={{ padding: "80px 0" }}>
       <div className="mx-auto px-6" style={{ maxWidth: 860 }}>
