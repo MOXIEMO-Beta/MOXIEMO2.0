@@ -232,7 +232,7 @@ export default function Index() {
             Join the beta and get full platform access — free, forever. We're personally onboarding every founding member with a 1:1 kickoff call.
           </p>
 
-          <ul className="grid sm:grid-cols-2 gap-3 max-w-2xl mx-auto mb-12 text-left">
+          <ul className="flex flex-col gap-3 items-start max-w-[400px] mx-auto mb-12 text-left">
             {[
               "Full platform access — free forever",
               "Locked-in founding rate",
@@ -241,7 +241,7 @@ export default function Index() {
             ].map((perk) => (
               <li key={perk} className="flex gap-2.5 items-start text-[15px]">
                 <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                <span>{perk}</span>
+                <span className="whitespace-nowrap">{perk}</span>
               </li>
             ))}
           </ul>
