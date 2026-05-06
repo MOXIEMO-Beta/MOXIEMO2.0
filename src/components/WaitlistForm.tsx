@@ -97,7 +97,7 @@ export function WaitlistForm() {
 
   return (
     <Card id="waitlist" className="p-8 md:p-12 border-border rounded-3xl bg-card shadow-lift max-w-2xl mx-auto scroll-mt-24">
-      <div className="text-center mb-8">
+      <div className="text-center mb-5">
         <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-accent bg-accent-soft px-4 py-2 rounded-full mb-5">
           <Sparkles className="h-3.5 w-3.5" />
           Founding members
@@ -105,19 +105,19 @@ export function WaitlistForm() {
         <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
           Be a MOXIEMO Founding Member
         </h2>
-        <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-lg mx-auto">
-          Join the beta and get full platform access — free, forever. We're personally onboarding every founding member with a 1:1 kickoff call.
+        <p className="text-muted-foreground text-[15px] mx-auto max-w-[480px]" style={{ lineHeight: 1.8 }}>
+          The Foundation plan is $79 per month at public launch. As a founding member you pay nothing, ever. Your access is locked in permanently before prices increase. We are personally onboarding every founding member with a 1:1 kickoff call with Karee. Spots close when we hit capacity.
         </p>
       </div>
 
-      <ul className="flex flex-col items-start gap-2.5 w-fit mx-auto mb-6">
+      <ul className="flex flex-col items-start gap-2.5 w-fit mx-auto mb-6" style={{ marginBottom: 24 }}>
         {[
-          "Full platform access — free forever",
-          "Locked-in founding rate",
-          "1:1 onboarding call with Karee",
-          "Shape the product with your feedback",
+          "Full Foundation plan access, free forever",
+          "Locked-in founding rate before prices increase",
+          "1:1 kickoff call with Karee",
+          "Direct Discord access to the team",
         ].map((perk) => (
-          <li key={perk} className="flex flex-row items-center gap-2.5 text-[15px] whitespace-nowrap">
+          <li key={perk} className="flex flex-row items-center gap-2.5 text-[15px] text-foreground whitespace-nowrap">
             <Check className="h-5 w-5 text-accent flex-shrink-0 self-center" />
             <span>{perk}</span>
           </li>
