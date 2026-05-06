@@ -15,6 +15,9 @@ import Pricing from "./pages/marketing/Pricing.tsx";
 import Community from "./pages/marketing/Community.tsx";
 import About from "./pages/marketing/About.tsx";
 import Blog from "./pages/marketing/Blog.tsx";
+import WhyMarketingIsntWorking from "./pages/blog/WhyMarketingIsntWorking.tsx";
+import HowToKnowWhatToPost from "./pages/blog/HowToKnowWhatToPost.tsx";
+import BuildingTechPlatform from "./pages/blog/BuildingTechPlatform.tsx";
 import Resources from "./pages/marketing/Resources.tsx";
 import Changelog from "./pages/marketing/Changelog.tsx";
 import AppLayout from "./layouts/AppLayout.tsx";
@@ -61,6 +64,9 @@ const App = () => (
             <Route path="/community" element={<Community />} />
             <Route path="/about" element={<About />} />
             <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/why-marketing-isnt-working" element={<WhyMarketingIsntWorking />} />
+            <Route path="/blog/how-to-know-what-to-post" element={<HowToKnowWhatToPost />} />
+            <Route path="/blog/building-a-tech-platform-at-peak-of-ai" element={<BuildingTechPlatform />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/terms" element={<Terms />} />
