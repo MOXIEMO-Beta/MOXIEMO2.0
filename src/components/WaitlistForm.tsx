@@ -110,7 +110,7 @@ export function WaitlistForm() {
         </p>
       </div>
 
-      <ul className="flex flex-col items-start gap-2.5 w-full mb-6">
+      <ul className="flex flex-col items-start gap-2.5 w-fit mx-auto mb-6">
         {[
           "Full platform access — free forever",
           "Locked-in founding rate",
