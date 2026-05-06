@@ -16,6 +16,7 @@ import Community from "./pages/marketing/Community.tsx";
 import About from "./pages/marketing/About.tsx";
 import Blog from "./pages/marketing/Blog.tsx";
 import Resources from "./pages/marketing/Resources.tsx";
+import Changelog from "./pages/marketing/Changelog.tsx";
 import AppLayout from "./layouts/AppLayout.tsx";
 import Dashboard from "./pages/app/Dashboard.tsx";
 import Discovery from "./pages/app/Discovery.tsx";
@@ -61,6 +62,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/resources" element={<Resources />} />
+            <Route path="/changelog" element={<Changelog />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
