@@ -4,7 +4,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Send } from "lucide-react";
 import kareeHeadshot from "@/assets/karee-headshot.png";
-import radicaHeadshot from "@/assets/radica-headshot.png";
+import radicaHeadshot from "@/assets/radica-headshot.jpeg";
 import moxieDevelopers from "@/assets/moxie-developers.png";
 
 const DISCORD_URL = "https://discord.gg/BGRj8PxW";
