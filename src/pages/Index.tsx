@@ -235,8 +235,8 @@ export default function Index() {
           <ul className="grid sm:grid-cols-2 gap-3 max-w-2xl mx-auto mb-12 text-left">
             {[
               "Full platform access — free forever",
-              "Locked-in rate before prices increase",
-              "Personal onboarding call with the founder",
+              "Locked-in founding rate",
+              "1:1 onboarding call with Karee",
               "Shape the product with your feedback",
             ].map((perk) => (
               <li key={perk} className="flex gap-2.5 items-start text-[15px]">
