@@ -14,13 +14,13 @@ export function MoxieLogo({
   if (!showWord) {
     return (
       <div className={cn("flex items-center", className)}>
-        <img src={mark} alt="MOXIEMO" className="h-8 w-auto" />
+        <img src={mark} alt="MOXIEMO" className="h-11 w-auto" />
       </div>
     );
   }
   return (
     <div className={cn("flex items-center", className)}>
-      <img src={logo} alt="MOXIEMO" className="h-8 w-auto" />
+      <img src={logo} alt="MOXIEMO" className="h-11 w-auto" />
     </div>
   );
 }
