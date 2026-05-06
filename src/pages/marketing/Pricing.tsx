@@ -41,6 +41,7 @@ const tiers = [
     savings: "$1,000+/mo + team capacity",
     cta: "Get started",
     featured: false,
+    coralCta: true,
   },
 ];
 
