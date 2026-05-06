@@ -33,10 +33,8 @@ export function SiteHeader() {
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "px-3.5 py-2 text-[15px] rounded-md transition-colors",
-                  active
-                    ? "text-foreground font-semibold"
-                    : "text-foreground/70 font-medium hover:text-foreground",
+                  "moxie-nav-link relative px-3.5 py-2 rounded-md",
+                  active && "moxie-nav-link-active",
                 )}
               >
                 {item.label}
@@ -80,8 +78,8 @@ export function SiteHeader() {
                 onClick={() => setOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    "px-3 py-2.5 text-[15px] rounded-md",
-                    isActive ? "bg-muted text-foreground font-semibold" : "text-foreground/75 font-medium hover:bg-muted/60",
+                    "moxie-nav-link relative px-3 py-2.5 rounded-md",
+                    isActive && "moxie-nav-link-active",
                   )
                 }
               >
