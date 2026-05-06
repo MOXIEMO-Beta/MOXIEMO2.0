@@ -1,4 +1,5 @@
 import { useState, FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,27 @@ import { Input } from "@/components/ui/input";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import article1 from "@/assets/blog/article-1-marketing.jpg";
+import article2 from "@/assets/blog/article-2-content.jpg";
+import article3 from "@/assets/blog/article-3-platform.jpg";
+
+const REAL_ARTICLES: Record<string, { image: string; href: string; date: string }> = {
+  "Why Your Marketing Isn't Working (It's Not the Tools)": {
+    image: article1,
+    href: "/blog/why-marketing-isnt-working",
+    date: "May 6, 2026",
+  },
+  "How to Know Exactly What to Post Without Guessing": {
+    image: article2,
+    href: "/blog/how-to-know-what-to-post",
+    date: "May 6, 2026",
+  },
+  "Building a Tech Platform at the Peak of AI: What Nobody Prepared Me For": {
+    image: article3,
+    href: "/blog/building-a-tech-platform-at-peak-of-ai",
+    date: "May 6, 2026",
+  },
+};
 
 const CATEGORIES = [
   "All",
@@ -18,9 +40,9 @@ const CATEGORIES = [
 ];
 
 const ARTICLES = [
-  { category: "Strategy", title: "The Brand Architecture Method: How to stop winging your positioning", excerpt: "A repeatable system for nailing positioning the first time — without the guesswork.", read: "6 min read" },
-  { category: "Content", title: "Why your LinkedIn posts aren't landing (and the fix takes 10 minutes)", excerpt: "Most posts fail at the hook. Here's the framework we use with every founder.", read: "5 min read" },
-  { category: "AI Marketing", title: "AI slop vs. AI strategy: the difference is your foundation", excerpt: "Why your prompts only get as good as the brand architecture behind them.", read: "7 min read" },
+  { category: "Strategy", title: "Why Your Marketing Isn't Working (It's Not the Tools)", excerpt: "Most founders aren't failing at marketing because they're using the wrong platforms. They're failing because they don't have a strategy for the tools to execute. The fix starts before you open LinkedIn.", read: "7 min read" },
+  { category: "Content", title: "How to Know Exactly What to Post Without Guessing", excerpt: "Content paralysis isn't a creativity problem. It's a positioning problem. When you know your content pillars, your ideal client, and your voice, the blank screen disappears. Here's the system.", read: "6 min read" },
+  { category: "Founder Stories", title: "Building a Tech Platform at the Peak of AI: What Nobody Prepared Me For", excerpt: "The honest version of what it's like to build a software platform as a brand strategist with no engineering background, in the middle of the most significant technology shift in a generation.", read: "8 min read" },
   { category: "Tools & Systems", title: "The 6-tool stack killing your productivity — and what replaces it", excerpt: "An honest audit of the marketing stack most founders accidentally end up with.", read: "4 min read" },
   { category: "Founder Stories", title: "From overwhelmed to operating: how one consultant reclaimed 18 hours a week", excerpt: "What changed when she stopped reinventing her marketing every Monday.", read: "9 min read" },
   { category: "Case Studies", title: "$93K in annual savings: what happens when your marketing actually has a strategy", excerpt: "A real teardown of one founder's stack before and after MOXIEMO.", read: "8 min read" },
@@ -128,44 +150,57 @@ export default function Blog() {
 
       <main className="max-w-6xl mx-auto px-6 py-12 w-full">
         {/* Featured */}
-        <article className="rounded-2xl overflow-hidden bg-[#101116] text-white grid md:grid-cols-[55%_45%]">
+        <Link to="/blog/building-a-tech-platform-at-peak-of-ai" className="block rounded-2xl overflow-hidden bg-[#101116] text-white grid md:grid-cols-[55%_45%] hover:opacity-95 transition">
           <div className="p-8 md:p-12 flex flex-col justify-between gap-6">
             <div>
-              <span className="text-accent text-xs font-bold uppercase tracking-[0.2em]">Coming Soon</span>
+              <span className="text-accent text-xs font-bold uppercase tracking-[0.2em]">Featured</span>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 mb-4 leading-tight">
-                She stopped Googling "content ideas" and built a system instead.
+                Building a Tech Platform at the Peak of AI: What Nobody Prepared Me For
               </h2>
               <p className="text-white/70 text-base md:text-lg leading-relaxed">
-                The story behind MOXIEMO — and why every expertise-based founder needs a marketing engine, not a marketing to-do list.
+                The honest version of what it's like to build a software platform as a brand strategist with no engineering background — in the middle of the most significant technology shift in a generation.
               </p>
               <p className="text-white/50 text-sm mt-5">Founder Stories · 8 min read</p>
             </div>
-            <span className="text-white/40 text-sm font-medium">Read when it drops →</span>
+            <span className="text-accent text-sm font-medium">Read the story →</span>
           </div>
-          <div className="relative min-h-[260px] bg-gradient-to-br from-[#1c1d24] to-[#101116]">
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles className="text-accent" style={{ width: 64, height: 64 }} />
-            </div>
-            <div className="absolute inset-0 bg-gradient-to-tr from-accent/10 to-transparent" />
+          <div className="relative min-h-[260px]">
+            <img src={article3} alt="Building a Tech Platform" className="absolute inset-0 w-full h-full object-cover" />
           </div>
-        </article>
+        </Link>
 
         {/* Article grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mt-10">
-          {filtered.map((a) => (
-            <div key={a.title} className="rounded-xl border border-border overflow-hidden bg-card flex flex-col">
-              <PlaceholderImage className="aspect-[16/10] rounded-t-xl" />
-              <div className="p-5 flex flex-col gap-2 flex-1">
-                <span className="text-accent text-xs font-bold uppercase tracking-wider">{a.category}</span>
-                <h3 className="text-[18px] font-bold leading-snug text-foreground">{a.title}</h3>
-                <p className="text-sm text-muted-foreground line-clamp-2">{a.excerpt}</p>
-                <div className="flex items-center justify-between mt-auto pt-3">
-                  <span className="text-xs text-muted-foreground">{a.read}</span>
-                  <ComingSoonPill />
+          {filtered.map((a) => {
+            const real = REAL_ARTICLES[a.title];
+            const inner = (
+              <div className="rounded-xl border border-border overflow-hidden bg-card flex flex-col h-full hover:shadow-md transition">
+                {real ? (
+                  <img src={real.image} alt={a.title} className="aspect-[16/10] w-full object-cover" />
+                ) : (
+                  <PlaceholderImage className="aspect-[16/10] rounded-t-xl" />
+                )}
+                <div className="p-5 flex flex-col gap-2 flex-1">
+                  <span className="text-accent text-xs font-bold uppercase tracking-wider">{a.category}</span>
+                  <h3 className="text-[18px] font-bold leading-snug text-foreground">{a.title}</h3>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{a.excerpt}</p>
+                  <div className="flex items-center justify-between mt-auto pt-3">
+                    <span className="text-xs text-muted-foreground">{a.read}{real ? ` · ${real.date}` : ""}</span>
+                    {real ? (
+                      <span className="text-accent text-xs font-bold uppercase tracking-wider">Read →</span>
+                    ) : (
+                      <ComingSoonPill />
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+            return real ? (
+              <Link key={a.title} to={real.href} className="block">{inner}</Link>
+            ) : (
+              <div key={a.title}>{inner}</div>
+            );
+          })}
         </div>
       </main>
 
