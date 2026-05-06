@@ -3,7 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM = `You are MOXIE's strategy synthesizer. Read a discovery conversation transcript and extract a complete marketing strategy.
+const SYSTEM = `You are MOXIEMO's strategy synthesizer. Read a discovery conversation transcript and extract a complete marketing strategy.
 You will save BOTH a base strategy AND an expanded "enhanced_foundation" object that deepens the output (Sprint 1: positioning breakdown, brand archetype, core values, competitive positioning, detailed voice guidelines).
 Be specific and grounded in the transcript — never generic. Every example, value, and word should feel derived from what the user actually said.`;
 
@@ -138,7 +138,7 @@ Deno.serve(async (req) => {
               const messages: Array<{ role: string; content: string }> = session?.messages ?? [];
               if (Array.isArray(messages) && messages.length > 0) {
                 transcript = messages
-                  .map((m) => `${m.role === "user" ? "USER" : "MOXIE"}: ${m.content}`)
+                  .map((m) => `${m.role === "user" ? "USER" : "MOXIEMO"}: ${m.content}`)
                   .join("\n\n");
               }
               // Mark session completed if not already
@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
     if (!transcript) throw new Error("No discovery transcript available");
 
     let userContent =
-      "Here is a founder's complete Discovery conversation with MOXIE.\n" +
+      "Here is a founder's complete Discovery conversation with MOXIEMO.\n" +
       "Extract and synthesize their full marketing strategy from their answers below.\n\n" +
       "Discovery transcript:\n\n" + transcript;
     if (revenueRange) userContent += `\n\nFounder's revenue stage: ${revenueRange}`;

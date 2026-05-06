@@ -973,7 +973,7 @@ export default function Email() {
         </div>
       )}
 
-      {/* 1. How MOXIE sends your emails */}
+      {/* 1. How MOXIEMO sends your emails */}
       <Card>
         <CardHeader className="pb-3">
           <button
@@ -982,7 +982,7 @@ export default function Email() {
           >
             <div className="flex items-center gap-2">
               <Info className="h-5 w-5 text-orange-600" />
-              <CardTitle className="text-lg">How MOXIE sends your emails</CardTitle>
+              <CardTitle className="text-lg">How MOXIEMO sends your emails</CardTitle>
             </div>
             {howItWorksOpen ? (
               <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -996,7 +996,7 @@ export default function Email() {
             <div className="flex gap-3">
               <Send className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">
-                Your emails send through MOXIE's secure sending infrastructure. Your name appears as the sender — your subscribers won't see "MOXIE" anywhere.
+                Your emails send through MOXIEMO's secure sending infrastructure. Your name appears as the sender — your subscribers won't see "MOXIEMO" anywhere.
               </p>
             </div>
             <div className="flex gap-3">
@@ -1061,7 +1061,7 @@ export default function Email() {
             )}
           </Button>
           <p className="text-xs text-muted-foreground border-t pt-3">
-            In Beta 1, all emails send from <span className="font-mono">hello@mail.buildwithmoxie.co</span> on your behalf. Your name appears as the sender. Replies go directly to your reply-to address. Custom sending domains are coming in a future update.
+            In Beta 1, all emails send from <span className="font-mono">hello@mail.buildwithmoxiemo.com</span> on your behalf. Your name appears as the sender. Replies go directly to your reply-to address. Custom sending domains are coming in a future update.
           </p>
         </CardContent>
       </Card>
@@ -1442,7 +1442,7 @@ export default function Email() {
                 onClick={() => setShowGenPanel(true)}
                 className="text-xs text-orange-600 hover:underline"
               >
-                Regenerate with MOXIE
+                Regenerate with MOXIEMO
               </button>
             )}
           </div>
@@ -1742,7 +1742,7 @@ export default function Email() {
                   <div className="rounded-md bg-background border p-4 text-sm space-y-2">
                     <div className="flex justify-between"><span className="text-muted-foreground">Sending to:</span><span className="font-medium">{sendAudienceLabel} — {sendRecipientIds.length} recipients</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Subject:</span><span className="font-medium truncate max-w-[60%] text-right">{subject}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">From:</span><span className="font-medium">{settings.from_name || "MOXIE"} &lt;hello@mail.buildwithmoxie.co&gt;</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">From:</span><span className="font-medium">{settings.from_name || "MOXIEMO"} &lt;hello@mail.buildwithmoxiemo.com&gt;</span></div>
                     <div className="flex justify-between"><span className="text-muted-foreground">Replies to:</span><span className="font-medium">{settings.reply_to || "—"}</span></div>
                   </div>
 

@@ -3,7 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM = `You are MOXIE, an AI Chief Marketing Officer generating content for an expertise-based founder.
+const SYSTEM = `You are MOXIEMO, an AI Chief Marketing Officer generating content for an expertise-based founder.
 
 Your user is a founder selling their expertise — they may be a coach, consultant, fractional executive, agency owner, solopreneur, or business owner. They earn $600K–2M revenue and struggle with tool fragmentation and unclear marketing strategy.
 

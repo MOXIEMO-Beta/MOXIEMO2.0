@@ -413,7 +413,7 @@ export default function Content() {
                 What's the idea?
               </label>
               <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                A take from an article you read, something a client said, a hot opinion, a story — bring anything. MOXIE will shape it into content that sounds like you.
+                A take from an article you read, something a client said, a hot opinion, a story — bring anything. MOXIEMO will shape it into content that sounds like you.
               </p>
               <Textarea
                 value={topic}
@@ -480,9 +480,9 @@ export default function Content() {
               className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg"
             >
               {generating ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> MOXIE is writing{".".repeat(dotCount)}</>
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> MOXIEMO is writing{".".repeat(dotCount)}</>
               ) : (
-                <><Sparkles className="mr-2 h-4 w-4" /> Generate with MOXIE</>
+                <><Sparkles className="mr-2 h-4 w-4" /> Generate with MOXIEMO</>
               )}
             </Button>
           </Card>
@@ -583,7 +583,7 @@ export default function Content() {
                 {/* Refine row */}
                 <div className="px-4 py-3 border-t border-border bg-muted/20">
                   <div className="text-[11px] text-muted-foreground mb-1.5">
-                    Not quite right? Tell MOXIE what to adjust →
+                    Not quite right? Tell MOXIEMO what to adjust →
                   </div>
                   <div className="relative">
                     <Input

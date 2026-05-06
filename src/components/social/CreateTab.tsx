@@ -798,7 +798,7 @@ export default function CreateTab({
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base">
                 <Sparkles className="h-4 w-4 text-accent" />
-                Build with MOXIE
+                Build with MOXIEMO
               </CardTitle>
               <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{stepLabel}</span>
             </div>
@@ -881,12 +881,12 @@ export default function CreateTab({
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <Dices className="h-4 w-4 text-accent" /> 🎲 Surprise Me
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">MOXIE picks from your strategy</p>
+                  <p className="mt-1 text-xs text-muted-foreground">MOXIEMO picks from your strategy</p>
                   {focusMode === "surprise" && surprisePick && (
                     <div className="mt-2 flex items-center gap-2 text-xs">
                       <Check className="h-3.5 w-3.5 text-accent" />
                       <span>
-                        MOXIE picked: <span className="font-medium">{surprisePick}</span>
+                        MOXIEMO picked: <span className="font-medium">{surprisePick}</span>
                       </span>
                       <span
                         role="button"
@@ -1047,12 +1047,12 @@ export default function CreateTab({
                   </>
                 ) : (
                   <>
-                    <Sparkles className="h-4 w-4" /> Generate with MOXIE
+                    <Sparkles className="h-4 w-4" /> Generate with MOXIEMO
                   </>
                 )}
               </Button>
               <p className="text-center text-xs text-muted-foreground">
-                MOXIE uses your strategy, voice, and positioning
+                MOXIEMO uses your strategy, voice, and positioning
               </p>
             </div>
           </CardContent>
@@ -1087,7 +1087,7 @@ export default function CreateTab({
                 >
                   <span aria-hidden className="text-lg leading-none">💡</span>
                   <div className="flex-1 text-xs leading-relaxed">
-                    <div className="font-semibold mb-0.5">Pro tip: MOXIE can edit any part of your post</div>
+                    <div className="font-semibold mb-0.5">Pro tip: MOXIEMO can edit any part of your post</div>
                     <div>Select any text to improve, shorten, or rewrite it. Or type a command below to change anything instantly.</div>
                   </div>
                   <button
@@ -1231,7 +1231,7 @@ export default function CreateTab({
                             }}
                           >
                             <div className="font-medium">✨ Try selecting text</div>
-                            <div className="text-[11px] text-muted-foreground">to edit with MOXIE</div>
+                            <div className="text-[11px] text-muted-foreground">to edit with MOXIEMO</div>
                           </div>
                         )}
                       </div>
@@ -1242,7 +1242,7 @@ export default function CreateTab({
                           style={{ fontSize: "11px", color: "#9b9faf" }}
                           className="-mt-1"
                         >
-                          💡 Select any text to edit it with MOXIE · Or click the command box below for suggestions →
+                          💡 Select any text to edit it with MOXIEMO · Or click the command box below for suggestions →
                         </div>
                       )}
 
@@ -1329,7 +1329,7 @@ export default function CreateTab({
                               });
                             }
                           }}
-                          placeholder="Ask MOXIE to change something..."
+                          placeholder="Ask MOXIEMO to change something..."
                           className="h-8 border-0 bg-transparent text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
                         />
                         <Button

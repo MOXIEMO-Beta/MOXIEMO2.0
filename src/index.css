@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* MOXIE Design System — warm cream + ink + coral. Inspired by monday.com cleanness. */
+/* MOXIEMO Design System — warm cream + ink + coral. Inspired by monday.com cleanness. */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
@@ -150,7 +150,7 @@
   animation: freedom-pulse 2s ease-in-out infinite;
 }
 
-/* MOXIE nav typography + interactions */
+/* MOXIEMO nav typography + interactions */
 .moxie-nav-link,
 .moxie-footer-link,
 .moxie-footer-heading {

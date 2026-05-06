@@ -416,7 +416,7 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
     [posts],
   );
 
-  // MOXIE recommendations
+  // MOXIEMO recommendations
   const recommendations = useMemo(() => {
     const recs: { icon: string; title: string; insight: string; action: string; tab: "create" | "calendar" | "library"; pillar?: string }[] = [];
     const weeks = Math.max(1, Math.ceil((range.to.getTime() - range.from.getTime()) / (7 * 24 * 60 * 60 * 1000)));
@@ -1049,10 +1049,10 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
               </p>
               <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
                 <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-accent">
-                  <Sparkles className="h-4 w-4" /> MOXIE Insight
+                  <Sparkles className="h-4 w-4" /> MOXIEMO Insight
                 </div>
                 <p className="text-sm text-foreground">
-                  Tag your posts with content pillars as you publish. MOXIE will show you which themes drive the most engagement for your specific audience.
+                  Tag your posts with content pillars as you publish. MOXIEMO will show you which themes drive the most engagement for your specific audience.
                 </p>
                 <Button
                   size="sm"
@@ -1098,7 +1098,7 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
               {moxieInsight ? (
                 <div className="rounded-lg border border-accent/30 bg-accent/5 p-4">
                   <div className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-accent">
-                    <Sparkles className="h-4 w-4" /> MOXIE Insight
+                    <Sparkles className="h-4 w-4" /> MOXIEMO Insight
                   </div>
                   <p className="text-sm text-foreground">
                     "{moxieInsight.topPillar}" posts get {moxieInsight.ratio.toFixed(1)}x more engagement than your other
@@ -1218,16 +1218,16 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
         </div>
       </section>
 
-      {/* SECTION 7 — MOXIE Recommendations */}
+      {/* SECTION 7 — MOXIEMO Recommendations */}
       <section className="space-y-3">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">MOXIE Recommendations</h3>
+          <h3 className="text-sm font-semibold text-foreground">MOXIEMO Recommendations</h3>
           <p className="text-xs text-muted-foreground">Based on your strategy and performance data</p>
         </div>
         {totalPublishedAll < 5 ? (
           <Card className="space-y-4 p-6">
             <div className="flex items-center gap-2 text-sm font-semibold text-accent">
-              <Sparkles className="h-4 w-4" /> MOXIE Recommendations unlock as you post
+              <Sparkles className="h-4 w-4" /> MOXIEMO Recommendations unlock as you post
             </div>
             <p className="text-sm text-foreground">
               Publish <span className="font-semibold">5 posts</span> to get your first personalized recommendations.
@@ -1245,7 +1245,7 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              MOXIE will analyze your content and tell you exactly what to do more of, less of, and differently.
+              MOXIEMO will analyze your content and tell you exactly what to do more of, less of, and differently.
             </p>
             <div>
               <Button size="sm" onClick={() => onSwitchTab("create")} className="gap-1">

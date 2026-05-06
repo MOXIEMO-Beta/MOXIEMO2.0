@@ -109,7 +109,7 @@ function StrategyHeader() {
       <div>
         <div className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-accent px-3 py-1.5 rounded-full bg-accent-soft mb-3">Your strategy</div>
         <h1 className="font-display text-5xl md:text-6xl tracking-[-0.03em] mb-3">Marketing foundation</h1>
-        <p className="text-muted-foreground max-w-2xl">This strategy powers every piece of content, email, and post MOXIE generates. Update it any time — your execution layer adapts automatically.</p>
+        <p className="text-muted-foreground max-w-2xl">This strategy powers every piece of content, email, and post MOXIEMO generates. Update it any time — your execution layer adapts automatically.</p>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <span className="uppercase tracking-[0.2em] text-[10px]">Prepared for</span>
@@ -985,7 +985,7 @@ export default function Strategy() {
         ) : (
           <>
             <h1 className="font-display text-4xl mb-3">No strategy yet</h1>
-            <p className="text-muted-foreground mb-8">Run MOXIE Discovery to extract your positioning, voice, and content foundation.</p>
+            <p className="text-muted-foreground mb-8">Run MOXIEMO Discovery to extract your positioning, voice, and content foundation.</p>
             <Button asChild className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
               <Link to="/app/discovery"><Sparkles className="mr-2 h-4 w-4 text-accent" /> Begin discovery</Link>
             </Button>

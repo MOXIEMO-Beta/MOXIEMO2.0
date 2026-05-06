@@ -5,10 +5,10 @@ export default function Privacy() {
     <LegalPage title="Privacy Policy" lastUpdated="Last updated: May 4, 2026">
       <LegalSection heading="Introduction">
         <p>
-          MOXIE ("we," "our," or "us") is committed to protecting your privacy. This Privacy
+          MOXIEMO ("we," "our," or "us") is committed to protecting your privacy. This Privacy
           Policy explains how we collect, use, disclose, and safeguard your information when
-          you use our platform at buildwithmoxie.co and any related services (collectively,
-          the "Platform"). Please read this policy carefully. By using MOXIE, you agree to
+          you use our platform at buildwithmoxiemo.com and any related services (collectively,
+          the "Platform"). Please read this policy carefully. By using MOXIEMO, you agree to
           the practices described here.
         </p>
       </LegalSection>
@@ -17,7 +17,7 @@ export default function Privacy() {
         <p className="font-medium text-foreground">Information you provide directly:</p>
         <LegalList items={[
           "Account information: name, email address, company name, website, and role when you create an account or join the waitlist",
-          "Discovery responses: your answers to the MOXIE Discovery conversation — including your business positioning, ideal client, pain points, voice, and marketing goals",
+          "Discovery responses: your answers to the MOXIEMO Discovery conversation — including your business positioning, ideal client, pain points, voice, and marketing goals",
           "Content you create: posts, emails, campaigns, and other content generated or saved within the platform",
           "Communications: messages you send us via email or the feedback form",
         ]} />
@@ -37,7 +37,7 @@ export default function Privacy() {
         <p>We use the information we collect to:</p>
         <LegalList items={[
           "Create and maintain your account",
-          "Run the MOXIE Discovery process and generate your marketing strategy",
+          "Run the MOXIEMO Discovery process and generate your marketing strategy",
           "Generate content, campaigns, and recommendations personalized to your business",
           "Improve and develop the platform and our AI models*",
           "Send you product updates, onboarding communications, and marketing emails (you may opt out at any time)",
@@ -58,7 +58,7 @@ export default function Privacy() {
         <LegalList items={[
           <><span className="text-foreground font-medium">Service providers:</span> We share data with trusted vendors who help us operate the platform, including Supabase (database), Anthropic (AI processing), and Stripe (payments). These providers are contractually bound to protect your data.</>,
           <><span className="text-foreground font-medium">Legal requirements:</span> We may disclose information if required by law, court order, or government authority.</>,
-          <><span className="text-foreground font-medium">Business transfers:</span> If MOXIE is acquired or merges with another company, your data may be transferred as part of that transaction. We will notify you before this occurs.</>,
+          <><span className="text-foreground font-medium">Business transfers:</span> If MOXIEMO is acquired or merges with another company, your data may be transferred as part of that transaction. We will notify you before this occurs.</>,
           <><span className="text-foreground font-medium">With your consent:</span> We may share information in other ways if you explicitly authorize it.</>,
         ]} />
       </LegalSection>
@@ -83,7 +83,7 @@ export default function Privacy() {
         ]} />
         <p>
           To exercise any of these rights, contact us at:{" "}
-          <a className="text-foreground underline" href="mailto:hello@buildwithmoxie.co">hello@buildwithmoxie.co</a>
+          <a className="text-foreground underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a>
         </p>
         <p>We will respond to all requests within 30 days.</p>
       </LegalSection>
@@ -99,7 +99,7 @@ export default function Privacy() {
       <LegalDivider />
       <LegalSection heading="Children's Privacy">
         <p>
-          MOXIE is not intended for users under the age of 18. We do not knowingly collect
+          MOXIEMO is not intended for users under the age of 18. We do not knowingly collect
           personal information from minors. If we discover we have collected data from a
           minor, we will delete it immediately.
         </p>
@@ -109,7 +109,7 @@ export default function Privacy() {
         <p>
           We implement industry-standard security measures including encryption in transit
           (TLS), encrypted storage, and access controls. However, no system is completely
-          secure. We encourage you to use a strong, unique password for your MOXIE account.
+          secure. We encourage you to use a strong, unique password for your MOXIEMO account.
         </p>
       </LegalSection>
       <LegalDivider />
@@ -117,16 +117,16 @@ export default function Privacy() {
         <p>
           We may update this Privacy Policy from time to time. We will notify you of material
           changes by email or by posting a notice on the platform. Your continued use of
-          MOXIE after changes take effect constitutes acceptance of the updated policy.
+          MOXIEMO after changes take effect constitutes acceptance of the updated policy.
         </p>
       </LegalSection>
       <LegalDivider />
       <LegalSection heading="Contact Us">
         <p>If you have questions about this Privacy Policy, contact us at:</p>
         <p className="text-foreground">
-          MOXIE /{" "}
-          <a className="underline" href="mailto:hello@buildwithmoxie.co">hello@buildwithmoxie.co</a> /
-          buildwithmoxie.co
+          MOXIEMO /{" "}
+          <a className="underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a> /
+          buildwithmoxiemo.com
         </p>
       </LegalSection>
     </LegalPage>

@@ -1,5 +1,5 @@
 // src/components/MoxieReport.tsx
-// MOXIE Strategic Report — multi-page styled PDF layout.
+// MOXIEMO Strategic Report — multi-page styled PDF layout.
 // All styling inline / scoped to avoid conflicts with app Tailwind.
 
 import React from "react";
@@ -74,7 +74,7 @@ const pill = (bg: string, fg: string, extra: React.CSSProperties = {}): React.CS
   ...extra,
 });
 
-// ─── MOXIE wordmark ────────────────────────────────────────────
+// ─── MOXIEMO wordmark ────────────────────────────────────────────
 function MoxieMark({ light = false }: { light?: boolean }) {
   const fg = light ? C.white : C.navy;
   return (
@@ -87,7 +87,7 @@ function MoxieMark({ light = false }: { light?: boolean }) {
           fontFamily={FONT} fontWeight={900} fontSize="20" fill={C.white}
         >M</text>
       </svg>
-      <span style={{ fontWeight: 900, letterSpacing: 4, fontSize: 18, color: fg }}>MOXIE</span>
+      <span style={{ fontWeight: 900, letterSpacing: 4, fontSize: 18, color: fg }}>MOXIEMO</span>
     </div>
   );
 }

@@ -83,7 +83,7 @@ export default function GeneratePanel({
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <Sparkles className="h-4 w-4 text-orange-600" />
-            Generate with MOXIE
+            Generate with MOXIEMO
           </CardTitle>
           <span className="text-xs uppercase tracking-wide text-muted-foreground">
             {stepLabel}
@@ -162,12 +162,12 @@ export default function GeneratePanel({
               Surprise me
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              MOXIE picks a focus from your strategy and runs with it
+              MOXIEMO picks a focus from your strategy and runs with it
             </p>
             {focusMode === "surprise" && surprisePick && (
               <div className="mt-2 flex items-center gap-2 text-sm">
                 <Check className="h-4 w-4 text-orange-600" />
-                <span>MOXIE picked: <span className="font-medium">{surprisePick}</span></span>
+                <span>MOXIEMO picked: <span className="font-medium">{surprisePick}</span></span>
                 <span
                   role="button"
                   onClick={(e) => {
@@ -268,12 +268,12 @@ export default function GeneratePanel({
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" /> Generate with MOXIE
+                  <Sparkles className="h-4 w-4" /> Generate with MOXIEMO
                 </>
               )}
             </Button>
             <p className="text-xs text-muted-foreground text-center">
-              MOXIE will use your strategy, voice, and selected focus to write the full email
+              MOXIEMO will use your strategy, voice, and selected focus to write the full email
             </p>
           </div>
         )}

@@ -122,7 +122,7 @@ export default function Auth() {
                 You need a system that makes<br />
                 marketing inevitable."
                 <br />
-                <span className="not-italic">— MOXIE</span>
+                <span className="not-italic">— MOXIEMO</span>
               </p>
             </>
           ) : (
@@ -139,7 +139,7 @@ export default function Auth() {
                 Every time you log in,<br />
                 you're building something real."
                 <br />
-                <span className="not-italic">— MOXIE</span>
+                <span className="not-italic">— MOXIEMO</span>
               </p>
             </>
           )}
@@ -261,7 +261,7 @@ export default function Auth() {
               </>
             ) : (
               <>
-                New to MOXIE?{" "}
+                New to MOXIEMO?{" "}
                 <button
                   onClick={() => setMode("signup")}
                   className="font-bold hover:opacity-80"

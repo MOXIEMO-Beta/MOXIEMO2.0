@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import logoUrl from "@/assets/moxie-logo-full.png";
 
 /**
- * PDF export styled to mirror the MOXIE platform UI:
+ * PDF export styled to mirror the MOXIEMO platform UI:
  * white canvas, ink (#262833) text, coral (#ff6b6b) accents,
  * soft cards with rounded corners, grids of metric tiles, and
  * the same labeling system used in the Strategy tabs.
@@ -886,7 +886,7 @@ function renderChannels(ctx: Ctx, s: StrategyLike) {
   });
 
   if (cs.timeSavings || cs.comparison) {
-    drawSubhead(ctx, "Time savings with MOXIE");
+    drawSubhead(ctx, "Time savings with MOXIEMO");
     if (cs.timeSavings) drawTextCard(ctx, "Estimated savings", typeof cs.timeSavings === "string" ? cs.timeSavings : valueToString(cs.timeSavings));
     if (cs.comparison) drawTextCard(ctx, "Comparison", String(cs.comparison));
   }
@@ -1081,7 +1081,7 @@ async function renderCover(ctx: Ctx, _s: StrategyLike, companyName?: string) {
 
   // Title
   setFont(pdf, "bold", 32, COLORS.ink);
-  pdf.text(safe("Chief MOXIE Officer"), cardX + 32, cardY + 84);
+  pdf.text(safe("Chief MOXIEMO Officer"), cardX + 32, cardY + 84);
   setFont(pdf, "normal", 24, COLORS.body);
   pdf.text(safe("Strategic Report"), cardX + 32, cardY + 116);
 
@@ -1128,7 +1128,7 @@ export async function exportStrategyPdf(opts: {
   companyName?: string;
   sections?: { id: string; title: string }[];
 }) {
-  const { strategy, fileName = "moxie-strategy.pdf", brandName = "MOXIE", companyName } = opts;
+  const { strategy, fileName = "moxie-strategy.pdf", brandName = "MOXIEMO", companyName } = opts;
 
   if (!strategy) {
     toast.error("Nothing to export yet");

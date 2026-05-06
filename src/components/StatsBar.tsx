@@ -19,7 +19,7 @@ export function StatsBar() {
           className="text-muted-foreground mt-3 mx-auto"
           style={{ fontSize: 16, maxWidth: 560 }}
         >
-          Every founder who runs MOXIE Discovery gets a strategy that runs their entire platform. Here's what that looks like at scale.
+          Every founder who runs MOXIEMO Discovery gets a strategy that runs their entire platform. Here's what that looks like at scale.
         </p>
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0">

@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
-import logo from "@/assets/moxie-logo.png";
-import logoLight from "@/assets/moxie-logo-light.png";
+import logo from "@/assets/moxiemo-logo.png";
 import mark from "@/assets/moxie-mark.png";
 
 export function MoxieLogo({
@@ -15,14 +14,13 @@ export function MoxieLogo({
   if (!showWord) {
     return (
       <div className={cn("flex items-center", className)}>
-        <img src={mark} alt="Moxie" className="h-8 w-auto" />
+        <img src={mark} alt="MOXIEMO" className="h-8 w-auto" />
       </div>
     );
   }
-  const src = variant === "light" ? logoLight : logo;
   return (
     <div className={cn("flex items-center", className)}>
-      <img src={src} alt="Moxie" className="h-7 w-auto" />
+      <img src={logo} alt="MOXIEMO" className="h-8 w-auto" />
     </div>
   );
 }

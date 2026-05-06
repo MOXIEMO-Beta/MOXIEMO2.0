@@ -14,11 +14,11 @@ const stages = [
     n: "01",
     label: "Strategic foundation",
     time: "30 minutes",
-    title: "MOXIE Discovery conversation",
-    body: "MOXIE's AI interviews you about who you serve, the transformation you provide, your unique positioning, and your voice. The strategic work most tools skip — done in half an hour.",
+    title: "MOXIEMO Discovery conversation",
+    body: "MOXIEMO's AI interviews you about who you serve, the transformation you provide, your unique positioning, and your voice. The strategic work most tools skip — done in half an hour.",
     outputs: ["Strategic positioning statement", "Brand voice guidelines", "Audience pain map", "Content theme clusters", "Channel prioritization", "Success metrics dashboard"],
     img: shotDiscovery,
-    alt: "MOXIE Discovery conversation",
+    alt: "MOXIEMO Discovery conversation",
   },
   {
     n: "02",
@@ -28,7 +28,7 @@ const stages = [
     body: "Your strategy isn't a PDF in a folder. It's wired into the email tool, the social tool, the content creator, the analytics — guiding every output automatically.",
     outputs: ["Email subject lines align to positioning", "Social posts build a narrative", "Content sounds like you", "Analytics tracks YOUR success metric"],
     img: shotStrategy,
-    alt: "MOXIE Strategy positioning",
+    alt: "MOXIEMO Strategy positioning",
   },
   {
     n: "03",
@@ -38,7 +38,7 @@ const stages = [
     body: "Monday morning: review, approve, publish. Friday: check what worked. The other 18 hours go back to clients and growth.",
     outputs: ["Review week's content (15 min)", "Approve & edit (30 min)", "Auto-publish across channels", "Friday analytics check (15 min)"],
     img: shotPlanner,
-    alt: "MOXIE Marketing Planner",
+    alt: "MOXIEMO Marketing Planner",
   },
 ];
 
@@ -54,7 +54,7 @@ const weeks = [
   { n: "Week 1", t: "Discovery + strategy" },
   { n: "Week 2", t: "Data migration + setup" },
   { n: "Week 3", t: "Content generation begins" },
-  { n: "Week 4", t: "Full switch to MOXIE" },
+  { n: "Week 4", t: "Full switch to MOXIEMO" },
 ];
 
 export default function Platform() {
@@ -62,7 +62,7 @@ export default function Platform() {
     <MarketingPage
       eyebrow="The platform"
       title="The only platform that starts with strategy."
-      subtitle="MOXIE isn't better execution tools. We're the only marketing platform that creates your strategic foundation first — then embeds it into every tool you use."
+      subtitle="MOXIEMO isn't better execution tools. We're the only marketing platform that creates your strategic foundation first — then embeds it into every tool you use."
     >
       <div className="space-y-24">
         {/* SECTION 1 — Hero image + CTA */}
@@ -70,7 +70,7 @@ export default function Platform() {
           <div className="w-[90%] mx-auto">
             <img
               src={heroFunctions}
-              alt="MOXIE — your AI marketing co-pilot with six core functions"
+              alt="MOXIEMO — your AI marketing co-pilot with six core functions"
               className="w-full h-auto rounded-2xl"
               style={{ borderRadius: 16, boxShadow: "0 8px 40px rgba(0,0,0,0.12)" }}
               loading="lazy"

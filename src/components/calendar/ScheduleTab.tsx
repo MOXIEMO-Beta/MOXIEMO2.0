@@ -286,7 +286,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
           <BalRow label="Email" val={weekEmail} max={2} color="bg-accent" />
           <BalRow label="Instagram" val={weekIG} max={3} color="bg-purple-500" />
 
-          <div className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">MOXIE suggests</div>
+          <div className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">MOXIEMO suggests</div>
           <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
             <div className="flex items-center gap-1 font-medium mb-1.5"><Sparkles className="w-3.5 h-3.5 text-accent" /> Tip</div>
             {weekLI < cadenceTarget ? (
@@ -388,7 +388,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
           </DialogHeader>
           <div className="space-y-2 mt-2">
             <Button variant="outline" className="w-full justify-start" onClick={() => { setQuickCreate(null); navigate("/app/social?tab=create"); }}>
-              <Sparkles className="w-4 h-4" /> Generate with MOXIE
+              <Sparkles className="w-4 h-4" /> Generate with MOXIEMO
             </Button>
             <Button variant="outline" className="w-full justify-start" onClick={() => { setQuickCreate(null); navigate(quickCreate?.channel === "email" ? "/app/email" : quickCreate?.channel === "content" ? "/app/content" : "/app/social?tab=create"); }}>
               <Plus className="w-4 h-4" /> Create manually

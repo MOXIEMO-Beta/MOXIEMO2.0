@@ -338,7 +338,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
               </div>
               {plan.length === 0 && !planLoading && (
                 <div className="text-sm text-muted-foreground border border-dashed border-border rounded-md p-6 text-center">
-                  Click "Generate plan" to have MOXIE draft a week-by-week topic plan.
+                  Click "Generate plan" to have MOXIEMO draft a week-by-week topic plan.
                 </div>
               )}
               <div className="space-y-3 max-h-[400px] overflow-y-auto">

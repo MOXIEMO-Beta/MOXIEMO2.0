@@ -55,7 +55,7 @@ const features = [
   { icon: "🚀", title: "Release notes first", desc: "Every update, fix, and new feature hits the community before anywhere else. You know what changed and why before it's announced publicly." },
   { icon: "🗺️", title: "Live roadmap access", desc: "See exactly what's being built, what's next, and what's been requested. Your upvotes directly influence what ships." },
   { icon: "🐛", title: "Bug reports that get fixed", desc: "Every bug report gets its own thread, a status tag, and a response. In Review → In Progress → Resolved. Nothing gets lost." },
-  { icon: "🏆", title: "Show and tell", desc: "Share what you've built with MOXIE — content that landed, strategies that worked, campaigns that converted. This is your stage." },
+  { icon: "🏆", title: "Show and tell", desc: "Share what you've built with MOXIEMO — content that landed, strategies that worked, campaigns that converted. This is your stage." },
   { icon: "🔬", title: "Beta-only features", desc: "Founding members get early access to features before they go public. You test it, break it, and shape it before anyone else sees it." },
 ];
 
@@ -88,7 +88,7 @@ export default function Community() {
             You're not building this alone.
           </h1>
           <p className="text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light mb-10">
-            The MOXIE beta community is where the platform gets built.
+            The MOXIEMO beta community is where the platform gets built.
             <br />
             Every founding member is a collaborator, not just a user.
           </p>
@@ -119,7 +119,7 @@ export default function Community() {
               Structured. Intentional. Yours.
             </h2>
             <p className="text-muted-foreground font-light max-w-[560px] mx-auto leading-relaxed">
-              Not a group chat. A real home base — with channels for feedback, bugs, features, show-and-tell, and direct access to the team building MOXIE.
+              Not a group chat. A real home base — with channels for feedback, bugs, features, show-and-tell, and direct access to the team building MOXIEMO.
             </p>
           </div>
 
@@ -137,7 +137,7 @@ export default function Community() {
             <div style={{ backgroundColor: "#111318" }} className="p-4 hidden md:block">
               <div className="flex items-center gap-2 pb-4 border-b border-white/5">
                 <div className="w-7 h-7 rounded-md flex items-center justify-center font-bold text-white text-sm" style={{ backgroundColor: CORAL }}>M</div>
-                <span className="text-white font-bold text-sm">MOXIE Server</span>
+                <span className="text-white font-bold text-sm">MOXIEMO Server</span>
               </div>
               <div className="text-[11px] mt-3 mb-4" style={{ color: "rgba(255,255,255,0.4)" }}>
                 <span style={{ color: "#3ba55c" }}>●</span> Online · Founding Members
@@ -241,7 +241,7 @@ export default function Community() {
               <h3 className="text-lg font-bold text-foreground">Karee Laing</h3>
               <p className="text-sm text-muted-foreground font-light mb-3">Founder & CEO</p>
               <p className="text-sm text-muted-foreground leading-relaxed font-light mb-4">
-                Building MOXIE in public. In the server daily — answering questions, sharing what's coming next, and taking your feedback seriously.
+                Building MOXIEMO in public. In the server daily — answering questions, sharing what's coming next, and taking your feedback seriously.
               </p>
               <p className="text-sm font-semibold" style={{ color: CORAL }}>K.Laing in Discord</p>
             </div>
@@ -255,11 +255,11 @@ export default function Community() {
               <p className="text-sm font-semibold" style={{ color: CORAL }}>Radica.M in Discord</p>
             </div>
             <div className="bg-white border border-border rounded-2xl p-7 text-center shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-              <img src={moxieDevelopers} alt="MOXIE Developers" className="w-24 h-24 rounded-full mx-auto mb-4 object-cover" />
-              <h3 className="text-lg font-bold text-foreground">MOXIE Developers</h3>
+              <img src={moxieDevelopers} alt="MOXIEMO Developers" className="w-24 h-24 rounded-full mx-auto mb-4 object-cover" />
+              <h3 className="text-lg font-bold text-foreground">MOXIEMO Developers</h3>
               <p className="text-sm text-muted-foreground font-light mb-3">Engineering & Product</p>
               <p className="text-sm text-muted-foreground leading-relaxed font-light mb-4">
-                The technical team behind the platform. Instrumental in Phase 2 of MOXIE's build — expanding platform capabilities, adding integrations, and making sure everything runs the way it should. They're in the server and they're listening.
+                The technical team behind the platform. Instrumental in Phase 2 of MOXIEMO's build — expanding platform capabilities, adding integrations, and making sure everything runs the way it should. They're in the server and they're listening.
               </p>
               <p className="text-sm font-semibold" style={{ color: CORAL }}>moxiedevelopers in Discord</p>
             </div>
@@ -275,7 +275,7 @@ export default function Community() {
             Your story goes here.
           </h2>
           <p className="font-light max-w-[500px] mx-auto leading-relaxed mb-8" style={{ color: "rgba(255,255,255,0.6)" }}>
-            We're collecting our first founding member stories. If MOXIE has made a difference in how you work — we want to hear it and share it.
+            We're collecting our first founding member stories. If MOXIEMO has made a difference in how you work — we want to hear it and share it.
           </p>
           <Button asChild size="lg" variant="outline" className="h-12 px-8 rounded-full font-semibold text-white hover:opacity-90" style={{ borderColor: CORAL, backgroundColor: "transparent" }}>
             <a href={DISCORD_URL} target="_blank" rel="noopener noreferrer">

@@ -48,7 +48,7 @@ const tiers = [
 const universal = ["20-min AI strategic discovery", "Marketing strategy foundation", "Brand voice & positioning", "Unlimited strategy updates", "Mobile app (iOS + Android)", "Data export anytime", "99.9% uptime SLA", "SOC 2 Type II security", "GDPR compliance", "30-day money-back guarantee"];
 
 const faqs = [
-  { q: "Why is MOXIE cheaper than my current tool stack?", a: "We're one platform replacing 4–6 tools. No integrations, no middleware, no complexity. Lower costs = lower price." },
+  { q: "Why is MOXIEMO cheaper than my current tool stack?", a: "We're one platform replacing 4–6 tools. No integrations, no middleware, no complexity. Lower costs = lower price." },
   { q: "What happens to my data if I cancel?", a: "You export everything (subscribers, content, analytics) before canceling. Your data is always yours. We delete it within 30 days of account closure." },
   { q: "Can I switch plans?", a: "Yes, anytime. Upgrade immediately. Downgrade at next billing cycle. Prorated automatically." },
   { q: "Is there a free trial?", a: "The discovery is free — no credit card required. You see your complete strategy foundation before deciding. Better than a generic trial." },
@@ -136,7 +136,7 @@ export default function Pricing() {
             <Shield className="h-7 w-7 text-accent" />
           </div>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Zero-risk 30-day guarantee.</h2>
-          <p className="text-muted-foreground font-light leading-relaxed mb-3">Try MOXIE for 30 days. Complete the discovery. Generate content. Publish it. If we don't save you 10+ hours, create strategy that sounds like you, and simplify your workflow — full refund. No hoops.</p>
+          <p className="text-muted-foreground font-light leading-relaxed mb-3">Try MOXIEMO for 30 days. Complete the discovery. Generate content. Publish it. If we don't save you 10+ hours, create strategy that sounds like you, and simplify your workflow — full refund. No hoops.</p>
           <p className="text-sm text-muted-foreground font-light italic">Most founders who complete Discovery never look back. Your strategy is yours to keep — regardless.</p>
         </section>
 

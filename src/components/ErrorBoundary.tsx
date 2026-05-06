@@ -17,7 +17,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: unknown) {
-    console.error("[MOXIE Error Boundary]", error, info);
+    console.error("[MOXIEMO Error Boundary]", error, info);
   }
 
   render() {
@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <div className="text-5xl mb-4">⚠️</div>
           <h2 className="font-display text-2xl mb-2">Something went wrong</h2>
           <p className="text-muted-foreground mb-6 max-w-md">
-            This section hit an error. The rest of MOXIE is still working.
+            This section hit an error. The rest of MOXIEMO is still working.
           </p>
           <button
             onClick={() => this.setState({ hasError: false, error: undefined })}

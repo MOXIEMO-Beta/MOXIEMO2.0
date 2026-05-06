@@ -103,7 +103,7 @@ export function WaitlistForm() {
           Founding members
         </div>
         <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
-          Be a MOXIE Founding Member
+          Be a MOXIEMO Founding Member
         </h2>
         <p className="text-muted-foreground text-base md:text-lg leading-relaxed max-w-lg mx-auto">
           Join the beta and get full platform access — free, forever. We're personally onboarding every founding member with a 1:1 kickoff call.
@@ -232,7 +232,7 @@ export function WaitlistForm() {
         {error === "generic" && (
           <p className="text-sm text-center text-destructive">
             Something went wrong — please try again or email us at{" "}
-            <a href="mailto:questions@buildwithmoxie.co" className="underline underline-offset-2">questions@buildwithmoxie.co</a>
+            <a href="mailto:questions@buildwithmoxiemo.com" className="underline underline-offset-2">questions@buildwithmoxiemo.com</a>
           </p>
         )}
 

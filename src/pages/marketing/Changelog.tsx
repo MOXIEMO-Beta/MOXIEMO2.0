@@ -33,7 +33,7 @@ const entries: Entry[] = [
     date: "MAY 3, 2026",
     tag: "Improvement",
     headline: "The Content page got a complete redesign — meet the Creative Desk.",
-    body: "The old Content page was a generic \"generate a post\" form with no personality. We rebuilt it as the Creative Desk — your unstructured creative space for ad-hoc content that isn't tied to a campaign or a schedule. It now greets you by name, shows your content pillars as clickable chips, and generates content that actually anchors to your strategy. The output area has three actions (Copy, Save to Drafts, Add to Queue) and a refine input so you can tell MOXIE what to adjust before you publish anything. This is the page you'll live in when inspiration hits.",
+    body: "The old Content page was a generic \"generate a post\" form with no personality. We rebuilt it as the Creative Desk — your unstructured creative space for ad-hoc content that isn't tied to a campaign or a schedule. It now greets you by name, shows your content pillars as clickable chips, and generates content that actually anchors to your strategy. The output area has three actions (Copy, Save to Drafts, Add to Queue) and a refine input so you can tell MOXIEMO what to adjust before you publish anything. This is the page you'll live in when inspiration hits.",
     closing: "— Karee",
   },
   {
@@ -48,27 +48,27 @@ const entries: Entry[] = [
     tag: "Bug Fix",
     headline: "Email compose was rendering raw JSON. That's fixed.",
     body: "If you tried to generate an email today and saw something like `json { \"subject\": \"...\" }` dumped into the body editor — that was us, not you. The AI was returning a JSON object and we were injecting the raw string directly into the rich text area instead of parsing it. We added a client-side unwrap so the content renders correctly now. The subject line populates the subject field, the body renders as formatted paragraphs, and the editor is fully usable. We're sorry it shipped that way. It's fixed.",
-    closing: "— The MOXIE team",
+    closing: "— The MOXIEMO team",
   },
   {
     date: "MAY 2, 2026",
     tag: "Improvement",
     headline: "Strategy generation now streams instead of crashing.",
     body: "We had a serious problem: strategy generation was timing out after 150 seconds and returning a blank screen. You'd go through all 16 Discovery questions, watch the loading spinner for two minutes, get an error, and lose everything. That was unacceptable. We rebuilt synthesize-strategy from a blocking request to a streaming response — the same way Discovery streams questions. It now reads your answers directly from the database (not from what the client sends), streams the strategy as it builds, and saves your answers before Anthropic is even called so nothing gets lost. If it still times out for any reason, your answers are safe and there's a retry button. No more blank screens.",
-    closing: "— The MOXIE team",
+    closing: "— The MOXIEMO team",
   },
   {
     date: "MAY 1, 2026",
     tag: "Bug Fix",
-    headline: "Clicking into the Discovery input no longer restarted MOXIE.",
-    body: "This one was maddening — and I'm sorry it took us this long to catch. When you clicked into the answer textarea on Question 2 of Discovery, MOXIE would immediately start saying \"MOXIE is typing...\" and restart the conversation from the beginning before you could type anything. The root cause: the session-loading effect depended on the entire user object. Supabase fires auth events on focus, which created a new user object reference, which re-ran the effect, which restarted MOXIE. We switched the dependency to the stable user ID string. The effect now fires once when you log in and never again. Click freely.",
-    closing: "— The MOXIE team",
+    headline: "Clicking into the Discovery input no longer restarted MOXIEMO.",
+    body: "This one was maddening — and I'm sorry it took us this long to catch. When you clicked into the answer textarea on Question 2 of Discovery, MOXIEMO would immediately start saying \"MOXIEMO is typing...\" and restart the conversation from the beginning before you could type anything. The root cause: the session-loading effect depended on the entire user object. Supabase fires auth events on focus, which created a new user object reference, which re-ran the effect, which restarted MOXIEMO. We switched the dependency to the stable user ID string. The effect now fires once when you log in and never again. Click freely.",
+    closing: "— The MOXIEMO team",
   },
   {
     date: "APRIL 30, 2026",
     tag: "Coming Soon",
-    headline: "Building with MOXIE — the blog is coming.",
-    body: "We're building a blog and we're calling it Building with MOXIE. It will be strategy, content, founder stories, and honest takes on AI marketing — written for expertise-based founders who are building real businesses in the messy middle. No content marketing fluff. No SEO-bait listicles. Just useful things worth reading. The first issue will go to our founding members first. If you want to be notified the moment it drops, there's an email capture on the blog page. We'll write something worth your time.",
+    headline: "Building with MOXIEMO — the blog is coming.",
+    body: "We're building a blog and we're calling it Building with MOXIEMO. It will be strategy, content, founder stories, and honest takes on AI marketing — written for expertise-based founders who are building real businesses in the messy middle. No content marketing fluff. No SEO-bait listicles. Just useful things worth reading. The first issue will go to our founding members first. If you want to be notified the moment it drops, there's an email capture on the blog page. We'll write something worth your time.",
     closing: "— Karee",
   },
 ];
@@ -101,10 +101,10 @@ export default function Changelog() {
             Building in public.
           </h1>
           <p className="text-lg text-muted-foreground max-w-[560px] mx-auto leading-relaxed">
-            Every update, fix, improvement, and honest reflection from the team building MOXIE. No corporate spin. No marketing gloss. Just what we shipped, what broke, what we learned, and what's coming next.
+            Every update, fix, improvement, and honest reflection from the team building MOXIEMO. No corporate spin. No marketing gloss. Just what we shipped, what broke, what we learned, and what's coming next.
           </p>
           <p className="mt-6 text-sm text-muted-foreground">
-            Updated regularly by Karee and the MOXIE team.
+            Updated regularly by Karee and the MOXIEMO team.
           </p>
           <a
             href={DISCORD_URL}

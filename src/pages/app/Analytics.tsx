@@ -370,7 +370,7 @@ export default function Analytics() {
     return { top, empty };
   }, [pillarChart]);
 
-  // SECTION 7 — MOXIE Insights
+  // SECTION 7 — MOXIEMO Insights
   const insights = useMemo(() => {
     const out: { icon: string; title: string; detail?: string; action?: string; route?: string }[] = [];
     const weeksWithContent = goalEntries.filter(e => (e.posts_published || 0) > 0).length;
@@ -876,19 +876,19 @@ export default function Analytics() {
         )}
       </Card>
 
-      {/* SECTION 7 — MOXIE Insights */}
+      {/* SECTION 7 — MOXIEMO Insights */}
       <Card className="p-6 border-border shadow-soft mb-10">
         <div className="mb-4 flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-accent" />
           <div>
-            <h2 className="font-display text-2xl">MOXIE Insights</h2>
+            <h2 className="font-display text-2xl">MOXIEMO Insights</h2>
             <p className="text-sm text-muted-foreground">What your data is telling you</p>
           </div>
         </div>
 
         {!hasEnoughForInsights ? (
           <div className="p-6 rounded-md bg-muted/40 border border-border text-center">
-            <p className="text-sm mb-3">✨ MOXIE insights unlock after 4 weeks of activity. Keep publishing and logging your goals — your personalized insights will appear here.</p>
+            <p className="text-sm mb-3">✨ MOXIEMO insights unlock after 4 weeks of activity. Keep publishing and logging your goals — your personalized insights will appear here.</p>
             <div className="max-w-xs mx-auto">
               <div className="text-xs text-muted-foreground mb-1">{weeksWithActivity} / 4 weeks with activity</div>
               <div className="h-2 w-full bg-muted rounded-full overflow-hidden">

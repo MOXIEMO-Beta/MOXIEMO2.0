@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const settings = (profile?.email_settings as Record<string, string> | null) || {};
-    const from_name = settings.from_name || profile?.full_name || "MOXIE";
+    const from_name = settings.from_name || profile?.full_name || "MOXIEMO";
     const from_email = settings.from_email;
     const reply_to = settings.reply_to || from_email;
 
@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY missing");
 
-    const fromHeader = `${from_name} <hello@mail.buildwithmoxie.co>`;
+    const fromHeader = `${from_name} <hello@mail.buildwithmoxiemo.com>`;
 
     const resendPayload = {
       from: fromHeader,

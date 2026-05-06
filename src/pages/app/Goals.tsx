@@ -151,7 +151,7 @@ export default function Goals() {
           {!hasStrategy && (
             <Button asChild variant="default" className="mt-4">
               <Link to="/app/discovery">
-                <Sparkles className="h-4 w-4 mr-2" /> Start MOXIE Discovery
+                <Sparkles className="h-4 w-4 mr-2" /> Start MOXIEMO Discovery
               </Link>
             </Button>
           )}
