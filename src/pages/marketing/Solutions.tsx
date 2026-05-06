@@ -5,6 +5,8 @@ import { ArrowRight } from "lucide-react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { StatsBar } from "@/components/StatsBar";
+import { useState } from "react";
+import { Plus, Minus } from "lucide-react";
 
 const profiles = [
   {
@@ -40,6 +42,132 @@ const scenarios = [
   { t: "The ROI uncertainty problem", before: "$800/mo on tools, 20 hours/week, no idea if any of it works. Discovery calls feel random.", after: "Define YOUR success metric in discovery. Get attribution + ROI tied to real business outcomes." },
   { t: "The scale-without-chaos problem", before: "To grow $750K → $1.5M you'd need 40-hour marketing weeks. CMO costs $120K. Agencies $5K/mo.", after: "Same 2 hours/week at $600K or $1.5M. The system scales — you don't have to." },
 ];
+
+type FaqItem = { q: string; a: string };
+type FaqGroup = { label: string; items: FaqItem[] };
+
+const faqGroups: FaqGroup[] = [
+  {
+    label: "How it works",
+    items: [
+      { q: "How does MOXIE Discovery actually work?", a: "MOXIE Discovery is a guided AI conversation — not a form, not a quiz. MOXIE asks you 16 questions about your business: who you serve, the transformation you provide, your voice, your goals, and your biggest marketing challenges. You answer in your own words, as much or as little detail as you want. The whole conversation takes about 20 minutes. When you're done, MOXIE synthesizes everything into your complete marketing strategy — positioning statement, content pillars, voice guidelines, channel plan, and success metrics. It's the strategic work most founders spend $5K–$10K on with a consultant, done in under half an hour." },
+      { q: "How long does it take to get set up?", a: "Most founders are fully set up and generating their first content within 45 minutes of signing up. Discovery takes 20 minutes. Strategy review takes 5–10 minutes. Your first piece of content takes another 5 minutes. There's no onboarding call required, no data migration on day one, and no technical setup. You just answer the questions and MOXIE does the rest." },
+      { q: "What happens after I complete Discovery?", a: "MOXIE synthesizes your answers into your Marketing Foundation — a complete strategy document that lives inside the platform and powers everything else. From there you can review and edit your strategy, generate your first batch of content, build your first campaign, set up your content calendar, and connect your social accounts. Every tool inside MOXIE already knows your strategy, so everything you generate from that point forward is anchored to your positioning, voice, and goals — automatically." },
+    ],
+  },
+  {
+    label: "The AI angle",
+    items: [
+      { q: "Will the content actually sound like me or will it sound like AI?", a: "This is the most important question — and the honest answer is: it depends on how much you put into Discovery. MOXIE is specifically built to prevent AI slop. Before any AI touches your content, it reads your full strategy — your voice attributes, your ideal client, your positioning, your content pillars, and the exact language you used in your Discovery answers. The more specific you are in Discovery, the more your content sounds like you. Founders who answer in detail consistently say the output sounds like a well-briefed version of themselves. We also built in an edit-and-refine loop so you can adjust any output with a single instruction before publishing." },
+      { q: "Do I need to know anything about AI to use MOXIE?", a: "Not even slightly. MOXIE is built for operators, not engineers. You don't configure anything, you don't write prompts, and you don't need to understand how the AI works. You bring the idea — a topic, a client story, a hot take — and MOXIE shapes it into content. The only thing you need to do is review, edit if you want to, and approve. That's it." },
+      { q: "What AI does MOXIE use?", a: "MOXIE is powered by Claude, built by Anthropic — one of the leading AI safety companies in the world. We chose Claude specifically because of its strength in nuanced, voice-accurate writing and its commitment to responsible AI. Your Discovery responses and strategy data are used only to generate your content — we do not use your data to train AI models." },
+    ],
+  },
+  {
+    label: "Practical concerns",
+    items: [
+      { q: "What tools does MOXIE replace?", a: "For most founders in the $500K–$2M range, MOXIE replaces 4–6 tools they're currently paying for separately. Typically: a content scheduling tool (Buffer, Later, Hootsuite), an email marketing platform (ConvertKit, Mailchimp, ActiveCampaign), a content planning tool (Notion, Airtable, or a spreadsheet), a social publishing tool, and often a strategy consultant or fractional CMO engagement. The average founder saves $300–$600/month in tool costs alone — before counting the 18+ hours a week they get back." },
+      { q: "Do I have to cancel my other tools right away?", a: "No — and we actually recommend against it. Run MOXIE alongside your current stack for your first 30 days. Get comfortable with the platform, generate your first month of content, and see what it replaces in practice. Most founders find they can cut 3–4 tools after the first month once they've confirmed MOXIE covers what they need. We'd rather you make that decision with confidence than feel pressured to cancel everything on day one." },
+      { q: "Can I edit the content MOXIE generates?", a: "Yes — always. Every piece of content MOXIE generates lands in a fully editable rich text area before it goes anywhere. You can rewrite sentences, change the tone, add a personal story, or use the inline refine tool to give MOXIE a single instruction like \"make this shorter\" or \"add a question at the end.\" Nothing publishes without your approval. You are always the final editor." },
+      { q: "What if I want to change my strategy later?", a: "Your strategy is a living document, not a locked PDF. You can edit any section of your Marketing Foundation at any time — your positioning statement, your content pillars, your ideal client, your voice attributes. When you update your strategy, all future content generation automatically reflects the changes. You can also run a full Discovery refresh anytime you want a complete strategy reset — useful after a pivot, a new offer launch, or a significant shift in your business." },
+    ],
+  },
+  {
+    label: "Pricing & commitment",
+    items: [
+      { q: "What does founding member access include?", a: "Founding members get full access to MOXIE's Foundation tier — free forever. That includes MOXIE Discovery, your complete Marketing Foundation, content generation, Marketing Planner, email marketing, social publishing, and every feature at the Foundation level we ship going forward. As MOXIE grows and we build out expanded modules — advanced campaigns, deeper analytics, team collaboration, and more — those will live in paid tiers. Founding members get first access to every new feature and locked-in founding member pricing on any upgrade. You'll never pay for what you have today — and you'll always pay less than anyone who joins after you." },
+      { q: "Is there a contract or can I cancel anytime?", a: "No contracts, ever. Paid plans are month-to-month and you can cancel anytime from your account settings — no fees, no friction, no calls required. For founding members on free Foundation access, there's nothing to cancel. Your free tier simply continues. We believe MOXIE should earn your continued use every month, not trap you into staying." },
+      { q: "What happens when the beta ends?", a: "Your Foundation tier access stays free permanently — that's the founding member promise, full stop. When we move out of beta, new users will pay standard pricing. Founding members who want access to expanded Growth or Scale features will have first access and locked-in founding member rates — significantly below what new users pay. The beta period is also where you shape what we build. We're already running an active Discord community for founding members — bug reports, feature requests, early access drops, and direct conversations with Karee about what comes next. You're not just getting a tool. You're building it with us." },
+    ],
+  },
+];
+
+function FaqSection() {
+  const [openKey, setOpenKey] = useState<string>("0-0");
+  return (
+    <section className="bg-white" style={{ padding: "80px 0" }}>
+      <div className="mx-auto px-6" style={{ maxWidth: 860 }}>
+        <div className="text-center mb-12">
+          <div className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">
+            Frequently asked questions
+          </div>
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-4 leading-[1.1]">
+            Everything you want to know<br />before you get started.
+          </h2>
+          <p className="text-muted-foreground mx-auto" style={{ maxWidth: 560, fontSize: 16 }}>
+            No fluff. No corporate non-answers. Just straight answers to the questions we hear every week.
+          </p>
+        </div>
+
+        <div className="space-y-10">
+          {faqGroups.map((group, gi) => (
+            <div key={group.label}>
+              <div
+                className="font-bold text-foreground uppercase mb-3 pl-3"
+                style={{
+                  fontSize: 13,
+                  letterSpacing: "2px",
+                  borderLeft: "3px solid #ff6b6b",
+                }}
+              >
+                {group.label}
+              </div>
+              <div>
+                {group.items.map((item, ii) => {
+                  const key = `${gi}-${ii}`;
+                  const isOpen = openKey === key;
+                  return (
+                    <div key={key} style={{ borderBottom: "1px solid #eee" }}>
+                      <button
+                        type="button"
+                        onClick={() => setOpenKey(isOpen ? "" : key)}
+                        className="w-full flex items-center justify-between text-left py-5"
+                      >
+                        <span className="font-bold text-foreground pr-6" style={{ fontSize: 17 }}>
+                          {item.q}
+                        </span>
+                        {isOpen ? (
+                          <Minus className="shrink-0" style={{ color: "#ff6b6b" }} size={20} />
+                        ) : (
+                          <Plus className="shrink-0" style={{ color: "#ff6b6b" }} size={20} />
+                        )}
+                      </button>
+                      <div
+                        style={{
+                          maxHeight: isOpen ? 800 : 0,
+                          overflow: "hidden",
+                          transition: "max-height 300ms ease",
+                        }}
+                      >
+                        <div
+                          className="text-muted-foreground"
+                          style={{ fontSize: 16, lineHeight: 1.8, padding: "16px 0 24px 0" }}
+                        >
+                          {item.a}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="text-center" style={{ marginTop: 40 }}>
+          <p className="text-muted-foreground mb-2">Still have questions? We answer personally.</p>
+          <a
+            href="mailto:hello@buildwithmoxie.co"
+            className="font-semibold hover:underline"
+            style={{ color: "#ff6b6b" }}
+          >
+            Email us at hello@buildwithmoxie.co →
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function Solutions() {
   return (
@@ -115,6 +243,7 @@ export default function Solutions() {
         </section>
         </div>
       </main>
+      <FaqSection />
       <section className="py-[60px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
           <StatsBar />
