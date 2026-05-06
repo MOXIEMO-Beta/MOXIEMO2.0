@@ -102,7 +102,7 @@ export default function Pricing() {
                   <p className="text-xs"><span className="text-muted-foreground">Replaces:</span> <span className="font-medium">{t.replaces}</span></p>
                   <p className="text-xs"><span className="text-muted-foreground">Savings:</span> <span className="font-medium text-accent">{t.savings}</span></p>
                 </div>
-                <Button asChild className={`w-full h-11 rounded-full font-semibold ${t.featured ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-foreground hover:bg-foreground/90 text-background"}`}>
+                <Button asChild className={`w-full h-11 rounded-full font-semibold ${t.featured ? "bg-accent hover:bg-accent/90 text-accent-foreground" : (t as any).coralCta ? "text-white hover:opacity-90" : "bg-foreground hover:bg-foreground/90 text-background"}`} style={(t as any).coralCta ? { backgroundColor: "#ff6b6b" } : undefined}>
                   <Link to="/auth">{t.cta}</Link>
                 </Button>
               </Card>
