@@ -15,33 +15,33 @@ export function SiteFooter() {
           </div>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4">Product</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/platform" className="hover:text-foreground">Platform</Link></li>
-              <li><Link to="/solutions" className="hover:text-foreground">Solutions</Link></li>
-              <li><Link to="/why-moxie" className="hover:text-foreground">Why MOXIE</Link></li>
-              <li><Link to="/pricing" className="hover:text-foreground">Pricing</Link></li>
-              <li><Link to="/community" className="hover:text-foreground">Community</Link></li>
-              <li><Link to="/about" className="hover:text-foreground">About</Link></li>
+            <h4 className="moxie-footer-heading mb-4">Product</h4>
+            <ul className="space-y-2">
+              <li><Link to="/platform" className="moxie-footer-link">Platform</Link></li>
+              <li><Link to="/solutions" className="moxie-footer-link">Solutions</Link></li>
+              <li><Link to="/why-moxie" className="moxie-footer-link">Why MOXIE</Link></li>
+              <li><Link to="/pricing" className="moxie-footer-link">Pricing</Link></li>
+              <li><Link to="/community" className="moxie-footer-link">Community</Link></li>
+              <li><Link to="/about" className="moxie-footer-link">About</Link></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4">Resources</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/blog" className="hover:text-foreground">Building with MOXIE</Link></li>
-              <li><Link to="/changelog" className="hover:text-foreground">Changelog</Link></li>
-              <li><Link to="/resources" className="hover:text-foreground">Resources</Link></li>
-              <li><a href="mailto:hello@buildwithmoxie.co" className="hover:text-foreground">Contact</a></li>
+            <h4 className="moxie-footer-heading mb-4">Resources</h4>
+            <ul className="space-y-2">
+              <li><Link to="/blog" className="moxie-footer-link">Building with MOXIE</Link></li>
+              <li><Link to="/changelog" className="moxie-footer-link">Changelog</Link></li>
+              <li><Link to="/resources" className="moxie-footer-link">Resources</Link></li>
+              <li><a href="mailto:hello@buildwithmoxie.co" className="moxie-footer-link">Contact</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4">Legal</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link to="/privacy" className="hover:text-foreground">Privacy</Link></li>
-              <li><Link to="/terms" className="hover:text-foreground">Terms</Link></li>
-              <li><Link to="/data-deletion" className="hover:text-foreground">Data Deletion</Link></li>
+            <h4 className="moxie-footer-heading mb-4">Legal</h4>
+            <ul className="space-y-2">
+              <li><Link to="/privacy" className="moxie-footer-link">Privacy</Link></li>
+              <li><Link to="/terms" className="moxie-footer-link">Terms</Link></li>
+              <li><Link to="/data-deletion" className="moxie-footer-link">Data Deletion</Link></li>
             </ul>
           </div>
         </div>
@@ -54,7 +54,7 @@ export function SiteFooter() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
-              className="hover:text-foreground"
+              className="moxie-footer-social"
             >
               <Instagram className="h-4 w-4" />
             </a>
@@ -63,7 +63,7 @@ export function SiteFooter() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
-              className="hover:text-foreground"
+              className="moxie-footer-social"
             >
               <Facebook className="h-4 w-4" />
             </a>
@@ -72,7 +72,7 @@ export function SiteFooter() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"
-              className="hover:text-foreground"
+              className="moxie-footer-social"
             >
               <Linkedin className="h-4 w-4" />
             </a>
