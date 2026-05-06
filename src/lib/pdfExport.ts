@@ -11,7 +11,7 @@ export function exportViaPrint(
   recipientName: string = 'Founder',
   containerId: string = 'moxie-strategy-report'
 ) {
-  const title = `MOXIE Strategic Report — ${recipientName} — ${formatFilenameDate()}`;
+  const title = `MOXIEMO Strategic Report — ${recipientName} — ${formatFilenameDate()}`;
   const prevTitle = document.title;
   document.title = title;
 
@@ -55,7 +55,7 @@ export async function exportViaHTML2PDF(
 
   const element = document.getElementById(containerId);
   if (!element) {
-    console.error(`[MOXIE PDF] Element #${containerId} not found.`);
+    console.error(`[MOXIEMO PDF] Element #${containerId} not found.`);
     return;
   }
 
@@ -70,7 +70,7 @@ export async function exportViaHTML2PDF(
   // Force layout flush before measuring
   void element.offsetHeight;
   const rect = element.getBoundingClientRect();
-  console.log('[MOXIE PDF DEBUG] #moxie-pdf-report bounding box:', {
+  console.log('[MOXIEMO PDF DEBUG] #moxie-pdf-report bounding box:', {
     width: rect.width,
     height: rect.height,
     top: rect.top,
@@ -81,7 +81,7 @@ export async function exportViaHTML2PDF(
     innerHTMLLength: element.innerHTML.length,
   });
   const pages = element.querySelectorAll('.report-page');
-  console.log(`[MOXIE PDF DEBUG] Found ${pages.length} .report-page elements`);
+  console.log(`[MOXIEMO PDF DEBUG] Found ${pages.length} .report-page elements`);
   pages.forEach((p, i) => {
     const pr = (p as HTMLElement).getBoundingClientRect();
     console.log(`  page[${i}]`, { width: pr.width, height: pr.height, top: pr.top });

@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     const settings = (profile?.email_settings as Record<string, string> | null) || {};
-    const from_name = settings.from_name || profile?.full_name || "MOXIE";
+    const from_name = settings.from_name || profile?.full_name || "MOXIEMO";
     const from_email = settings.from_email;
     const reply_to = settings.reply_to || from_email;
 

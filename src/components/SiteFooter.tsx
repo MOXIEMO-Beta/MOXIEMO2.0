@@ -19,7 +19,7 @@ export function SiteFooter() {
             <ul className="space-y-2">
               <li><Link to="/platform" className="moxie-footer-link">Platform</Link></li>
               <li><Link to="/solutions" className="moxie-footer-link">Solutions</Link></li>
-              <li><Link to="/why-moxie" className="moxie-footer-link">Why MOXIE</Link></li>
+              <li><Link to="/why-moxie" className="moxie-footer-link">Why MOXIEMO</Link></li>
               <li><Link to="/pricing" className="moxie-footer-link">Pricing</Link></li>
               <li><Link to="/community" className="moxie-footer-link">Community</Link></li>
               <li><Link to="/about" className="moxie-footer-link">About</Link></li>
@@ -29,7 +29,7 @@ export function SiteFooter() {
           <div>
             <h4 className="moxie-footer-heading mb-4">Resources</h4>
             <ul className="space-y-2">
-              <li><Link to="/blog" className="moxie-footer-link">Building with MOXIE</Link></li>
+              <li><Link to="/blog" className="moxie-footer-link">Building with MOXIEMO</Link></li>
               <li><Link to="/changelog" className="moxie-footer-link">Changelog</Link></li>
               <li><Link to="/resources" className="moxie-footer-link">Resources</Link></li>
               <li><a href="mailto:hello@buildwithmoxie.co" className="moxie-footer-link">Contact</a></li>
@@ -47,7 +47,7 @@ export function SiteFooter() {
         </div>
 
         <div className="border-t border-border pt-6 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">© 2026 MOXIE. One platform. Confident marketing.</p>
+          <p className="text-xs text-muted-foreground">© 2026 MOXIEMO. One platform. Confident marketing.</p>
           <div className="flex items-center gap-4 text-muted-foreground">
             <a
               href="https://www.instagram.com/buildwithmoxie"

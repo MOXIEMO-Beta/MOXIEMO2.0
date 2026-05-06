@@ -5,17 +5,17 @@ export default function Terms() {
     <LegalPage title="Terms of Service" lastUpdated="Last updated: May 4, 2026">
       <LegalSection heading="Agreement to Terms">
         <p>
-          These Terms of Service ("Terms") govern your access to and use of the MOXIE
-          platform operated by KLMG-US ("MOXIE," "we," "our," or "us"). By creating an
+          These Terms of Service ("Terms") govern your access to and use of the MOXIEMO
+          platform operated by KLMG-US ("MOXIEMO," "we," "our," or "us"). By creating an
           account or using the platform, you agree to these Terms. If you do not agree, do
-          not use MOXIE.
+          not use MOXIEMO.
         </p>
       </LegalSection>
       <LegalDivider />
       <LegalSection heading="Eligibility">
         <p>
           You must be at least 18 years old and capable of entering a legally binding
-          contract to use MOXIE. By using the platform, you represent that you meet these
+          contract to use MOXIEMO. By using the platform, you represent that you meet these
           requirements.
         </p>
       </LegalSection>
@@ -37,7 +37,7 @@ export default function Terms() {
       <LegalDivider />
       <LegalSection heading="Platform License">
         <p>
-          Subject to these Terms, MOXIE grants you a limited, non-exclusive, non-transferable,
+          Subject to these Terms, MOXIEMO grants you a limited, non-exclusive, non-transferable,
           revocable license to access and use the platform for your internal business
           purposes. This license does not include the right to:
         </p>
@@ -51,9 +51,9 @@ export default function Terms() {
       <LegalDivider />
       <LegalSection heading="Your Content">
         <p>
-          You retain full ownership of the content you create using MOXIE — your Discovery
+          You retain full ownership of the content you create using MOXIEMO — your Discovery
           responses, generated posts, emails, campaigns, and strategies. By using the
-          platform, you grant MOXIE a limited license to store, process, and display your
+          platform, you grant MOXIEMO a limited license to store, process, and display your
           content solely to provide the service to you.
         </p>
         <p>
@@ -63,7 +63,7 @@ export default function Terms() {
       </LegalSection>
       <LegalDivider />
       <LegalSection heading="Acceptable Use">
-        <p>You agree not to use MOXIE to:</p>
+        <p>You agree not to use MOXIEMO to:</p>
         <LegalList items={[
           "Generate spam, misleading content, or content that violates applicable laws",
           "Harass, defame, or harm any person or group",
@@ -79,13 +79,13 @@ export default function Terms() {
       <LegalDivider />
       <LegalSection heading="AI-Generated Content">
         <p>
-          MOXIE uses AI to generate marketing content, strategies, and recommendations. You
+          MOXIEMO uses AI to generate marketing content, strategies, and recommendations. You
           acknowledge that:
         </p>
         <LegalList items={[
           "AI-generated content may not always be accurate, complete, or appropriate for your specific situation",
           "You are responsible for reviewing and approving all content before publishing or using it",
-          "MOXIE does not guarantee specific results from using AI-generated content",
+          "MOXIEMO does not guarantee specific results from using AI-generated content",
           "You should not rely on AI-generated content as legal, financial, or professional advice",
         ]} />
       </LegalSection>
@@ -116,7 +116,7 @@ export default function Terms() {
       <LegalDivider />
       <LegalSection heading="Intellectual Property">
         <p>
-          The MOXIE platform, including its design, code, brand, AI systems, and methodology,
+          The MOXIEMO platform, including its design, code, brand, AI systems, and methodology,
           is owned by KLMG-US and protected by intellectual property laws. Nothing in these
           Terms transfers ownership of our intellectual property to you.
         </p>
@@ -133,7 +133,7 @@ export default function Terms() {
       <LegalDivider />
       <LegalSection heading="Limitation of Liability">
         <p className="uppercase text-[15px]">
-          To the maximum extent permitted by law, MOXIE shall not be liable for any indirect,
+          To the maximum extent permitted by law, MOXIEMO shall not be liable for any indirect,
           incidental, special, consequential, or punitive damages arising from your use of
           the platform. Our total liability to you shall not exceed the amount you paid to us
           in the 12 months preceding the claim.
@@ -142,7 +142,7 @@ export default function Terms() {
       <LegalDivider />
       <LegalSection heading="Indemnification">
         <p>
-          You agree to indemnify and hold harmless MOXIE and its officers, directors,
+          You agree to indemnify and hold harmless MOXIEMO and its officers, directors,
           employees, and agents from any claims, damages, or expenses (including attorney's
           fees) arising from your use of the platform, your content, or your violation of
           these Terms.

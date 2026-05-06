@@ -25,7 +25,7 @@ function buildMeta(profile: any, strategy: any) {
     businessName:  profile?.business_name ?? profile?.full_name ?? 'Your Business',
     email:         profile?.email         ?? '',
     date:          formatDate(strategy.created_at ? new Date(strategy.created_at) : new Date()),
-    reportTitle:   'Chief MOXIE Officer Strategic Report',
+    reportTitle:   'Chief MOXIEMO Officer Strategic Report',
     confidential:  true,
     strengthScore: strategy.strength_score ?? null,
   };

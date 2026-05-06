@@ -244,7 +244,7 @@ export default function Discovery() {
           try {
             const parsed = JSON.parse(data);
             if (parsed?.type === "error") {
-              streamError = parsed.message || "MOXIE had a moment — tap Send again to continue.";
+              streamError = parsed.message || "MOXIEMO had a moment — tap Send again to continue.";
               continue;
             }
             const chunk = parsed?.choices?.[0]?.delta?.content ?? "";
@@ -292,9 +292,9 @@ export default function Discovery() {
         });
       }
       const raw = typeof e?.message === "string" ? e.message : "";
-      const message = raw.includes("MOXIE")
+      const message = raw.includes("MOXIEMO")
         ? raw
-        : "MOXIE is thinking — just a moment...";
+        : "MOXIEMO is thinking — just a moment...";
       setInlineError(message);
       // Auto-retry after 3s for the "thinking" message, no user tap required.
       if (message.includes("thinking") && lastHistoryRef.current && sid) {
@@ -345,7 +345,7 @@ export default function Discovery() {
       console.error("pre-synth persist failed:", saveErr);
     }
     try {
-      const transcript = history.map((m) => `${m.role === "user" ? "USER" : "MOXIE"}: ${m.content}`).join("\n\n");
+      const transcript = history.map((m) => `${m.role === "user" ? "USER" : "MOXIEMO"}: ${m.content}`).join("\n\n");
       // Extract the optional Q14 (revenue) and Q15 (challenge) answers from the transcript.
       const optional = extractOptionalAnswers(history);
 
@@ -458,9 +458,9 @@ export default function Discovery() {
           <div className="max-w-3xl mx-auto flex items-start gap-3">
             <span className="text-xl">🎉</span>
             <div className="flex-1">
-              <p className="font-medium">Welcome to MOXIE{welcomeName ? `, ${welcomeName}` : ""}!</p>
+              <p className="font-medium">Welcome to MOXIEMO{welcomeName ? `, ${welcomeName}` : ""}!</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Your account is ready. The best place to start is your marketing strategy — everything in MOXIE flows from here. Let's build it together.
+                Your account is ready. The best place to start is your marketing strategy — everything in MOXIEMO flows from here. Let's build it together.
               </p>
             </div>
             <button onClick={dismissWelcome} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss">
@@ -474,7 +474,7 @@ export default function Discovery() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <Sparkles className="h-4 w-4 text-accent" />
-            <span className="text-sm font-medium">MOXIE Discovery</span>
+            <span className="text-sm font-medium">MOXIEMO Discovery</span>
             <span className="text-xs text-muted-foreground">Section {currentSection} of {SECTIONS.length} — {SECTIONS[currentSection - 1]}</span>
           </div>
           <div className="flex items-center gap-3">
@@ -492,7 +492,7 @@ export default function Discovery() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Restart discovery?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This clears your current conversation and starts a fresh discovery using the latest MOXIE coaching flow. Your existing strategy (if any) won't be deleted until you complete and synthesize a new one.
+                    This clears your current conversation and starts a fresh discovery using the latest MOXIEMO coaching flow. Your existing strategy (if any) won't be deleted until you complete and synthesize a new one.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -532,7 +532,7 @@ export default function Discovery() {
             <div className="flex items-center gap-3 justify-center text-sm text-muted-foreground py-6">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />
               <span className="inline-flex items-center gap-1">
-                MOXIE is building your strategy
+                MOXIEMO is building your strategy
                 <span className="inline-flex gap-0.5 ml-1">
                   <span className="h-1 w-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
                   <span className="h-1 w-1 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -586,7 +586,7 @@ export default function Discovery() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                placeholder={loading ? "MOXIE is responding…" : "Type your answer… (Enter to send, Shift+Enter for new line)"}
+                placeholder={loading ? "MOXIEMO is responding…" : "Type your answer… (Enter to send, Shift+Enter for new line)"}
                 disabled={loading}
                 rows={1}
                 className="resize-none border-0 bg-transparent focus-visible:ring-0 min-h-[44px] max-h-40 text-[15px]"
@@ -595,7 +595,7 @@ export default function Discovery() {
                 <ArrowUp className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2 text-center">MOXIE adapts to how you answer. Be as detailed or quick as you like.</p>
+            <p className="text-xs text-muted-foreground mt-2 text-center">MOXIEMO adapts to how you answer. Be as detailed or quick as you like.</p>
           </div>
         </div>
       )}

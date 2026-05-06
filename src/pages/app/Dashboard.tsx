@@ -246,7 +246,7 @@ export default function Dashboard() {
         type: "strategy",
         icon: Compass,
         label: "Complete your strategy",
-        detail: "Everything in MOXIE flows from your strategy",
+        detail: "Everything in MOXIEMO flows from your strategy",
         action: "Start Discovery",
         route: "/app/discovery",
         urgent: true,
@@ -381,7 +381,7 @@ export default function Dashboard() {
   // ---------- setup checklist ----------
   const setupSteps = [
     {
-      label: "Run MOXIE Discovery",
+      label: "Run MOXIEMO Discovery",
       done: discoveryComplete,
       active: !discoveryComplete,
       to: "/app/discovery",
@@ -503,7 +503,7 @@ export default function Dashboard() {
                   Set up your engine.
                 </h2>
                 <p className="text-background/70 text-lg font-light mb-7 max-w-md">
-                  Four steps. About 15-20 minutes total. Then MOXIE runs the rest.
+                  Four steps. About 15-20 minutes total. Then MOXIEMO runs the rest.
                 </p>
                 <div className="flex items-center gap-4 mb-2">
                   <div className="flex-1 h-1.5 rounded-full bg-background/15 overflow-hidden">
@@ -594,7 +594,7 @@ export default function Dashboard() {
               </div>
               <div>
                 <h3 className="font-semibold text-base">Today's focus</h3>
-                <p className="text-xs text-muted-foreground">Priority queue, ranked by MOXIE</p>
+                <p className="text-xs text-muted-foreground">Priority queue, ranked by MOXIEMO</p>
               </div>
             </div>
             <Link to="/app/content" className="text-xs text-accent hover:underline font-medium">
@@ -631,7 +631,7 @@ export default function Dashboard() {
             <EmptyState
               icon={FileText}
               title="You're all caught up"
-              body="Nothing urgent right now. MOXIE will surface items here as they come up."
+              body="Nothing urgent right now. MOXIEMO will surface items here as they come up."
               cta={{ to: "/app/content", label: "Browse content" }}
             />
           )}

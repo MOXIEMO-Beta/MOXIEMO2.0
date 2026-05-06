@@ -3,7 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM = `You are MOXIE's execution-plan synthesizer. You will be given the user's marketing strategy foundation (positioning, audience, voice, channel, capacity, content pillars, brand archetype, goals).
+const SYSTEM = `You are MOXIEMO's execution-plan synthesizer. You will be given the user's marketing strategy foundation (positioning, audience, voice, channel, capacity, content pillars, brand archetype, goals).
 
 Generate a complete EXECUTION PLAN that includes:
 1. Quarterly content themes (3 quarters, 12 weekly topics each, derived from the user's content pillars)

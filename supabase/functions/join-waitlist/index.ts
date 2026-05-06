@@ -61,15 +61,15 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-        from: "Karee at MOXIE <hello@mail.buildwithmoxie.co>",
+        from: "Karee at MOXIEMO <hello@mail.buildwithmoxie.co>",
         reply_to: "karee@studiosbagency.com",
         to: [email],
-        subject: "You're on the MOXIE founding member list",
+        subject: "You're on the MOXIEMO founding member list",
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
             <h1 style="font-size: 22px; margin: 0 0 16px;">Hey ${name}, you're on the list.</h1>
             <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
-              Thanks for your interest in MOXIE. We're personally onboarding every founding member — so the next step is a quick 20-minute call so we can learn about your business and get you set up right.
+              Thanks for your interest in MOXIEMO. We're personally onboarding every founding member — so the next step is a quick 20-minute call so we can learn about your business and get you set up right.
             </p>
             <p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
               Click below to pick a time that works for you:
@@ -82,7 +82,7 @@ serve(async (req) => {
             </p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
             <p style="font-size: 12px; color: #888; line-height: 1.5;">
-              MOXIE · buildwithmoxie.co<br />
+              MOXIEMO · buildwithmoxie.co<br />
               Built by KLMG-US Ltd · Houston, Texas
             </p>
           </div>
@@ -108,7 +108,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-        from: "MOXIE Waitlist <hello@mail.buildwithmoxie.co>",
+        from: "MOXIEMO Waitlist <hello@mail.buildwithmoxie.co>",
         to: ["karee@studiosbagency.com"],
         subject: `New waitlist signup: ${name}`,
         html: `

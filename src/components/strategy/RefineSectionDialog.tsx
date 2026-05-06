@@ -144,7 +144,7 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
                 rows={4}
                 className="text-sm"
               />
-              <p className="text-xs text-muted-foreground mt-2">MOXIE will rewrite the section using your input + the rest of your strategy as context.</p>
+              <p className="text-xs text-muted-foreground mt-2">MOXIEMO will rewrite the section using your input + the rest of your strategy as context.</p>
             </div>
           </div>
         )}

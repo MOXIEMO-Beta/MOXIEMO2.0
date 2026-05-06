@@ -355,7 +355,7 @@ export default function Onboarding() {
 function Step1({ firstName, lastName, setFirstName, setLastName }: any) {
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Welcome to MOXIE. 👋</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">Welcome to MOXIEMO. 👋</h1>
       <p className="text-muted-foreground mt-2">Let's get your account set up. This takes about 2 minutes.</p>
       <h2 className="text-lg font-medium mt-10 mb-4">What's your name?</h2>
       <div className="grid sm:grid-cols-2 gap-4">
@@ -400,7 +400,7 @@ function Step3({ uses, setUses }: any) {
   const toggle = (id: string) => setUses(uses.includes(id) ? uses.filter((u: string) => u !== id) : [...uses, id]);
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">How do you plan to use MOXIE?</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">How do you plan to use MOXIEMO?</h1>
       <p className="text-muted-foreground mt-2">Select all that apply.</p>
       <div className="space-y-2.5 mt-8">
         {USES.map((u) => {
@@ -433,7 +433,7 @@ function Step3({ uses, setUses }: any) {
 function Step4({ referral, setReferral, referralOther, setReferralOther }: any) {
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">How did you hear about MOXIE?</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">How did you hear about MOXIEMO?</h1>
       <div className="space-y-2 mt-8">
         {REFERRALS.map((r) => (
           <label key={r} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition", referral === r ? "border-accent bg-accent/5" : "border-border hover:border-foreground/20")}>
@@ -453,7 +453,7 @@ function Step5({ website, setWebsite, brandLoading, brandAssets, brandError, fet
   return (
     <div>
       <h1 className="text-3xl font-semibold tracking-tight">Share your website <span className="text-muted-foreground text-xl">(optional)</span></h1>
-      <p className="text-muted-foreground mt-2">MOXIE will try to pull your logo and brand colors automatically.</p>
+      <p className="text-muted-foreground mt-2">MOXIEMO will try to pull your logo and brand colors automatically.</p>
       <div className="mt-8 flex gap-2">
         <Input placeholder="https://yourwebsite.com" value={website} onChange={(e) => setWebsite(e.target.value)} />
         <Button onClick={fetchBrand} disabled={!website.trim() || brandLoading} variant="outline">
@@ -541,7 +541,7 @@ function Step8({ betaCode, setBetaCode, applyBetaCode, codeChecking, codeError, 
   return (
     <div>
       <h1 className="text-3xl font-semibold tracking-tight">You're almost in.</h1>
-      <p className="text-muted-foreground mt-2">Choose how you'd like to access MOXIE.</p>
+      <p className="text-muted-foreground mt-2">Choose how you'd like to access MOXIEMO.</p>
       <div className="grid md:grid-cols-2 gap-4 mt-8">
         {/* Beta */}
         <div className={cn(

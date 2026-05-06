@@ -44,12 +44,12 @@ export default function About() {
               Ending the tool fragmentation era.
             </h1>
             <p className="text-lg md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-light">
-              MOXIE exists because brilliant entrepreneurs deserve to be strategic leaders — not exhausted system administrators.
+              MOXIEMO exists because brilliant entrepreneurs deserve to be strategic leaders — not exhausted system administrators.
             </p>
           </div>
           <div className="md:col-span-2 order-1 md:order-2">
             <div className="rounded-2xl overflow-hidden border-l-4 border-accent" style={photoShadow}>
-              <img src={kareeHeadshot} alt="Karee Laing, Founder of MOXIE" className="w-full h-auto object-cover" loading="eager" />
+              <img src={kareeHeadshot} alt="Karee Laing, Founder of MOXIEMO" className="w-full h-auto object-cover" loading="eager" />
             </div>
             <p className="text-xs text-muted-foreground mt-3 text-center md:text-left">
               Karee Laing — Founder, Brand Strategist, 4x Entrepreneur
@@ -76,7 +76,7 @@ export default function About() {
               </div>
               <div style={{ marginTop: "12px" }}>
                 <div className="text-foreground" style={{ fontSize: "15px", fontWeight: 400 }}>— Karee Laing</div>
-                <div className="text-muted-foreground" style={{ fontSize: "14px", marginTop: "2px" }}>Founder, MOXIE</div>
+                <div className="text-muted-foreground" style={{ fontSize: "14px", marginTop: "2px" }}>Founder, MOXIEMO</div>
                 <div
                   className="text-accent"
                   style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", marginTop: "10px" }}
@@ -95,7 +95,7 @@ export default function About() {
                 className="text-accent font-bold mb-3 uppercase"
                 style={{ fontSize: "13px", letterSpacing: "2px" }}
               >
-                Why MOXIE exists
+                Why MOXIEMO exists
               </div>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight mb-6">This is personal.</h2>
               <div className="space-y-5 text-muted-foreground font-light leading-relaxed">
@@ -103,8 +103,8 @@ export default function About() {
                 <p>I've spent 14 years in marketing. I should know better. But I was still drowning in tools, building Zapier automations at 11 PM, wondering why marketing felt like IT work instead of strategy. If I was struggling, what about the founders I work with? The ones building real businesses, whether it's coaching practices, consulting firms, or service companies who never signed up to become software administrators.</p>
                 <p>Here's what I kept seeing: Brilliant founders spending 20+ hours a week on marketing operations; from copying content between platforms, troubleshooting integrations, managing subscriptions and zero hours on marketing strategy. No time to think about positioning, building a consistent narrative, or creating content that actually moves the needle. Just managing systems.</p>
                 <p className="text-foreground font-medium">That's the real problem. It's not too many tools, and the issue is that every tool jumps straight to execution without fully asking the strategic questions: Who are you? Who do you serve? What makes you different? What's your actual narrative? You can't build a business that lasts on random posts and duct-taped automations.</p>
-                <p>So, I built MOXIE — your AI CMO. Not another tool to manage, but your actual Chief Marketing Officer. The one who asks the strategic questions, creates your foundation, then executes it consistently so you can get back to building the business you actually started. Because you didn't become a founder to be a system administrator. You became one to build a legacy.</p>
-                <p className="text-foreground font-medium">MOXIE gives you the marketing brain to do it.</p>
+                <p>So, I built MOXIEMO — your AI CMO. Not another tool to manage, but your actual Chief Marketing Officer. The one who asks the strategic questions, creates your foundation, then executes it consistently so you can get back to building the business you actually started. Because you didn't become a founder to be a system administrator. You became one to build a legacy.</p>
+                <p className="text-foreground font-medium">MOXIEMO gives you the marketing brain to do it.</p>
               </div>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function About() {
                 <p className="text-2xl md:text-3xl italic font-light leading-snug mb-6">
                   You're not missing knowledge. You're missing a system.
                 </p>
-                <p className="text-sm text-white/70 font-medium">That's why MOXIE exists.</p>
+                <p className="text-sm text-white/70 font-medium">That's why MOXIEMO exists.</p>
               </div>
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function About() {
             <div className="max-w-3xl mx-auto text-center">
               <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-4">Our mission</div>
               <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight mb-6">We're ending the tool fragmentation era — turning exhausted operators into strategic marketers who actually grow revenue.</h2>
-              <p className="text-background/70 font-light leading-relaxed">In five years, we want "tool fragmentation" to feel as outdated as fax machines. The default answer should be: <em>just use MOXIE.</em></p>
+              <p className="text-background/70 font-light leading-relaxed">In five years, we want "tool fragmentation" to feel as outdated as fax machines. The default answer should be: <em>just use MOXIEMO.</em></p>
             </div>
           </div>
         </section>
@@ -193,7 +193,7 @@ export default function About() {
       <section className="border-t border-border bg-muted/40 py-20">
         <div className="max-w-3xl mx-auto px-6 text-center">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-[1.1]">Ready when you are.</h2>
-          <p className="text-muted-foreground mb-7 text-lg">Start your MOXIE Discovery in under a minute.</p>
+          <p className="text-muted-foreground mb-7 text-lg">Start your MOXIEMO Discovery in under a minute.</p>
           <Button asChild size="lg" className="bg-foreground hover:bg-foreground/90 text-background h-12 px-8 rounded-full font-semibold">
             <Link to="/auth">Get started <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>

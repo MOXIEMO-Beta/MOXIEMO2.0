@@ -64,7 +64,7 @@ Keep everything that doesn't need to change. Only modify what the instruction as
 Maintain the exact same voice, tone, and platform format.`
         : actionInstructions[action];
 
-    const prompt = `You are MOXIE editing a ${platform} post for an expertise-based founder.
+    const prompt = `You are MOXIEMO editing a ${platform} post for an expertise-based founder.
 
 VOICE: ${JSON.stringify(s.voice_attributes ?? [])}
 ANTI-POSITIONING: ${(s.anti_positioning as string) ?? "(not set)"}

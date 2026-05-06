@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { to: "/platform", label: "Platform" },
   { to: "/solutions", label: "Solutions" },
-  { to: "/why-moxie", label: "Why MOXIE" },
+  { to: "/why-moxie", label: "Why MOXIEMO" },
   { to: "/pricing", label: "Pricing" },
   { to: "/community", label: "Community" },
   { to: "/about", label: "About" },

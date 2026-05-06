@@ -185,7 +185,7 @@ export function ChannelsTab() {
               <Sparkles className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <div className="text-xs uppercase tracking-[0.25em] text-accent mb-1">Time savings with MOXIE</div>
+              <div className="text-xs uppercase tracking-[0.25em] text-accent mb-1">Time savings with MOXIEMO</div>
               <h3 className="font-display text-xl tracking-[-0.01em]">Reclaim your week</h3>
             </div>
           </div>

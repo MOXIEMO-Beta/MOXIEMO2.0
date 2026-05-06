@@ -147,7 +147,7 @@ export default function WaitlistAdmin() {
   }
 
   function handleScheduleCall(entry: WaitlistEntry) {
-    const subject = encodeURIComponent("Your MOXIE founding member call");
+    const subject = encodeURIComponent("Your MOXIEMO founding member call");
     const body = encodeURIComponent(
       `Hey ${entry.name.split(" ")[0]}, looking forward to connecting!\n\n` +
       `Here's my calendar to pick a time:\n${ZOOM_LINK}`
@@ -395,7 +395,7 @@ export default function WaitlistAdmin() {
                             ) : <span className="text-muted-foreground">—</span>}
                           </div>
                           <div>
-                            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-0.5">Heard about MOXIE via</div>
+                            <div className="text-xs uppercase tracking-wide text-muted-foreground mb-0.5">Heard about MOXIEMO via</div>
                             <div>{e.referral_source || "—"}</div>
                           </div>
                           <div>

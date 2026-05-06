@@ -70,9 +70,9 @@ export function FeedbackButton() {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>💬 Send feedback to MOXIE</DialogTitle>
+          <DialogTitle>💬 Send feedback to MOXIEMO</DialogTitle>
           <DialogDescription>
-            Help us make MOXIE better. We read every message.
+            Help us make MOXIEMO better. We read every message.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

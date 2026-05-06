@@ -50,13 +50,13 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Karee at MOXIE <hello@mail.buildwithmoxie.co>",
+        from: "Karee at MOXIEMO <hello@mail.buildwithmoxie.co>",
         reply_to: "karee@studiosbagency.com",
         to: [entry.email],
-        subject: "You're in — welcome to MOXIE 🎉",
+        subject: "You're in — welcome to MOXIEMO 🎉",
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
-            <h1 style="font-size: 22px; margin: 0 0 16px;">Welcome to MOXIE, ${entry.name}.</h1>
+            <h1 style="font-size: 22px; margin: 0 0 16px;">Welcome to MOXIEMO, ${entry.name}.</h1>
             <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
               It was great connecting with you. Your founding member access is ready — here's everything you need to get started.
             </p>
@@ -81,7 +81,7 @@ serve(async (req) => {
             <p style="font-size: 15px; margin: 0 0 24px;">— Karee</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
             <p style="font-size: 12px; color: #888; line-height: 1.5;">
-              MOXIE · buildwithmoxie.co<br />
+              MOXIEMO · buildwithmoxie.co<br />
               Built by KLMG-US Ltd · Houston, Texas
             </p>
           </div>

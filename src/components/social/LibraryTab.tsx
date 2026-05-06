@@ -998,7 +998,7 @@ function TemplatesSection({
 
       <section className="space-y-3">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-          MOXIE starter templates
+          MOXIEMO starter templates
         </h3>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {MOXIE_TEMPLATES.map((t) => (
@@ -1006,7 +1006,7 @@ function TemplatesSection({
               key={t.id}
               className="relative flex flex-col overflow-hidden border-t-4 border-t-[#FF6B6B] transition-all hover:shadow-md"
             >
-              <Badge className="absolute right-3 top-3 bg-[#FFF0F0] text-[#E85D5D]">MOXIE</Badge>
+              <Badge className="absolute right-3 top-3 bg-[#FFF0F0] text-[#E85D5D]">MOXIEMO</Badge>
               <div className="flex flex-1 flex-col gap-2 p-4 pt-5">
                 <p className="text-sm font-semibold text-foreground">{t.title}</p>
                 <span className="inline-flex w-fit items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
@@ -1043,14 +1043,14 @@ function InspirationSection({
       <EmptyState
         icon={<Bookmark className="h-10 w-10 text-accent" />}
         title="No inspiration saved yet"
-        subtitle="Save posts that resonate — MOXIE will use them to understand your content style over time."
+        subtitle="Save posts that resonate — MOXIEMO will use them to understand your content style over time."
       />
     );
   }
   return (
     <div className="space-y-4">
       <Card className="bg-[#FFF8F0] p-3 text-sm text-foreground">
-        💡 Tip: Save posts that resonate — MOXIE will use them to understand your content style over time.
+        💡 Tip: Save posts that resonate — MOXIEMO will use them to understand your content style over time.
       </Card>
       <div className="columns-1 gap-4 md:columns-2 lg:columns-3">
         {posts.map((p) => (

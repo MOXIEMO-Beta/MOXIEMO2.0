@@ -42,14 +42,14 @@ const notForYou = [
 export default function WhyMoxie() {
   return (
     <MarketingPage
-      eyebrow="Why MOXIE"
-      title="Why MOXIE succeeds where others failed."
+      eyebrow="Why MOXIEMO"
+      title="Why MOXIEMO succeeds where others failed."
       subtitle="You've tried VAs, Zapier, HubSpot, all-in-one platforms, and generic AI. They all failed for the same reason: they didn't start with strategy."
     >
       <div className="space-y-24">
         <section className="-mx-6 md:-mx-12 px-6 md:px-12" style={{ paddingTop: "16px", paddingBottom: "40px" }}>
           <div className="text-center mb-12">
-            <div className="text-xs font-bold uppercase tracking-[0.25em] text-accent mb-4">Who is MOXIE for?</div>
+            <div className="text-xs font-bold uppercase tracking-[0.25em] text-accent mb-4">Who is MOXIEMO for?</div>
             <h2 className="text-4xl md:text-6xl font-bold tracking-[-0.03em] leading-[1.05]">
               Is This <span className="italic text-accent">Right</span> For You?
             </h2>
@@ -112,7 +112,7 @@ export default function WhyMoxie() {
         {/* Differences */}
         <section>
           <div className="text-center mb-14">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">What makes MOXIE unreplicable.</h2>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">What makes MOXIEMO unreplicable.</h2>
             <p className="text-muted-foreground text-lg font-light max-w-2xl mx-auto">Five differences nobody else can copy without rebuilding from the ground up.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-6">
@@ -127,7 +127,7 @@ export default function WhyMoxie() {
                   </div>
                   <div className="flex gap-3">
                     <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
-                    <div><span className="font-semibold">MOXIE:</span> <span className="font-light">{d.us}</span></div>
+                    <div><span className="font-semibold">MOXIEMO:</span> <span className="font-light">{d.us}</span></div>
                   </div>
                 </div>
               </Card>
@@ -175,9 +175,9 @@ export default function WhyMoxie() {
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-center mb-10">Three convergences make this the right moment.</h2>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { n: "01", t: "AI matured", d: "ChatGPT proved AI can create quality content. MOXIE goes further — AI that knows YOUR business, voice, and strategy." },
+              { n: "01", t: "AI matured", d: "ChatGPT proved AI can create quality content. MOXIEMO goes further — AI that knows YOUR business, voice, and strategy." },
               { n: "02", t: "Fragmentation hit a breaking point", d: "40% of companies abandoned marketing automation in 2024 (up from 24%). The market is rejecting complexity." },
-              { n: "03", t: "The messy middle is underserved", d: "Tools built for startups or enterprises. The $600K–$2M segment ignored. Exactly where MOXIE fits." },
+              { n: "03", t: "The messy middle is underserved", d: "Tools built for startups or enterprises. The $600K–$2M segment ignored. Exactly where MOXIEMO fits." },
             ].map((r) => (
               <div key={r.n}>
                 <div className="font-display text-5xl text-accent mb-3">{r.n}</div>

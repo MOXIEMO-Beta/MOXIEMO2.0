@@ -23,7 +23,7 @@ const ARTICLES = [
   { category: "AI Marketing", title: "AI slop vs. AI strategy: the difference is your foundation", excerpt: "Why your prompts only get as good as the brand architecture behind them.", read: "7 min read" },
   { category: "Tools & Systems", title: "The 6-tool stack killing your productivity — and what replaces it", excerpt: "An honest audit of the marketing stack most founders accidentally end up with.", read: "4 min read" },
   { category: "Founder Stories", title: "From overwhelmed to operating: how one consultant reclaimed 18 hours a week", excerpt: "What changed when she stopped reinventing her marketing every Monday.", read: "9 min read" },
-  { category: "Case Studies", title: "$93K in annual savings: what happens when your marketing actually has a strategy", excerpt: "A real teardown of one founder's stack before and after MOXIE.", read: "8 min read" },
+  { category: "Case Studies", title: "$93K in annual savings: what happens when your marketing actually has a strategy", excerpt: "A real teardown of one founder's stack before and after MOXIEMO.", read: "8 min read" },
 ];
 
 function PlaceholderImage({ className = "" }: { className?: string }) {
@@ -97,7 +97,7 @@ export default function Blog() {
             The Blog
           </div>
           <h1 className="text-5xl md:text-7xl font-bold tracking-[-0.04em] leading-[1.02] text-foreground mb-5">
-            Building with MOXIE.
+            Building with MOXIEMO.
           </h1>
           <p className="text-lg md:text-2xl text-muted-foreground font-light max-w-3xl mb-8">
             Strategy, content, and founder stories for experts building real businesses.
@@ -136,7 +136,7 @@ export default function Blog() {
                 She stopped Googling "content ideas" and built a system instead.
               </h2>
               <p className="text-white/70 text-base md:text-lg leading-relaxed">
-                The story behind MOXIE — and why every expertise-based founder needs a marketing engine, not a marketing to-do list.
+                The story behind MOXIEMO — and why every expertise-based founder needs a marketing engine, not a marketing to-do list.
               </p>
               <p className="text-white/50 text-sm mt-5">Founder Stories · 8 min read</p>
             </div>

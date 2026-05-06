@@ -59,7 +59,7 @@ export default function Index() {
             </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-[600px] mx-auto mb-10 leading-relaxed">
-            MOXIE is your AI Chief Marketing Officer — building your strategy, generating your content, and publishing across every channel. One platform. Confident marketing.
+            MOXIEMO is your AI Chief Marketing Officer — building your strategy, generating your content, and publishing across every channel. One platform. Confident marketing.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
             <Button
@@ -77,7 +77,7 @@ export default function Index() {
         </div>
 
         <div className="max-w-[85%] mx-auto px-6 mt-16">
-          <ProductShot src={dashboardImg} alt="MOXIE Dashboard" />
+          <ProductShot src={dashboardImg} alt="MOXIEMO Dashboard" />
         </div>
       </section>
 
@@ -101,7 +101,7 @@ export default function Index() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { n: "01", icon: MessageSquare, t: "MOXIE Discovery", d: "A guided 20-minute conversation extracts your positioning, voice, audience, and goals.", img: strategyImg, alt: "Discovery chat" },
+              { n: "01", icon: MessageSquare, t: "MOXIEMO Discovery", d: "A guided 20-minute conversation extracts your positioning, voice, audience, and goals.", img: strategyImg, alt: "Discovery chat" },
               { n: "02", icon: Target, t: "Strategy synthesized", d: "Positioning, pillars, voice, channels, and metrics — connected to everything, not a static PDF.", img: strategyImg, alt: "Strategy positioning" },
               { n: "03", icon: Zap, t: "Execution embedded", d: "Every tool already knows your strategy. Generate content, plan campaigns, send emails. Approve, edit, publish.", img: plannerImg, alt: "Marketing planner" },
             ].map((s) => (
@@ -136,14 +136,14 @@ export default function Index() {
 
           {/* Row 1 — Strategy (image left, copy right) */}
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center mb-24">
-            <ProductShot src={strategyImg} alt="MOXIE Strategy positioning statement" />
+            <ProductShot src={strategyImg} alt="MOXIEMO Strategy positioning statement" />
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.22em] text-accent mb-4">Strategy</div>
               <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-[-0.03em] mb-5 leading-[1.1]">
                 Your foundation. Built in minutes.
               </h3>
               <p className="text-[17px] md:text-[18px] text-muted-foreground leading-[1.7] mb-6">
-                MOXIE runs a guided discovery, then synthesizes your complete marketing strategy — positioning, voice, content pillars, channel plan. It scores your strategy and tells you exactly what to strengthen.
+                MOXIEMO runs a guided discovery, then synthesizes your complete marketing strategy — positioning, voice, content pillars, channel plan. It scores your strategy and tells you exactly what to strengthen.
               </p>
               <div className="inline-flex items-baseline gap-2 px-4 py-2.5 rounded-full bg-accent-soft">
                 <span className="text-2xl font-bold text-accent">97/100</span>
@@ -160,36 +160,36 @@ export default function Index() {
                 Content that sounds like you. Every time.
               </h3>
               <p className="text-[17px] md:text-[18px] text-muted-foreground leading-[1.7]">
-                Generate LinkedIn posts, newsletters, captions, and long-form content anchored to your strategy. Pick a content pillar, describe your idea, and MOXIE writes in your voice — not generic AI output.
+                Generate LinkedIn posts, newsletters, captions, and long-form content anchored to your strategy. Pick a content pillar, describe your idea, and MOXIEMO writes in your voice — not generic AI output.
               </p>
             </div>
             <div className="md:order-2 order-1">
-              <ProductShot src={contentImg} alt="MOXIE Content creator" />
+              <ProductShot src={contentImg} alt="MOXIEMO Content creator" />
             </div>
           </div>
 
           {/* Row 3 — Marketing Planner (image left, copy right) */}
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
-            <ProductShot src={plannerImg} alt="MOXIE Marketing Planner" />
+            <ProductShot src={plannerImg} alt="MOXIEMO Marketing Planner" />
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.22em] text-accent mb-4">Marketing Planner</div>
               <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-[-0.03em] mb-5 leading-[1.1]">
                 See your whole quarter at a glance.
               </h3>
               <p className="text-[17px] md:text-[18px] text-muted-foreground leading-[1.7]">
-                Build campaigns across LinkedIn, email, Instagram, and Facebook. MOXIE populates your calendar with content slots, flags gaps, and keeps everything tied back to your strategy goals.
+                Build campaigns across LinkedIn, email, Instagram, and Facebook. MOXIEMO populates your calendar with content slots, flags gaps, and keeps everything tied back to your strategy goals.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* SECTION 5 — WHY MOXIE */}
+      {/* SECTION 5 — WHY MOXIEMO */}
       <section className="py-[100px] bg-[#f8f8f8] border-y border-border">
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
             <div className="max-w-[480px]">
-              <SectionLabel>Why MOXIE</SectionLabel>
+              <SectionLabel>Why MOXIEMO</SectionLabel>
               <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.035em] mb-6 leading-[1.05] text-foreground">
                 You became a founder to build something. Not to run a tool stack.
               </h2>
@@ -226,7 +226,7 @@ export default function Index() {
             Founding members
           </div>
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.035em] mb-5 leading-[1.05]">
-            Be a MOXIE Founding Member.
+            Be a MOXIEMO Founding Member.
           </h2>
           <p className="text-lg md:text-xl text-background/70 max-w-2xl mx-auto mb-10 leading-relaxed">
             Join the beta and get full platform access — free, forever. We're personally onboarding every founding member with a 1:1 kickoff call.
