@@ -4,6 +4,8 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Send } from "lucide-react";
 import kareeHeadshot from "@/assets/karee-headshot.png";
+import radicaHeadshot from "@/assets/radica-headshot.png";
+import moxieDevelopers from "@/assets/moxie-developers.png";
 
 const DISCORD_URL = "https://discord.gg/BGRj8PxW";
 const CORAL = "#ff6b6b";
@@ -229,11 +231,11 @@ export default function Community() {
 
       {/* SECTION 4 — TEAM */}
       <section className="bg-white" style={{ paddingTop: 80, paddingBottom: 80 }}>
-        <div className="max-w-[700px] mx-auto px-6">
+        <div className="max-w-[1100px] mx-auto px-6">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center text-foreground mb-14">
             The people behind the community.
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white border border-border rounded-2xl p-7 text-center shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
               <img src={kareeHeadshot} alt="Karee Laing" className="w-24 h-24 rounded-full mx-auto mb-4 object-cover" />
               <h3 className="text-lg font-bold text-foreground">Karee Laing</h3>
@@ -244,13 +246,22 @@ export default function Community() {
               <p className="text-sm font-semibold" style={{ color: CORAL }}>K.Laing in Discord</p>
             </div>
             <div className="bg-white border border-border rounded-2xl p-7 text-center shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
-              <div className="w-24 h-24 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white" style={{ backgroundColor: CORAL }}>R</div>
+              <img src={radicaHeadshot} alt="Radica M." className="w-24 h-24 rounded-full mx-auto mb-4 object-cover" />
               <h3 className="text-lg font-bold text-foreground">Radica M.</h3>
               <p className="text-sm text-muted-foreground font-light mb-3">Community Lead</p>
               <p className="text-sm text-muted-foreground leading-relaxed font-light mb-4">
                 Managing the help-desk, onboarding new members, keeping the server structured, and making sure no question goes unanswered.
               </p>
               <p className="text-sm font-semibold" style={{ color: CORAL }}>Radica.M in Discord</p>
+            </div>
+            <div className="bg-white border border-border rounded-2xl p-7 text-center shadow-[0_4px_20px_rgba(0,0,0,0.04)]">
+              <img src={moxieDevelopers} alt="MOXIE Developers" className="w-24 h-24 rounded-full mx-auto mb-4 object-cover" />
+              <h3 className="text-lg font-bold text-foreground">MOXIE Developers</h3>
+              <p className="text-sm text-muted-foreground font-light mb-3">Engineering & Product</p>
+              <p className="text-sm text-muted-foreground leading-relaxed font-light mb-4">
+                The technical team behind the platform. Instrumental in Phase 2 of MOXIE's build — expanding platform capabilities, adding integrations, and making sure everything runs the way it should. They're in the server and they're listening.
+              </p>
+              <p className="text-sm font-semibold" style={{ color: CORAL }}>moxiedevelopers in Discord</p>
             </div>
           </div>
         </div>
