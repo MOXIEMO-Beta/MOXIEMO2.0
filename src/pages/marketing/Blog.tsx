@@ -10,6 +10,9 @@ import { toast } from "sonner";
 import article1 from "@/assets/blog/article-1-marketing.jpg";
 import article2 from "@/assets/blog/article-2-content.jpg";
 import article3 from "@/assets/blog/article-3-platform.jpg";
+import article4 from "@/assets/blog/article-4-linkedin.jpg";
+import article5 from "@/assets/blog/article-5-ai-slop.jpg";
+import article6 from "@/assets/blog/article-6-tool-stack.jpg";
 
 const REAL_ARTICLES: Record<string, { image: string; href: string; date: string }> = {
   "Why Your Marketing Isn't Working (It's Not the Tools)": {
@@ -25,6 +28,21 @@ const REAL_ARTICLES: Record<string, { image: string; href: string; date: string 
   "Building a Tech Platform at the Peak of AI: What Nobody Prepared Me For": {
     image: article3,
     href: "/blog/building-a-tech-platform-at-peak-of-ai",
+    date: "May 6, 2026",
+  },
+  "Why Your LinkedIn Posts Aren't Landing (And the Fix Takes 10 Minutes)": {
+    image: article4,
+    href: "/blog/why-linkedin-posts-arent-landing",
+    date: "May 6, 2026",
+  },
+  "AI Slop vs. AI Strategy: The Difference Is Your Foundation": {
+    image: article5,
+    href: "/blog/ai-slop-vs-ai-strategy",
+    date: "May 6, 2026",
+  },
+  "The 6-Tool Stack Killing Your Productivity (And What Replaces It)": {
+    image: article6,
+    href: "/blog/six-tool-stack-killing-productivity",
     date: "May 6, 2026",
   },
 };
@@ -43,9 +61,9 @@ const ARTICLES = [
   { category: "Strategy", title: "Why Your Marketing Isn't Working (It's Not the Tools)", excerpt: "Most founders aren't failing at marketing because they're using the wrong platforms. They're failing because they don't have a strategy for the tools to execute. The fix starts before you open LinkedIn.", read: "7 min read" },
   { category: "Content", title: "How to Know Exactly What to Post Without Guessing", excerpt: "Content paralysis isn't a creativity problem. It's a positioning problem. When you know your content pillars, your ideal client, and your voice, the blank screen disappears. Here's the system.", read: "6 min read" },
   { category: "Founder Stories", title: "Building a Tech Platform at the Peak of AI: What Nobody Prepared Me For", excerpt: "The honest version of what it's like to build a software platform as a brand strategist with no engineering background, in the middle of the most significant technology shift in a generation.", read: "8 min read" },
-  { category: "Tools & Systems", title: "The 6-tool stack killing your productivity — and what replaces it", excerpt: "An honest audit of the marketing stack most founders accidentally end up with.", read: "4 min read" },
-  { category: "Founder Stories", title: "From overwhelmed to operating: how one consultant reclaimed 18 hours a week", excerpt: "What changed when she stopped reinventing her marketing every Monday.", read: "9 min read" },
-  { category: "Case Studies", title: "$93K in annual savings: what happens when your marketing actually has a strategy", excerpt: "A real teardown of one founder's stack before and after MOXIEMO.", read: "8 min read" },
+  { category: "Content", title: "Why Your LinkedIn Posts Aren't Landing (And the Fix Takes 10 Minutes)", excerpt: "You're posting consistently. You know your stuff. And yet, crickets. The problem isn't your content. It's your hook.", read: "9 min read" },
+  { category: "AI Marketing", title: "AI Slop vs. AI Strategy: The Difference Is Your Foundation", excerpt: "Generic AI content isn't the AI's fault. It's the briefing. The prompts only get as good as the brand architecture behind them.", read: "7 min read" },
+  { category: "Tools & Systems", title: "The 6-Tool Stack Killing Your Productivity (And What Replaces It)", excerpt: "You didn't plan this. But somewhere between Buffer, ConvertKit, Notion, and three other subscriptions, you became the integration layer.", read: "8 min read" },
 ];
 
 function PlaceholderImage({ className = "" }: { className?: string }) {
