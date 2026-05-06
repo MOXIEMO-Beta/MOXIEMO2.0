@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Send } from "lucide-react";
 import kareeHeadshot from "@/assets/karee-headshot.png";
 import radicaHeadshot from "@/assets/radica-headshot.jpeg";
-import moxieDevelopers from "@/assets/moxie-developers.png";
+import moxieDevelopers from "@/assets/moxie-developers.jpg";
 
 const DISCORD_URL = "https://discord.gg/BGRj8PxW";
 const CORAL = "#ff6b6b";
