@@ -137,7 +137,7 @@ export default function Pricing() {
           </div>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Zero-risk 30-day guarantee.</h2>
           <p className="text-muted-foreground font-light leading-relaxed mb-3">Try MOXIE for 30 days. Complete the discovery. Generate content. Publish it. If we don't save you 10+ hours, create strategy that sounds like you, and simplify your workflow — full refund. No hoops.</p>
-          <p className="text-sm text-muted-foreground font-light italic">92% of users who complete discovery stay long-term.</p>
+          <p className="text-sm text-muted-foreground font-light italic">Most founders who complete Discovery never look back. Your strategy is yours to keep — regardless.</p>
         </section>
 
         {/* FAQ */}
