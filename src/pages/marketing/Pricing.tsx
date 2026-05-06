@@ -11,7 +11,7 @@ const tiers = [
     price: "$79",
     sub: "/month",
     annual: "or $790/year (save $158)",
-    desc: "For founders ready to build a real marketing strategy and stop winging it.",
+    desc: "For founders ready to build a real marketing strategy and stop winging it. The tier founding members get free — forever.",
     features: ["Complete AI strategic discovery", "Marketing strategy foundation", "Marketing Planner access", "Email marketing (up to 2,500 subscribers)", "Social publishing (LinkedIn + 1 platform)", "Content creation (20 pieces/month)", "Basic analytics dashboard", "Standard support (24-hour response)"],
     replaces: "ConvertKit + Buffer + scheduling tool",
     savings: "~$60/mo + 12 hours/week",
@@ -41,10 +41,11 @@ const tiers = [
     savings: "$1,000+/mo + team capacity",
     cta: "Get started",
     featured: false,
+    coralCta: true,
   },
 ];
 
-const universal = ["30-min AI strategic discovery", "Marketing strategy foundation", "Brand voice & positioning", "Unlimited strategy updates", "Mobile app (iOS + Android)", "Data export anytime", "99.9% uptime SLA", "SOC 2 Type II security", "GDPR compliance", "30-day money-back guarantee"];
+const universal = ["20-min AI strategic discovery", "Marketing strategy foundation", "Brand voice & positioning", "Unlimited strategy updates", "Mobile app (iOS + Android)", "Data export anytime", "99.9% uptime SLA", "SOC 2 Type II security", "GDPR compliance", "30-day money-back guarantee"];
 
 const faqs = [
   { q: "Why is MOXIE cheaper than my current tool stack?", a: "We're one platform replacing 4–6 tools. No integrations, no middleware, no complexity. Lower costs = lower price." },
@@ -101,7 +102,7 @@ export default function Pricing() {
                   <p className="text-xs"><span className="text-muted-foreground">Replaces:</span> <span className="font-medium">{t.replaces}</span></p>
                   <p className="text-xs"><span className="text-muted-foreground">Savings:</span> <span className="font-medium text-accent">{t.savings}</span></p>
                 </div>
-                <Button asChild className={`w-full h-11 rounded-full font-semibold ${t.featured ? "bg-accent hover:bg-accent/90 text-accent-foreground" : "bg-foreground hover:bg-foreground/90 text-background"}`}>
+                <Button asChild className={`w-full h-11 rounded-full font-semibold ${t.featured ? "bg-accent hover:bg-accent/90 text-accent-foreground" : (t as any).coralCta ? "text-white hover:opacity-90" : "bg-foreground hover:bg-foreground/90 text-background"}`} style={(t as any).coralCta ? { backgroundColor: "#ff6b6b" } : undefined}>
                   <Link to="/auth">{t.cta}</Link>
                 </Button>
               </Card>
@@ -136,7 +137,7 @@ export default function Pricing() {
           </div>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">Zero-risk 30-day guarantee.</h2>
           <p className="text-muted-foreground font-light leading-relaxed mb-3">Try MOXIE for 30 days. Complete the discovery. Generate content. Publish it. If we don't save you 10+ hours, create strategy that sounds like you, and simplify your workflow — full refund. No hoops.</p>
-          <p className="text-sm text-muted-foreground font-light italic">92% of users who complete discovery stay long-term.</p>
+          <p className="text-sm text-muted-foreground font-light italic">Most founders who complete Discovery never look back. Your strategy is yours to keep — regardless.</p>
         </section>
 
         {/* FAQ */}
