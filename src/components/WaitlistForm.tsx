@@ -110,15 +110,15 @@ export function WaitlistForm() {
         </p>
       </div>
 
-      <ul className="grid sm:grid-cols-2 gap-3 mb-8">
+      <ul className="flex flex-col items-start gap-2.5 w-full mb-6">
         {[
           "Full platform access — free forever",
-          "Locked-in rate before prices increase",
-          "Personal onboarding call with the founder",
+          "Locked-in founding rate",
+          "1:1 onboarding call with Karee",
           "Shape the product with your feedback",
         ].map((perk) => (
-          <li key={perk} className="flex gap-2.5 items-start text-[15px]">
-            <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+          <li key={perk} className="flex flex-row items-center gap-2.5 text-[15px] whitespace-nowrap">
+            <Check className="h-5 w-5 text-accent flex-shrink-0 self-center" />
             <span>{perk}</span>
           </li>
         ))}
