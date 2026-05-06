@@ -18,6 +18,9 @@ import Blog from "./pages/marketing/Blog.tsx";
 import WhyMarketingIsntWorking from "./pages/blog/WhyMarketingIsntWorking.tsx";
 import HowToKnowWhatToPost from "./pages/blog/HowToKnowWhatToPost.tsx";
 import BuildingTechPlatform from "./pages/blog/BuildingTechPlatform.tsx";
+import WhyLinkedInPostsArentLanding from "./pages/blog/WhyLinkedInPostsArentLanding.tsx";
+import AiSlopVsAiStrategy from "./pages/blog/AiSlopVsAiStrategy.tsx";
+import SixToolStack from "./pages/blog/SixToolStack.tsx";
 import Resources from "./pages/marketing/Resources.tsx";
 import Changelog from "./pages/marketing/Changelog.tsx";
 import AppLayout from "./layouts/AppLayout.tsx";
@@ -67,6 +70,9 @@ const App = () => (
             <Route path="/blog/why-marketing-isnt-working" element={<WhyMarketingIsntWorking />} />
             <Route path="/blog/how-to-know-what-to-post" element={<HowToKnowWhatToPost />} />
             <Route path="/blog/building-a-tech-platform-at-peak-of-ai" element={<BuildingTechPlatform />} />
+            <Route path="/blog/why-linkedin-posts-arent-landing" element={<WhyLinkedInPostsArentLanding />} />
+            <Route path="/blog/ai-slop-vs-ai-strategy" element={<AiSlopVsAiStrategy />} />
+            <Route path="/blog/six-tool-stack-killing-productivity" element={<SixToolStack />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/terms" element={<Terms />} />
