@@ -11,7 +11,7 @@ const tiers = [
     price: "$79",
     sub: "/month",
     annual: "or $790/year (save $158)",
-    desc: "For founders ready to build a real marketing strategy and stop winging it.",
+    desc: "For founders ready to build a real marketing strategy and stop winging it. The tier founding members get free — forever.",
     features: ["Complete AI strategic discovery", "Marketing strategy foundation", "Marketing Planner access", "Email marketing (up to 2,500 subscribers)", "Social publishing (LinkedIn + 1 platform)", "Content creation (20 pieces/month)", "Basic analytics dashboard", "Standard support (24-hour response)"],
     replaces: "ConvertKit + Buffer + scheduling tool",
     savings: "~$60/mo + 12 hours/week",
