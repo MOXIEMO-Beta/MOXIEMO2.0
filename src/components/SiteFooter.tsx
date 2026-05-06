@@ -30,6 +30,7 @@ export function SiteFooter() {
             <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-foreground mb-4">Resources</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/blog" className="hover:text-foreground">Building with MOXIE</Link></li>
+              <li><Link to="/changelog" className="hover:text-foreground">Changelog</Link></li>
               <li><Link to="/resources" className="hover:text-foreground">Resources</Link></li>
               <li><a href="mailto:hello@buildwithmoxie.co" className="hover:text-foreground">Contact</a></li>
             </ul>
