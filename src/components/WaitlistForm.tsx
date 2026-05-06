@@ -232,7 +232,7 @@ export function WaitlistForm() {
         {error === "generic" && (
           <p className="text-sm text-center text-destructive">
             Something went wrong — please try again or email us at{" "}
-            <a href="mailto:questions@buildwithmoxie.co" className="underline underline-offset-2">questions@buildwithmoxie.co</a>
+            <a href="mailto:questions@buildwithmoxiemo.com" className="underline underline-offset-2">questions@buildwithmoxiemo.com</a>
           </p>
         )}
 

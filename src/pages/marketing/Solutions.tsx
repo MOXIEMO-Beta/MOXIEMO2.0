@@ -157,11 +157,11 @@ function FaqSection() {
         <div className="text-center" style={{ marginTop: 40 }}>
           <p className="text-muted-foreground mb-2">Still have questions? We answer personally.</p>
           <a
-            href="mailto:hello@buildwithmoxie.co"
+            href="mailto:hello@buildwithmoxiemo.com"
             className="font-semibold hover:underline"
             style={{ color: "#ff6b6b" }}
           >
-            Email us at hello@buildwithmoxie.co →
+            Email us at hello@buildwithmoxiemo.com →
           </a>
         </div>
       </div>

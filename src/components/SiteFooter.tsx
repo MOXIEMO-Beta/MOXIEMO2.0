@@ -32,7 +32,7 @@ export function SiteFooter() {
               <li><Link to="/blog" className="moxie-footer-link">Building with MOXIEMO</Link></li>
               <li><Link to="/changelog" className="moxie-footer-link">Changelog</Link></li>
               <li><Link to="/resources" className="moxie-footer-link">Resources</Link></li>
-              <li><a href="mailto:hello@buildwithmoxie.co" className="moxie-footer-link">Contact</a></li>
+              <li><a href="mailto:hello@buildwithmoxiemo.com" className="moxie-footer-link">Contact</a></li>
             </ul>
           </div>
 
@@ -50,7 +50,7 @@ export function SiteFooter() {
           <p className="text-xs text-muted-foreground">© 2026 MOXIEMO. One platform. Confident marketing.</p>
           <div className="flex items-center gap-4 text-muted-foreground">
             <a
-              href="https://www.instagram.com/buildwithmoxie"
+              href="https://www.instagram.com/buildwithmoxiemo"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -59,7 +59,7 @@ export function SiteFooter() {
               <Instagram className="h-4 w-4" />
             </a>
             <a
-              href="https://www.facebook.com/buildwithmoxie"
+              href="https://www.facebook.com/buildwithmoxiemo"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
@@ -68,7 +68,7 @@ export function SiteFooter() {
               <Facebook className="h-4 w-4" />
             </a>
             <a
-              href="https://www.linkedin.com/company/buildwithmoxie"
+              href="https://www.linkedin.com/company/moxiemo"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"

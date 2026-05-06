@@ -7,7 +7,7 @@ export default function Privacy() {
         <p>
           MOXIEMO ("we," "our," or "us") is committed to protecting your privacy. This Privacy
           Policy explains how we collect, use, disclose, and safeguard your information when
-          you use our platform at buildwithmoxie.co and any related services (collectively,
+          you use our platform at buildwithmoxiemo.com and any related services (collectively,
           the "Platform"). Please read this policy carefully. By using MOXIEMO, you agree to
           the practices described here.
         </p>
@@ -83,7 +83,7 @@ export default function Privacy() {
         ]} />
         <p>
           To exercise any of these rights, contact us at:{" "}
-          <a className="text-foreground underline" href="mailto:hello@buildwithmoxie.co">hello@buildwithmoxie.co</a>
+          <a className="text-foreground underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a>
         </p>
         <p>We will respond to all requests within 30 days.</p>
       </LegalSection>
@@ -125,8 +125,8 @@ export default function Privacy() {
         <p>If you have questions about this Privacy Policy, contact us at:</p>
         <p className="text-foreground">
           MOXIEMO /{" "}
-          <a className="underline" href="mailto:hello@buildwithmoxie.co">hello@buildwithmoxie.co</a> /
-          buildwithmoxie.co
+          <a className="underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a> /
+          buildwithmoxiemo.com
         </p>
       </LegalSection>
     </LegalPage>

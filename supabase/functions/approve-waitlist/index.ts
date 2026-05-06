@@ -50,7 +50,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "Karee at MOXIEMO <hello@mail.buildwithmoxie.co>",
+        from: "Karee at MOXIEMO <hello@mail.buildwithmoxiemo.com>",
         reply_to: "karee@studiosbagency.com",
         to: [entry.email],
         subject: "You're in — welcome to MOXIEMO 🎉",
@@ -67,13 +67,13 @@ serve(async (req) => {
             </div>
             <p style="font-size: 15px; line-height: 1.6; margin: 0 0 12px; font-weight: 600;">Here's how to get started:</p>
             <ol style="font-size: 15px; line-height: 1.7; margin: 0 0 24px; padding-left: 20px;">
-              <li>Go to buildwithmoxie.co/auth</li>
+              <li>Go to buildwithmoxiemo.com/auth</li>
               <li>Create your account with this email address</li>
               <li>On Step 8, enter your code: <strong>MOXIE2026</strong></li>
               <li>You're in — free, forever</li>
             </ol>
             <p style="margin: 0 0 24px;">
-              <a href="https://buildwithmoxie.co/auth" style="display: inline-block; background: #111; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Create your account →</a>
+              <a href="https://buildwithmoxiemo.com/auth" style="display: inline-block; background: #111; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Create your account →</a>
             </p>
             <p style="font-size: 14px; color: #555; line-height: 1.6; margin: 0 0 16px;">
               Reply to this email any time — I personally read every message.
@@ -81,7 +81,7 @@ serve(async (req) => {
             <p style="font-size: 15px; margin: 0 0 24px;">— Karee</p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
             <p style="font-size: 12px; color: #888; line-height: 1.5;">
-              MOXIEMO · buildwithmoxie.co<br />
+              MOXIEMO · buildwithmoxiemo.com<br />
               Built by KLMG-US Ltd · Houston, Texas
             </p>
           </div>

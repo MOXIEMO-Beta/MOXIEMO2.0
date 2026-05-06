@@ -48,7 +48,7 @@ export default function DataDeletion() {
           <span className="text-foreground font-medium">Option 2 — By email:</span>
           <br />
           Send a request to{" "}
-          <a className="text-foreground underline" href="mailto:hello@buildwithmoxie.co">hello@buildwithmoxie.co</a>{" "}
+          <a className="text-foreground underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a>{" "}
           with the subject line: "Data Deletion Request"
         </p>
         <p>Include in your email:</p>
@@ -84,7 +84,7 @@ export default function DataDeletion() {
       <LegalSection heading="Questions">
         <p>
           If you have questions about the data deletion process, contact us at:{" "}
-          <a className="text-foreground underline" href="mailto:hello@buildwithmoxie.co">hello@buildwithmoxie.co</a>
+          <a className="text-foreground underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a>
         </p>
         <p>We are committed to responding within 3 business days.</p>
       </LegalSection>

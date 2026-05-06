@@ -61,7 +61,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-        from: "Karee at MOXIEMO <hello@mail.buildwithmoxie.co>",
+        from: "Karee at MOXIEMO <hello@mail.buildwithmoxiemo.com>",
         reply_to: "karee@studiosbagency.com",
         to: [email],
         subject: "You're on the MOXIEMO founding member list",
@@ -82,7 +82,7 @@ serve(async (req) => {
             </p>
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
             <p style="font-size: 12px; color: #888; line-height: 1.5;">
-              MOXIEMO · buildwithmoxie.co<br />
+              MOXIEMO · buildwithmoxiemo.com<br />
               Built by KLMG-US Ltd · Houston, Texas
             </p>
           </div>
@@ -108,7 +108,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-        from: "MOXIEMO Waitlist <hello@mail.buildwithmoxie.co>",
+        from: "MOXIEMO Waitlist <hello@mail.buildwithmoxiemo.com>",
         to: ["karee@studiosbagency.com"],
         subject: `New waitlist signup: ${name}`,
         html: `
@@ -123,7 +123,7 @@ serve(async (req) => {
               <tr><td style="padding-right: 12px; color: #666;">Heard via</td><td>${referral_source ?? "—"}</td></tr>
             </table>
             <p style="margin-top: 24px;">
-              <a href="https://buildwithmoxie.co/admin/waitlist" style="display: inline-block; background: #111; color: #fff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600;">View in admin panel →</a>
+              <a href="https://buildwithmoxiemo.com/admin/waitlist" style="display: inline-block; background: #111; color: #fff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600;">View in admin panel →</a>
             </p>
           </div>
         `,

@@ -24,7 +24,7 @@ export default function Terms() {
         <p>
           You are responsible for maintaining the confidentiality of your login credentials
           and for all activity that occurs under your account. Notify us immediately at{" "}
-          <a className="text-foreground underline" href="mailto:hello@buildwithmoxie.co">hello@buildwithmoxie.co</a>{" "}
+          <a className="text-foreground underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a>{" "}
           if you suspect unauthorized access to your account.
         </p>
         <p>You agree not to:</p>
@@ -153,7 +153,7 @@ export default function Terms() {
         <p>
           We may suspend or terminate your account at any time for violation of these Terms.
           You may terminate your account by contacting us at{" "}
-          <a className="text-foreground underline" href="mailto:hello@buildwithmoxie.co">hello@buildwithmoxie.co</a>.
+          <a className="text-foreground underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a>.
           Upon termination, your license to use the platform ends immediately and we will
           handle your data per our Privacy Policy.
         </p>
@@ -178,8 +178,8 @@ export default function Terms() {
       <LegalSection heading="Contact">
         <p>Questions about these Terms? Contact us at:</p>
         <p className="text-foreground">
-          <a className="underline" href="mailto:hello@buildwithmoxie.co">hello@buildwithmoxie.co</a> /
-          buildwithmoxie.co
+          <a className="underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a> /
+          buildwithmoxiemo.com
         </p>
       </LegalSection>
     </LegalPage>

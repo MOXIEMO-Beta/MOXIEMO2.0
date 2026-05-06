@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY missing");
 
-    const fromHeader = `${from_name} <hello@mail.buildwithmoxie.co>`;
+    const fromHeader = `${from_name} <hello@mail.buildwithmoxiemo.com>`;
 
     const resendPayload = {
       from: fromHeader,
