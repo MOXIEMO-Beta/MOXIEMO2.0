@@ -45,7 +45,7 @@ const tiers = [
   },
 ];
 
-const universal = ["30-min AI strategic discovery", "Marketing strategy foundation", "Brand voice & positioning", "Unlimited strategy updates", "Mobile app (iOS + Android)", "Data export anytime", "99.9% uptime SLA", "SOC 2 Type II security", "GDPR compliance", "30-day money-back guarantee"];
+const universal = ["20-min AI strategic discovery", "Marketing strategy foundation", "Brand voice & positioning", "Unlimited strategy updates", "Mobile app (iOS + Android)", "Data export anytime", "99.9% uptime SLA", "SOC 2 Type II security", "GDPR compliance", "30-day money-back guarantee"];
 
 const faqs = [
   { q: "Why is MOXIE cheaper than my current tool stack?", a: "We're one platform replacing 4–6 tools. No integrations, no middleware, no complexity. Lower costs = lower price." },
