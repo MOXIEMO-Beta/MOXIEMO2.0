@@ -26,17 +26,17 @@ const forYou = [
   { t: "You're building a real business", d: "Not a side hobby. You're serious about growth and you need marketing that actually works." },
   { t: "You're done using 6 different tools", d: "Tired of paying for all the tools without direction, a strategy and a roadmap. You want one system that does it all." },
   { t: "You need strategy AND execution", d: "You don't just want \"post ideas\", you need a complete marketing roadmap, the content to execute it, and the tools to schedule it." },
-  { t: "You're ready to show up consistently", d: "Moxie can write, schedule, and plan everything, but you still need to approve and post. If you're ready to execute, Moxie handles the rest." },
+  { t: "You're ready to show up consistently", d: "MOXIEMO can write, schedule, and plan everything, but you still need to approve and post. If you're ready to execute, MOXIEMO handles the rest." },
   { t: "You value your time more than anything", d: "You'd rather spend 15 minutes reviewing content than 5 hours creating it from scratch." },
   { t: "You can't afford a $10K/month agency", d: "You need agency-level strategy and execution at a price that actually makes sense for a small business." },
 ];
 
 const notForYou = [
-  { t: "You want someone to run your marketing FOR you", d: "Moxie creates everything, but you review and approve. If you want 100% hands-off done-for-you, hire an agency." },
-  { t: "You're not ready to commit to execution", d: "Moxie can build a perfect 90-day plan, but if you never log in and post, nothing happens. The system works when you do." },
-  { t: "You just want \"content ideas\"", d: "Moxie is a full marketing operating system. If you only need a Pinterest board of post ideas, this is overkill." },
-  { t: "You expect results without strategy", d: "Moxie is built strategy-first. If you just want to \"post and hope,\" we're not the right fit." },
-  { t: "You're not willing to invest a minimum of $79/month", d: "If you're looking for free tools or can't commit to investing in your marketing, Moxie isn't for you right now." },
+  { t: "You want someone to run your marketing FOR you", d: "MOXIEMO creates everything, but you review and approve. If you want 100% hands-off done-for-you, hire an agency." },
+  { t: "You're not ready to commit to execution", d: "MOXIEMO can build a perfect 90-day plan, but if you never log in and post, nothing happens. The system works when you do." },
+  { t: "You just want \"content ideas\"", d: "MOXIEMO is a full marketing operating system. If you only need a Pinterest board of post ideas, this is overkill." },
+  { t: "You expect results without strategy", d: "MOXIEMO is built strategy-first. If you just want to \"post and hope,\" we're not the right fit." },
+  { t: "You're not willing to invest a minimum of $79/month", d: "If you're looking for free tools or can't commit to investing in your marketing, MOXIEMO isn't for you right now." },
 ];
 
 export default function WhyMoxie() {
