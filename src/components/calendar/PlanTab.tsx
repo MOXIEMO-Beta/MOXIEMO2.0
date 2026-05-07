@@ -94,15 +94,15 @@ export default function PlanTab({ ctx }: { ctx: any }) {
       if (!iso) return;
       if (new Date(iso).toDateString() !== d.toDateString()) return;
       (p.platforms ?? []).forEach((pl: string) => {
-        if (pl === "linkedin") dots.push({ color: "bg-blue-500", key: `li-${p.id}`, label: "LinkedIn" });
-        else if (pl === "instagram") dots.push({ color: "bg-purple-500", key: `ig-${p.id}`, label: "Instagram" });
-        else if (pl === "facebook") dots.push({ color: "bg-blue-700", key: `fb-${p.id}`, label: "Facebook" });
+        if (pl === "linkedin") dots.push({ color: "bg-[#ff6b6b]", key: `li-${p.id}`, label: "LinkedIn" });
+        else if (pl === "instagram") dots.push({ color: "bg-[#ff6b6b]", key: `ig-${p.id}`, label: "Instagram" });
+        else if (pl === "facebook") dots.push({ color: "bg-[#ff6b6b]", key: `fb-${p.id}`, label: "Facebook" });
       });
     });
     emailSends.forEach((e: any) => {
       const iso = e.scheduled_for ?? e.sent_at;
       if (!iso) return;
-      if (new Date(iso).toDateString() === d.toDateString()) dots.push({ color: "bg-accent", key: `em-${e.id}`, label: "Email" });
+      if (new Date(iso).toDateString() === d.toDateString()) dots.push({ color: "bg-[#ff6b6b]", key: `em-${e.id}`, label: "Email" });
     });
     contentItems.forEach((c: any) => {
       if (c.status !== "draft") return;
@@ -120,10 +120,10 @@ export default function PlanTab({ ctx }: { ctx: any }) {
   counts.email = emailSends.filter((e: any) => isBetween(e.scheduled_for ?? e.sent_at, monthStart, monthEnd)).length;
   const total = Math.max(1, counts.linkedin + counts.instagram + counts.facebook + counts.email);
   const bal = [
-    { label: "LinkedIn", val: counts.linkedin, color: "bg-blue-500" },
-    { label: "Email", val: counts.email, color: "bg-accent" },
-    { label: "Instagram", val: counts.instagram, color: "bg-purple-500" },
-    { label: "Facebook", val: counts.facebook, color: "bg-blue-700" },
+    { label: "LinkedIn", val: counts.linkedin, color: "bg-[#ff6b6b]" },
+    { label: "Email", val: counts.email, color: "bg-[#ff6b6b]" },
+    { label: "Instagram", val: counts.instagram, color: "bg-[#ff6b6b]" },
+    { label: "Facebook", val: counts.facebook, color: "bg-[#ff6b6b]" },
   ];
 
   const activeCampaigns = campaigns.filter((c: any) => c.status === "active");
@@ -174,18 +174,27 @@ export default function PlanTab({ ctx }: { ctx: any }) {
               const empty = dots.length === 0;
               const inCampaign = inMonth ? activeCampaignForDate(campaigns ?? [], date) : null;
               const camp = empty && isWeekday ? inCampaign : null;
+              const isToday = date.toDateString() === today.toDateString();
               return (
                 <div
                   key={idx}
-                  className={`relative group min-h-[64px] p-1.5 ${inMonth ? "" : "opacity-40"} ${inCampaign ? "bg-accent-soft" : "bg-card"}`}
+                  className={`relative group min-h-[72px] p-2 align-top bg-card ${inMonth ? "" : "opacity-40"} ${inCampaign ? "border-t-[3px] border-t-[#ff6b6b]" : ""}`}
                 >
-                  <div className="text-[10px] text-muted-foreground mb-1">{date.getDate()}</div>
+                  <div className="mb-1">
+                    {isToday ? (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#ff6b6b] text-white text-[11px] font-semibold">
+                        {date.getDate()}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-muted-foreground">{date.getDate()}</span>
+                    )}
+                  </div>
                   {dots.length > 0 && (
                     <div className="flex flex-col gap-1">
                       {dots.slice(0, 3).map(d => (
                         <span
                           key={d.key}
-                          className={`text-[9px] leading-tight px-1 py-0.5 rounded text-white truncate ${d.color}`}
+                          className={`text-[12px] font-semibold leading-tight px-2 py-1 rounded-md text-white truncate ${d.color}`}
                           title={d.label}
                         >
                           {d.label}
@@ -217,11 +226,11 @@ export default function PlanTab({ ctx }: { ctx: any }) {
                           setTab("schedule");
                         }
                       }}
-                      className={`w-full text-[10px] text-accent font-medium flex flex-col items-center justify-center px-1 py-1 rounded text-center truncate ${camp ? "bg-accent-soft border border-accent/30 hover:bg-accent/20" : "bg-accent/5 border border-dashed border-accent/30 hover:bg-accent/10"} transition-colors`}
-                      title={camp ? `Fill gap — ${camp.name}` : "Fill gap"}
+                      className="block w-full text-left text-[11px] font-normal py-0.5 bg-transparent border-0 hover:opacity-100 transition-opacity"
+                      style={{ color: "rgba(255, 107, 107, 0.6)" }}
+                      title={camp ? `Add content — ${camp.name}` : "Add content"}
                     >
-                      <span className="truncate w-full">Fill gap</span>
-                      {camp && <span className="truncate w-full text-[9px] opacity-80">{camp.name}</span>}
+                      + Add content
                     </button>
                   )}
                 </div>
