@@ -177,6 +177,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   const [plan, setPlan] = useState<any[]>([]);
   const [planLoading, setPlanLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [color, setColor] = useState<string>("#F97066");
 
   useEffect(() => {
     if (!open) return;
@@ -187,6 +188,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     setStartDate(seed?.start_date ?? "");
     setEndDate(seed?.end_date ?? "");
     setGoals("");
+    setColor(seed?.color ?? "#F97066");
     if (seed?.channels) {
       const c: Record<string, boolean> = { linkedin: false, email: false, instagram: false, facebook: false };
       seed.channels.forEach((ch: string) => { c[ch] = true; });
@@ -239,6 +241,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         end_date: endDate || null,
         channels: selectedChannels,
         status: "active",
+        color,
         content_plan: { weeks: plan, targets, slots },
       });
       if (error) throw error;
@@ -273,6 +276,23 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>Campaign color</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {COLOR_PALETTE.map(c => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => setColor(c.value)}
+                      title={c.name}
+                      className={`w-9 h-9 rounded-full border-2 transition-all ${color === c.value ? "border-foreground scale-110" : "border-transparent"}`}
+                      style={{ backgroundColor: c.value }}
+                      aria-label={c.name}
+                    />
+                  ))}
+                </div>
+                <div className="text-xs text-muted-foreground mt-2">Used on the campaign card and calendar indicators.</div>
               </div>
               <div className="flex justify-end pt-3">
                 <Button onClick={() => setStep(2)} disabled={!name}>Next <ArrowRight className="w-4 h-4" /></Button>
