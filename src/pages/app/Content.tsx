@@ -125,6 +125,8 @@ export default function Content() {
   const [profile, setProfile] = useState<{ full_name: string | null; business_name: string | null; email: string | null } | null>(null);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [campaignContext, setCampaignContext] = useState<any | null>(null);
+  const [slotContext, setSlotContext] = useState<{ scheduled_date: string | null; pillar: string | null } | null>(null);
 
   // Generate state
   const [topic, setTopic] = useState("");
@@ -151,8 +153,9 @@ export default function Content() {
   useEffect(() => {
     const qpPlatform = searchParams.get("platform");
     const qpCampaign = searchParams.get("campaign");
+    const qpCampaignId = searchParams.get("campaignId");
     const qpDate = searchParams.get("date");
-    if (!qpPlatform && !qpCampaign) return;
+    if (!qpPlatform && !qpCampaign && !qpCampaignId) return;
     if (qpPlatform && PLATFORMS.some((p) => p.value === qpPlatform)) {
       setPlatform(qpPlatform);
     }
@@ -160,6 +163,17 @@ export default function Content() {
       const dateNote = qpDate ? ` running around ${qpDate}` : "";
       const note = `This content is for the ${qpCampaign} campaign${dateNote}. Generate accordingly.`;
       setTopic((prev) => (prev ? prev : note));
+    }
+    setSlotContext({ scheduled_date: qpDate, pillar: null });
+    if (qpCampaignId) {
+      (async () => {
+        const { data } = await supabase
+          .from("campaigns")
+          .select("id, name, goals, theme, start_date, end_date, channels, content_plan")
+          .eq("id", qpCampaignId)
+          .maybeSingle();
+        if (data) setCampaignContext(data);
+      })();
     }
     // Clear params so they don't re-apply on refresh
     setSearchParams({}, { replace: true });
@@ -181,7 +195,7 @@ export default function Content() {
         supabase
           .from("strategies")
           .select(
-            "positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning, primary_channel, content_pillars",
+            "positioning_statement, ideal_client, pain_point, transformation, voice_attributes, anti_positioning, methodology, primary_channel, content_pillars",
           )
           .eq("user_id", user.id)
           .maybeSingle(),
@@ -238,7 +252,14 @@ export default function Content() {
       ? `${opts.topic}\n\n[Angle this through my content pillar: ${opts.pillar}]`
       : opts.topic;
     const { data, error } = await supabase.functions.invoke("generate-content", {
-      body: { topic: augmentedTopic, platform: opts.platform, contentType: opts.contentType, strategy },
+      body: {
+        topic: augmentedTopic,
+        platform: opts.platform,
+        contentType: opts.contentType,
+        strategy,
+        campaign: campaignContext,
+        slot: { scheduled_date: slotContext?.scheduled_date ?? null, pillar: opts.pillar },
+      },
     });
     if (error) throw error;
     if ((data as any)?.error) throw new Error((data as any).error);
@@ -248,6 +269,15 @@ export default function Content() {
   async function handleGenerate() {
     if (!topic.trim()) {
       toast.error("Add an idea first");
+      return;
+    }
+    const missingStrategy =
+      !strategy?.positioning_statement ||
+      !(Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes.length : strategy?.voice_attributes);
+    if (missingStrategy) {
+      toast.error("Complete your Brand Strategy first", {
+        description: "MOXIE needs your positioning and voice to generate content that sounds like you.",
+      });
       return;
     }
     setGenerating(true);
