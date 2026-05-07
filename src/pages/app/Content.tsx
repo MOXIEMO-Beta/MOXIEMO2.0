@@ -437,6 +437,16 @@ export default function Content() {
 
         {/* GENERATE */}
         <TabsContent value="generate" className="space-y-6">
+          {!loading && (!strategy?.positioning_statement || !(Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes.length : strategy?.voice_attributes)) && (
+            <Card className="p-4 border-dashed border-accent/40 bg-accent-soft/30 text-sm flex items-center justify-between gap-3">
+              <span className="text-foreground">
+                Complete your Brand Strategy first so MOXIE can generate content that actually sounds like you.
+              </span>
+              <Link to="/app/discovery" className="text-accent font-medium hover:underline shrink-0 inline-flex items-center gap-1">
+                Go to Discovery <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Card>
+          )}
           <Card className="p-6 border-border shadow-soft space-y-5">
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">
@@ -519,13 +529,15 @@ export default function Content() {
 
           {generated && lockedMeta && (
             <div ref={outputRef} className="space-y-3 animate-in slide-in-from-bottom-4 fade-in duration-300">
-              {!strategy && (
-                <Card className="p-3 border-dashed border-border bg-accent-soft/20 text-xs text-muted-foreground flex items-center justify-between gap-3">
-                  <span>Connect your strategy to make this sound more like you →</span>
-                  <Link to="/app/discovery" className="text-accent font-medium hover:underline shrink-0">
-                    Complete Discovery
-                  </Link>
-                </Card>
+              {(campaignContext?.name || activePillar) && (
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                  <Sparkles className="h-3 w-3 text-accent" />
+                  <span className="font-medium text-foreground">Generated for:</span>
+                  {campaignContext?.name && <span>{campaignContext.name}</span>}
+                  <span>·</span>
+                  <span>{lockedMeta.platform}</span>
+                  {activePillar && (<><span>·</span><span>{activePillar}</span></>)}
+                </div>
               )}
 
               <Card className="border-border shadow-soft overflow-hidden">
