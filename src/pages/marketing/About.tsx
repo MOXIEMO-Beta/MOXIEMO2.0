@@ -19,9 +19,9 @@ const values = [
 ];
 
 const vision = [
-  { y: "2026", t: "Year 1", d: "Free 75 founders from tool chaos, reclaiming 1,350 hours weekly for strategic growth." },
-  { y: "2028", t: "Year 3", d: "Free 400 founders across coaching, consulting, and service businesses — each reclaiming 18+ hours weekly." },
-  { y: "2030", t: "Year 5", d: "Free 1,500 service businesses from tool chaos, proving consolidation beats fragmentation as the industry standard." },
+  { y: "2026", t: "Year 1", d: "Free 200 founders from tool chaos, reclaiming 3,600 hours weekly for strategic growth." },
+  { y: "2028", t: "Year 3", d: "Free 1,000 founders across coaching, consulting, and service businesses, each reclaiming 18+ hours weekly." },
+  { y: "2030", t: "Year 5", d: "Free 5,000 service businesses from tool chaos, proving consolidation beats fragmentation as the industry standard." },
 ];
 
 const credentials = ["Brand Strategist", "JD/MBA", "Goldman Sachs 10KSB Scholar", "HBJ 40 Under 40"];
@@ -173,7 +173,7 @@ export default function About() {
         <section className="max-w-6xl mx-auto px-6 pb-24">
           <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-4">Where we're going.</h2>
           <p className="text-center italic text-accent font-medium mb-12">
-            We measure success in hours returned and tools eliminated — not vanity metrics.
+            We measure success in hours returned and tools eliminated. Not vanity metrics.
           </p>
           <div className="grid md:grid-cols-3 gap-6">
             {vision.map((v) => (
