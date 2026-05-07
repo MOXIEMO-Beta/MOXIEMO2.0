@@ -3,75 +3,101 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM = `You are MOXIEMO, an AI Chief Marketing Officer generating content for an expertise-based founder.
+const SYSTEM = `You are MOXIE, an AI CMO generating content for a specific marketing campaign.
 
-Your user is a founder selling their expertise — they may be a coach, consultant, fractional executive, agency owner, solopreneur, or business owner. They earn $600K–2M revenue and struggle with tool fragmentation and unclear marketing strategy.
-
-Your job is to generate content that:
-- Sounds exactly like them (match their voice attributes)
-- Speaks directly to their ideal client's pain points
-- Reflects their unique positioning and methodology
-- Never uses corporate jargon or empty buzzwords
-- Always ends with an engagement-driving question
-
-You are not a generic AI tool. You are their dedicated CMO who knows their business deeply.`;
+You write in the founder's voice — never generic marketing speak. Every piece of content you produce must:
+- Map to one of the founder's content pillars
+- Advance the stated campaign goal
+- Speak directly to the ideal client's pain point or transformation
+- Sound like the founder, using their voice attributes — never the anti-positioning language
+- Follow the platform-specific rules exactly`;
 
 function buildPrompt(opts: {
   topic: string;
   platform: string;
   contentType: string;
   strategy: any;
+  campaign?: any;
+  slot?: { scheduled_date?: string | null; pillar?: string | null };
 }) {
   const s = opts.strategy ?? {};
   const voice = Array.isArray(s.voice_attributes)
     ? s.voice_attributes.join(", ")
     : (s.voice_attributes ?? "");
-  const pillars = Array.isArray(s.content_pillars)
-    ? s.content_pillars.join(", ")
-    : (s.content_pillars ?? "");
+  const pillarsList: string[] = Array.isArray(s.content_pillars)
+    ? s.content_pillars
+        .map((p: any) => (typeof p === "string" ? p : p?.name ?? p?.title ?? ""))
+        .filter(Boolean)
+    : [];
+  const pillarsBlock = pillarsList.length
+    ? pillarsList.map((p) => `- ${p}`).join("\n")
+    : "(not set)";
+  const c = opts.campaign ?? {};
+  const slot = opts.slot ?? {};
 
   const richFormats = new Set(["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"]);
   const isRich = richFormats.has(opts.platform);
-  const lengthHint: Record<string, string> = {
-    "LinkedIn Post": "1200-1800 chars, line breaks, hook under 60 chars",
-    "Instagram Caption": "800-1500 chars, conversational, line breaks between thoughts",
-    "Facebook Post": "600-1200 chars, conversational",
-    "X / Twitter": "Under 280 chars total. Punchy. No fluff.",
-    "Newsletter Section": "300-500 words. One focused idea.",
-    "Long-Form Article": "800-1500 words with clear structure (intro, body, conclusion).",
-    "Standalone Newsletter (full)": "500-900 words. Greeting, body with subheads, sign-off.",
-  };
+  const platformRules = `PLATFORM-SPECIFIC RULES:
+- LinkedIn: 1,200–1,800 characters, sentence case, no em dashes, punchy hook under 60 characters, end with a question, no links in the body
+- Instagram: conversational, 150–300 characters for the caption, 5–10 relevant hashtags at the end
+- Facebook: 100–250 characters, casual tone, question or poll format preferred
+- Email: subject line + preview text + body, conversational but structured, clear single CTA
+- Newsletter Section: 300–500 words, one focused idea
+- Long-Form Article: 800–1,500 words, clear intro/body/conclusion structure
+- Standalone Newsletter (full): 500–900 words, greeting, body with subheads, sign-off
+- X / Twitter: under 280 characters total, punchy, no fluff`;
   const formatHint = isRich
     ? "Return formatted HTML using <h1>, <h2>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <hr>. No <html> or <body> wrappers. No code fences."
     : "Return only plain text. No markdown, no HTML, no code fences.";
 
-  return `BRAND STRATEGY CONTEXT:
+  const campaignBlock = c && (c.name || c.goals || c.theme)
+    ? `CAMPAIGN CONTEXT:
+Campaign name: ${c.name ?? "(unnamed)"}
+Campaign goal: ${c.goals ?? c.objective ?? c.theme ?? "(not set)"}
+Campaign runs: ${c.start_date ?? "?"} to ${c.end_date ?? "?"}
+Active channels: ${Array.isArray(c.channels) ? c.channels.join(", ") : "(not set)"}`
+    : `CAMPAIGN CONTEXT:
+(No specific campaign — treat this as a standalone post that still maps to a content pillar.)`;
+
+  return `ABOUT THIS FOUNDER:
 Positioning: ${s.positioning_statement ?? "(not set)"}
 Ideal client: ${s.ideal_client ?? "(not set)"}
-Pain point: ${s.pain_point ?? "(not set)"}
-Voice attributes: ${voice || "(not set)"}
-Anti-positioning (never sound like): ${s.anti_positioning ?? "(not set)"}
-Primary channel: ${s.primary_channel ?? "(not set)"}
-Content pillars: ${pillars || "(not set)"}
+Their pain point: ${s.pain_point ?? "(not set)"}
+The transformation they deliver: ${s.transformation ?? "(not set)"}
+Brand voice: ${voice || "(not set)"}
+They are NOT: ${s.anti_positioning ?? "(not set)"}
+Their methodology/framework: ${s.methodology ?? "(not set)"}
 
-Generate a ${opts.platform} ${opts.contentType} post about: ${opts.topic}
+CONTENT PILLARS (all content must map to one of these):
+${pillarsBlock}
 
-Requirements:
-- Match the voice attributes exactly
-- Address the ideal client's pain point naturally
-- Never use the anti-positioning language
-- Format for ${opts.platform}: ${lengthHint[opts.platform] ?? "appropriate length and tone for the platform"}
-- End with a specific engagement question
-- Do not include hashtags unless asked
-- ${formatHint}
+${campaignBlock}
 
-Return only the post content. No preamble, no explanation.`;
+CONTENT REQUEST:
+Platform: ${opts.platform}
+Content type: ${opts.contentType}
+Scheduled date: ${slot.scheduled_date ?? "(not set)"}
+${slot.pillar ? `Anchor pillar: ${slot.pillar}` : ""}
+Founder's idea / angle: ${opts.topic}
+
+${platformRules}
+
+Generate ONE piece of content for this platform that:
+1. Advances the campaign goal stated above
+2. Maps to one of the content pillars${slot.pillar ? ` (use "${slot.pillar}" as the anchor pillar)` : ""}
+3. Speaks directly to the ideal client's pain point or transformation
+4. Uses the founder's voice attributes — not generic marketing language
+5. Follows the platform rules above
+
+${formatHint}
+
+Return only the content itself — no preamble, no explanation, no "here's your post."`;
 }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { topic, platform, contentType, strategy, mode, text, existing, instruction } = await req.json();
+    const { topic, platform, contentType, strategy, campaign, slot, mode, text, existing, instruction } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
@@ -151,7 +177,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const prompt = buildPrompt({ topic, platform, contentType, strategy });
+    const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot });
 
     const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"].includes(platform);
     const res = await callClaude(SYSTEM, prompt, longForm ? 3000 : 1024);
