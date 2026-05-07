@@ -36,6 +36,17 @@ const STATUS_BADGE: Record<string, string> = {
   paused: "bg-amber-50 text-amber-700",
 };
 
+const COLOR_PALETTE = [
+  { name: "Coral", value: "#F97066" },
+  { name: "Navy", value: "#1A2744" },
+  { name: "Teal", value: "#0D9488" },
+  { name: "Amber", value: "#F59E0B" },
+  { name: "Violet", value: "#7C3AED" },
+  { name: "Sky", value: "#0EA5E9" },
+  { name: "Rose", value: "#E11D48" },
+  { name: "Sage", value: "#4D7C0F" },
+];
+
 export default function CampaignsTab({ ctx }: { ctx: any }) {
   const { campaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
   const [openNew, setOpenNew] = useState(false);
@@ -103,6 +114,7 @@ function CampaignCard({ c, ctx, onOpen }: any) {
   const counts = campaignSlotCounts(c);
   const { pct, filled, total } = campaignSlotProgress(c);
   const channels = c.channels ?? [];
+  const color = c.color || "#F97066";
   const summaryParts: string[] = [];
   if (counts.linkedin) summaryParts.push(`${counts.linkedin} linkedin`);
   if (counts.email) summaryParts.push(`${counts.email} email`);
@@ -111,10 +123,14 @@ function CampaignCard({ c, ctx, onOpen }: any) {
   const summary = summaryParts.length > 0 ? summaryParts.join(" · ") : "0 posts scheduled";
 
   return (
-    <Card className="p-5 shadow-soft border-border">
+    <Card
+      className="p-5 shadow-soft border-border border-l-4"
+      style={{ borderLeftColor: color }}
+    >
       <div className="flex items-start justify-between mb-2">
         <div className="font-display text-lg flex items-center gap-2">
-          <Target className="w-4 h-4 text-accent" /> {c.name}
+          <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+          {c.name}
         </div>
         <Badge className={STATUS_BADGE[c.status] ?? "bg-muted"}>{c.status}</Badge>
       </div>
@@ -161,6 +177,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   const [plan, setPlan] = useState<any[]>([]);
   const [planLoading, setPlanLoading] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [color, setColor] = useState<string>("#F97066");
 
   useEffect(() => {
     if (!open) return;
@@ -171,6 +188,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     setStartDate(seed?.start_date ?? "");
     setEndDate(seed?.end_date ?? "");
     setGoals("");
+    setColor(seed?.color ?? "#F97066");
     if (seed?.channels) {
       const c: Record<string, boolean> = { linkedin: false, email: false, instagram: false, facebook: false };
       seed.channels.forEach((ch: string) => { c[ch] = true; });
@@ -223,6 +241,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         end_date: endDate || null,
         channels: selectedChannels,
         status: "active",
+        color,
         content_plan: { weeks: plan, targets, slots },
       });
       if (error) throw error;
@@ -257,6 +276,23 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                 </Select>
+              </div>
+              <div>
+                <Label>Campaign color</Label>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {COLOR_PALETTE.map(c => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => setColor(c.value)}
+                      title={c.name}
+                      className={`w-9 h-9 rounded-full border-2 transition-all ${color === c.value ? "border-foreground scale-110" : "border-transparent"}`}
+                      style={{ backgroundColor: c.value }}
+                      aria-label={c.name}
+                    />
+                  ))}
+                </div>
+                <div className="text-xs text-muted-foreground mt-2">Used on the campaign card and calendar indicators.</div>
               </div>
               <div className="flex justify-end pt-3">
                 <Button onClick={() => setStep(2)} disabled={!name}>Next <ArrowRight className="w-4 h-4" /></Button>

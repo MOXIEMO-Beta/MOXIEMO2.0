@@ -172,8 +172,15 @@ export default function PlanTab({ ctx }: { ctx: any }) {
               const dots = inMonth ? dayDots(date) : [];
               const isWeekday = date.getDay() !== 0 && date.getDay() !== 6;
               const empty = dots.length === 0;
-              const inCampaign = inMonth ? activeCampaignForDate(campaigns ?? [], date) : null;
-              const camp = empty && isWeekday ? inCampaign : null;
+              const t = date.getTime();
+              const dayCampaigns = inMonth
+                ? (campaigns ?? []).filter((c: any) => {
+                    if (!c.start_date || !c.end_date) return false;
+                    if (c.status === "completed" || c.status === "paused") return false;
+                    return t >= new Date(c.start_date).getTime() && t <= new Date(c.end_date).getTime();
+                  })
+                : [];
+              const camp = empty && isWeekday ? dayCampaigns[0] : null;
               const isToday = date.toDateString() === today.toDateString();
               return (
                 <div
@@ -189,6 +196,26 @@ export default function PlanTab({ ctx }: { ctx: any }) {
                       <span className="text-[10px] text-muted-foreground">{date.getDate()}</span>
                     )}
                   </div>
+                  {dayCampaigns.length > 0 && (
+                    <div className="flex flex-col gap-1 mb-1">
+                      {dayCampaigns.slice(0, 2).map((c: any) => (
+                        <span
+                          key={c.id}
+                          className="text-[10px] font-medium leading-tight px-1.5 py-0.5 rounded text-white truncate"
+                          style={{
+                            backgroundColor: c.color || "#F97066",
+                            opacity: dots.length > 0 ? 1 : 0.5,
+                          }}
+                          title={c.name}
+                        >
+                          {c.name}
+                        </span>
+                      ))}
+                      {dayCampaigns.length > 2 && (
+                        <span className="text-[9px] text-muted-foreground">+{dayCampaigns.length - 2}</span>
+                      )}
+                    </div>
+                  )}
                   {dots.length > 0 && (
                     <div className="flex flex-col gap-1">
                       {dots.slice(0, 3).map(d => (
