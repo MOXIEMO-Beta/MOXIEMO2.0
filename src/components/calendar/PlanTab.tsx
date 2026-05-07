@@ -164,7 +164,7 @@ export default function PlanTab({ ctx }: { ctx: any }) {
           Coverage at a glance — {today.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </h2>
         <Card className="p-4 shadow-soft border-border">
-          <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden mb-4">
+          <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden mb-4" style={{ backgroundColor: "#E5E7EB" }}>
             {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
               <div key={d} className="bg-muted px-2 py-1.5 text-[11px] font-medium text-muted-foreground">{d}</div>
             ))}
@@ -178,7 +178,7 @@ export default function PlanTab({ ctx }: { ctx: any }) {
               return (
                 <div
                   key={idx}
-                  className={`relative group min-h-[72px] p-2 align-top bg-card ${inMonth ? "" : "opacity-40"} ${inCampaign ? "border-t-[3px] border-t-[#ff6b6b]" : ""}`}
+                  className={`relative group min-h-[72px] p-2 align-top bg-card ${inMonth ? "" : "opacity-40"}`}
                 >
                   <div className="mb-1">
                     {isToday ? (
