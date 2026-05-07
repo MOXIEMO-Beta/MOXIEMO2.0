@@ -36,6 +36,17 @@ const STATUS_BADGE: Record<string, string> = {
   paused: "bg-amber-50 text-amber-700",
 };
 
+const COLOR_PALETTE = [
+  { name: "Coral", value: "#F97066" },
+  { name: "Navy", value: "#1A2744" },
+  { name: "Teal", value: "#0D9488" },
+  { name: "Amber", value: "#F59E0B" },
+  { name: "Violet", value: "#7C3AED" },
+  { name: "Sky", value: "#0EA5E9" },
+  { name: "Rose", value: "#E11D48" },
+  { name: "Sage", value: "#4D7C0F" },
+];
+
 export default function CampaignsTab({ ctx }: { ctx: any }) {
   const { campaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
   const [openNew, setOpenNew] = useState(false);
@@ -103,6 +114,7 @@ function CampaignCard({ c, ctx, onOpen }: any) {
   const counts = campaignSlotCounts(c);
   const { pct, filled, total } = campaignSlotProgress(c);
   const channels = c.channels ?? [];
+  const color = c.color || "#F97066";
   const summaryParts: string[] = [];
   if (counts.linkedin) summaryParts.push(`${counts.linkedin} linkedin`);
   if (counts.email) summaryParts.push(`${counts.email} email`);
@@ -111,10 +123,14 @@ function CampaignCard({ c, ctx, onOpen }: any) {
   const summary = summaryParts.length > 0 ? summaryParts.join(" · ") : "0 posts scheduled";
 
   return (
-    <Card className="p-5 shadow-soft border-border">
+    <Card
+      className="p-5 shadow-soft border-border border-l-4"
+      style={{ borderLeftColor: color }}
+    >
       <div className="flex items-start justify-between mb-2">
         <div className="font-display text-lg flex items-center gap-2">
-          <Target className="w-4 h-4 text-accent" /> {c.name}
+          <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+          {c.name}
         </div>
         <Badge className={STATUS_BADGE[c.status] ?? "bg-muted"}>{c.status}</Badge>
       </div>
