@@ -4,9 +4,41 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, ArrowRight, AlertTriangle, Target } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Sparkles, ArrowRight, AlertTriangle, Target, Linkedin, Instagram, Facebook, Mail, FileText, Check } from "lucide-react";
 import { startOfWeek, addDays, sameDay, fmtShort, ymd, PLATFORM_LABELS, activeCampaignForDate } from "./helpers";
 import { cn } from "@/lib/utils";
+
+const DEFAULT_CAMPAIGN_COLOR = "#F97066";
+
+function PlatformIcon({ channel, className }: { channel: string; className?: string }) {
+  const cls = cn("w-4 h-4", className);
+  if (channel === "linkedin") return <Linkedin className={cls} />;
+  if (channel === "instagram") return <Instagram className={cls} />;
+  if (channel === "facebook") return <Facebook className={cls} />;
+  if (channel === "email") return <Mail className={cls} />;
+  return <FileText className={cls} />;
+}
+
+function itemChannel(it: any): string {
+  if (it._kind === "email") return "email";
+  if (it._kind === "content") return "content";
+  if (it._kind === "slot") return it.platform ?? "linkedin";
+  return it.platforms?.[0] ?? "linkedin";
+}
+
+function itemStatus(it: any): "draft" | "scheduled" | "published" | "needs" {
+  if (it._kind === "slot") return "needs";
+  if (it.status === "published" || it.status === "sent") return "published";
+  if (it.status === "scheduled") return "scheduled";
+  return "draft";
+}
+
+function statusBadge(s: ReturnType<typeof itemStatus>) {
+  if (s === "published") return { label: "Published", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" };
+  if (s === "scheduled") return { label: "Scheduled", cls: "bg-blue-50 text-blue-700 border-blue-200" };
+  if (s === "needs") return { label: "Needs content", cls: "bg-accent-soft text-accent border-accent/30" };
+  return { label: "Draft", cls: "bg-muted text-muted-foreground border-border" };
+}
 
 type ChannelKey = "linkedin" | "email" | "instagram" | "facebook" | "content";
 
@@ -18,6 +50,16 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
 
   const [openItem, setOpenItem] = useState<any>(null);
   const [quickCreate, setQuickCreate] = useState<{ date: Date; channel: ChannelKey } | null>(null);
+
+  function campaignColorForItem(it: any): string {
+    if (it._campaign?.color) return it._campaign.color;
+    const cid = it.campaign_id;
+    if (cid) {
+      const c = (campaigns ?? []).find((x: any) => x.id === cid);
+      if (c?.color) return c.color;
+    }
+    return DEFAULT_CAMPAIGN_COLOR;
+  }
 
   // Determine which channel rows to show
   const channels = useMemo<ChannelKey[]>(() => {
@@ -76,13 +118,6 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
     return [...real, ...slotItems];
   }
 
-  function chipClass(item: any) {
-    if (item._kind === "slot") return "bg-accent/10 text-accent border-accent/40 border-dashed";
-    if (item.status === "published" || item.status === "sent") return "bg-emerald-50 text-emerald-700 border-emerald-200";
-    if (item.status === "scheduled") return "bg-accent-soft text-accent border-accent/30";
-    return "bg-muted text-muted-foreground border-border border-dashed";
-  }
-
   // Sidebar metrics — this week
   const weekEnd = addDays(weekStart, 7);
   const inWeek = (iso: string | null | undefined) => iso && new Date(iso) >= weekStart && new Date(iso) < weekEnd;
@@ -90,6 +125,14 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
   const weekLI = socialPosts.filter((p: any) => (p.platforms ?? []).includes("linkedin") && inWeek(p.scheduled_for ?? p.published_at)).length;
   const weekIG = socialPosts.filter((p: any) => (p.platforms ?? []).includes("instagram") && inWeek(p.scheduled_for ?? p.published_at)).length;
   const weekEmail = emailSends.filter((e: any) => inWeek(e.scheduled_for ?? e.sent_at)).length;
+
+  // "X of Y slots filled this week" — count campaign slots in week
+  const weekSlotsAll = (campaigns ?? []).flatMap((c: any) => (c?.content_plan?.slots ?? []).map((s: any) => ({ ...s, _c: c })))
+    .filter((s: any) => {
+      const d = s.date ? new Date(s.date) : null;
+      return d && d >= weekStart && d < weekEnd;
+    });
+  const weekSlotsFilled = weekSlotsAll.filter((s: any) => s.status === "filled").length;
 
   // Month view cells
   const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
@@ -157,18 +200,23 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                 <div className="mb-2 space-y-1">
                   {visibleCampaigns.map((c: any) => {
                     const { startCol, span } = spanForCampaign(c);
+                    const color = c.color || DEFAULT_CAMPAIGN_COLOR;
                     return (
                       <div
                         key={c.id}
                         className="grid"
-                        style={{ gridTemplateColumns: "100px repeat(7, minmax(0, 1fr))", gap: 2 }}
+                        style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 2 }}
                       >
-                        <div />
                         <button
                           type="button"
                           onClick={() => navigate("/app/calendar?tab=campaigns")}
-                          style={{ gridColumnStart: startCol + 2, gridColumnEnd: `span ${span}` }}
-                          className="h-6 px-2 rounded-md bg-accent text-accent-foreground text-[11px] font-medium flex items-center gap-1.5 truncate hover:bg-accent/90 transition-colors text-left"
+                          style={{
+                            gridColumnStart: startCol + 1,
+                            gridColumnEnd: `span ${span}`,
+                            backgroundColor: color,
+                            borderLeft: `3px solid ${color}`,
+                          }}
+                          className="h-6 px-2 rounded-md text-white text-[11px] font-medium flex items-center gap-1.5 truncate hover:opacity-90 transition-opacity text-left"
                           title={`${c.name} · ${fmtShort(new Date(c.start_date))} – ${fmtShort(new Date(c.end_date))}`}
                         >
                           <Target className="w-3 h-3 shrink-0" />
@@ -180,92 +228,192 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                 </div>
               )}
 
-              <div className="grid" style={{ gridTemplateColumns: "100px repeat(7, minmax(0, 1fr))", gap: 2 }}>
-                <div />
-                {weekDays.map(d => (
-                  <div key={d.toISOString()} className="text-[11px] text-muted-foreground font-medium px-2 py-1">
-                    <div>{d.toLocaleDateString("en-US", { weekday: "short" })}</div>
-                    <div className="text-foreground">{d.getDate()}</div>
-                  </div>
-                ))}
-                {channels.map(ch => (
-                  <FragmentRow
-                    key={ch}
-                    label={PLATFORM_LABELS[ch]}
-                    days={weekDays}
-                    cellItems={(d) => itemsForCell(ch, d)}
-                    chipClass={chipClass}
-                    onItem={setOpenItem}
-                    onAdd={(d) => setQuickCreate({ date: d, channel: ch })}
-                    campaignForDate={(d) => activeCampaignForDate(campaigns ?? [], d)}
-                  />
-                ))}
+              <div className="grid" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 2 }}>
+                {weekDays.map(d => {
+                  const isToday = sameDay(d, new Date());
+                  return (
+                    <div key={`hdr-${d.toISOString()}`} className="text-[11px] text-muted-foreground font-medium px-2 py-1">
+                      <div>{d.toLocaleDateString("en-US", { weekday: "short" })}</div>
+                      <div className={cn("text-foreground", isToday && "font-bold")}>{d.getDate()}</div>
+                    </div>
+                  );
+                })}
+                {weekDays.map(d => {
+                  const items = dayItems(d);
+                  const isToday = sameDay(d, new Date());
+                  return (
+                    <div
+                      key={`col-${d.toISOString()}`}
+                      className={cn(
+                        "group relative min-h-[260px] p-1.5 rounded border border-transparent",
+                        isToday && "bg-accent-soft/40"
+                      )}
+                    >
+                      <div className="space-y-1.5">
+                        {items.map((it, idx) => {
+                          const ch = itemChannel(it);
+                          const status = itemStatus(it);
+                          const badge = statusBadge(status);
+                          const color = campaignColorForItem(it);
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => setOpenItem(it)}
+                              className="w-full text-left bg-card rounded-md border border-border shadow-sm hover:shadow-md transition-shadow overflow-hidden"
+                            >
+                              <div className="h-1" style={{ backgroundColor: color }} />
+                              <div className="p-2">
+                                <div className="flex items-start justify-between gap-1.5 mb-1">
+                                  <div className="text-[11px] font-medium leading-snug line-clamp-2 flex-1">
+                                    {(it._text || "Untitled").slice(0, 60)}
+                                  </div>
+                                  <PlatformIcon channel={ch} className="w-4 h-4 text-muted-foreground shrink-0" />
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span className={cn("inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full border", badge.cls)}>
+                                    {status === "published" && <Check className="w-2.5 h-2.5" />}
+                                    {badge.label}
+                                  </span>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {/* Hover-only add affordance */}
+                      <button
+                        onClick={() => setQuickCreate({ date: d, channel: "linkedin" })}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 w-full text-[10px] text-muted-foreground hover:text-accent flex items-center justify-center gap-1 py-1.5 rounded border border-dashed border-border"
+                        title="Add content"
+                      >
+                        <Plus className="w-3 h-3" /> Add content
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </Card>
         ) : (
           <Card className="p-3 shadow-soft border-border">
-            <div className="grid grid-cols-7 gap-px bg-border rounded-md overflow-hidden">
+            <div className="grid grid-cols-7 gap-px rounded-md overflow-hidden" style={{ backgroundColor: "#E5E7EB" }}>
               {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
                 <div key={d} className="bg-muted px-2 py-1.5 text-[11px] font-medium text-muted-foreground">{d}</div>
               ))}
-              {Array.from({ length: monthCells }, (_, i) => addDays(monthFirstWeek, i)).map((d, i) => {
-                const inMonth = d.getMonth() === anchor.getMonth();
-                const items = inMonth ? dayItems(d) : [];
-                const camp = inMonth ? activeCampaignForDate(campaigns ?? [], d) : null;
-                const pillClass = (ch: string) =>
-                  ch === "linkedin" ? "bg-blue-50 text-blue-700 border-blue-200"
-                  : ch === "instagram" ? "bg-purple-50 text-purple-700 border-purple-200"
-                  : ch === "facebook" ? "bg-blue-50 text-blue-800 border-blue-300"
-                  : ch === "email" ? "bg-accent-soft text-accent border-accent/30"
-                  : "bg-muted text-muted-foreground border-border";
-                const pillLabel = (ch: string) =>
-                  ch === "linkedin" ? "LinkedIn"
-                  : ch === "instagram" ? "Instagram"
-                  : ch === "facebook" ? "Facebook"
-                  : ch === "email" ? "Email"
-                  : "Content";
-                return (
-                  <button
-                    key={i}
-                    className={cn("bg-card min-h-[84px] p-1.5 text-left relative flex flex-col", inMonth ? "" : "opacity-40 cursor-default")}
-                    onClick={() => inMonth && items.length > 0 && setOpenItem({ _kind: "day", date: d, items })}
-                  >
-                    {camp && (
+              {(() => {
+                const cells = Array.from({ length: monthCells }, (_, i) => addDays(monthFirstWeek, i));
+                const today = new Date();
+                const out: JSX.Element[] = [];
+                for (let row = 0; row < cells.length / 7; row++) {
+                  const rowDays = cells.slice(row * 7, row * 7 + 7);
+                  const rowStart = rowDays[0];
+                  const rowEnd = rowDays[6];
+                  // Find campaigns overlapping this row
+                  const rowCampaigns = (campaigns ?? []).filter((c: any) => {
+                    if (!c.start_date || !c.end_date) return false;
+                    const s = new Date(c.start_date);
+                    const e = new Date(c.end_date);
+                    return s <= rowEnd && e >= rowStart;
+                  });
+                  // Color strips spanning the full row width — render via 7-col grid w/ per-campaign segments
+                  if (rowCampaigns.length > 0) {
+                    out.push(
                       <div
-                        className="absolute top-0 left-0 right-0 h-1 bg-accent"
-                        title={`${camp.name} (${fmtShort(new Date(camp.start_date))} – ${fmtShort(new Date(camp.end_date))})`}
-                      />
-                    )}
-                    <div className="flex items-center justify-between mb-1 mt-1">
-                      <div className="text-[10px] text-muted-foreground">{d.getDate()}</div>
-                      {camp && (
-                        <div className="text-[8px] text-accent font-medium truncate max-w-[60%]" title={camp.name}>
-                          {camp.name}
+                        key={`strip-${row}`}
+                        className="col-span-7 bg-card"
+                        style={{ padding: 0 }}
+                      >
+                        <div className="flex flex-col">
+                          {rowCampaigns.map((c: any) => {
+                            const s = new Date(c.start_date);
+                            const e = new Date(c.end_date);
+                            const startCol = Math.max(0, Math.floor((Math.max(s.getTime(), rowStart.getTime()) - rowStart.getTime()) / 86400000));
+                            const endCol = Math.min(6, Math.floor((Math.min(e.getTime(), rowEnd.getTime()) - rowStart.getTime()) / 86400000));
+                            const span = endCol - startCol + 1;
+                            const color = c.color || DEFAULT_CAMPAIGN_COLOR;
+                            return (
+                              <div
+                                key={c.id}
+                                className="grid"
+                                style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
+                                title={c.name}
+                              >
+                                <div
+                                  style={{
+                                    gridColumnStart: startCol + 1,
+                                    gridColumnEnd: `span ${span}`,
+                                    height: 4,
+                                    backgroundColor: color,
+                                  }}
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-0.5">
-                      {items.slice(0, 3).map((it, idx) => {
-                        const ch = it._kind === "email" ? "email" : it._kind === "content" ? "content" : (it.platforms?.[0] ?? "linkedin");
-                        return (
-                          <span
-                            key={idx}
-                            className={cn("text-[9px] px-1 py-0.5 rounded border truncate max-w-full", pillClass(ch))}
-                          >
-                            {pillLabel(ch)}
+                      </div>
+                    );
+                  }
+                  rowDays.forEach((d, i) => {
+                    const inMonth = d.getMonth() === anchor.getMonth();
+                    const items = inMonth ? dayItems(d) : [];
+                    const isToday = sameDay(d, today);
+                    out.push(
+                      <div
+                        key={`cell-${row}-${i}`}
+                        className={cn(
+                          "group bg-card min-h-[88px] p-1.5 text-left relative flex flex-col",
+                          inMonth ? "" : "opacity-40",
+                          isToday && "bg-accent-soft/40"
+                        )}
+                      >
+                        <div className="mb-1">
+                          <span className={cn("text-[10px]", isToday ? "font-bold text-foreground" : "text-muted-foreground")}>
+                            {d.getDate()}
                           </span>
-                        );
-                      })}
-                      {items.length > 3 && (
-                        <span className="text-[9px] px-1 py-0.5 rounded border bg-muted text-muted-foreground border-border">
-                          +{items.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
+                        </div>
+                        <div className="space-y-0.5 flex-1">
+                          {items.slice(0, 2).map((it, idx) => {
+                            const ch = itemChannel(it);
+                            const color = campaignColorForItem(it);
+                            const status = itemStatus(it);
+                            return (
+                              <button
+                                key={idx}
+                                onClick={(e) => { e.stopPropagation(); setOpenItem(it); }}
+                                className="w-full flex items-center gap-1 bg-card pl-1.5 pr-1 py-0.5 rounded border border-border text-left hover:bg-muted/40"
+                                style={{ borderLeft: `3px solid ${color}` }}
+                                title={`${it._text} · ${statusBadge(status).label}`}
+                              >
+                                <PlatformIcon channel={ch} className="w-3 h-3 text-muted-foreground shrink-0" />
+                                <span className="text-[9px] truncate">{(it._text || "").slice(0, 20)}</span>
+                              </button>
+                            );
+                          })}
+                          {items.length > 2 && (
+                            <button
+                              onClick={() => { setAnchor(d); setView("week"); }}
+                              className="text-[9px] font-medium hover:underline"
+                              style={{ color: campaignColorForItem(items[2]) }}
+                            >
+                              +{items.length - 2} more
+                            </button>
+                          )}
+                          {inMonth && items.length === 0 && (
+                            <button
+                              onClick={() => setQuickCreate({ date: d, channel: "linkedin" })}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity w-full flex items-center justify-center text-muted-foreground hover:text-accent py-1"
+                              title="Add content"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  });
+                }
+                return out;
+              })()}
             </div>
           </Card>
         )}
@@ -280,11 +428,11 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
             Scheduled: <span className="font-medium">{weekScheduled} posts</span>
             {weekScheduled < cadenceTarget && <span className="text-amber-600 inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> behind</span>}
           </div>
-
-          <div className="mt-4 mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Channel balance</div>
-          <BalRow label="LinkedIn" val={weekLI} max={cadenceTarget} color="bg-blue-500" />
-          <BalRow label="Email" val={weekEmail} max={2} color="bg-accent" />
-          <BalRow label="Instagram" val={weekIG} max={3} color="bg-purple-500" />
+          {weekSlotsAll.length > 0 && (
+            <div className="text-sm mt-1 text-muted-foreground">
+              <span className="font-medium text-foreground">{weekSlotsFilled}</span> of <span className="font-medium text-foreground">{weekSlotsAll.length}</span> slots filled this week
+            </div>
+          )}
 
           <div className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">MOXIEMO suggests</div>
           <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
