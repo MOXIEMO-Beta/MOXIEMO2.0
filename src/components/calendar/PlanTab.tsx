@@ -170,7 +170,7 @@ export default function PlanTab({ ctx }: { ctx: any }) {
             ))}
             {days.map(({ date, inMonth }, idx) => {
               const dots = inMonth ? dayDots(date) : [];
-              const isWeekday = date.getDay() !== 0 && date.getDay() !== 6;
+              const isWeekday = true;
               const empty = dots.length === 0;
               const t = date.getTime();
               const dayCampaigns = inMonth

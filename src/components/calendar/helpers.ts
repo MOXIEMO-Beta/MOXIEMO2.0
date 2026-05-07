@@ -71,7 +71,7 @@ export function generateCampaignSlots(opts: {
     cursor = addDays(cursor, 7);
   }
 
-  const POST_DAYS = [0, 1, 2, 3]; // Mon, Tue, Wed, Thu offsets from week start
+  const POST_DAYS = [0, 1, 2, 3, 4, 5, 6]; // Mon–Sun offsets from week start
   const slots: any[] = [];
 
   weeks.forEach((weekStart, weekIdx) => {
