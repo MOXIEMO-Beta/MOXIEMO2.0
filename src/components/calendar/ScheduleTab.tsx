@@ -315,44 +315,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                     const e = new Date(c.end_date);
                     return s <= rowEnd && e >= rowStart;
                   });
-                  // Color strips spanning the full row width — render via 7-col grid w/ per-campaign segments
-                  if (rowCampaigns.length > 0) {
-                    out.push(
-                      <div
-                        key={`strip-${row}`}
-                        className="col-span-7 bg-card"
-                        style={{ padding: 0 }}
-                      >
-                        <div className="flex flex-col">
-                          {rowCampaigns.map((c: any) => {
-                            const s = new Date(c.start_date);
-                            const e = new Date(c.end_date);
-                            const startCol = Math.max(0, Math.floor((Math.max(s.getTime(), rowStart.getTime()) - rowStart.getTime()) / 86400000));
-                            const endCol = Math.min(6, Math.floor((Math.min(e.getTime(), rowEnd.getTime()) - rowStart.getTime()) / 86400000));
-                            const span = endCol - startCol + 1;
-                            const color = c.color || DEFAULT_CAMPAIGN_COLOR;
-                            return (
-                              <div
-                                key={c.id}
-                                className="grid"
-                                style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}
-                                title={c.name}
-                              >
-                                <div
-                                  style={{
-                                    gridColumnStart: startCol + 1,
-                                    gridColumnEnd: `span ${span}`,
-                                    height: 4,
-                                    backgroundColor: color,
-                                  }}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  }
+                  // Week separators are provided by the grid's 1px gap (#E5E7EB) — no colored strips.
                   rowDays.forEach((d, i) => {
                     const inMonth = d.getMonth() === anchor.getMonth();
                     const items = inMonth ? dayItems(d) : [];
@@ -393,7 +356,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                             <button
                               onClick={() => { setAnchor(d); setView("week"); }}
                               className="text-[9px] font-medium hover:underline"
-                              style={{ color: campaignColorForItem(items[2]) }}
+                              style={{ color: "#6B7280" }}
                             >
                               +{items.length - 2} more
                             </button>
