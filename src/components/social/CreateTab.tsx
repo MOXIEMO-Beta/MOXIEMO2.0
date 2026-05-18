@@ -1474,6 +1474,12 @@ export default function CreateTab({
                 {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                 Publish now
               </Button>
+              {platforms.includes("facebook") && !canPublishOn(plan, "facebook") && (
+                <PublishLockBadge platform="facebook" />
+              )}
+              {platforms.includes("instagram") && !canPublishOn(plan, "instagram") && (
+                <PublishLockBadge platform="instagram" />
+              )}
             </div>
 
             {showSchedule && (
