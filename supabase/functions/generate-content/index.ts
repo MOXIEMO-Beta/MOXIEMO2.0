@@ -3,6 +3,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
+
 const SYSTEM = `You are MOXIE, an AI CMO generating content for a specific marketing campaign.
 
 You write in the founder's voice — never generic marketing speak. Every piece of content you produce must:
@@ -177,6 +179,17 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Server-side limit enforcement (handles UTC month rollover atomically)
+    const pre = await precheckGeneration(req);
+    if (!pre.allowed) {
+      if (pre.error === "unauthorized") return unauthorizedResponse(corsHeaders);
+      if (pre.error === "limit_reached") return limitErrorResponse(corsHeaders, pre);
+      return new Response(JSON.stringify({ error: pre.error ?? "limit_check_failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot });
 
     const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"].includes(platform);
@@ -203,6 +216,11 @@ Deno.serve(async (req) => {
 
     const data = await res.json();
     const body = data.content?.[0]?.text?.trim() ?? "";
+    const usage = await commitGeneration(req, {
+      platform,
+      campaignId: campaign?.id ?? null,
+      preview: body,
+    });
     return new Response(JSON.stringify({ body }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
