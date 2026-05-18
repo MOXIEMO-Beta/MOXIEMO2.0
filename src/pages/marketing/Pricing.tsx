@@ -110,7 +110,7 @@ export default function Pricing() {
                 </div>
                 <Button asChild className={`w-full h-11 rounded-full font-semibold ${t.featured ? "bg-accent hover:bg-accent/90 text-accent-foreground" : (t as any).coralCta ? "text-white hover:opacity-90" : "bg-foreground hover:bg-foreground/90 text-background"}`} style={(t as any).coralCta ? { backgroundColor: "#ff6b6b" } : undefined}>
                   {(t as any).comingSoon ? (
-                    <a href="mailto:karee@klmg-us.com?subject=Scale%20plan%20waitlist">{t.cta}</a>
+                    <a href="mailto:hello@buildwithmoxiemo.com?subject=Scale%20plan%20waitlist">{t.cta}</a>
                   ) : (
                     <Link to="/auth">{t.cta}</Link>
                   )}
