@@ -3,6 +3,14 @@ import { usePlan } from "@/hooks/usePlan";
 import { GENERATION_LIMIT, PLAN_LABEL } from "@/lib/planConfig";
 import { cn } from "@/lib/utils";
 
+function nextResetLabel(): string {
+  // First day of next month, in user's locale.
+  const now = new Date();
+  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const month = next.toLocaleString(undefined, { month: "long" });
+  return `Resets ${month} 1st`;
+}
+
 export function UsageIndicator({ compact = false }: { compact?: boolean }) {
   const { plan, usage, loading } = usePlan();
   if (loading) return null;
@@ -10,12 +18,15 @@ export function UsageIndicator({ compact = false }: { compact?: boolean }) {
   const limit = GENERATION_LIMIT[plan];
   const used = usage?.generations_used ?? 0;
   const unlimited = limit === null;
-  const pct = unlimited ? 0 : Math.min(100, Math.round((used / limit!) * 100));
+  const remaining = unlimited ? null : Math.max(0, (limit ?? 0) - used);
+  const pct = unlimited ? 100 : Math.min(100, Math.round((used / (limit || 1)) * 100));
 
   const overEighty = !unlimited && pct >= 80 && pct < 100;
   const atLimit = !unlimited && used >= (limit ?? 0);
 
-  const barColor = atLimit
+  const barColor = unlimited
+    ? "bg-[#C9A96E]" // gold for unlimited
+    : atLimit
     ? "bg-brand-coral"
     : overEighty
     ? "bg-[#C9A96E]"
@@ -28,18 +39,24 @@ export function UsageIndicator({ compact = false }: { compact?: boolean }) {
         <span className="text-xs font-semibold text-foreground">{PLAN_LABEL[plan]}</span>
       </div>
       {unlimited ? (
-        <div className="mt-1.5 text-xs text-muted-foreground">Unlimited generations</div>
+        <>
+          <div className="mt-1.5 text-xs text-foreground font-medium">Unlimited generations</div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
+            <div className={cn("h-full", barColor)} style={{ width: "100%" }} />
+          </div>
+        </>
       ) : (
         <>
           <div className="mt-1.5 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{used}</span> of {limit} generations used this month
+            <span className="font-medium text-foreground">{remaining}</span> generation{remaining === 1 ? "" : "s"} remaining this month
           </div>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
             <div className={cn("h-full transition-all", barColor)} style={{ width: `${pct}%` }} />
           </div>
+          <div className="mt-1.5 text-[10.5px] text-muted-foreground">{nextResetLabel()}</div>
           <Link
             to="/pricing"
-            className="mt-2 inline-block text-[11px] font-medium text-brand-coral hover:underline"
+            className="mt-1.5 inline-block text-[11px] font-medium text-brand-coral hover:underline"
           >
             Upgrade your plan →
           </Link>
