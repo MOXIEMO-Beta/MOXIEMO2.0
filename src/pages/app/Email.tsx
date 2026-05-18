@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlan } from "@/hooks/usePlan";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -173,6 +174,7 @@ type SendMode = "now" | "schedule" | "queue";
 
 export default function Email() {
   const { user } = useAuth();
+  const { checkGenerationLimit, incrementUsage } = usePlan();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [previewText, setPreviewText] = useState("");
@@ -341,6 +343,7 @@ export default function Email() {
   }, [sends.length]);
 
   async function generateWithMoxie(params: GenerateParams) {
+    if (!(await checkGenerationLimit())) return;
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-email", {
@@ -353,6 +356,7 @@ export default function Email() {
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      await incrementUsage();
 
       // Defensive parse: if the function returned a raw string (possibly
       // wrapped in markdown fences), normalize into { subject, body, preview_text }.
