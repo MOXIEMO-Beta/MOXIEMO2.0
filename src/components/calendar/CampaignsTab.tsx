@@ -205,8 +205,10 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   }, [startDate, endDate]);
 
   const selectedChannels = Object.keys(channels).filter(k => channels[k]);
+  const { checkGenerationLimit, incrementUsage } = usePlan();
 
   async function generatePlan() {
+    if (!(await checkGenerationLimit())) return;
     setPlanLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-campaign-plan", {
@@ -216,6 +218,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         },
       });
       if (error) throw error;
+      await incrementUsage();
       setPlan((data as any)?.weeks ?? []);
     } catch (e: any) {
       toast.error("Could not generate plan", { description: e.message });
