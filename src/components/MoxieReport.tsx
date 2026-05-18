@@ -160,14 +160,14 @@ function Overview({ data }: { data: any }) {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
         {cells.map(([k, v]) => (
-          <div key={k} style={{ ...card, padding: 14 }}>
+          <div className="report-card" key={k} style={{ ...card, padding: 14 }}>
             <div style={{ fontSize: 10, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 6 }}>{k.toUpperCase()}</div>
             <div style={{ fontSize: 13, lineHeight: 1.4, color: C.navy2 }}>{v ?? "—"}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ ...card, marginBottom: 16 }}>
+      <div className="report-card" style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>ARCHETYPE</div>
         <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
           {data?.archetype?.primary ?? "—"}
@@ -214,7 +214,7 @@ function Voice({ data }: { data: any }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
-        <div style={card}>
+        <div className="report-card" style={card}>
           <div style={{ fontSize: 11, letterSpacing: 2, color: C.green, fontWeight: 700, marginBottom: 8 }}>USE</div>
           {useWords.map((w: any, i) => (
             <span key={i} style={pill(C.greenPale, C.green)}>
@@ -222,7 +222,7 @@ function Voice({ data }: { data: any }) {
             </span>
           ))}
         </div>
-        <div style={card}>
+        <div className="report-card" style={card}>
           <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>AVOID</div>
           {avoidWords.map((w: any, i) => (
             <span key={i} style={pill(C.coralPale, C.coral, { textDecoration: "line-through" })}>
@@ -239,7 +239,7 @@ function Voice({ data }: { data: any }) {
         </div>
       </div>
 
-      <div style={{ ...card, marginBottom: 20 }}>
+      <div className="report-card" style={{ ...card, marginBottom: 20 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.muted, fontWeight: 700, marginBottom: 6 }}>NEVER SOUND LIKE</div>
         <div style={{ fontSize: 13, color: C.navy3 }}>{data?.voice?.neverSoundLike ?? "—"}</div>
       </div>
@@ -248,7 +248,7 @@ function Voice({ data }: { data: any }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 10 }}>TONE BY CHANNEL</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
           {(["email", "linkedin", "podcast"] as const).map((ch) => (
-            <div key={ch} style={{ ...card, padding: 14 }}>
+            <div className="report-card" key={ch} style={{ ...card, padding: 14 }}>
               <div style={{ fontSize: 10, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 6 }}>
                 {ch.toUpperCase()}
               </div>
@@ -272,7 +272,7 @@ function Content({ data }: { data: any }) {
       <div style={sectionLabel}>03 · Content Strategy</div>
       <h1 style={h1}>What You Publish</h1>
 
-      <div style={{ ...card, marginBottom: 24 }}>
+      <div className="report-card" style={{ ...card, marginBottom: 24 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 12 }}>CONTENT PILLARS</div>
         {pillars.map((p, i) => (
           <div key={i} style={{ display: "flex", gap: 12, padding: "10px 0", borderTop: i ? `1px solid ${C.creamDark}` : "none" }}>
@@ -385,7 +385,7 @@ function ChannelsMetrics({ data }: { data: any }) {
         {tiers.map(([key, label]) => {
           const ch = channels?.[key] ?? {};
           return (
-            <div key={key} style={{ ...card }}>
+            <div className="report-card" key={key} style={{ ...card }}>
               <div style={{ fontSize: 10, letterSpacing: 2, color: C.coral, fontWeight: 700 }}>{label.toUpperCase()}</div>
               <div style={{ fontSize: 18, fontWeight: 800, margin: "6px 0", color: C.navy }}>{ch?.name ?? "—"}</div>
               <div style={{ fontSize: 12, color: C.navy3, lineHeight: 1.4, wordBreak: "break-word" }}>
@@ -399,7 +399,7 @@ function ChannelsMetrics({ data }: { data: any }) {
         })}
       </div>
 
-      <div style={{ ...card, marginBottom: 20 }}>
+      <div className="report-card" style={{ ...card, marginBottom: 20 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 12 }}>BUSINESS GOALS</div>
         {goals.map((g, i) => (
           <div key={i} style={{
@@ -415,7 +415,7 @@ function ChannelsMetrics({ data }: { data: any }) {
         ))}
       </div>
 
-      <div style={card}>
+      <div className="report-card" style={card}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 12 }}>BRAND HEALTH</div>
         {[
           ["Archetype Alignment", aa],
@@ -457,7 +457,7 @@ function ActionPlan({ data }: { data: any }) {
           const color = wColors[i % wColors.length];
           const tasks: any[] = w?.tasks ?? [];
           return (
-            <div key={i} style={{ ...card, padding: 0, overflow: "hidden" }}>
+            <div className="report-card" key={i} style={{ ...card, padding: 0, overflow: "hidden" }}>
               <div style={{ background: color, color: C.white, padding: "10px 16px", fontSize: 11, letterSpacing: 2, fontWeight: 700 }}>
                 {w?.label ?? `WEEK ${i + 1}`}
               </div>
@@ -474,7 +474,7 @@ function ActionPlan({ data }: { data: any }) {
         })}
       </div>
 
-      <div style={card}>
+      <div className="report-card" style={card}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 12 }}>ONGOING ROUTINE</div>
         <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 0 }}>
           {tiers.map(([key, label], i) => {
