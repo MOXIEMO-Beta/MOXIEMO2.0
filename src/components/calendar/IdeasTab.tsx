@@ -25,7 +25,7 @@ function isThisWeek(iso: string | null | undefined) {
 export default function IdeasTab({ ctx }: { ctx: any }) {
   const { strategy, socialPosts, emailSends, ideas, refresh, user, navigate } = ctx;
   const [loadingGen, setLoadingGen] = useState(false);
-  const { checkGenerationLimit, incrementUsage } = usePlan();
+  const { checkGenerationLimit, handleGenerationResponse } = usePlan();
 
   const opportunities = ideas.filter((i: any) => !i.dismissed).slice(0, 3);
 
@@ -40,9 +40,9 @@ export default function IdeasTab({ ctx }: { ctx: any }) {
       const { data, error } = await supabase.functions.invoke("generate-calendar-ideas", {
         body: { strategy, recentPosts, recentEmails, activeChannels },
       });
+      if (handleGenerationResponse(data, error)) return;
       if (error) throw error;
       const newIdeas = (data as any)?.ideas ?? [];
-      await incrementUsage();
       // Persist
       if (newIdeas.length > 0) {
         await supabase.from("calendar_ideas").insert(newIdeas.map((it: any) => ({
