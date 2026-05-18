@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,16 @@ serve(async (req) => {
     const { campaign, strategy } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
+
+    const pre = await precheckGeneration(req);
+    if (!pre.allowed) {
+      if (pre.error === "unauthorized") return unauthorizedResponse(corsHeaders);
+      if (pre.error === "limit_reached") return limitErrorResponse(corsHeaders, pre);
+      return new Response(JSON.stringify({ error: pre.error ?? "limit_check_failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const start = campaign?.start_date ? new Date(campaign.start_date) : new Date();
     const end = campaign?.end_date ? new Date(campaign.end_date) : new Date();
@@ -71,7 +82,12 @@ Return ONLY valid JSON, no markdown:
       });
     }
 
-    return new Response(JSON.stringify(result), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const usage = await commitGeneration(req, {
+      platform: "campaign-plan",
+      campaignId: campaign?.id ?? null,
+      preview: campaign?.name ? `Campaign plan: ${campaign.name}` : "Campaign plan",
+    });
+    return new Response(JSON.stringify({ ...result, usage }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("generate-campaign-plan error:", e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

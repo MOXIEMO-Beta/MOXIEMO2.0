@@ -7,7 +7,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowRight, Shield } from "lucide-react";
+import { ArrowRight, Shield, Linkedin, Facebook, Instagram, Mail, Calendar as CalIcon, Lightbulb, Megaphone, Sparkles, FileText } from "lucide-react";
+
+type HistoryRow = {
+  id: string;
+  platform: string | null;
+  campaign_id: string | null;
+  content_preview: string | null;
+  generated_at: string;
+};
+
+function platformIcon(platform: string | null) {
+  const p = (platform ?? "").toLowerCase();
+  if (p.includes("linkedin")) return <Linkedin className="h-4 w-4 text-foreground/70" />;
+  if (p.includes("facebook")) return <Facebook className="h-4 w-4 text-foreground/70" />;
+  if (p.includes("instagram")) return <Instagram className="h-4 w-4 text-foreground/70" />;
+  if (p.includes("email")) return <Mail className="h-4 w-4 text-foreground/70" />;
+  if (p.includes("calendar")) return <CalIcon className="h-4 w-4 text-foreground/70" />;
+  if (p === "ideas") return <Lightbulb className="h-4 w-4 text-foreground/70" />;
+  if (p.includes("campaign")) return <Megaphone className="h-4 w-4 text-foreground/70" />;
+  if (p.includes("social")) return <Sparkles className="h-4 w-4 text-foreground/70" />;
+  return <FileText className="h-4 w-4 text-foreground/70" />;
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
 
 export default function Settings() {
   const { user } = useAuth();
@@ -15,6 +41,8 @@ export default function Settings() {
   const [business, setBusiness] = useState("");
   const [saving, setSaving] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [history, setHistory] = useState<HistoryRow[]>([]);
+  const [campaignNames, setCampaignNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) return;
@@ -23,6 +51,31 @@ export default function Settings() {
       setBusiness(data?.business_name || "");
       setIsAdmin(Boolean((data as any)?.is_admin));
     });
+
+    supabase
+      .from("generation_history")
+      .select("id, platform, campaign_id, content_preview, generated_at")
+      .eq("user_id", user.id)
+      .order("generated_at", { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        const rows = (data ?? []) as HistoryRow[];
+        setHistory(rows);
+        const ids = Array.from(
+          new Set(rows.map((r) => r.campaign_id).filter((v): v is string => Boolean(v))),
+        );
+        if (ids.length) {
+          supabase
+            .from("campaigns")
+            .select("id, name")
+            .in("id", ids)
+            .then(({ data: cs }) => {
+              const map: Record<string, string> = {};
+              (cs ?? []).forEach((c: any) => { map[c.id] = c.name; });
+              setCampaignNames(map);
+            });
+        }
+      });
   }, [user]);
 
   async function save() {
@@ -73,6 +126,43 @@ export default function Settings() {
           </Card>
         </div>
       )}
+
+      <div className="mt-10">
+        <div className="text-xs uppercase tracking-[0.2em] font-semibold text-muted-foreground mb-3">
+          Generation History
+        </div>
+        <Card className="p-0 border-border shadow-soft overflow-hidden">
+          {history.length === 0 ? (
+            <div className="p-6 text-sm text-muted-foreground">
+              No generations yet. Your last 20 AI generations will appear here.
+            </div>
+          ) : (
+            <ul className="divide-y divide-border">
+              {history.map((row) => (
+                <li key={row.id} className="flex items-start gap-3 p-4">
+                  <div className="mt-0.5 flex-shrink-0">{platformIcon(row.platform)}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-foreground truncate">
+                      {row.content_preview || <span className="text-muted-foreground italic">No preview</span>}
+                    </div>
+                    <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <span className="uppercase tracking-wider">{row.platform || "generation"}</span>
+                      {row.campaign_id && campaignNames[row.campaign_id] && (
+                        <>
+                          <span>•</span>
+                          <span>Campaign: {campaignNames[row.campaign_id]}</span>
+                        </>
+                      )}
+                      <span>•</span>
+                      <span>{formatDate(row.generated_at)}</span>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }

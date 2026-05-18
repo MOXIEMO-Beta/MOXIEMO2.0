@@ -4,6 +4,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
+
 const SYSTEM = `You are MOXIEMO, an AI Chief Marketing Officer generating social media content for an expertise-based founder.
 
 This founder sells their expertise — they may be a coach, consultant, fractional executive, or agency owner. Every post you write must:
@@ -47,6 +49,16 @@ Deno.serve(async (req) => {
         JSON.stringify({ error: "topic, platforms, postFormat required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+
+    const pre = await precheckGeneration(req);
+    if (!pre.allowed) {
+      if (pre.error === "unauthorized") return unauthorizedResponse(corsHeaders);
+      if (pre.error === "limit_reached") return limitErrorResponse(corsHeaders, pre);
+      return new Response(JSON.stringify({ error: pre.error ?? "limit_check_failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const s = strategy ?? {};
@@ -125,7 +137,14 @@ For unrequested platforms, return an empty string.`;
       result[p] = typeof posts[p] === "string" ? posts[p] : "";
     }
 
-    return new Response(JSON.stringify({ posts: result }), {
+    const firstPlatform = platforms[0];
+    const previewText = result[firstPlatform] ?? Object.values(result).find((v) => v) ?? "";
+    const usage = await commitGeneration(req, {
+      platform: `social:${platforms.join(",")}`,
+      campaignId: null,
+      preview: previewText,
+    });
+    return new Response(JSON.stringify({ posts: result, usage }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

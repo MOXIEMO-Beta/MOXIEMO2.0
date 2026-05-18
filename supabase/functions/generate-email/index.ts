@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -42,6 +43,17 @@ Deno.serve(async (req) => {
       });
     }
     const userId = userData.user.id;
+
+    // Server-side limit enforcement (handles UTC month rollover atomically)
+    const pre = await precheckGeneration(req);
+    if (!pre.allowed) {
+      if (pre.error === "unauthorized") return unauthorizedResponse(corsHeaders);
+      if (pre.error === "limit_reached") return limitErrorResponse(corsHeaders, pre);
+      return new Response(JSON.stringify({ error: pre.error ?? "limit_check_failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     let topic = "";
     let emailType = "Weekly Newsletter";
@@ -187,7 +199,13 @@ The user will add their own CTA separately in the editor.`;
       parsed.body = stripFences(parsed.body);
     }
 
-    return new Response(JSON.stringify(parsed), {
+    const usage = await commitGeneration(req, {
+      platform: "email",
+      campaignId: null,
+      preview: parsed.subject || (parsed.body ?? "").replace(/<[^>]+>/g, " ").slice(0, 100),
+    });
+
+    return new Response(JSON.stringify({ ...parsed, usage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

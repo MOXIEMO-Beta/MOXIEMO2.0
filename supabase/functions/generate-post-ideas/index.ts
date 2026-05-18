@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,6 +17,16 @@ serve(async (req) => {
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) {
       throw new Error("ANTHROPIC_API_KEY is not set");
+    }
+
+    const pre = await precheckGeneration(req);
+    if (!pre.allowed) {
+      if (pre.error === "unauthorized") return unauthorizedResponse(corsHeaders);
+      if (pre.error === "limit_reached") return limitErrorResponse(corsHeaders, pre);
+      return new Response(JSON.stringify({ error: pre.error ?? "limit_check_failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const pillars = Array.isArray(strategy?.content_pillars)
@@ -78,7 +89,12 @@ Return ONLY a valid JSON array with exactly 6 items. No explanation, no preamble
       ];
     }
 
-    return new Response(JSON.stringify({ ideas }), {
+    const usage = await commitGeneration(req, {
+      platform: "ideas",
+      campaignId: null,
+      preview: Array.isArray(ideas) && ideas[0]?.title ? String(ideas[0].title) : "Post ideas",
+    });
+    return new Response(JSON.stringify({ ideas, usage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 

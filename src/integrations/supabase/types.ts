@@ -342,6 +342,33 @@ export type Database = {
         }
         Relationships: []
       }
+      generation_history: {
+        Row: {
+          campaign_id: string | null
+          content_preview: string | null
+          generated_at: string
+          id: string
+          platform: string | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          content_preview?: string | null
+          generated_at?: string
+          id?: string
+          platform?: string | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          content_preview?: string | null
+          generated_at?: string
+          id?: string
+          platform?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       goal_entries: {
         Row: {
           created_at: string
@@ -902,7 +929,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      consume_generation: {
+        Args: {
+          p_campaign_id: string
+          p_dry_run?: boolean
+          p_platform: string
+          p_preview: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

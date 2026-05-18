@@ -158,7 +158,7 @@ export default function CreateTab({
   isLinkedInConnected: boolean;
 }) {
   /* ---------------- state ---------------- */
-  const { plan, checkGenerationLimit, incrementUsage } = usePlan();
+  const { plan, checkGenerationLimit, handleGenerationResponse } = usePlan();
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentEmails, setRecentEmails] = useState<RecentEmail[]>([]);
@@ -573,10 +573,10 @@ export default function CreateTab({
           strategy: strategy ?? {},
         },
       });
+      if (handleGenerationResponse(data, error)) return;
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const posts = (data?.posts ?? {}) as Record<string, string>;
-      await incrementUsage();
       // push previous versions to history before overwriting
       for (const p of platforms) {
         if (content[p]) pushHistory(p, content[p]);

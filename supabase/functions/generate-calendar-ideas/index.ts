@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,16 @@ serve(async (req) => {
     const { strategy, recentPosts = [], recentEmails = [], activeChannels = [] } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
+
+    const pre = await precheckGeneration(req);
+    if (!pre.allowed) {
+      if (pre.error === "unauthorized") return unauthorizedResponse(corsHeaders);
+      if (pre.error === "limit_reached") return limitErrorResponse(corsHeaders, pre);
+      return new Response(JSON.stringify({ error: pre.error ?? "limit_check_failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const lastPillar = recentPosts[0]?.pillar ?? "none";
     const lastEmailDate = recentEmails[0]?.sent_at ? new Date(recentEmails[0].sent_at) : null;
@@ -57,7 +68,12 @@ Return ONLY valid JSON array of 3 ideas, no markdown:
     let ideas: any[] = [];
     try { ideas = JSON.parse(text.replace(/```json|```/g, "").trim()); } catch { console.error("parse", text); }
 
-    return new Response(JSON.stringify({ ideas }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const usage = await commitGeneration(req, {
+      platform: "calendar-ideas",
+      campaignId: null,
+      preview: Array.isArray(ideas) && ideas[0]?.title ? String(ideas[0].title) : "Calendar ideas",
+    });
+    return new Response(JSON.stringify({ ideas, usage }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("generate-calendar-ideas error:", e);
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });

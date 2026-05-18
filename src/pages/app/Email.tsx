@@ -174,7 +174,7 @@ type SendMode = "now" | "schedule" | "queue";
 
 export default function Email() {
   const { user } = useAuth();
-  const { checkGenerationLimit, incrementUsage } = usePlan();
+  const { checkGenerationLimit, handleGenerationResponse } = usePlan();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [previewText, setPreviewText] = useState("");
@@ -354,9 +354,9 @@ export default function Email() {
           senderName: fullName || "Your Name",
         },
       });
+      if (handleGenerationResponse(data, error)) return;
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      await incrementUsage();
 
       // Defensive parse: if the function returned a raw string (possibly
       // wrapped in markdown fences), normalize into { subject, body, preview_text }.

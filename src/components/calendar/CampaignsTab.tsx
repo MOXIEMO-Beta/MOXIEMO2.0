@@ -205,7 +205,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   }, [startDate, endDate]);
 
   const selectedChannels = Object.keys(channels).filter(k => channels[k]);
-  const { checkGenerationLimit, incrementUsage } = usePlan();
+  const { checkGenerationLimit, handleGenerationResponse } = usePlan();
 
   async function generatePlan() {
     if (!(await checkGenerationLimit())) return;
@@ -217,8 +217,8 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
           strategy,
         },
       });
+      if (handleGenerationResponse(data, error)) return;
       if (error) throw error;
-      await incrementUsage();
       setPlan((data as any)?.weeks ?? []);
     } catch (e: any) {
       toast.error("Could not generate plan", { description: e.message });
