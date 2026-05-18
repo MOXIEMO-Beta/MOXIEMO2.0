@@ -40,6 +40,8 @@ import Email from "./pages/app/Email.tsx";
 import WaitlistAdmin from "./pages/app/WaitlistAdmin.tsx";
 import Onboarding from "./pages/onboarding/Onboarding.tsx";
 import { AuthProvider } from "./hooks/useAuth.tsx";
+import { PlanProvider } from "./hooks/usePlan.tsx";
+import { UpgradeDialog } from "./components/UpgradeDialog.tsx";
 import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
 import Terms from "./pages/Terms.tsx";
 import Privacy from "./pages/Privacy.tsx";
@@ -53,11 +55,13 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <ScrollToTop />
-          <Routes>
+        <PlanProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <UpgradeDialog />
+            <ScrollToTop />
+            <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/forgot-password" element={<ForgotPassword />} />
@@ -96,9 +100,10 @@ const App = () => (
               <Route path="social" element={<ErrorBoundary><Social /></ErrorBoundary>} />
               <Route path="admin/waitlist" element={<ErrorBoundary><WaitlistAdmin /></ErrorBoundary>} />
             </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </TooltipProvider>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </TooltipProvider>
+        </PlanProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>
