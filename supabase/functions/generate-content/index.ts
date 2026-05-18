@@ -221,7 +221,7 @@ Deno.serve(async (req) => {
       campaignId: campaign?.id ?? null,
       preview: body,
     });
-    return new Response(JSON.stringify({ body }), {
+    return new Response(JSON.stringify({ body, usage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
