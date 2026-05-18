@@ -167,6 +167,7 @@ function bestTimeFor(date: Date): string | null {
 
 /* ============================================================ */
 export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImportFromContent }: Props) {
+  const { plan } = usePlan();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [pillars, setPillars] = useState<string[]>([]);
