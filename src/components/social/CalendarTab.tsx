@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { usePlan } from "@/hooks/usePlan";
+import { canPublishOn } from "@/lib/planConfig";
+import { PublishLockBadge } from "@/components/PublishLockBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -164,6 +167,7 @@ function bestTimeFor(date: Date): string | null {
 
 /* ============================================================ */
 export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImportFromContent }: Props) {
+  const { plan } = usePlan();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [pillars, setPillars] = useState<string[]>([]);
@@ -790,19 +794,28 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                         </Button>
                       </div>
                       {(s === "scheduled" || s === "queued") && (
-                        <Button
-                          size="sm"
-                          className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                          onClick={() => handlePublishNow(p)}
-                          disabled={actionLoading === "publish"}
-                        >
-                          {actionLoading === "publish" ? (
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                          ) : (
-                            <Send className="mr-1 h-3 w-3" />
-                          )}
-                          Publish now
-                        </Button>
+                        (() => {
+                          const platform = (p.platforms ?? [])[0];
+                          const locked = platform && !canPublishOn(plan, platform);
+                          if (locked) {
+                            return <PublishLockBadge platform={platform} className="w-full justify-center" />;
+                          }
+                          return (
+                            <Button
+                              size="sm"
+                              className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                              onClick={() => handlePublishNow(p)}
+                              disabled={actionLoading === "publish"}
+                            >
+                              {actionLoading === "publish" ? (
+                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                              ) : (
+                                <Send className="mr-1 h-3 w-3" />
+                              )}
+                              Publish now
+                            </Button>
+                          );
+                        })()
                       )}
                     </div>
                   );

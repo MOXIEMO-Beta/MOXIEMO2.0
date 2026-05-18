@@ -14,6 +14,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlan } from "@/hooks/usePlan";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -442,8 +443,10 @@ function OverviewTab({
 
   const ideasToShow = aiIdeas ?? localIdeas;
 
+  const { checkGenerationLimit: _checkGen, incrementUsage: _incGen } = usePlan();
   const handleGenerateMore = async () => {
     if (!strategy) return;
+    if (!(await _checkGen())) return;
     setGeneratingIdeas(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-post-ideas", {
@@ -456,6 +459,7 @@ function OverviewTab({
         return;
       }
       setAiIdeas(ideas);
+      await _incGen();
       toast.success("Fresh ideas ready");
     } catch (err) {
       console.error(err);

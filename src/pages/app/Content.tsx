@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { usePlan } from "@/hooks/usePlan";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,6 +121,7 @@ function firstName(full: string | null | undefined): string {
 
 export default function Content() {
   const { user } = useAuth();
+  const { checkGenerationLimit, incrementUsage } = usePlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const [strategy, setStrategy] = useState<any>(null);
   const [profile, setProfile] = useState<{ full_name: string | null; business_name: string | null; email: string | null } | null>(null);
@@ -263,6 +265,7 @@ export default function Content() {
     });
     if (error) throw error;
     if ((data as any)?.error) throw new Error((data as any).error);
+    await incrementUsage();
     return ((data as any).body ?? "") as string;
   }
 
@@ -280,6 +283,7 @@ export default function Content() {
       });
       return;
     }
+    if (!(await checkGenerationLimit())) return;
     setGenerating(true);
     try {
       const body = await runGeneration({ topic, platform, contentType, pillar: activePillar });
@@ -298,6 +302,7 @@ export default function Content() {
 
   async function handleRegenerate() {
     if (!lockedMeta) return;
+    if (!(await checkGenerationLimit())) return;
     setGenerating(true);
     try {
       const body = await runGeneration({ topic, platform: lockedMeta.platform, contentType: lockedMeta.contentType, pillar: activePillar });
@@ -315,6 +320,7 @@ export default function Content() {
   async function handleRefine() {
     const instruction = refineText.trim();
     if (!instruction || !generated.trim() || !lockedMeta) return;
+    if (!(await checkGenerationLimit())) return;
     setRefining(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-content", {
@@ -330,7 +336,10 @@ export default function Content() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       const body = ((data as any).body ?? "") as string;
-      if (body) setGenerated(body);
+      if (body) {
+        setGenerated(body);
+        await incrementUsage();
+      }
       setRefineText("");
     } catch (e: any) {
       console.error(e);

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { usePlan } from "@/hooks/usePlan";
+import { canPublishOn } from "@/lib/planConfig";
+import { PublishLockBadge } from "@/components/PublishLockBadge";
 import {
   Sparkles,
   Loader2,
@@ -155,6 +158,7 @@ export default function CreateTab({
   isLinkedInConnected: boolean;
 }) {
   /* ---------------- state ---------------- */
+  const { plan, checkGenerationLimit, incrementUsage } = usePlan();
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentEmails, setRecentEmails] = useState<RecentEmail[]>([]);
@@ -557,6 +561,7 @@ export default function CreateTab({
 
   async function handleGenerate() {
     if (!canGenerate) return;
+    if (!(await checkGenerationLimit())) return;
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-social-post", {
@@ -571,6 +576,7 @@ export default function CreateTab({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const posts = (data?.posts ?? {}) as Record<string, string>;
+      await incrementUsage();
       // push previous versions to history before overwriting
       for (const p of platforms) {
         if (content[p]) pushHistory(p, content[p]);
@@ -1468,6 +1474,12 @@ export default function CreateTab({
                 {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                 Publish now
               </Button>
+              {platforms.includes("facebook") && !canPublishOn(plan, "facebook") && (
+                <PublishLockBadge platform="facebook" />
+              )}
+              {platforms.includes("instagram") && !canPublishOn(plan, "instagram") && (
+                <PublishLockBadge platform="instagram" />
+              )}
             </div>
 
             {showSchedule && (
