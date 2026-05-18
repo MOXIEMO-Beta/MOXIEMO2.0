@@ -12,7 +12,7 @@ const tiers = [
     sub: "/month",
     annual: "or $790/year (save $158)",
     desc: "For founders ready to build a real marketing strategy and stop winging it. The tier founding members get free — forever.",
-    features: ["Complete AI strategic discovery", "Marketing strategy foundation", "Marketing Planner access", "Email marketing (up to 2,500 subscribers)", "Social publishing (LinkedIn + 1 platform)", "Content creation (20 pieces/month)", "Basic analytics dashboard", "Standard support (24-hour response)"],
+    features: ["Complete AI strategic discovery", "Marketing strategy foundation", "Marketing Planner access", "Content creation (75 pieces/month)", "Social publishing: LinkedIn + Facebook + Instagram", "Email content generation + draft sync to your ESP (Kit, Mailchimp, Beehiiv)", "Up to 5 active campaigns", "Basic analytics dashboard", "Standard support (24-hour response)"],
     replaces: "ConvertKit + Buffer + scheduling tool",
     savings: "~$60/mo + 12 hours/week",
     cta: "Start free discovery",
@@ -24,7 +24,7 @@ const tiers = [
     sub: "/month",
     annual: "or $1,290/year (save $258)",
     desc: "For established founders scaling their expertise to $1M+.",
-    features: ["Everything in Foundation", "Unlimited subscribers", "Social: LinkedIn + Instagram + Facebook", "Unlimited content creation", "Campaign builder (launches, sequences, evergreen)", "Advanced analytics (attribution + ROI)", "Lead magnet creation", "Priority support (12-hour response)", "Quarterly strategy refinement calls"],
+    features: ["Everything in Foundation", "Unlimited content creation", "5 publishing platforms: LinkedIn + Facebook + Instagram + Pinterest + Threads", "Campaign builder (launches, sequences, evergreen)", "Full ESP sync (Kit, Mailchimp, Beehiiv, ActiveCampaign)", "Advanced analytics (attribution + ROI)", "Lead magnet creation", "Priority support (12-hour response)", "Quarterly strategy refinement calls"],
     replaces: "ConvertKit + Buffer + Kajabi + scheduling",
     savings: "~$372/mo + 18 hours/week",
     cta: "Start free discovery",
@@ -36,12 +36,13 @@ const tiers = [
     sub: "/month",
     annual: "or $1,890/year (save $378)",
     desc: "For agencies and multi-brand operators running at full capacity.",
-    features: ["Everything in Growth", "Team collaboration (up to 5 users)", "Multiple brand workspaces", "Custom integrations", "Dedicated account manager", "White-glove onboarding + migration", "Monthly strategy check-in calls", "SLA guarantees", "Priority feature requests"],
+    features: ["Everything in Growth", "Full platform suite: LinkedIn + Facebook + Instagram + Pinterest + Threads + TikTok + YouTube + Google Business", "Team collaboration (up to 5 users)", "Multiple brand workspaces", "Custom integrations", "Dedicated account manager", "White-glove onboarding + migration", "Monthly strategy check-in calls", "SLA guarantees", "Priority feature requests"],
     replaces: "Full martech stack",
     savings: "$1,000+/mo + team capacity",
-    cta: "Get started",
+    cta: "Join the waitlist",
     featured: false,
     coralCta: true,
+    comingSoon: true,
   },
 ];
 
@@ -83,6 +84,11 @@ export default function Pricing() {
                     Most popular
                   </div>
                 )}
+                {(t as any).comingSoon && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-foreground text-background text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                    Coming soon
+                  </div>
+                )}
                 <h3 className="font-bold text-lg mb-1">{t.name}</h3>
                 <p className="text-sm text-muted-foreground mb-6 font-light min-h-[40px]">{t.desc}</p>
                 <div className="mb-1">
@@ -103,7 +109,11 @@ export default function Pricing() {
                   <p className="text-xs"><span className="text-muted-foreground">Savings:</span> <span className="font-medium text-accent">{t.savings}</span></p>
                 </div>
                 <Button asChild className={`w-full h-11 rounded-full font-semibold ${t.featured ? "bg-accent hover:bg-accent/90 text-accent-foreground" : (t as any).coralCta ? "text-white hover:opacity-90" : "bg-foreground hover:bg-foreground/90 text-background"}`} style={(t as any).coralCta ? { backgroundColor: "#ff6b6b" } : undefined}>
-                  <Link to="/auth">{t.cta}</Link>
+                  {(t as any).comingSoon ? (
+                    <a href="mailto:karee@klmg-us.com?subject=Scale%20plan%20waitlist">{t.cta}</a>
+                  ) : (
+                    <Link to="/auth">{t.cta}</Link>
+                  )}
                 </Button>
               </Card>
             ))}
