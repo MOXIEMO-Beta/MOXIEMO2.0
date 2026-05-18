@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { Instagram, Facebook, Linkedin } from "lucide-react";
 import { MoxieLogo } from "@/components/MoxieLogo";
+import { useAuth } from "@/hooks/useAuth";
 
 export function SiteFooter() {
+  const { user } = useAuth();
   return (
     <footer className="border-t border-border py-12 bg-background">
       <div className="max-w-6xl mx-auto px-6">
@@ -23,6 +25,13 @@ export function SiteFooter() {
               <li><Link to="/pricing" className="moxie-footer-link">Pricing</Link></li>
               <li><Link to="/community" className="moxie-footer-link">Community</Link></li>
               <li><Link to="/about" className="moxie-footer-link">About</Link></li>
+              {!user && (
+                <li>
+                  <Link to="/founding" className="moxie-footer-link" style={{ color: "#ff6b6b" }}>
+                    Join as Founding Member
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 
