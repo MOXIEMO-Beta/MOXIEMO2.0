@@ -443,7 +443,7 @@ function OverviewTab({
 
   const ideasToShow = aiIdeas ?? localIdeas;
 
-  const { checkGenerationLimit: _checkGen, incrementUsage: _incGen } = usePlan();
+  const { checkGenerationLimit: _checkGen, handleGenerationResponse } = usePlan();
   const handleGenerateMore = async () => {
     if (!strategy) return;
     if (!(await _checkGen())) return;
@@ -452,6 +452,7 @@ function OverviewTab({
       const { data, error } = await supabase.functions.invoke("generate-post-ideas", {
         body: { strategy },
       });
+      if (handleGenerationResponse(data, error)) return;
       if (error) throw error;
       const ideas = (Array.isArray(data) ? data : data?.ideas ?? []) as PostIdea[];
       if (ideas.length === 0) {
@@ -459,7 +460,6 @@ function OverviewTab({
         return;
       }
       setAiIdeas(ideas);
-      await _incGen();
       toast.success("Fresh ideas ready");
     } catch (err) {
       console.error(err);
