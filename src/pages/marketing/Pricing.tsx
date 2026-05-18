@@ -7,12 +7,34 @@ import { StatsBar } from "@/components/StatsBar";
 
 const tiers = [
   {
+    name: "Founding Member",
+    price: "Free",
+    sub: " — forever",
+    annual: "Locked in before public pricing",
+    desc: "For early believers who joined before the world caught on.",
+    features: [
+      "AI strategic discovery (1 brand strategy)",
+      "25 content generations per month",
+      "Marketing Planner access",
+      "Social publishing: LinkedIn only",
+      "Email content generation (draft only — no ESP connection)",
+      "2 active campaigns",
+      "Standard support",
+    ],
+    replaces: "Your scattered tool experiments",
+    savings: "100% — free forever",
+    cta: "Join as a Founding Member →",
+    featured: false,
+    foundingMember: true,
+    note: "Founding Member access is by invitation only and is no longer available after beta closes.",
+  },
+  {
     name: "Foundation",
     price: "$79",
     sub: "/month",
     annual: "or $790/year (save $158)",
-    desc: "For founders ready to build a real marketing strategy and stop winging it. The tier founding members get free — forever.",
-    features: ["Complete AI strategic discovery", "Marketing strategy foundation", "Marketing Planner access", "Content creation (75 pieces/month)", "Social publishing: LinkedIn + Facebook + Instagram", "Email content generation + draft sync to your ESP (Kit, Mailchimp, Beehiiv)", "Up to 5 active campaigns", "Basic analytics dashboard", "Standard support (24-hour response)"],
+    desc: "For founders ready to build a real marketing strategy and stop winging it.",
+    features: ["Complete AI strategic discovery", "Marketing strategy foundation", "Marketing Planner access", "100 content generations per month", "Social publishing: LinkedIn + Facebook + Instagram", "Email content generation + draft sync to your ESP (Kit, Mailchimp, Beehiiv)", "Up to 5 active campaigns", "Basic analytics dashboard", "Standard support (24-hour response)"],
     replaces: "ConvertKit + Buffer + scheduling tool",
     savings: "~$60/mo + 12 hours/week",
     cta: "Start free discovery",
@@ -69,14 +91,14 @@ export default function Pricing() {
           <div className="mb-8 rounded-xl p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6" style={{ backgroundColor: "#ff6b6b", color: "#ffffff" }}>
             <div className="flex-1">
               <p className="text-xs font-bold uppercase tracking-[1.5px] mb-2 opacity-90">🎉  Founding Members — Limited Spots</p>
-              <h3 className="text-2xl md:text-3xl font-bold mb-2">Join now and get the Foundation plan free — forever.</h3>
-              <p className="text-sm md:text-base opacity-95 font-light">We're personally onboarding every founding member with a 1:1 kickoff call. Founding members get full platform access at no cost. Locked in before prices increase.</p>
+            <h3 className="text-2xl md:text-3xl font-bold mb-2">Join now and lock in free access — forever.</h3>
+            <p className="text-sm md:text-base opacity-95 font-light">We're personally onboarding every founding member with a 1:1 kickoff call. Founding members get free platform access locked in before prices increase. Your plan never expires and never charges — no matter how our pricing grows.</p>
             </div>
             <Button asChild className="h-12 px-6 rounded-full font-semibold bg-white hover:bg-white/90 text-foreground whitespace-nowrap">
               <Link to="/auth">Join as a Founding Member →</Link>
             </Button>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {tiers.map((t) => (
               <Card key={t.name} className={`p-8 border-border shadow-soft flex flex-col ${t.featured ? "border-accent shadow-lift bg-card relative ring-1 ring-accent" : "bg-card"}`}>
                 {t.featured && (
@@ -87,6 +109,11 @@ export default function Pricing() {
                 {(t as any).comingSoon && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-foreground text-background text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                     Coming soon
+                  </div>
+                )}
+                {(t as any).foundingMember && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider text-white" style={{ backgroundColor: "#ff6b6b" }}>
+                    Founding Member
                   </div>
                 )}
                 <h3 className="font-bold text-lg mb-1">{t.name}</h3>
@@ -115,6 +142,9 @@ export default function Pricing() {
                     <Link to="/auth">{t.cta}</Link>
                   )}
                 </Button>
+                {(t as any).note && (
+                  <p className="text-[11px] text-muted-foreground font-light italic mt-3 leading-relaxed">{(t as any).note}</p>
+                )}
               </Card>
             ))}
           </div>
