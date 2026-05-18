@@ -152,10 +152,9 @@ function StrategyHeader() {
           size="sm"
           className="rounded-lg"
           data-pdf-export-btn
-          onClick={() => {
-            console.log('PDF export triggered, looking for element:', document.getElementById('moxie-pdf-report'));
-            exportViaHTML2PDF('moxie-pdf-report', (strategy as any)?.profiles?.full_name ?? 'Founder');
-          }}
+          onClick={() =>
+            exportViaHTML2PDF('moxie-report', (strategy as any)?.profiles?.full_name ?? 'Founder')
+          }
         >
           <Download className="mr-2 h-3.5 w-3.5" /> Download PDF
         </Button>
@@ -853,7 +852,7 @@ function StrategyContent({ reportData }: { reportData?: any }) {
         }}
         aria-hidden="true"
       >
-        <div id="moxie-pdf-report">
+        <div id="moxie-report">
           {reportData && <MoxieReport data={reportData} />}
         </div>
       </div>

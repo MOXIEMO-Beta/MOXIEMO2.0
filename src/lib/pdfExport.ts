@@ -41,7 +41,7 @@ export function exportViaPrint(
  * Falls back to print dialog if html2pdf.js is not installed.
  */
 export async function exportViaHTML2PDF(
-  containerId: string = 'moxie-pdf-report',
+  containerId: string = 'moxie-report',
   recipientName: string = 'Founder'
 ) {
   let html2pdf: any;
@@ -59,42 +59,21 @@ export async function exportViaHTML2PDF(
     return;
   }
 
-  // Temporarily make visible for html2canvas
+  // Temporarily make visible (and on-screen) for html2canvas to measure & render.
   const parent = element.parentElement;
   const prevStyle = parent ? parent.getAttribute('style') : null;
   if (parent) {
-    parent.setAttribute('style', 'position:fixed;top:0;left:0;width:794px;z-index:99999;background:white;outline:4px solid magenta;');
+    parent.setAttribute(
+      'style',
+      'position:fixed;top:0;left:0;width:794px;z-index:-1;background:white;opacity:0;pointer-events:none;'
+    );
   }
 
-  // ── DEBUG: log layout dimensions of the report and its pages ──
   // Force layout flush before measuring
   void element.offsetHeight;
-  const rect = element.getBoundingClientRect();
-  console.log('[MOXIEMO PDF DEBUG] #moxie-pdf-report bounding box:', {
-    width: rect.width,
-    height: rect.height,
-    top: rect.top,
-    left: rect.left,
-    scrollWidth: element.scrollWidth,
-    scrollHeight: element.scrollHeight,
-    childCount: element.children.length,
-    innerHTMLLength: element.innerHTML.length,
-  });
-  const pages = element.querySelectorAll('.report-page');
-  console.log(`[MOXIEMO PDF DEBUG] Found ${pages.length} .report-page elements`);
-  pages.forEach((p, i) => {
-    const pr = (p as HTMLElement).getBoundingClientRect();
-    console.log(`  page[${i}]`, { width: pr.width, height: pr.height, top: pr.top });
-  });
 
-  // Add a temporary debug banner inside the report so we can see if it renders in the PDF
-  const debugBanner = document.createElement('div');
-  debugBanner.id = 'moxie-pdf-debug-banner';
-  debugBanner.style.cssText = 'position:absolute;top:0;left:0;right:0;background:magenta;color:white;font:bold 14px sans-serif;padding:6px 10px;z-index:99999;';
-  debugBanner.textContent = `DEBUG: report ${Math.round(rect.width)}×${Math.round(rect.height)}, pages=${pages.length}`;
-  element.prepend(debugBanner);
-
-  const filename = `MOXIE_Strategic_Report_${sanitizeFilename(recipientName)}_${formatFilenameDate()}.pdf`;
+  const firstName = sanitizeFilename((recipientName || 'Founder').trim().split(/\s+/)[0] || 'Founder');
+  const filename = `${firstName}-MOXIE-Strategy-Report.pdf`;
 
   const options = {
     margin:      [0, 0, 0, 0],
@@ -105,7 +84,7 @@ export async function exportViaHTML2PDF(
       useCORS:         true,
       letterRendering: true,
       backgroundColor: '#f7f2eb',
-      logging:                true,
+      logging:                false,
       allowTaint:             true,
       foreignObjectRendering: false,
       windowWidth:            794,
@@ -119,6 +98,7 @@ export async function exportViaHTML2PDF(
     pagebreak: {
       mode:   ['css', 'legacy'],
       before: '.report-page',
+      avoid:  '.report-card',
     },
   };
 
@@ -131,10 +111,9 @@ export async function exportViaHTML2PDF(
 
   try {
     await html2pdf().set(options).from(element).save();
+  } catch (err) {
+    console.error('[MOXIEMO PDF] Export failed:', err);
   } finally {
-    // Remove debug banner
-    const banner = document.getElementById('moxie-pdf-debug-banner');
-    if (banner) banner.remove();
     // Restore hidden state on the parent wrapper
     if (parent) {
       if (prevStyle !== null) {
