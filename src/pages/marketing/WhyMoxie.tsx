@@ -18,7 +18,7 @@ const differences = [
   { t: "We start with strategy", them: "Jump straight to execution: 'What do you want to post?'", us: "30-minute strategic discovery first. Who you serve, what transformation you provide, your voice — before any content gets written." },
   { t: "Strategy is a living system", them: "Consultant gives you a strategy PDF. You reference it manually until it goes stale.", us: "Strategy embedded IN every tool. You never 'forget the strategy' — the system enforces it automatically." },
   { t: "True consolidation", them: "Integration platforms connect fragmented tools. 'All-in-ones' still need 3–4 supplements.", us: "Replaces tools entirely. No integrations because everything is native. One login, one source of truth." },
-  { t: "Built for the messy middle", them: "Tools for startups (too simple) or enterprises (too complex / expensive).", us: "Built specifically for $600K–$2M revenue businesses. Simple enough to use without training. Sophisticated enough to grow." },
+  { t: "Built for the messy middle", them: "Tools for startups (too simple) or enterprises (too complex / expensive).", us: "Built specifically for $250K+ revenue businesses. Simple enough to use without training. Sophisticated enough to grow." },
   { t: "AI that knows your business", them: "Generic AI that needs prompting. Generic outputs.", us: "AI trained on your strategic foundation. Knows your voice, your positioning, your audience. Sounds like you wrote it." },
 ];
 
@@ -177,7 +177,7 @@ export default function WhyMoxie() {
             {[
               { n: "01", t: "AI matured", d: "ChatGPT proved AI can create quality content. MOXIEMO goes further — AI that knows YOUR business, voice, and strategy." },
               { n: "02", t: "Fragmentation hit a breaking point", d: "40% of companies abandoned marketing automation in 2024 (up from 24%). The market is rejecting complexity." },
-              { n: "03", t: "The messy middle is underserved", d: "Tools built for startups or enterprises. The $600K–$2M segment ignored. Exactly where MOXIEMO fits." },
+              { n: "03", t: "The messy middle is underserved", d: "Tools built for startups or enterprises. The $250K+ segment ignored. Exactly where MOXIEMO fits." },
             ].map((r) => (
               <div key={r.n}>
                 <div className="font-display text-5xl text-accent mb-3">{r.n}</div>
