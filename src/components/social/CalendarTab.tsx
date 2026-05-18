@@ -794,19 +794,28 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                         </Button>
                       </div>
                       {(s === "scheduled" || s === "queued") && (
-                        <Button
-                          size="sm"
-                          className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                          onClick={() => handlePublishNow(p)}
-                          disabled={actionLoading === "publish"}
-                        >
-                          {actionLoading === "publish" ? (
-                            <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                          ) : (
-                            <Send className="mr-1 h-3 w-3" />
-                          )}
-                          Publish now
-                        </Button>
+                        (() => {
+                          const platform = (p.platforms ?? [])[0];
+                          const locked = platform && !canPublishOn(plan, platform);
+                          if (locked) {
+                            return <PublishLockBadge platform={platform} className="w-full justify-center" />;
+                          }
+                          return (
+                            <Button
+                              size="sm"
+                              className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+                              onClick={() => handlePublishNow(p)}
+                              disabled={actionLoading === "publish"}
+                            >
+                              {actionLoading === "publish" ? (
+                                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                              ) : (
+                                <Send className="mr-1 h-3 w-3" />
+                              )}
+                              Publish now
+                            </Button>
+                          );
+                        })()
                       )}
                     </div>
                   );
