@@ -265,6 +265,7 @@ export default function Content() {
     });
     if (error) throw error;
     if ((data as any)?.error) throw new Error((data as any).error);
+    await incrementUsage();
     return ((data as any).body ?? "") as string;
   }
 
@@ -282,6 +283,7 @@ export default function Content() {
       });
       return;
     }
+    if (!(await checkGenerationLimit())) return;
     setGenerating(true);
     try {
       const body = await runGeneration({ topic, platform, contentType, pillar: activePillar });
@@ -300,6 +302,7 @@ export default function Content() {
 
   async function handleRegenerate() {
     if (!lockedMeta) return;
+    if (!(await checkGenerationLimit())) return;
     setGenerating(true);
     try {
       const body = await runGeneration({ topic, platform: lockedMeta.platform, contentType: lockedMeta.contentType, pillar: activePillar });
@@ -317,6 +320,7 @@ export default function Content() {
   async function handleRefine() {
     const instruction = refineText.trim();
     if (!instruction || !generated.trim() || !lockedMeta) return;
+    if (!(await checkGenerationLimit())) return;
     setRefining(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-content", {
@@ -332,7 +336,10 @@ export default function Content() {
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       const body = ((data as any).body ?? "") as string;
-      if (body) setGenerated(body);
+      if (body) {
+        setGenerated(body);
+        await incrementUsage();
+      }
       setRefineText("");
     } catch (e: any) {
       console.error(e);
