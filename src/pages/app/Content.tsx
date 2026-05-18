@@ -121,6 +121,7 @@ function firstName(full: string | null | undefined): string {
 
 export default function Content() {
   const { user } = useAuth();
+  const { checkGenerationLimit, incrementUsage } = usePlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const [strategy, setStrategy] = useState<any>(null);
   const [profile, setProfile] = useState<{ full_name: string | null; business_name: string | null; email: string | null } | null>(null);
