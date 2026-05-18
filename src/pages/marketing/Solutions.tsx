@@ -140,7 +140,7 @@ function FaqSection() {
                         }}
                       >
                         <div
-                          className="text-muted-foreground"
+                          className="text-muted-foreground whitespace-pre-line"
                           style={{ fontSize: 16, lineHeight: 1.8, padding: "16px 0 24px 0" }}
                         >
                           {item.a}
