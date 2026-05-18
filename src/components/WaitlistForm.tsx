@@ -82,9 +82,8 @@ export function WaitlistForm() {
           You're on the list, {name.split(" ")[0]}!
         </h3>
         <p className="text-muted-foreground text-lg leading-relaxed mb-8 max-w-md mx-auto">
-          Check your email — we sent you a confirmation with a link to schedule your founding member kickoff call with Karee.
+          Use the button below to book your personal kickoff call with Karee. You will receive platform access after your call. We cannot wait to meet you.
         </p>
-        <p className="text-muted-foreground mb-8">Can't wait to meet you.</p>
         <Button asChild size="lg" className="bg-foreground text-background hover:bg-foreground/90 h-12 px-7 rounded-full font-semibold">
           <a href={ZOOM_LINK} target="_blank" rel="noopener noreferrer">
             <CalendarDays className="mr-2 h-4 w-4" />
@@ -100,22 +99,22 @@ export function WaitlistForm() {
       <div className="text-center mb-5">
         <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-accent bg-accent-soft px-4 py-2 rounded-full mb-5">
           <Sparkles className="h-3.5 w-3.5" />
-          Founding members
+          Founding Members
         </div>
         <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
           Be a MOXIEMO Founding Member
         </h2>
         <p className="text-muted-foreground text-[15px] mx-auto max-w-[480px]" style={{ lineHeight: 1.8 }}>
-          The Foundation plan is $79 per month at public launch. As a founding member you pay nothing, ever. Your access is locked in permanently before prices increase. We are personally onboarding every founding member with a 1:1 kickoff call with Karee. Spots close when we hit capacity.
+          Founding Member access is free forever. Submit your details below and you will be taken directly to our calendar to book your personal 1:1 kickoff call. Spots close when beta closes.
         </p>
       </div>
 
       <ul className="flex flex-col items-start gap-2.5 w-fit mx-auto mb-6" style={{ marginBottom: 24 }}>
         {[
-          "Full Foundation plan access, free forever",
-          "Locked-in founding rate before prices increase",
-          "1:1 kickoff call with Karee",
-          "Direct Discord access to the team",
+          "Founding Member access, free forever",
+          "Personal 1:1 kickoff call with Karee before you start",
+          "First access to new features before public release",
+          "Direct line to the team during your first 30 days",
         ].map((perk) => (
           <li key={perk} className="flex flex-row items-center gap-2.5 text-[15px] text-foreground whitespace-nowrap">
             <Check className="h-5 w-5 text-accent flex-shrink-0 self-center" />
