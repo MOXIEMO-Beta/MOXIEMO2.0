@@ -811,6 +811,38 @@ export type Database = {
         }
         Relationships: []
       }
+      usage_tracking: {
+        Row: {
+          generations_used: number | null
+          id: string
+          last_reset: string | null
+          month: string
+          user_id: string | null
+        }
+        Insert: {
+          generations_used?: number | null
+          id?: string
+          last_reset?: string | null
+          month: string
+          user_id?: string | null
+        }
+        Update: {
+          generations_used?: number | null
+          id?: string
+          last_reset?: string | null
+          month?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_tracking_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       waitlist: {
         Row: {
           approved_at: string | null
