@@ -63,11 +63,11 @@ export default function Index() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
             <Button
+              asChild
               size="lg"
               className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 px-7 rounded-full text-base font-semibold"
-              onClick={() => document.getElementById("waitlist")?.scrollIntoView({ behavior: "smooth", block: "start" })}
             >
-              Join the founding member waitlist <ArrowRight className="ml-2 h-4 w-4" />
+              <Link to="/founding">Join as a Founding Member <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
             <Button asChild size="lg" variant="ghost" className="h-12 px-6 rounded-full text-base font-semibold">
               <Link to="/auth">Sign in <ArrowRight className="ml-2 h-4 w-4" /></Link>
