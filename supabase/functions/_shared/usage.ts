@@ -57,13 +57,16 @@ export function limitErrorResponse(
 ) {
   return new Response(
     JSON.stringify({
+      limit_reached: true,
       error: "limit_reached",
       plan: result.plan,
       used: result.used,
       limit: result.limit,
       message: "Monthly generation limit reached. Upgrade to keep creating.",
     }),
-    { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    // Return 200 so supabase.functions.invoke surfaces the body in `data`
+    // rather than a FunctionsHttpError. Frontend checks `data.limit_reached`.
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 }
 
