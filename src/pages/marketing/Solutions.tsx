@@ -19,7 +19,7 @@ const profiles = [
   },
   {
     t: "Fractional Executives & Consultants",
-    rev: "$600K–$2M annually",
+    rev: "$250K+ annually",
     challenge: "Disconnected marketing across LinkedIn, email, and content. No coherent narrative. Prospects can't articulate what you actually do — and neither can your marketing.",
     help: ["Clarify positioning and the transformation you provide", "Content calendar that builds a clear narrative", "Qualified leads who understand your value before the first call"],
     quote: "MOXIEMO's AI discovery nailed my positioning better than the $5K consultant I hired. And unlike their PDF, MOXIEMO executes.",
@@ -27,7 +27,7 @@ const profiles = [
   },
   {
     t: "Service-Based Founders",
-    rev: "$600K–$2M annually",
+    rev: "$250K+ annually",
     challenge: "You deliver exceptional work for clients but your own marketing is an afterthought. You're too busy serving others to build the system that serves you.",
     help: ["Practice what you preach with a strategic foundation", "Marketing runs without pulling team off client work", "Consistent pipeline without sacrificing delivery"],
     quote: "We built incredible strategies for clients but couldn't execute our own. MOXIEMO gave us the system we build for others — finally working for us.",
@@ -40,7 +40,7 @@ const scenarios = [
   { t: "The disconnected content problem", before: "You post when you remember. Email when you have something to say. No coherent narrative.", after: "20-min discovery → strategy themes → AI writes in your voice. Random posts become a brand narrative." },
   { t: "The 'what should I post?' problem", before: "It's Wednesday. Blank LinkedIn screen. Everything feels forced or generic.", after: "Strategy-aligned topics tied to your content pillars and audience pain points. Blank screen never again." },
   { t: "The ROI uncertainty problem", before: "$800/mo on tools, 20 hours/week, no idea if any of it works. Discovery calls feel random.", after: "Define YOUR success metric in discovery. Get attribution + ROI tied to real business outcomes." },
-  { t: "The scale-without-chaos problem", before: "To grow $750K → $1.5M you'd need 40-hour marketing weeks. CMO costs $120K. Agencies $5K/mo.", after: "Same 2 hours/week at $600K or $1.5M. The system scales — you don't have to." },
+  { t: "The scale-without-chaos problem", before: "To grow $750K → $1.5M you'd need 40-hour marketing weeks. CMO costs $120K. Agencies $5K/mo.", after: "Same 2 hours/week at $250K or $1.5M. The system scales — you don't have to." },
 ];
 
 type FaqItem = { q: string; a: string };
@@ -66,7 +66,7 @@ const faqGroups: FaqGroup[] = [
   {
     label: "Practical concerns",
     items: [
-      { q: "What tools does MOXIEMO replace?", a: "For most founders in the $500K–$2M range, MOXIEMO replaces 4–6 tools they're currently paying for separately. Typically: a content scheduling tool (Buffer, Later, Hootsuite), an email marketing platform (ConvertKit, Mailchimp, ActiveCampaign), a content planning tool (Notion, Airtable, or a spreadsheet), a social publishing tool, and often a strategy consultant or fractional CMO engagement. The average founder saves $300–$600/month in tool costs alone — before counting the 18+ hours a week they get back." },
+      { q: "What tools does MOXIEMO replace?", a: "For most founders generating $250K or more, MOXIEMO replaces 4–6 tools they're currently paying for separately. Typically: a content scheduling tool (Buffer, Later, Hootsuite), an email marketing platform (ConvertKit, Mailchimp, ActiveCampaign), a content planning tool (Notion, Airtable, or a spreadsheet), a social publishing tool, and often a strategy consultant or fractional CMO engagement. The average founder saves $300–$600/month in tool costs alone — before counting the 18+ hours a week they get back." },
       { q: "Do I have to cancel my other tools right away?", a: "No — and we actually recommend against it. Run MOXIEMO alongside your current stack for your first 30 days. Get comfortable with the platform, generate your first month of content, and see what it replaces in practice. Most founders find they can cut 3–4 tools after the first month once they've confirmed MOXIEMO covers what they need. We'd rather you make that decision with confidence than feel pressured to cancel everything on day one." },
       { q: "Can I edit the content MOXIEMO generates?", a: "Yes — always. Every piece of content MOXIEMO generates lands in a fully editable rich text area before it goes anywhere. You can rewrite sentences, change the tone, add a personal story, or use the inline refine tool to give MOXIEMO a single instruction like \"make this shorter\" or \"add a question at the end.\" Nothing publishes without your approval. You are always the final editor." },
       { q: "What if I want to change my strategy later?", a: "Your strategy is a living document, not a locked PDF. You can edit any section of your Marketing Foundation at any time — your positioning statement, your content pillars, your ideal client, your voice attributes. When you update your strategy, all future content generation automatically reflects the changes. You can also run a full Discovery refresh anytime you want a complete strategy reset — useful after a pivot, a new offer launch, or a significant shift in your business." },
@@ -182,7 +182,7 @@ export default function Solutions() {
             Built for the messy middle.
           </h1>
           <p className="text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light">
-            You're too successful for scrappy startup hacks. Not big enough for enterprise platforms with 6-month implementations. MOXIEMO is built for $600K–$2M coaches, consultants, and agencies.
+            You're too successful for scrappy startup hacks. Not big enough for enterprise platforms with 6-month implementations. MOXIEMO is built for $250K+ coaches, consultants, and agencies.
           </p>
         </div>
       </section>
