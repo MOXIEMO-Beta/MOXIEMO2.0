@@ -28,7 +28,7 @@ export function SiteFooter() {
               {!user && (
                 <li>
                   <Link to="/founding" className="moxie-footer-link" style={{ color: "#ff6b6b" }}>
-                    Join as Founding Member
+                    Join as a Founding Member →
                   </Link>
                 </li>
               )}
