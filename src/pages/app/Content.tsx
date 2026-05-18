@@ -121,7 +121,7 @@ function firstName(full: string | null | undefined): string {
 
 export default function Content() {
   const { user } = useAuth();
-  const { checkGenerationLimit, incrementUsage } = usePlan();
+  const { checkGenerationLimit, incrementUsage, handleGenerationResponse } = usePlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const [strategy, setStrategy] = useState<any>(null);
   const [profile, setProfile] = useState<{ full_name: string | null; business_name: string | null; email: string | null } | null>(null);
@@ -263,9 +263,11 @@ export default function Content() {
         slot: { scheduled_date: slotContext?.scheduled_date ?? null, pillar: opts.pillar },
       },
     });
+    if (handleGenerationResponse(data, error)) {
+      throw new Error("limit_reached");
+    }
     if (error) throw error;
     if ((data as any)?.error) throw new Error((data as any).error);
-    await incrementUsage();
     return ((data as any).body ?? "") as string;
   }
 
@@ -333,13 +335,11 @@ export default function Content() {
           strategy,
         },
       });
+      if (handleGenerationResponse(data, error)) return;
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
       const body = ((data as any).body ?? "") as string;
-      if (body) {
-        setGenerated(body);
-        await incrementUsage();
-      }
+      if (body) setGenerated(body);
       setRefineText("");
     } catch (e: any) {
       console.error(e);
