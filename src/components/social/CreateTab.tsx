@@ -158,6 +158,7 @@ export default function CreateTab({
   isLinkedInConnected: boolean;
 }) {
   /* ---------------- state ---------------- */
+  const { plan, checkGenerationLimit, incrementUsage } = usePlan();
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [recentEmails, setRecentEmails] = useState<RecentEmail[]>([]);
