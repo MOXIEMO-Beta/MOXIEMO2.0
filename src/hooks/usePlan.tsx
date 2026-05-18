@@ -5,6 +5,8 @@ import { currentMonthKey, GENERATION_LIMIT, PlanId } from "@/lib/planConfig";
 
 type Usage = { generations_used: number; month: string } | null;
 
+type ServerUsage = { plan?: string; used?: number; limit?: number | null; month?: string };
+
 type Ctx = {
   plan: PlanId;
   usage: Usage;
@@ -12,8 +14,12 @@ type Ctx = {
   refresh: () => Promise<void>;
   /** Check before firing a generation. Returns true if allowed. If false, opens upgrade dialog. */
   checkGenerationLimit: () => Promise<boolean>;
-  /** Call AFTER a successful generation to increment usage. */
+  /** Refresh usage after a server-side generation (server already incremented). */
   incrementUsage: () => Promise<void>;
+  /** Inspect the response from a generation edge function. Returns true if the server blocked the call. */
+  handleGenerationResponse: (data: unknown, error: unknown) => boolean;
+  /** Apply a usage snapshot returned by the server (avoids a refetch). */
+  applyServerUsage: (u: ServerUsage | undefined | null) => void;
   openUpgrade: (forPlan?: PlanId) => void;
   upgradeOpen: PlanId | null;
   closeUpgrade: () => void;
@@ -67,56 +73,52 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     const limit = GENERATION_LIMIT[plan];
     if (limit === null) return true; // unlimited
 
-    const month = currentMonthKey();
-    const { data: row } = await supabase
-      .from("usage_tracking")
-      .select("id, generations_used, month, last_reset")
-      .eq("user_id", user.id)
-      .eq("month", month)
-      .maybeSingle();
-
-    let used = 0;
-    if (!row) {
-      const { error: insertErr } = await supabase
-        .from("usage_tracking")
-        .insert({ user_id: user.id, month, generations_used: 0, last_reset: new Date().toISOString() });
-      if (insertErr && insertErr.code !== "23505") {
-        console.error("usage_tracking insert failed", insertErr);
-      }
-      used = 0;
-    } else {
-      used = row.generations_used ?? 0;
-    }
-    setUsage({ generations_used: used, month });
-
+    // Optimistic client-side check using last-known usage. The edge function
+    // is the authoritative enforcer — this is only to avoid an obvious round-trip.
+    const used = usage?.generations_used ?? 0;
     if (used >= limit) {
       setUpgradeOpen(plan);
       return false;
     }
     return true;
-  }, [user, plan]);
-
-  const incrementUsage = useCallback(async () => {
-    if (!user) return;
-    const limit = GENERATION_LIMIT[plan];
-    if (limit === null) return;
-    const month = currentMonthKey();
-    const newCount = (usage?.generations_used ?? 0) + 1;
-    const { error } = await supabase
-      .from("usage_tracking")
-      .update({ generations_used: newCount })
-      .eq("user_id", user.id)
-      .eq("month", month);
-    if (error) {
-      console.error("usage_tracking increment failed", error);
-      return;
-    }
-    setUsage({ generations_used: newCount, month });
   }, [user, plan, usage]);
 
+  const incrementUsage = useCallback(async () => {
+    // Server-side enforcement increments and returns the new usage via the
+    // generation response. We just refresh from the DB to stay in sync.
+    await fetchAll();
+  }, [fetchAll]);
+
+  const applyServerUsage = useCallback((u: ServerUsage | undefined | null) => {
+    if (!u || typeof u.used !== "number") return;
+    const month = u.month || currentMonthKey();
+    setUsage({ generations_used: u.used, month });
+    if (u.plan && u.plan !== plan) setPlan(u.plan as PlanId);
+  }, [plan]);
+
+  const handleGenerationResponse = useCallback((data: unknown, error: unknown): boolean => {
+    // Server returned { limit_reached: true, ... } in the body (with 200).
+    const d = (data ?? {}) as { limit_reached?: boolean; usage?: ServerUsage } & ServerUsage;
+    if (d?.limit_reached) {
+      // Sync local state to server snapshot before opening dialog.
+      applyServerUsage({ plan: d.plan, used: d.used, limit: d.limit, month: d.month });
+      setUpgradeOpen((d.plan as PlanId) ?? plan);
+      return true;
+    }
+    // Some legacy paths may surface a 4xx with a message — also catch that.
+    const errMsg = (error as { message?: string } | null)?.message ?? "";
+    if (errMsg.toLowerCase().includes("limit_reached")) {
+      setUpgradeOpen(plan);
+      return true;
+    }
+    // Success path: edge function returns { ..., usage: { used, limit, plan, month } }
+    if (d?.usage) applyServerUsage(d.usage);
+    return false;
+  }, [plan, applyServerUsage]);
+
   const value = useMemo<Ctx>(
-    () => ({ plan, usage, loading, refresh: fetchAll, checkGenerationLimit, incrementUsage, openUpgrade, upgradeOpen, closeUpgrade }),
-    [plan, usage, loading, fetchAll, checkGenerationLimit, incrementUsage, openUpgrade, upgradeOpen, closeUpgrade],
+    () => ({ plan, usage, loading, refresh: fetchAll, checkGenerationLimit, incrementUsage, handleGenerationResponse, applyServerUsage, openUpgrade, upgradeOpen, closeUpgrade }),
+    [plan, usage, loading, fetchAll, checkGenerationLimit, incrementUsage, handleGenerationResponse, applyServerUsage, openUpgrade, upgradeOpen, closeUpgrade],
   );
 
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;
