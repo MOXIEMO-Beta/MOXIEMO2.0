@@ -65,7 +65,7 @@ const CATEGORIES = [
 ];
 
 const ARTICLES = [
-  { category: "Founder Mindset", title: "The Case for Optimism: Why the Best Time to Build Is Right Now", excerpt: "I want to make a case for optimism. Not the toxic kind. The kind that comes from looking clearly at what's in front of you and deciding the conditions are better than they've ever been.", read: "5 min read" },
+  { category: "Founder Mindset", title: "The Case for Optimism: Why the Best Time to Build Is Right Now", excerpt: "Not the 'good vibes only' version. The kind of optimism that comes from looking clearly at what's in front of you and deciding the conditions are better than they've ever been.", read: "5 min read" },
   { category: "Strategy", title: "Why Your Marketing Isn't Working (It's Not the Tools)", excerpt: "Most founders aren't failing at marketing because they're using the wrong platforms. They're failing because they don't have a strategy for the tools to execute. The fix starts before you open LinkedIn.", read: "7 min read" },
   { category: "Content", title: "How to Know Exactly What to Post Without Guessing", excerpt: "Content paralysis isn't a creativity problem. It's a positioning problem. When you know your content pillars, your ideal client, and your voice, the blank screen disappears. Here's the system.", read: "6 min read" },
   { category: "Founder Stories", title: "Building a Tech Platform at the Peak of AI: What Nobody Prepared Me For", excerpt: "The honest version of what it's like to build a software platform as a brand strategist with no engineering background, in the middle of the most significant technology shift in a generation.", read: "8 min read" },
