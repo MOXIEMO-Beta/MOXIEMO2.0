@@ -75,9 +75,9 @@ const faqGroups: FaqGroup[] = [
   {
     label: "Pricing & commitment",
     items: [
-      { q: "What does founding member access include?", a: "Founding members get full access to MOXIEMO's Foundation tier — free forever. That includes MOXIEMO Discovery, your complete Marketing Foundation, content generation, Marketing Planner, email marketing, social publishing, and every feature at the Foundation level we ship going forward. As MOXIEMO grows and we build out expanded modules — advanced campaigns, deeper analytics, team collaboration, and more — those will live in paid tiers. Founding members get first access to every new feature and locked-in founding member pricing on any upgrade. You'll never pay for what you have today — and you'll always pay less than anyone who joins after you." },
-      { q: "Is there a contract or can I cancel anytime?", a: "No contracts, ever. Paid plans are month-to-month and you can cancel anytime from your account settings — no fees, no friction, no calls required. For founding members on free Foundation access, there's nothing to cancel. Your free tier simply continues. We believe MOXIEMO should earn your continued use every month, not trap you into staying." },
-      { q: "What happens when the beta ends?", a: "Your Foundation tier access stays free permanently — that's the founding member promise, full stop. When we move out of beta, new users will pay standard pricing. Founding members who want access to expanded Growth or Scale features will have first access and locked-in founding member rates — significantly below what new users pay. The beta period is also where you shape what we build. We're already running an active Discord community for founding members — bug reports, feature requests, early access drops, and direct conversations with Karee about what comes next. You're not just getting a tool. You're building it with us." },
+      { q: "What does founding member access include?", a: "Founding members get free platform access, forever. That includes MOXIEMO Discovery, your complete Marketing Foundation, content generation (25 pieces per month), Marketing Planner, and social publishing on LinkedIn. This access never expires and you will never be charged for it, no matter how our pricing evolves.\n\nAs founding members use the platform and we gather feedback during beta, we will expand what is available at the founding member level. When we launch paid tiers publicly, founding members get first access to every new feature and the lowest available upgrade pricing if and when you choose to grow into more. You will always pay less than anyone who joins after you.\n\nWhat you have today is yours, free, forever." },
+      { q: "Is there a contract or can I cancel anytime?", a: "No contracts, ever. Paid plans are month-to-month and you can cancel anytime from your account settings. No fees, no friction, no calls required.\n\nFor founding members, there is nothing to cancel. Your founding member access is free and it simply continues. We believe MOXIEMO should earn your continued use every month, not trap you into staying." },
+      { q: "What happens when the beta ends?", a: "Your founding member access stays free permanently. That is the founding member promise, full stop.\n\nWhen we move out of beta, new users pay standard pricing. Founding members who want access to expanded Growth or Scale features will have first access and locked-in founding member rates, significantly below what new users pay.\n\nThe beta period is also where you shape what we build. We are running an active Discord community for founding members where you can submit bug reports, request features, get early access drops, and have direct conversations with Karee about what comes next. The Discord link is already in the footer and connected. You are not just getting a tool. You are building it with us." },
     ],
   },
 ];
@@ -140,7 +140,7 @@ function FaqSection() {
                         }}
                       >
                         <div
-                          className="text-muted-foreground"
+                          className="text-muted-foreground whitespace-pre-line"
                           style={{ fontSize: 16, lineHeight: 1.8, padding: "16px 0 24px 0" }}
                         >
                           {item.a}
