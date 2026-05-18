@@ -126,7 +126,6 @@ function PlatformTile({ platform, muted }: { platform: "linkedin" | "facebook" |
 /* ===================================================== */
 export default function Social() {
   const { user } = useAuth();
-  const { checkGenerationLimit, incrementUsage } = usePlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
 
