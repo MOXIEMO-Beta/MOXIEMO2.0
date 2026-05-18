@@ -26,7 +26,7 @@ const tiers = [
     cta: "Join as a Founding Member →",
     featured: false,
     foundingMember: true,
-    note: "Founding Member access is by invitation only and is no longer available after beta closes.",
+    note: "Founding Member access is by invitation only and will no longer be available after beta closes.",
   },
   {
     name: "Foundation",
@@ -91,11 +91,11 @@ export default function Pricing() {
           <div className="mb-8 rounded-xl p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6" style={{ backgroundColor: "#ff6b6b", color: "#ffffff" }}>
             <div className="flex-1">
               <p className="text-xs font-bold uppercase tracking-[1.5px] mb-2 opacity-90">🎉  Founding Members — Limited Spots</p>
-            <h3 className="text-2xl md:text-3xl font-bold mb-2">Join now and lock in free access — forever.</h3>
-            <p className="text-sm md:text-base opacity-95 font-light">We're personally onboarding every founding member with a 1:1 kickoff call. Founding members get free platform access locked in before prices increase. Your plan never expires and never charges — no matter how our pricing grows.</p>
+            <h3 className="text-2xl md:text-3xl font-bold mb-2">Join now and lock in free access, forever.</h3>
+            <p className="text-sm md:text-base opacity-95 font-light">Every founding member gets a personal 1:1 kickoff call with our team. Your access is free, your plan never expires, and you will never be charged regardless of how our pricing changes.</p>
             </div>
             <Button asChild className="h-12 px-6 rounded-full font-semibold bg-white hover:bg-white/90 text-foreground whitespace-nowrap">
-              <Link to="/auth">Join as a Founding Member →</Link>
+              <Link to="/founding">Join as a Founding Member →</Link>
             </Button>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -135,9 +135,11 @@ export default function Pricing() {
                   <p className="text-xs"><span className="text-muted-foreground">Replaces:</span> <span className="font-medium">{t.replaces}</span></p>
                   <p className="text-xs"><span className="text-muted-foreground">Savings:</span> <span className="font-medium text-accent">{t.savings}</span></p>
                 </div>
-                <Button asChild className={`w-full h-11 rounded-full font-semibold ${t.featured ? "bg-accent hover:bg-accent/90 text-accent-foreground" : (t as any).coralCta ? "text-white hover:opacity-90" : "bg-foreground hover:bg-foreground/90 text-background"}`} style={(t as any).coralCta ? { backgroundColor: "#ff6b6b" } : undefined}>
+                <Button asChild className={`w-full min-h-11 h-auto py-2 rounded-full font-semibold text-sm whitespace-normal text-center leading-tight ${t.featured ? "bg-accent hover:bg-accent/90 text-accent-foreground" : (t as any).coralCta ? "text-white hover:opacity-90" : "bg-foreground hover:bg-foreground/90 text-background"}`} style={(t as any).coralCta ? { backgroundColor: "#ff6b6b" } : undefined}>
                   {(t as any).comingSoon ? (
                     <a href="mailto:hello@buildwithmoxiemo.com?subject=Scale%20plan%20waitlist">{t.cta}</a>
+                  ) : (t as any).foundingMember ? (
+                    <Link to="/founding">{t.cta}</Link>
                   ) : (
                     <Link to="/auth">{t.cta}</Link>
                   )}
