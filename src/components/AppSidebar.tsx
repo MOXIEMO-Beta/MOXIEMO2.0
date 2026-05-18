@@ -5,6 +5,7 @@ import { MoxieLogo } from "./MoxieLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { FeedbackButton } from "./FeedbackButton";
+import { UsageIndicator } from "./UsageIndicator";
 
 type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; end?: boolean };
 
@@ -78,9 +79,14 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-3">
         {!collapsed && (
-          <div className="mb-2">
-            <FeedbackButton />
-          </div>
+          <>
+            <div className="mb-2">
+              <UsageIndicator compact />
+            </div>
+            <div className="mb-2">
+              <FeedbackButton />
+            </div>
+          </>
         )}
         <SidebarMenuButton onClick={() => supabase.auth.signOut()} className="h-10 rounded-lg text-muted-foreground">
           <LogOut className="h-[18px] w-[18px]" />
