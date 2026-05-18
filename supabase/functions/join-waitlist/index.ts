@@ -6,7 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ZOOM_LINK = "https://scheduler.zoom.us/klmg-ltd/moxie-beta-kickoff";
+function splitName(full: string): { first: string; last: string } {
+  const parts = (full || "").trim().split(/\s+/);
+  return { first: parts[0] || "", last: parts.slice(1).join(" ") || "" };
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -43,7 +46,6 @@ serve(async (req) => {
     console.log("✓ Saved to waitlist:", email);
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    console.log("RESEND_API_KEY present:", !!RESEND_API_KEY);
     if (!RESEND_API_KEY) {
       console.error("RESEND_API_KEY missing");
       return new Response(JSON.stringify({ success: true, warning: "saved_but_email_skipped" }), {
@@ -51,55 +53,10 @@ serve(async (req) => {
       });
     }
 
-    // Email 1 — Confirmation to applicant
-    console.log("Sending confirmation email to:", email);
-    try {
-      const applicantRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-        from: "Karee at MOXIEMO <hello@mail.buildwithmoxiemo.com>",
-        reply_to: "karee@studiosbagency.com",
-        to: [email],
-        subject: "You're on the MOXIEMO founding member list",
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
-            <h1 style="font-size: 22px; margin: 0 0 16px;">Hey ${name}, you're on the list.</h1>
-            <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
-              Thanks for your interest in MOXIEMO. We're personally onboarding every founding member — so the next step is a quick 20-minute call so we can learn about your business and get you set up right.
-            </p>
-            <p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px;">
-              Click below to pick a time that works for you:
-            </p>
-            <p style="margin: 0 0 24px;">
-              <a href="${ZOOM_LINK}" style="display: inline-block; background: #111; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Schedule your founding member call →</a>
-            </p>
-            <p style="font-size: 14px; color: #555; line-height: 1.6; margin: 0 0 24px;">
-              Can't find a time? Just reply to this email and we'll work something out.
-            </p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
-            <p style="font-size: 12px; color: #888; line-height: 1.5;">
-              MOXIEMO · buildwithmoxiemo.com<br />
-              Built by KLMG-US Ltd · Houston, Texas
-            </p>
-          </div>
-        `,
-        }),
-      });
-      const applicantData = await applicantRes.json().catch(() => ({}));
-      console.log("Applicant email response:", applicantRes.status, JSON.stringify(applicantData));
-      if (!applicantRes.ok) {
-        console.error("Applicant email failed:", applicantRes.status, JSON.stringify(applicantData));
-      }
-    } catch (e) {
-      console.error("Applicant email threw:", e);
-    }
+    const { first, last } = splitName(name);
+    const submittedAt = new Date().toISOString();
 
-    // Email 2 — Internal notification
-    console.log("Sending admin notification to: karee@studiosbagency.com");
+    // Notification email to team only — no confirmation to applicant
     try {
       const adminRes = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -108,25 +65,24 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-        from: "MOXIEMO Waitlist <hello@mail.buildwithmoxiemo.com>",
-        to: ["karee@studiosbagency.com"],
-        subject: `New waitlist signup: ${name}`,
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
-            <h2 style="font-size: 18px; margin: 0 0 16px;">New founding member application</h2>
-            <table style="font-size: 14px; line-height: 1.7;">
-              <tr><td style="padding-right: 12px; color: #666;">Name</td><td>${name}</td></tr>
-              <tr><td style="padding-right: 12px; color: #666;">Email</td><td>${email}</td></tr>
-              <tr><td style="padding-right: 12px; color: #666;">Role</td><td>${role ?? "—"}</td></tr>
-              <tr><td style="padding-right: 12px; color: #666;">Company</td><td>${company_name ?? "—"}</td></tr>
-              <tr><td style="padding-right: 12px; color: #666;">Website</td><td>${website_url ?? "—"}</td></tr>
-              <tr><td style="padding-right: 12px; color: #666;">Heard via</td><td>${referral_source ?? "—"}</td></tr>
-            </table>
-            <p style="margin-top: 24px;">
-              <a href="https://buildwithmoxiemo.com/admin/waitlist" style="display: inline-block; background: #111; color: #fff; padding: 10px 16px; border-radius: 8px; text-decoration: none; font-weight: 600;">View in admin panel →</a>
-            </p>
-          </div>
-        `,
+          from: "MOXIEMO Founding <hello@mail.buildwithmoxiemo.com>",
+          to: ["hello@buildwithmoxiemo.com"],
+          subject: `New Founding Member Application — ${first} ${last}`.trim(),
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
+              <h2 style="font-size: 18px; margin: 0 0 16px;">New Founding Member Application</h2>
+              <table style="font-size: 14px; line-height: 1.8;">
+                <tr><td style="padding-right: 16px; color: #666;">First name</td><td>${first || "—"}</td></tr>
+                <tr><td style="padding-right: 16px; color: #666;">Last name</td><td>${last || "—"}</td></tr>
+                <tr><td style="padding-right: 16px; color: #666;">Email</td><td>${email}</td></tr>
+                <tr><td style="padding-right: 16px; color: #666;">Role</td><td>${role ?? "—"}</td></tr>
+                <tr><td style="padding-right: 16px; color: #666;">Company</td><td>${company_name ?? "—"}</td></tr>
+                <tr><td style="padding-right: 16px; color: #666;">Website</td><td>${website_url ?? "—"}</td></tr>
+                <tr><td style="padding-right: 16px; color: #666;">Referral source</td><td>${referral_source ?? "—"}</td></tr>
+                <tr><td style="padding-right: 16px; color: #666;">Submitted at</td><td>${submittedAt}</td></tr>
+              </table>
+            </div>
+          `,
         }),
       });
       const adminData = await adminRes.json().catch(() => ({}));
