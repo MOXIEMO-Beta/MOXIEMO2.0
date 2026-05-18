@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, X, ArrowRight, AlertTriangle, Lightbulb, Mic, BookOpen, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { usePlan } from "@/hooks/usePlan";
 import { asArray } from "./helpers";
 
 function isThisMonth(iso: string | null | undefined) {
@@ -24,11 +25,13 @@ function isThisWeek(iso: string | null | undefined) {
 export default function IdeasTab({ ctx }: { ctx: any }) {
   const { strategy, socialPosts, emailSends, ideas, refresh, user, navigate } = ctx;
   const [loadingGen, setLoadingGen] = useState(false);
+  const { checkGenerationLimit, incrementUsage } = usePlan();
 
   const opportunities = ideas.filter((i: any) => !i.dismissed).slice(0, 3);
 
   async function generate() {
     if (!user) return;
+    if (!(await checkGenerationLimit())) return;
     setLoadingGen(true);
     try {
       const recentPosts = socialPosts.filter((p: any) => p.status === "published").slice(0, 10);
@@ -39,6 +42,7 @@ export default function IdeasTab({ ctx }: { ctx: any }) {
       });
       if (error) throw error;
       const newIdeas = (data as any)?.ideas ?? [];
+      await incrementUsage();
       // Persist
       if (newIdeas.length > 0) {
         await supabase.from("calendar_ideas").insert(newIdeas.map((it: any) => ({
