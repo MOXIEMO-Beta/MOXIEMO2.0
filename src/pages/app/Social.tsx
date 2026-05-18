@@ -444,9 +444,10 @@ function OverviewTab({
 
   const ideasToShow = aiIdeas ?? localIdeas;
 
+  const { checkGenerationLimit: _checkGen, incrementUsage: _incGen } = usePlan();
   const handleGenerateMore = async () => {
     if (!strategy) return;
-    if (!(await checkGenerationLimit())) return;
+    if (!(await _checkGen())) return;
     setGeneratingIdeas(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-post-ideas", {
@@ -459,7 +460,7 @@ function OverviewTab({
         return;
       }
       setAiIdeas(ideas);
-      await incrementUsage();
+      await _incGen();
       toast.success("Fresh ideas ready");
     } catch (err) {
       console.error(err);
