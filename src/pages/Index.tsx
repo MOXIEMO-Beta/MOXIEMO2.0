@@ -202,7 +202,7 @@ export default function Index() {
                 {[
                   "End fragmentation — replace tools, never integrate",
                   "Strategy embedded in execution, not a static PDF",
-                  "Built for $600K–$2M operators, not startups or enterprises",
+                  "Built for $250K+ operators, not startups or enterprises",
                   "Honest urgency over hype — real ROI, no exaggeration",
                   "Your voice in every output — not generic AI slop",
                 ].map((t) => (
