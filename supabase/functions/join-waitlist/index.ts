@@ -55,6 +55,45 @@ serve(async (req) => {
 
     const { first, last } = splitName(name);
     const submittedAt = new Date().toISOString();
+    const ZOOM_LINK = "https://scheduler.zoom.us/klmg-ltd/moxie-beta-kickoff";
+
+    // Confirmation email to applicant
+    try {
+      const applicantRes = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: "Karee at MOXIE <hello@mail.buildwithmoxiemo.com>",
+          reply_to: "hello@buildwithmoxiemo.com",
+          to: [email],
+          subject: `You are on the list - one step left, ${first}.`,
+          html: `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">Hi ${first},</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">You are officially on the MOXIE Founding Member list. Welcome.</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 20px;">There is one step left to lock in your access: book your personal kickoff call with Karee. This is where we walk through the platform together and get you fully set up.</p>
+              <p style="margin: 0 0 24px;">
+                <a href="${ZOOM_LINK}" style="display: inline-block; background: #ff6b6b; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Book your kickoff call →</a>
+              </p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">Your founding member access is free forever and your spot is held. But platform access is granted after your kickoff call, so grab a time that works for you.</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">If you have any questions before your call, reply to this email directly.</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">See you soon.</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0;">Karee<br/>Founder, MOXIE<br/><a href="mailto:hello@buildwithmoxiemo.com" style="color:#ff6b6b;">hello@buildwithmoxiemo.com</a></p>
+            </div>
+          `,
+        }),
+      });
+      const applicantData = await applicantRes.json().catch(() => ({}));
+      console.log("Applicant email response:", applicantRes.status, JSON.stringify(applicantData));
+      if (!applicantRes.ok) {
+        console.error("Applicant email failed:", applicantRes.status, JSON.stringify(applicantData));
+      }
+    } catch (e) {
+      console.error("Applicant email threw:", e);
+    }
 
     // Notification email to team only — no confirmation to applicant
     try {
