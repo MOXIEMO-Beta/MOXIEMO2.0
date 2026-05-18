@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { usePlan } from "@/hooks/usePlan";
+import { canPublishOn } from "@/lib/planConfig";
+import { PublishLockBadge } from "@/components/PublishLockBadge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
