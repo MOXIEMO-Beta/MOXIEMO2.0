@@ -202,7 +202,7 @@ What does your marketing stack actually look like right now?`,
   {
     id: "revenue-milestone",
     title: "The Revenue Milestone Reframe",
-    bestFor: "$600K–2M founders",
+    bestFor: "$250K+ founders",
     body: `$[revenue milestone] felt like it would change everything.
 
 It did — just not in the way I expected.

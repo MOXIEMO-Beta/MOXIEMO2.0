@@ -234,7 +234,7 @@ export default function Resources() {
             Everything you need to build smarter.
           </h1>
           <p className="text-lg md:text-2xl text-muted-foreground font-light max-w-3xl mx-auto">
-            Templates, toolkits, guides, and frameworks — built specifically for expertise-based founders at $600K–$2M.
+            Templates, toolkits, guides, and frameworks — built specifically for expertise-based founders at $250K+.
           </p>
         </div>
       </section>
