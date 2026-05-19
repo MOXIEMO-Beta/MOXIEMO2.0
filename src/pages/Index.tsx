@@ -1,4 +1,6 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -36,6 +38,48 @@ function ProductShot({ src, alt, className = "" }: { src: string; alt: string; c
 }
 
 export default function Index() {
+  const navigate = useNavigate();
+  const [interceptingInvite, setInterceptingInvite] = useState(false);
+
+  useEffect(() => {
+    const rawHash = window.location.hash.startsWith("#")
+      ? window.location.hash.slice(1)
+      : window.location.hash;
+    if (!rawHash) return;
+    const params = new URLSearchParams(rawHash);
+    const type = params.get("type");
+    const accessToken = params.get("access_token");
+    const refreshToken = params.get("refresh_token");
+    if (!accessToken && !type) return;
+
+    setInterceptingInvite(true);
+    (async () => {
+      try {
+        if (accessToken && refreshToken) {
+          await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+        }
+      } catch (e) {
+        console.error("Failed to set session from invite hash", e);
+      } finally {
+        // Hand off to the callback page (it handles password creation + plan)
+        const target = `/auth/callback#${rawHash}`;
+        window.history.replaceState(null, "", "/");
+        navigate(target, { replace: true });
+      }
+    })();
+  }, [navigate]);
+
+  if (interceptingInvite) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-muted-foreground">Verifying your invitation…</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <SiteHeader />
