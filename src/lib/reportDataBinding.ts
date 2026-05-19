@@ -64,7 +64,7 @@ function buildPositioningTemplate(s: any) {
 function buildTransformationArc(s: any) {
   const from = s.pain_point     ?? 'unclear and overwhelmed';
   const to   = s.transformation ?? 'clear, energized, and revenue-ready';
-  return `From '${from}' → '${to}'`;
+  return `From '${from}' to '${to}'`;
 }
 
 function buildVariations(statement: string, s: any, ef: any) {
@@ -74,7 +74,7 @@ function buildVariations(statement: string, s: any, ef: any) {
   return {
     short:    `I help ${client} turn their expertise into a clear, revenue-driving personal brand.`,
     tweet:    `${capitalize(pain)} doesn't have to be your reality. I help ${client} find their message and show up with confidence.`,
-    elevator: `You know how many ${client} have built great businesses but feel totally stuck on their personal brand? I help them find clarity — so they can achieve ${goal}.`,
+    elevator: `You know how many ${client} have built great businesses but feel totally stuck on their personal brand? I help them find clarity, so they can achieve ${goal}.`,
   };
 }
 
@@ -93,9 +93,13 @@ function buildArchetype(s: any, ef: any, raw: any) {
 
 // ─── VOICE ──────────────────────────────────────────────────────
 function buildVoice(s: any, ef: any, raw: any) {
-  const attrs    = coerceArray(s.voice_attributes ?? ef.personalityTraits ?? ['Authoritative', 'Empathetic', 'Direct']);
-  const useWords = coerceArray(s.use_words        ?? ef.extractedVocabulary ?? ['Clarity', 'Relief', 'Framework', 'Path', 'Execution']);
-  const avoid    = coerceStringOrArray(s.anti_positioning ?? ef.antiPositioning ?? 'synergy, holistic, leverage, ideation');
+  const toStr = (w: any): string =>
+    typeof w === 'string'
+      ? w
+      : (w?.name ?? w?.word ?? w?.text ?? w?.value ?? w?.label ?? '');
+  const attrs    = coerceArray(s.voice_attributes ?? ef.personalityTraits ?? ['Authoritative', 'Empathetic', 'Direct']).map(toStr).filter(Boolean);
+  const useWords = coerceArray(s.use_words        ?? ef.extractedVocabulary ?? ['Clarity', 'Relief', 'Framework', 'Path', 'Execution']).map(toStr).filter(Boolean);
+  const avoid    = coerceStringOrArray(s.anti_positioning ?? ef.antiPositioning ?? 'synergy, holistic, leverage, ideation').map(toStr).filter(Boolean);
 
   return {
     attributes:     attrs,
@@ -148,9 +152,9 @@ function buildContentStrategy(s: any, ef: any, raw: any) {
 function buildDefaultQuarters(s: any) {
   const method = s.methodology ?? 'The Framework';
   return [
-    { label: 'Q2 2026', theme: `${method}: Architecting Your Message`,  weeks: 12, arc: 'Problem → Solution → Authority',   color: '#ff6b6b', cta: 'Book a Discovery Call',          metric: s.success_definition ?? 'Qualified discovery calls' },
-    { label: 'Q3 2026', theme: "The Confident Founder's Mindset",        weeks: 12, arc: 'Mindset → Confidence → Execution', color: '#f5a623', cta: 'Book a Clarity Call',            metric: 'Increase engagement rate by 20%' },
-    { label: 'Q4 2026', theme: 'Building a Personal Brand That Sells',   weeks: 12, arc: 'Visibility → Leads → Revenue',     color: '#3cb87a', cta: 'Apply for Private Consultation', metric: 'Sign 3 new clients per month' },
+    { label: 'Q2 2026', theme: `${method}: Architecting Your Message`,  weeks: 12, arc: 'Problem, solution, authority',   color: '#ff6b6b', cta: 'Book a Discovery Call',          metric: s.success_definition ?? 'Qualified discovery calls' },
+    { label: 'Q3 2026', theme: "The Confident Founder's Mindset",        weeks: 12, arc: 'Mindset, confidence, execution', color: '#f5a623', cta: 'Book a Clarity Call',            metric: 'Increase engagement rate by 20%' },
+    { label: 'Q4 2026', theme: 'Building a Personal Brand That Sells',   weeks: 12, arc: 'Visibility, leads, revenue',     color: '#3cb87a', cta: 'Apply for Private Consultation', metric: 'Sign 3 new clients per month' },
   ];
 }
 
@@ -163,7 +167,7 @@ function buildQuartersFromThemes(themes: any[], s: any) {
     arc:    typeof t === 'object' ? t.arc   : '',
     color:  colors[i],
     cta:    typeof t === 'object' ? t.cta   : 'Book a Discovery Call',
-    metric: typeof t === 'object' ? t.metric : s.success_definition ?? '—',
+    metric: typeof t === 'object' ? t.metric : s.success_definition ?? '',
   }));
 }
 
@@ -326,6 +330,30 @@ function coerceStringOrArray(val: any): string[] {
   if (Array.isArray(val))      return val;
   if (typeof val === 'string') return val.split(/[,;\/]/).map((s: string) => s.trim()).filter(Boolean);
   return [];
+}
+
+function pickString(...vals: any[]): string | undefined {
+  for (const v of vals) {
+    if (typeof v === 'string' && v.trim()) return v;
+    if (v && typeof v === 'object') {
+      const s = v.name ?? v.title ?? v.text ?? v.topic ?? v.value;
+      if (typeof s === 'string' && s.trim()) return s;
+    }
+  }
+  return undefined;
+}
+
+/** Extract a short, single channel name from a possibly long strategy paragraph. */
+function shortChannel(val: any): string | undefined {
+  if (!val) return undefined;
+  if (typeof val !== 'string') {
+    const s = val?.name ?? val?.title ?? val?.channel;
+    return typeof s === 'string' ? shortChannel(s) : undefined;
+  }
+  const firstSeg = val.split(/[,;\/\n\-\u2014\u2013:\u2022|]/)[0]?.trim() ?? '';
+  if (!firstSeg) return undefined;
+  const words = firstSeg.split(/\s+/).slice(0, 3).join(' ');
+  return words.length > 28 ? words.slice(0, 28).trim() : words;
 }
 
 function deriveHours(timeCapStr: string | null) {
