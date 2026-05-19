@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import {
   Download, Search, Inbox, ChevronDown, ChevronRight, Mail, CalendarDays,
-  Check, X, StickyNote, RotateCcw, Send, Loader2, ExternalLink,
+  Check, X, StickyNote, RotateCcw, Send, Loader2, ExternalLink, UserPlus,
 } from "lucide-react";
 
 type WaitlistEntry = {
@@ -80,6 +80,29 @@ export default function WaitlistAdmin() {
   const [pendingApproval, setPendingApproval] = useState<WaitlistEntry | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
+
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteName, setInviteName] = useState("");
+  const [inviting, setInviting] = useState(false);
+
+  async function sendInvite(e: React.FormEvent) {
+    e.preventDefault();
+    if (!inviteEmail) return;
+    setInviting(true);
+    try {
+      const { error } = await supabase.functions.invoke("send-invite", {
+        body: { email: inviteEmail.trim(), full_name: inviteName.trim() || undefined },
+      });
+      if (error) throw error;
+      toast.success(`Invite sent to ${inviteEmail}.`);
+      setInviteEmail("");
+      setInviteName("");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Failed to send invite.");
+    } finally {
+      setInviting(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -249,6 +272,38 @@ export default function WaitlistAdmin() {
           <Download className="mr-2 h-4 w-4" /> Export CSV
         </Button>
       </div>
+
+      {/* Direct invite */}
+      <Card className="p-4 border-border mt-6">
+        <div className="flex items-center gap-2 mb-3">
+          <UserPlus className="h-4 w-4 text-accent" />
+          <h2 className="font-semibold">Send founding member invite</h2>
+        </div>
+        <p className="text-sm text-muted-foreground mb-3">
+          Sends a Supabase invite email with a link that lands on the password-creation screen.
+        </p>
+        <form onSubmit={sendInvite} className="flex flex-col sm:flex-row gap-2">
+          <Input
+            type="text"
+            placeholder="Full name (optional)"
+            value={inviteName}
+            onChange={(e) => setInviteName(e.target.value)}
+            className="sm:w-56 h-10"
+          />
+          <Input
+            type="email"
+            required
+            placeholder="invitee@example.com"
+            value={inviteEmail}
+            onChange={(e) => setInviteEmail(e.target.value)}
+            className="flex-1 h-10"
+          />
+          <Button type="submit" disabled={inviting} className="h-10">
+            {inviting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
+            Send invite
+          </Button>
+        </form>
+      </Card>
 
       {/* Summary */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-6 mb-6">
