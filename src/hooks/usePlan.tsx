@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 import { currentMonthKey, GENERATION_LIMIT, PlanId } from "@/lib/planConfig";
 
-type Usage = { generations_used: number; month: string } | null;
+type Usage = { generations_used: number; month: string; reset_date?: string | null } | null;
 
-type ServerUsage = { plan?: string; used?: number; limit?: number | null; month?: string };
+type ServerUsage = { plan?: string; used?: number; limit?: number | null; month?: string; reset_date?: string | null };
 
 type Ctx = {
   plan: PlanId;
@@ -47,14 +47,16 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
       supabase
         .from("usage_tracking")
-        .select("generations_used, month, last_reset")
+        .select("generations_used, month, last_reset, reset_date")
         .eq("user_id", user.id)
         .eq("month", month)
         .maybeSingle(),
     ]);
     const p = ((prof as { plan?: string } | null)?.plan as PlanId) || "founding_member";
     setPlan(p);
-    setUsage(usageRow ? { generations_used: usageRow.generations_used ?? 0, month: usageRow.month } : { generations_used: 0, month });
+    setUsage(usageRow
+      ? { generations_used: usageRow.generations_used ?? 0, month: usageRow.month, reset_date: (usageRow as any).reset_date ?? null }
+      : { generations_used: 0, month, reset_date: null });
     setLoading(false);
   }, [user]);
 
@@ -92,7 +94,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const applyServerUsage = useCallback((u: ServerUsage | undefined | null) => {
     if (!u || typeof u.used !== "number") return;
     const month = u.month || currentMonthKey();
-    setUsage({ generations_used: u.used, month });
+    setUsage({ generations_used: u.used, month, reset_date: u.reset_date ?? null });
     if (u.plan && u.plan !== plan) setPlan(u.plan as PlanId);
   }, [plan]);
 
@@ -101,7 +103,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
     const d = (data ?? {}) as { limit_reached?: boolean; usage?: ServerUsage } & ServerUsage;
     if (d?.limit_reached) {
       // Sync local state to server snapshot before opening dialog.
-      applyServerUsage({ plan: d.plan, used: d.used, limit: d.limit, month: d.month });
+      applyServerUsage({ plan: d.plan, used: d.used, limit: d.limit, month: d.month, reset_date: d.reset_date });
       setUpgradeOpen((d.plan as PlanId) ?? plan);
       return true;
     }
