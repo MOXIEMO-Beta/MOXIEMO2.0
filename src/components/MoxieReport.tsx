@@ -456,7 +456,7 @@ function ActionPlan({ data }: { data: any }) {
           return (
             <div className="report-card" key={i} style={{ ...card, padding: 0, overflow: "hidden" }}>
               <div style={{ background: color, color: C.white, padding: "10px 16px", fontSize: 11, letterSpacing: 2, fontWeight: 700 }}>
-                {w?.label ?? `WEEK ${i + 1}`}
+                {(w?.label ?? w?.week ?? `WEEK ${i + 1}`).toString().toUpperCase()}
               </div>
               <div style={{ padding: 16 }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: C.navy, marginBottom: 8 }}>{w?.theme ?? "—"}</div>
@@ -475,8 +475,12 @@ function ActionPlan({ data }: { data: any }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 12 }}>ONGOING ROUTINE</div>
         <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 0 }}>
           {tiers.map(([key, label], i) => {
-            const items = routine?.[key];
-            const list = Array.isArray(items) ? items : items ? [items] : [];
+            const block = routine?.[key];
+            // block can be: array of strings, array of [label, time], or { hrs, tasks: [...] }
+            let list: any[] = [];
+            if (Array.isArray(block)) list = block;
+            else if (block && Array.isArray(block.tasks)) list = block.tasks;
+            else if (block) list = [block];
             return (
               <React.Fragment key={key}>
                 <div style={{
@@ -490,10 +494,20 @@ function ActionPlan({ data }: { data: any }) {
                   fontSize: 13, color: C.navy2, lineHeight: 1.5,
                 }}>
                   {list.length
-                    ? list.map((x, j) => (
-                        <div key={j}>{typeof x === "string" ? x : (x?.title ?? x?.task ?? "")}</div>
-                      ))
-                    : "—"}
+                    ? list.map((x, j) => {
+                        let text = "";
+                        let time = "";
+                        if (typeof x === "string") text = x;
+                        else if (Array.isArray(x)) { text = x[0] ?? ""; time = x[1] ?? ""; }
+                        else if (x) { text = x.title ?? x.task ?? x.name ?? ""; time = x.time ?? x.duration ?? ""; }
+                        return (
+                          <div key={j} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                            <span>{text}</span>
+                            {time && <span style={{ color: C.muted, fontSize: 12 }}>{time}</span>}
+                          </div>
+                        );
+                      })
+                    : ""}
                 </div>
               </React.Fragment>
             );
