@@ -196,7 +196,14 @@ export default function Onboarding() {
     setCodeError(null);
     setCodeData(null);
     try {
-      const { data } = await supabase.from("beta_codes").select("*").eq("code", code).eq("active", true).maybeSingle();
+      const { data, error } = await supabase
+        .from("beta_codes")
+        .select("*")
+        .eq("code", code)
+        .eq("active", true)
+        .limit(1)
+        .maybeSingle();
+      if (error) { setCodeError("Couldn't validate code. Please try again."); return; }
       if (!data) { setCodeError("Invalid or expired code"); return; }
       if ((data.uses_count ?? 0) >= (data.max_uses ?? 0)) { setCodeError("This code has reached its maximum uses"); return; }
       if (data.expires_at && new Date(data.expires_at) < new Date()) { setCodeError("This code has expired"); return; }
@@ -217,20 +224,23 @@ export default function Onboarding() {
         .update({ uses_count: (codeData.uses_count ?? 0) + 1 })
         .eq("id", codeData.id);
 
-      // Update profile and verify the write succeeded before redirect
-      const { data: updated, error: updateError } = await supabase
+      // Upsert profile (handles case where profile row doesn't yet exist)
+      const { data: upserted, error: upsertError } = await supabase
         .from("profiles")
-        .update({
-          plan: "beta_lifetime",
-          beta_code_used: code,
-          onboarding_completed: true,
-        })
-        .eq("id", user.id)
-        .select("onboarding_completed")
-        .single();
+        .upsert(
+          {
+            id: user.id,
+            email: user.email,
+            plan: "founding_member",
+            beta_code_used: code,
+            onboarding_completed: true,
+          },
+          { onConflict: "id" }
+        )
+        .select("onboarding_completed");
 
-      if (updateError) throw updateError;
-      if (!updated?.onboarding_completed) {
+      if (upsertError) throw upsertError;
+      if (!upserted?.[0]?.onboarding_completed) {
         throw new Error("Profile update did not persist. Please try again.");
       }
 
@@ -248,7 +258,10 @@ export default function Onboarding() {
       window.location.assign("/app/discovery?welcome=true");
     } catch (e: any) {
       console.error("Founding member error:", e);
-      toast.error(e.message || "Couldn't finalize");
+      const msg = typeof e?.message === "string" && e.message
+        ? e.message
+        : "We couldn't finalize your founding member access. Please try again.";
+      toast.error(msg);
       setFinalizing(false);
     }
   }
@@ -551,12 +564,12 @@ function Step8({ betaCode, setBetaCode, applyBetaCode, codeChecking, codeError, 
           <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-accent">
             <Sparkles className="h-4 w-4" /> Beta Founding Member
           </div>
-          <div className="mt-3 text-2xl font-semibold">Free — forever</div>
+          <div className="mt-3 text-2xl font-semibold">Free, forever.</div>
           <ul className="mt-4 space-y-2 text-sm flex-1">
-            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> Full platform access</li>
-            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> Founding member status</li>
-            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> Shape the product</li>
-            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> Locked in free forever</li>
+            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> LinkedIn publishing included</li>
+            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> 25 content generations per month</li>
+            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> Personal 1:1 kickoff call with Karee</li>
+            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> Free forever, no card required</li>
           </ul>
           {codeValid ? (
             <>
