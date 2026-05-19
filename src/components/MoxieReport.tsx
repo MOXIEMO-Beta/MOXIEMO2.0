@@ -152,7 +152,7 @@ function Overview({ data }: { data: any }) {
       <div style={{ background: C.navy, color: C.white, borderRadius: 12, padding: 28, marginBottom: 24 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coralLight, marginBottom: 10 }}>POSITIONING</div>
         <div style={{ fontSize: 20, lineHeight: 1.4, fontWeight: 600 }}>
-          {data?.positioning?.statement ?? "—"}
+          {data?.positioning?.statement ?? ""}
         </div>
       </div>
 
@@ -160,7 +160,7 @@ function Overview({ data }: { data: any }) {
         {cells.map(([k, v]) => (
           <div className="report-card" key={k} style={{ ...card, padding: 14 }}>
             <div style={{ fontSize: 10, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 6 }}>{k.toUpperCase()}</div>
-            <div style={{ fontSize: 13, lineHeight: 1.4, color: C.navy2 }}>{v ?? "—"}</div>
+            <div style={{ fontSize: 13, lineHeight: 1.4, color: C.navy2 }}>{v ?? ""}</div>
           </div>
         ))}
       </div>
@@ -168,7 +168,7 @@ function Overview({ data }: { data: any }) {
       <div className="report-card" style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>ARCHETYPE</div>
         <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
-          {data?.archetype?.primary ?? "—"}
+          {data?.archetype?.primary ?? ""}
           {data?.archetype?.secondary ? (
             <span style={{ color: C.muted, fontWeight: 500, fontSize: 16 }}> · {data.archetype.secondary}</span>
           ) : null}
@@ -182,9 +182,9 @@ function Overview({ data }: { data: any }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>VALUES</div>
         {values.length ? values.map((v: any, i) => (
           <span key={i} style={pill(C.coralPale, C.navy)}>
-            {typeof v === "string" ? v : (v?.name ?? v?.title ?? "—")}
+            {typeof v === "string" ? v : (v?.name ?? v?.title ?? "")}
           </span>
-        )) : <span style={{ color: C.muted }}>—</span>}
+        )) : <span style={{ color: C.muted }}></span>}
       </div>
     </div>
   );
@@ -210,7 +210,7 @@ function Voice({ data }: { data: any }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>VOICE ATTRIBUTES</div>
         {attrs.slice(0, 4).map((a: any, i) => (
           <span key={i} style={pill(C.coral, C.white)}>
-            {typeof a === "string" ? a : (a?.name ?? a?.title ?? "—")}
+            {typeof a === "string" ? a : (a?.name ?? a?.title ?? "")}
           </span>
         ))}
       </div>
@@ -233,13 +233,13 @@ function Voice({ data }: { data: any }) {
       <div style={{ ...card, borderLeft: `4px solid ${C.coral}`, marginBottom: 16 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>VOICE EXAMPLE</div>
         <div style={{ fontSize: 16, fontStyle: "italic", lineHeight: 1.5, color: C.navy2 }}>
-          “{data?.voice?.exampleLine ?? "—"}”
+          “{data?.voice?.exampleLine ?? ""}”
         </div>
       </div>
 
       <div className="report-card" style={{ ...card, marginBottom: 20 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.muted, fontWeight: 700, marginBottom: 6 }}>NEVER SOUND LIKE</div>
-        <div style={{ fontSize: 13, color: C.navy3 }}>{data?.voice?.neverSoundLike ?? "—"}</div>
+        <div style={{ fontSize: 13, color: C.navy3 }}>{data?.voice?.neverSoundLike ?? ""}</div>
       </div>
 
       <div>
@@ -250,7 +250,7 @@ function Voice({ data }: { data: any }) {
               <div style={{ fontSize: 10, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 6 }}>
                 {ch.toUpperCase()}
               </div>
-              <div style={{ fontSize: 12, color: C.navy3, lineHeight: 1.4 }}>{tone[ch] ?? "—"}</div>
+              <div style={{ fontSize: 12, color: C.navy3, lineHeight: 1.4 }}>{tone[ch] ?? ""}</div>
             </div>
           ))}
         </div>
@@ -277,7 +277,7 @@ function Content({ data }: { data: any }) {
             <div style={{ minWidth: 28, height: 28, borderRadius: 6, background: C.coralPale, color: C.coral, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>{i + 1}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>
-                {typeof p === "string" ? p : (p?.name ?? p?.title ?? "—")}
+                {typeof p === "string" ? p : (p?.name ?? p?.title ?? "")}
               </div>
               {typeof p !== "string" && p?.description && (
                 <div style={{ fontSize: 12, color: C.navy3, marginTop: 2 }}>{p.description}</div>
@@ -294,7 +294,7 @@ function Content({ data }: { data: any }) {
               {q?.label ?? `Q${i + 1}`}
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, margin: "6px 0", color: C.navy }}>
-              {q?.theme ?? "—"}
+              {q?.theme ?? ""}
             </div>
             <div style={{ fontSize: 12, color: C.navy3, lineHeight: 1.4, marginBottom: 10 }}>
               {q?.arc ?? ""}
@@ -385,7 +385,7 @@ function ChannelsMetrics({ data }: { data: any }) {
           return (
             <div className="report-card" key={key} style={{ ...card }}>
               <div style={{ fontSize: 10, letterSpacing: 2, color: C.coral, fontWeight: 700 }}>{label.toUpperCase()}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, margin: "6px 0", color: C.navy }}>{ch?.name ?? "—"}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, margin: "6px 0", color: C.navy }}>{ch?.name ?? ""}</div>
               <div style={{ fontSize: 12, color: C.navy3, lineHeight: 1.4, wordBreak: "break-word" }}>
                 {ch?.rationale ?? ch?.description ?? ""}
               </div>
@@ -459,7 +459,7 @@ function ActionPlan({ data }: { data: any }) {
                 {(w?.label ?? w?.week ?? `WEEK ${i + 1}`).toString().toUpperCase()}
               </div>
               <div style={{ padding: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: C.navy, marginBottom: 8 }}>{w?.theme ?? "—"}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: C.navy, marginBottom: 8 }}>{w?.theme ?? ""}</div>
                 <ul style={{ margin: 0, paddingLeft: 18, color: C.navy2, fontSize: 12, lineHeight: 1.5 }}>
                   {tasks.map((t, j) => (
                     <li key={j}>{typeof t === "string" ? t : (t?.title ?? t?.task ?? "")}</li>
