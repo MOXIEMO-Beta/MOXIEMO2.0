@@ -7,7 +7,7 @@ import kareeHeadshot from "@/assets/karee-headshot.png";
 import radicaHeadshot from "@/assets/radica-headshot.jpeg";
 import moxieDevelopers from "@/assets/moxie-developers.jpg";
 
-const DISCORD_URL = "https://discord.gg/BGRj8PxW";
+const DISCORD_URL = "https://discord.gg/wa9JFx7nha";
 const CORAL = "#ff6b6b";
 
 const channelGroups = [

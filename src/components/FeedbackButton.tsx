@@ -25,7 +25,7 @@ const TYPES = [
   { value: "general", label: "General feedback" },
 ];
 
-const DISCORD_URL = "https://discord.gg/BGRj8PxW";
+const DISCORD_URL = "https://discord.gg/wa9JFx7nha";
 
 function DiscordIcon({ className }: { className?: string }) {
   return (
@@ -182,7 +182,7 @@ export function FeedbackButton() {
                     rel="noopener noreferrer"
                     className="underline hover:text-foreground"
                   >
-                    discord.gg/BGRj8PxW
+                    discord.gg/wa9JFx7nha
                   </a>
                 </p>
               </div>

@@ -13,7 +13,7 @@ interface Entry {
   links?: { label: string; href?: string }[];
 }
 
-const DISCORD_URL = "https://discord.gg/BGRj8PxW";
+const DISCORD_URL = "https://discord.gg/wa9JFx7nha";
 
 const entries: Entry[] = [
   {
