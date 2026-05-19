@@ -193,8 +193,12 @@ function Overview({ data }: { data: any }) {
 // ─── Page 3 — Voice & Brand ────────────────────────────────────
 function Voice({ data }: { data: any }) {
   const attrs: string[] = data?.voice?.attributes ?? [];
-  const useWords: string[] = data?.voice?.useWords ?? [];
-  const avoidWords: string[] = data?.voice?.avoidWords ?? [];
+  const toWord = (w: any): string =>
+    typeof w === "string"
+      ? w
+      : (w?.name ?? w?.word ?? w?.text ?? w?.value ?? w?.label ?? "");
+  const useWords: string[] = (data?.voice?.useWords ?? []).map(toWord).filter(Boolean);
+  const avoidWords: string[] = (data?.voice?.avoidWords ?? []).map(toWord).filter(Boolean);
   const tone = data?.voice?.toneByChannel ?? {};
 
   return (
@@ -214,19 +218,15 @@ function Voice({ data }: { data: any }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
         <div className="report-card" style={card}>
           <div style={{ fontSize: 11, letterSpacing: 2, color: C.green, fontWeight: 700, marginBottom: 8 }}>USE</div>
-          {useWords.map((w: any, i) => (
-            <span key={i} style={pill(C.greenPale, C.green)}>
-              {typeof w === "string" ? w : (w?.name ?? w?.word ?? "—")}
-            </span>
-          ))}
+          <div style={{ fontSize: 13, color: C.navy2, lineHeight: 1.6 }}>
+            {useWords.length ? useWords.join(", ") : "Clarity, Relief, Framework, Path, Execution"}
+          </div>
         </div>
         <div className="report-card" style={card}>
           <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>AVOID</div>
-          {avoidWords.map((w: any, i) => (
-            <span key={i} style={pill(C.coralPale, C.coral, { textDecoration: "line-through" })}>
-              {typeof w === "string" ? w : (w?.name ?? w?.word ?? "—")}
-            </span>
-          ))}
+          <div style={{ fontSize: 13, color: C.navy2, lineHeight: 1.6 }}>
+            {avoidWords.length ? avoidWords.join(", ") : ""}
+          </div>
         </div>
       </div>
 
