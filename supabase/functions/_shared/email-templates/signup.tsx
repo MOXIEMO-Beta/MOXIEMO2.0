@@ -60,7 +60,7 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif, color: '#262833' }
+const main = { backgroundColor: '#ffffff', fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif", color: '#262833' }
 const container = { padding: '20px 25px' }
 const h1 = {
   fontSize: '22px',
