@@ -955,6 +955,7 @@ export type Database = {
           id: string
           last_reset: string | null
           month: string
+          reset_date: string | null
           user_id: string | null
         }
         Insert: {
@@ -962,6 +963,7 @@ export type Database = {
           id?: string
           last_reset?: string | null
           month: string
+          reset_date?: string | null
           user_id?: string | null
         }
         Update: {
@@ -969,6 +971,7 @@ export type Database = {
           id?: string
           last_reset?: string | null
           month?: string
+          reset_date?: string | null
           user_id?: string | null
         }
         Relationships: [
