@@ -329,7 +329,7 @@ function Calendar({ data }: { data: any }) {
       <h1 style={h1}>Next 30 Days</h1>
 
       <div>
-        {entries.map((e, i) => (
+        {entries.slice(0, 18).map((e, i) => (
           <div key={i} className="calendar-entry" style={{
             ...card,
             padding: 12,
