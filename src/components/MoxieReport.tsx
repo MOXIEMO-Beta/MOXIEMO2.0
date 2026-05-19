@@ -401,14 +401,13 @@ function ChannelsMetrics({ data }: { data: any }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 12 }}>BUSINESS GOALS</div>
         {goals.map((g, i) => (
           <div key={i} style={{
-            display: "grid", gridTemplateColumns: "1fr 100px 100px",
+            display: "grid", gridTemplateColumns: "1fr 140px",
             gap: 12, padding: "10px 0",
             borderTop: i ? `1px solid ${C.creamDark}` : "none",
             fontSize: 13,
           }}>
-            <div style={{ color: C.navy2 }}>{g?.goal ?? g?.name ?? "—"}</div>
-            <div style={{ color: C.muted }}>{g?.timeframe ?? ""}</div>
-            <div style={{ color: C.coral, fontWeight: 700 }}>{g?.target ?? ""}</div>
+            <div style={{ color: C.navy2 }}>{g?.label ?? g?.goal ?? g?.name ?? ""}</div>
+            <div style={{ color: C.coral, fontWeight: 700, textAlign: "right" }}>{g?.value ?? g?.target ?? ""}</div>
           </div>
         ))}
       </div>
