@@ -96,9 +96,8 @@ export async function exportViaHTML2PDF(
       orientation: 'portrait',
     },
     pagebreak: {
-      mode:   ['css', 'legacy'],
-      before: '.report-page',
-      avoid:  '.report-card',
+      mode:   ['avoid-all', 'css'],
+      avoid:  ['.report-card', '.calendar-entry'],
     },
   };
 

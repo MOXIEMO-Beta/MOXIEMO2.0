@@ -25,14 +25,12 @@ const FONT = `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, 
 // ─── Shared page wrapper ───────────────────────────────────────
 const pageBase: React.CSSProperties = {
   width: "794px",
-  minHeight: "1123px",
+  height: "1123px",
   padding: "48px",
   boxSizing: "border-box",
   fontFamily: FONT,
   color: C.navy,
   position: "relative",
-  pageBreakAfter: "always",
-  breakAfter: "page",
   overflow: "hidden",
 };
 
@@ -154,7 +152,7 @@ function Overview({ data }: { data: any }) {
       <div style={{ background: C.navy, color: C.white, borderRadius: 12, padding: 28, marginBottom: 24 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coralLight, marginBottom: 10 }}>POSITIONING</div>
         <div style={{ fontSize: 20, lineHeight: 1.4, fontWeight: 600 }}>
-          {data?.positioning?.statement ?? "—"}
+          {data?.positioning?.statement ?? ""}
         </div>
       </div>
 
@@ -162,7 +160,7 @@ function Overview({ data }: { data: any }) {
         {cells.map(([k, v]) => (
           <div className="report-card" key={k} style={{ ...card, padding: 14 }}>
             <div style={{ fontSize: 10, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 6 }}>{k.toUpperCase()}</div>
-            <div style={{ fontSize: 13, lineHeight: 1.4, color: C.navy2 }}>{v ?? "—"}</div>
+            <div style={{ fontSize: 13, lineHeight: 1.4, color: C.navy2 }}>{v ?? ""}</div>
           </div>
         ))}
       </div>
@@ -170,7 +168,7 @@ function Overview({ data }: { data: any }) {
       <div className="report-card" style={{ ...card, marginBottom: 16 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>ARCHETYPE</div>
         <div style={{ fontSize: 22, fontWeight: 800, marginBottom: 4 }}>
-          {data?.archetype?.primary ?? "—"}
+          {data?.archetype?.primary ?? ""}
           {data?.archetype?.secondary ? (
             <span style={{ color: C.muted, fontWeight: 500, fontSize: 16 }}> · {data.archetype.secondary}</span>
           ) : null}
@@ -184,9 +182,9 @@ function Overview({ data }: { data: any }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>VALUES</div>
         {values.length ? values.map((v: any, i) => (
           <span key={i} style={pill(C.coralPale, C.navy)}>
-            {typeof v === "string" ? v : (v?.name ?? v?.title ?? "—")}
+            {typeof v === "string" ? v : (v?.name ?? v?.title ?? "")}
           </span>
-        )) : <span style={{ color: C.muted }}>—</span>}
+        )) : <span style={{ color: C.muted }}></span>}
       </div>
     </div>
   );
@@ -195,8 +193,12 @@ function Overview({ data }: { data: any }) {
 // ─── Page 3 — Voice & Brand ────────────────────────────────────
 function Voice({ data }: { data: any }) {
   const attrs: string[] = data?.voice?.attributes ?? [];
-  const useWords: string[] = data?.voice?.useWords ?? [];
-  const avoidWords: string[] = data?.voice?.avoidWords ?? [];
+  const toWord = (w: any): string =>
+    typeof w === "string"
+      ? w
+      : (w?.name ?? w?.word ?? w?.text ?? w?.value ?? w?.label ?? "");
+  const useWords: string[] = (data?.voice?.useWords ?? []).map(toWord).filter(Boolean);
+  const avoidWords: string[] = (data?.voice?.avoidWords ?? []).map(toWord).filter(Boolean);
   const tone = data?.voice?.toneByChannel ?? {};
 
   return (
@@ -208,7 +210,7 @@ function Voice({ data }: { data: any }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>VOICE ATTRIBUTES</div>
         {attrs.slice(0, 4).map((a: any, i) => (
           <span key={i} style={pill(C.coral, C.white)}>
-            {typeof a === "string" ? a : (a?.name ?? a?.title ?? "—")}
+            {typeof a === "string" ? a : (a?.name ?? a?.title ?? "")}
           </span>
         ))}
       </div>
@@ -216,32 +218,28 @@ function Voice({ data }: { data: any }) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
         <div className="report-card" style={card}>
           <div style={{ fontSize: 11, letterSpacing: 2, color: C.green, fontWeight: 700, marginBottom: 8 }}>USE</div>
-          {useWords.map((w: any, i) => (
-            <span key={i} style={pill(C.greenPale, C.green)}>
-              {typeof w === "string" ? w : (w?.name ?? w?.word ?? "—")}
-            </span>
-          ))}
+          <div style={{ fontSize: 13, color: C.navy2, lineHeight: 1.6 }}>
+            {useWords.length ? useWords.join(", ") : "Clarity, Relief, Framework, Path, Execution"}
+          </div>
         </div>
         <div className="report-card" style={card}>
           <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>AVOID</div>
-          {avoidWords.map((w: any, i) => (
-            <span key={i} style={pill(C.coralPale, C.coral, { textDecoration: "line-through" })}>
-              {typeof w === "string" ? w : (w?.name ?? w?.word ?? "—")}
-            </span>
-          ))}
+          <div style={{ fontSize: 13, color: C.navy2, lineHeight: 1.6 }}>
+            {avoidWords.length ? avoidWords.join(", ") : ""}
+          </div>
         </div>
       </div>
 
       <div style={{ ...card, borderLeft: `4px solid ${C.coral}`, marginBottom: 16 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 8 }}>VOICE EXAMPLE</div>
         <div style={{ fontSize: 16, fontStyle: "italic", lineHeight: 1.5, color: C.navy2 }}>
-          “{data?.voice?.exampleLine ?? "—"}”
+          “{data?.voice?.exampleLine ?? ""}”
         </div>
       </div>
 
       <div className="report-card" style={{ ...card, marginBottom: 20 }}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.muted, fontWeight: 700, marginBottom: 6 }}>NEVER SOUND LIKE</div>
-        <div style={{ fontSize: 13, color: C.navy3 }}>{data?.voice?.neverSoundLike ?? "—"}</div>
+        <div style={{ fontSize: 13, color: C.navy3 }}>{data?.voice?.neverSoundLike ?? ""}</div>
       </div>
 
       <div>
@@ -252,7 +250,7 @@ function Voice({ data }: { data: any }) {
               <div style={{ fontSize: 10, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 6 }}>
                 {ch.toUpperCase()}
               </div>
-              <div style={{ fontSize: 12, color: C.navy3, lineHeight: 1.4 }}>{tone[ch] ?? "—"}</div>
+              <div style={{ fontSize: 12, color: C.navy3, lineHeight: 1.4 }}>{tone[ch] ?? ""}</div>
             </div>
           ))}
         </div>
@@ -279,7 +277,7 @@ function Content({ data }: { data: any }) {
             <div style={{ minWidth: 28, height: 28, borderRadius: 6, background: C.coralPale, color: C.coral, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>{i + 1}</div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.navy }}>
-                {typeof p === "string" ? p : (p?.name ?? p?.title ?? "—")}
+                {typeof p === "string" ? p : (p?.name ?? p?.title ?? "")}
               </div>
               {typeof p !== "string" && p?.description && (
                 <div style={{ fontSize: 12, color: C.navy3, marginTop: 2 }}>{p.description}</div>
@@ -296,7 +294,7 @@ function Content({ data }: { data: any }) {
               {q?.label ?? `Q${i + 1}`}
             </div>
             <div style={{ fontSize: 16, fontWeight: 800, margin: "6px 0", color: C.navy }}>
-              {q?.theme ?? "—"}
+              {q?.theme ?? ""}
             </div>
             <div style={{ fontSize: 12, color: C.navy3, lineHeight: 1.4, marginBottom: 10 }}>
               {q?.arc ?? ""}
@@ -331,7 +329,7 @@ function Calendar({ data }: { data: any }) {
       <h1 style={h1}>Next 30 Days</h1>
 
       <div>
-        {entries.map((e, i) => (
+        {entries.slice(0, 18).map((e, i) => (
           <div key={i} className="calendar-entry" style={{
             ...card,
             padding: 12,
@@ -387,7 +385,7 @@ function ChannelsMetrics({ data }: { data: any }) {
           return (
             <div className="report-card" key={key} style={{ ...card }}>
               <div style={{ fontSize: 10, letterSpacing: 2, color: C.coral, fontWeight: 700 }}>{label.toUpperCase()}</div>
-              <div style={{ fontSize: 18, fontWeight: 800, margin: "6px 0", color: C.navy }}>{ch?.name ?? "—"}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, margin: "6px 0", color: C.navy }}>{ch?.name ?? ""}</div>
               <div style={{ fontSize: 12, color: C.navy3, lineHeight: 1.4, wordBreak: "break-word" }}>
                 {ch?.rationale ?? ch?.description ?? ""}
               </div>
@@ -403,14 +401,13 @@ function ChannelsMetrics({ data }: { data: any }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 12 }}>BUSINESS GOALS</div>
         {goals.map((g, i) => (
           <div key={i} style={{
-            display: "grid", gridTemplateColumns: "1fr 100px 100px",
+            display: "grid", gridTemplateColumns: "1fr 140px",
             gap: 12, padding: "10px 0",
             borderTop: i ? `1px solid ${C.creamDark}` : "none",
             fontSize: 13,
           }}>
-            <div style={{ color: C.navy2 }}>{g?.goal ?? g?.name ?? "—"}</div>
-            <div style={{ color: C.muted }}>{g?.timeframe ?? ""}</div>
-            <div style={{ color: C.coral, fontWeight: 700 }}>{g?.target ?? ""}</div>
+            <div style={{ color: C.navy2 }}>{g?.label ?? g?.goal ?? g?.name ?? ""}</div>
+            <div style={{ color: C.coral, fontWeight: 700, textAlign: "right" }}>{g?.value ?? g?.target ?? ""}</div>
           </div>
         ))}
       </div>
@@ -459,10 +456,10 @@ function ActionPlan({ data }: { data: any }) {
           return (
             <div className="report-card" key={i} style={{ ...card, padding: 0, overflow: "hidden" }}>
               <div style={{ background: color, color: C.white, padding: "10px 16px", fontSize: 11, letterSpacing: 2, fontWeight: 700 }}>
-                {w?.label ?? `WEEK ${i + 1}`}
+                {(w?.label ?? w?.week ?? `WEEK ${i + 1}`).toString().toUpperCase()}
               </div>
               <div style={{ padding: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: C.navy, marginBottom: 8 }}>{w?.theme ?? "—"}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: C.navy, marginBottom: 8 }}>{w?.theme ?? ""}</div>
                 <ul style={{ margin: 0, paddingLeft: 18, color: C.navy2, fontSize: 12, lineHeight: 1.5 }}>
                   {tasks.map((t, j) => (
                     <li key={j}>{typeof t === "string" ? t : (t?.title ?? t?.task ?? "")}</li>
@@ -478,8 +475,12 @@ function ActionPlan({ data }: { data: any }) {
         <div style={{ fontSize: 11, letterSpacing: 2, color: C.coral, fontWeight: 700, marginBottom: 12 }}>ONGOING ROUTINE</div>
         <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 0 }}>
           {tiers.map(([key, label], i) => {
-            const items = routine?.[key];
-            const list = Array.isArray(items) ? items : items ? [items] : [];
+            const block = routine?.[key];
+            // block can be: array of strings, array of [label, time], or { hrs, tasks: [...] }
+            let list: any[] = [];
+            if (Array.isArray(block)) list = block;
+            else if (block && Array.isArray(block.tasks)) list = block.tasks;
+            else if (block) list = [block];
             return (
               <React.Fragment key={key}>
                 <div style={{
@@ -493,10 +494,20 @@ function ActionPlan({ data }: { data: any }) {
                   fontSize: 13, color: C.navy2, lineHeight: 1.5,
                 }}>
                   {list.length
-                    ? list.map((x, j) => (
-                        <div key={j}>{typeof x === "string" ? x : (x?.title ?? x?.task ?? "")}</div>
-                      ))
-                    : "—"}
+                    ? list.map((x, j) => {
+                        let text = "";
+                        let time = "";
+                        if (typeof x === "string") text = x;
+                        else if (Array.isArray(x)) { text = x[0] ?? ""; time = x[1] ?? ""; }
+                        else if (x) { text = x.title ?? x.task ?? x.name ?? ""; time = x.time ?? x.duration ?? ""; }
+                        return (
+                          <div key={j} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                            <span>{text}</span>
+                            {time && <span style={{ color: C.muted, fontSize: 12 }}>{time}</span>}
+                          </div>
+                        );
+                      })
+                    : ""}
                 </div>
               </React.Fragment>
             );
