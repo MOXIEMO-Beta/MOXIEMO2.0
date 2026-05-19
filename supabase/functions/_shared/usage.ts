@@ -7,6 +7,7 @@ export type ConsumeResult = {
   used?: number;
   limit?: number | null;
   month?: string;
+  reset_date?: string | null;
 };
 
 function clientFromReq(req: Request) {
