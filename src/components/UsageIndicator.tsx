@@ -3,12 +3,22 @@ import { usePlan } from "@/hooks/usePlan";
 import { GENERATION_LIMIT, PLAN_LABEL } from "@/lib/planConfig";
 import { cn } from "@/lib/utils";
 
-function nextResetLabel(): string {
-  // First day of next month, in user's locale.
-  const now = new Date();
-  const next = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-  const month = next.toLocaleString(undefined, { month: "long" });
-  return `Resets ${month} 1st`;
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+function nextResetLabel(resetDate?: string | null): string {
+  const d = resetDate ? new Date(resetDate) : null;
+  if (!d || isNaN(d.getTime())) {
+    // Fallback: 30 days from today
+    const fb = new Date();
+    fb.setDate(fb.getDate() + 30);
+    return `Resets ${fb.toLocaleString(undefined, { month: "long" })} ${ordinal(fb.getDate())}`;
+  }
+  const month = d.toLocaleString(undefined, { month: "long" });
+  return `Resets ${month} ${ordinal(d.getDate())}`;
 }
 
 export function UsageIndicator({ compact = false }: { compact?: boolean }) {
@@ -53,7 +63,7 @@ export function UsageIndicator({ compact = false }: { compact?: boolean }) {
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
             <div className={cn("h-full transition-all", barColor)} style={{ width: `${pct}%` }} />
           </div>
-          <div className="mt-1.5 text-[10.5px] text-muted-foreground">{nextResetLabel()}</div>
+          <div className="mt-1.5 text-[10.5px] text-muted-foreground">{nextResetLabel(usage?.reset_date)}</div>
           <Link
             to="/pricing"
             className="mt-1.5 inline-block text-[11px] font-medium text-brand-coral hover:underline"
