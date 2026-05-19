@@ -208,7 +208,7 @@ function scaffoldCalendar(s: any) {
   const start   = new Date();
   const entries: any[] = [];
 
-  for (let i = 0; entries.length < 22; i++) {
+  for (let i = 0; entries.length < 18; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
     if (d.getDay() === 0) continue;
