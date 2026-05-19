@@ -181,9 +181,9 @@ function buildCalendar(s: any) {
     return s.calendar_entries.map((e: any) => ({
       date:    e.date,
       dayName: e.dayName ?? getDayName(e.date),
-      channel: e.channel    ?? s.primary_channel ?? 'LinkedIn',
+      channel: shortChannel(e.channel ?? s.primary_channel) ?? 'LinkedIn',
       type:    e.contentType ?? e.type ?? 'Text Post',
-      title:   e.topic      ?? e.title ?? '',
+      title:   pickString(e.topic, e.title, e.name, e.text) ?? '',
       pillar:  e.pillar      ?? '',
       status:  e.status      ?? 'pending',
     }));
@@ -192,7 +192,14 @@ function buildCalendar(s: any) {
 }
 
 function scaffoldCalendar(s: any) {
-  const pillar  = coerceArray(s.content_pillars ?? [])[0] ?? s.methodology ?? 'Your Core Framework';
+  const firstPillar = coerceArray(s.content_pillars ?? [])[0];
+  const pillar: string =
+    (typeof firstPillar === 'string'
+      ? firstPillar
+      : firstPillar?.name ?? firstPillar?.title ?? firstPillar?.text ?? null) ??
+    s.methodology ??
+    'Your Core Framework';
+  const ch = shortChannel(s.primary_channel) ?? 'LinkedIn';
   const formats = ['Text Post', 'Carousel', 'Personal Story', 'Poll', 'Explainer', 'Case Study', 'Behind-the-Scenes', 'How-to Carousel'];
   const start   = new Date();
   const entries: any[] = [];
@@ -204,9 +211,9 @@ function scaffoldCalendar(s: any) {
     entries.push({
       date:    d.toISOString().split('T')[0],
       dayName: getDayName(d),
-      channel: s.primary_channel ?? 'LinkedIn',
+      channel: ch,
       type:    formats[entries.length % formats.length],
-      title:   `${pillar} — Post ${entries.length + 1}`,
+      title:   `${pillar}, post ${entries.length + 1}`,
       pillar,
       status:  'pending',
     });
@@ -216,7 +223,7 @@ function scaffoldCalendar(s: any) {
 
 // ─── CHANNELS ───────────────────────────────────────────────────
 function buildChannels(s: any, ef: any, raw: any) {
-  const ch     = s.primary_channel   ?? ef.primaryChannel   ?? 'LinkedIn';
+  const ch     = shortChannel(s.primary_channel ?? ef.primaryChannel) ?? 'LinkedIn';
   const freq   = s.posting_frequency ?? ef.postingFrequency ?? '7 posts/week';
   const hrs    = deriveHours(s.time_capacity);
   const metric = s.success_definition ?? ef.successDefinition ?? '3–4 qualified calls/week';
