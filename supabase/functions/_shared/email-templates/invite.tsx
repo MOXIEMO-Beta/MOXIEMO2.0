@@ -27,24 +27,38 @@ export const InviteEmail = ({
 }: InviteEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>You've been invited to join {siteName}</Preview>
+    <Preview>You've been invited! Here is your MOXIEMO access.</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You've been invited</Heading>
+        <Text style={text}>Hi there,</Text>
         <Text style={text}>
-          You've been invited to join{' '}
-          <Link href={siteUrl} style={link}>
-            <strong>{siteName}</strong>
-          </Link>
-          . Click the button below to accept the invitation and create your
-          account.
+          Your member access is ready. You are officially part of the MOXIEMO circle.
+        </Text>
+        <Text style={text}>Here is what happens next:</Text>
+        <Text style={text}>
+          Click the button below to create your password and activate your account and
+          complete your Brand Discovery. This is where MOXIEMO learns your positioning,
+          voice, and content strategy. It takes about 10-15 minutes. Your Marketing
+          Planner will be ready immediately after Discovery is complete.
+        </Text>
+        <Text style={text}>
+          If you're a Founding Member, your access is free forever. No credit card, no
+          trial period, no catch.
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Accept Invitation
+          Activate your account →
         </Button>
-        <Text style={footer}>
-          If you weren't expecting this invitation, you can safely ignore this
-          email.
+        <Text style={text}>
+          If you have any questions before you get started, reply to this email directly.
+        </Text>
+        <Text style={text}>
+          Welcome to MOXIEMO,<br />
+          Your Chief AI Marketing Officer
+        </Text>
+        <Text style={text}>
+          Karee<br />
+          Founder, MOXIE<br />
+          <Link href="mailto:hello@buildwithmoxiemo.com" style={link}>hello@buildwithmoxiemo.com</Link>
         </Text>
       </Container>
     </Body>
