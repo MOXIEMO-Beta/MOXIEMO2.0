@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { MoxieLogo } from "@/components/MoxieLogo";
 import { ArrowUp, Sparkles, CheckCircle2, Loader2, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
@@ -433,9 +434,7 @@ export default function Discovery() {
     } catch (e: any) {
       console.error("synthesize error:", e);
       setSynthFailed(true);
-      toast.error("Strategy generation hit a snag — your answers are saved.", {
-        description: "Click 'Generate Strategy' to try again.",
-      });
+      toast.error(aiErrorMessage("discovery", e));
     } finally {
       setSynthesizing(false);
     }
