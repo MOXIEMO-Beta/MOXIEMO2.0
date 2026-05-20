@@ -593,19 +593,25 @@ export default function Discovery() {
             )}
             <div className="flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-soft focus-within:border-foreground/30 transition">
               <Textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
-                placeholder={loading ? "MOXIEMO is responding…" : "Type your answer… (Enter to send, Shift+Enter for new line)"}
+                placeholder={loading ? "MOXIEMO is responding…" : "Type your answer…"}
                 disabled={loading}
                 rows={1}
-                className="resize-none border-0 bg-transparent focus-visible:ring-0 min-h-[44px] max-h-40 text-[15px]"
+                className="resize-none border-0 bg-transparent focus-visible:ring-0 min-h-[120px] lg:min-h-[100px] max-h-[300px] overflow-y-auto text-[15px] flex-1"
               />
-              <Button onClick={send} disabled={loading || cooldown || (!input.trim() && !inlineError)} size="icon" className="h-9 w-9 rounded-xl bg-foreground hover:bg-foreground/90 text-background flex-shrink-0">
-                <ArrowUp className="h-4 w-4" />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button onClick={send} disabled={loading || cooldown || (!input.trim() && !inlineError)} size="icon" className="h-9 w-9 rounded-xl bg-foreground hover:bg-foreground/90 text-background flex-shrink-0 self-end">
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="hidden lg:block">Click to submit</TooltipContent>
+              </Tooltip>
             </div>
-            <p className="text-xs text-muted-foreground mt-2 text-center">MOXIEMO adapts to how you answer. Be as detailed or quick as you like.</p>
+            <p className="text-xs text-muted-foreground mt-2 text-center lg:hidden">Tap the arrow to submit your answer</p>
+            <p className="text-xs text-muted-foreground mt-2 text-center hidden lg:block">MOXIEMO adapts to how you answer. Be as detailed or quick as you like.</p>
           </div>
         </div>
       )}
