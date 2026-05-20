@@ -8,6 +8,7 @@ import { MoxieLogo } from "@/components/MoxieLogo";
 import { ArrowUp, Sparkles, CheckCircle2, Loader2, RotateCcw, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
