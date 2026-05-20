@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { toast } from "sonner";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import {
   Linkedin,
   Facebook,
