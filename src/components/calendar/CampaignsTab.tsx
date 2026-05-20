@@ -13,6 +13,7 @@ import {
 import { ArrowLeft, ArrowRight, Plus, Target, Sparkles, Loader2, Pause, CheckCircle2, MoreHorizontal, CalendarDays } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import { usePlan } from "@/hooks/usePlan";
 import { asArray, fmtShort, ymd, generateCampaignSlots, campaignSlotProgress, campaignSlotCounts } from "./helpers";
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import { usePlan } from "@/hooks/usePlan";
 import { canPublishOn } from "@/lib/planConfig";
 import { PublishLockBadge } from "@/components/PublishLockBadge";

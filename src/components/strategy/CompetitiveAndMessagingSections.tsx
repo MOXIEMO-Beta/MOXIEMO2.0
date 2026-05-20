@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Textarea } from "@/components/ui/textarea";
 import { Target, Copy, Loader2, Check, ChevronDown, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import { supabase } from "@/integrations/supabase/client";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
 
