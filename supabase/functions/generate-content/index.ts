@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
+import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const SYSTEM = `You are MOXIE, an AI CMO generating content for a specific marketing campaign.
 
@@ -131,6 +132,7 @@ Deno.serve(async (req) => {
       if (!res.ok) {
         const t = await res.text();
         console.error("hashtags AI error", res.status, t);
+        notifyAdminCritical(req, { functionName: "generate-content:hashtags", status: res.status, detail: t });
         return new Response(JSON.stringify({ error: "AI gateway error" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -153,13 +155,16 @@ Deno.serve(async (req) => {
       const refinePrompt = `Here is a piece of ${platform ?? "content"} (${contentType ?? "post"}):\n\n"""\n${existing}\n"""\n\nApply this refinement instruction from the user:\n"${instruction}"\n\nReturn ONLY the revised content. No preamble. Match the same format as the original (plain text or HTML).`;
       const res = await callClaude(SYSTEM, refinePrompt, 1500);
       if (!res.ok) {
-        if (res.status === 429)
+        if (res.status === 429) {
+          notifyAdminCritical(req, { functionName: "generate-content:refine", status: 429 });
           return new Response(JSON.stringify({ error: "Rate limit reached. Try again shortly." }), {
             status: 429,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
+        }
         const t = await res.text();
         console.error("refine AI error", res.status, t);
+        notifyAdminCritical(req, { functionName: "generate-content:refine", status: res.status, detail: t });
         return new Response(JSON.stringify({ error: "AI gateway error" }), {
           status: 500,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -196,18 +201,23 @@ Deno.serve(async (req) => {
     const res = await callClaude(SYSTEM, prompt, longForm ? 3000 : 1024);
 
     if (!res.ok) {
-      if (res.status === 429)
+      if (res.status === 429) {
+        notifyAdminCritical(req, { functionName: "generate-content", status: 429 });
         return new Response(JSON.stringify({ error: "Rate limit reached. Try again shortly." }), {
           status: 429,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
-      if (res.status === 402)
+      }
+      if (res.status === 402) {
+        notifyAdminCritical(req, { functionName: "generate-content", status: 402 });
         return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
       const t = await res.text();
       console.error("generate-content AI error", res.status, t);
+      notifyAdminCritical(req, { functionName: "generate-content", status: res.status, detail: t });
       return new Response(JSON.stringify({ error: "AI gateway error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
