@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,6 +48,7 @@ Return ONLY valid JSON, no explanation, no markdown:
 
     if (!res.ok) {
       const err = await res.text();
+      notifyAdminCritical(req, { functionName: "generate-competitive-positioning", status: res.status, detail: err });
       throw new Error(`Anthropic error: ${res.status} ${err}`);
     }
 
