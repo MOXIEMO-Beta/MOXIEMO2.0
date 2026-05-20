@@ -9,9 +9,12 @@ import { ArrowRight, Check, MessageSquare, Target, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { WaitlistForm } from "@/components/WaitlistForm";
 import dashboardImg from "@/assets/home-dashboard.png";
-import plannerImg from "@/assets/home-planner.png";
-import contentImg from "@/assets/home-content.png";
-import strategyImg from "@/assets/home-strategy.png";
+import plannerImg from "@/assets/home-planner-new.png";
+import contentImg from "@/assets/home-execution.png";
+import strategyImg from "@/assets/home-strategy-foundation.png";
+import discoveryImg from "@/assets/home-discovery.png";
+import strategyThemesImg from "@/assets/home-strategy-themes.png";
+import executionImg from "@/assets/home-execution.png";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -84,13 +87,12 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      {/* SECTION 1 — HERO */}
+      {/* SECTION 1 - HERO */}
       <section className="bg-background pt-28 md:pt-32 pb-16">
         <div className="max-w-[1100px] mx-auto px-6 text-center">
           <SectionLabel>Your AI CMO is ready</SectionLabel>
           <h1 className="max-w-[1100px] mx-auto text-5xl md:text-7xl lg:text-[88px] font-bold leading-[1.05] tracking-[-0.035em] mb-8 text-foreground">
-            Stop managing marketing tools.{" "}
-            <span style={{ color: "#ff6b6b" }}>Start</span>{" "}
+            Your brand is not your go-to-market.{" "}
             <span
               style={{
                 background: "linear-gradient(90deg, #ff6b6b, #ff9a3c)",
@@ -99,11 +101,11 @@ export default function Index() {
                 backgroundClip: "text",
               }}
             >
-              marketing your business.
+              MOXIEMO builds both.
             </span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-[600px] mx-auto mb-10 leading-relaxed">
-            MOXIEMO is your AI Chief Marketing Officer — building your strategy, generating your content, and publishing across every channel. One platform. Confident marketing.
+            MOXIEMO is your AI Chief Marketing Officer, built for founders at $250K+ who are ready to stop winging it. Build your marketing foundation, plan your content, and publish with strategy behind every post.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
             <Button
@@ -117,7 +119,7 @@ export default function Index() {
               <Link to="/auth">Sign in <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground/80">Founding members get full access — free, forever.</p>
+          <p className="text-xs text-muted-foreground/80">Founding members get free access, forever. No credit card required.</p>
         </div>
 
         <div className="max-w-[85%] mx-auto px-6 mt-16">
@@ -125,14 +127,14 @@ export default function Index() {
         </div>
       </section>
 
-      {/* SECTION 2 — STATS BAR */}
+      {/* SECTION 2 - STATS BAR */}
       <section className="py-[60px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
           <StatsBar />
         </div>
       </section>
 
-      {/* SECTION 3 — HOW IT WORKS */}
+      {/* SECTION 3 - HOW IT WORKS */}
       <section className="py-[70px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16 max-w-3xl mx-auto">
@@ -145,9 +147,9 @@ export default function Index() {
           </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { n: "01", icon: MessageSquare, t: "MOXIEMO Discovery", d: "A guided 20-minute conversation extracts your positioning, voice, audience, and goals.", img: strategyImg, alt: "Discovery chat" },
-              { n: "02", icon: Target, t: "Strategy synthesized", d: "Positioning, pillars, voice, channels, and metrics — connected to everything, not a static PDF.", img: strategyImg, alt: "Strategy positioning" },
-              { n: "03", icon: Zap, t: "Execution embedded", d: "Every tool already knows your strategy. Generate content, plan campaigns, send emails. Approve, edit, publish.", img: plannerImg, alt: "Marketing planner" },
+              { n: "01", icon: MessageSquare, t: "MOXIEMO Discovery", d: "A guided 20-minute conversation extracts your positioning, voice, audience, and goals.", img: discoveryImg, alt: "Discovery chat" },
+              { n: "02", icon: Target, t: "Strategy synthesized", d: "Positioning, pillars, voice, channels, and metrics. Connected to everything, not sitting in a doc you never open.", img: strategyThemesImg, alt: "Quarterly content themes" },
+              { n: "03", icon: Zap, t: "Execution embedded", d: "Every tool already knows your strategy. Generate content, plan campaigns, send emails. Approve, edit, publish.", img: executionImg, alt: "Social create view" },
             ].map((s) => (
               <Card key={s.n} className="p-7 border-border rounded-2xl bg-card hover:shadow-card transition flex flex-col">
                 <div className="text-sm font-semibold text-accent mb-4">{s.n}</div>
@@ -163,7 +165,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* SECTION 4 — PLATFORM FEATURE SHOWCASE */}
+      {/* SECTION 4 - PLATFORM FEATURE SHOWCASE */}
       <section className="py-[100px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-20 max-w-3xl mx-auto">
@@ -174,11 +176,11 @@ export default function Index() {
               <span className="text-muted-foreground">One place.</span>
             </h2>
             <p className="text-lg md:text-xl text-muted-foreground leading-relaxed font-light">
-              Strategy, content, calendar, analytics — all wired to one source of truth about your business.
+              Strategy, content, calendar, analytics. All wired to one source of truth about your business.
             </p>
           </div>
 
-          {/* Row 1 — Strategy (image left, copy right) */}
+          {/* Row 1 - Strategy */}
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center mb-24">
             <ProductShot src={strategyImg} alt="MOXIEMO Strategy positioning statement" />
             <div>
@@ -187,16 +189,16 @@ export default function Index() {
                 Your foundation. Built in minutes.
               </h3>
               <p className="text-[17px] md:text-[18px] text-muted-foreground leading-[1.7] mb-6">
-                MOXIEMO runs a guided discovery, then synthesizes your complete marketing strategy — positioning, voice, content pillars, channel plan. It scores your strategy and tells you exactly what to strengthen.
+                MOXIEMO runs a guided discovery, then synthesizes your complete marketing foundation: positioning, voice, content pillars, and channel plan. It scores your strategy and tells you exactly where to go deeper.
               </p>
               <div className="inline-flex items-baseline gap-2 px-4 py-2.5 rounded-full bg-accent-soft">
-                <span className="text-2xl font-bold text-accent">97/100</span>
-                <span className="text-sm text-foreground/70">strategy strength — out of the box</span>
+                <span className="text-2xl font-bold text-accent">100/100</span>
+                <span className="text-sm text-foreground/70">strategy strength, out of the box</span>
               </div>
             </div>
           </div>
 
-          {/* Row 2 — Content (copy left, image right) */}
+          {/* Row 2 - Content */}
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center mb-24">
             <div className="md:order-1 order-2">
               <div className="text-xs font-bold uppercase tracking-[0.22em] text-accent mb-4">Content</div>
@@ -204,7 +206,7 @@ export default function Index() {
                 Content that sounds like you. Every time.
               </h3>
               <p className="text-[17px] md:text-[18px] text-muted-foreground leading-[1.7]">
-                Generate LinkedIn posts, newsletters, captions, and long-form content anchored to your strategy. Pick a content pillar, describe your idea, and MOXIEMO writes in your voice — not generic AI output.
+                Generate LinkedIn posts, newsletters, captions, and long-form content anchored to your strategy. Pick a content pillar, describe your idea, and MOXIEMO writes in your voice. Not generic AI output. Yours.
               </p>
             </div>
             <div className="md:order-2 order-1">
@@ -212,7 +214,7 @@ export default function Index() {
             </div>
           </div>
 
-          {/* Row 3 — Marketing Planner (image left, copy right) */}
+          {/* Row 3 - Marketing Planner */}
           <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
             <ProductShot src={plannerImg} alt="MOXIEMO Marketing Planner" />
             <div>
@@ -228,7 +230,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* SECTION 5 — WHY MOXIEMO */}
+      {/* SECTION 5 - WHY MOXIEMO */}
       <section className="py-[100px] bg-[#f8f8f8] border-y border-border">
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 lg:gap-20 items-center">
@@ -244,11 +246,11 @@ export default function Index() {
             <Card className="p-8 md:p-10 border-border rounded-2xl bg-card" style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.08)" }}>
               <div className="space-y-5">
                 {[
-                  "End fragmentation — replace tools, never integrate",
-                  "Strategy embedded in execution, not a static PDF",
-                  "Built for $250K+ operators, not startups or enterprises",
-                  "Honest urgency over hype — real ROI, no exaggeration",
-                  "Your voice in every output — not generic AI slop",
+                  "End fragmentation. Replace tools, not just integrate them.",
+                  "Strategy embedded in execution, not sitting in a static PDF.",
+                  "Built for $250K+ founders, not startups or enterprises.",
+                  "Honest urgency over hype. Real ROI, no exaggeration.",
+                  "Your voice in every output. Not generic AI slop.",
                 ].map((t) => (
                   <div key={t} className="flex gap-3">
                     <div className="h-6 w-6 rounded-full bg-accent-soft flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -263,7 +265,7 @@ export default function Index() {
         </div>
       </section>
 
-      {/* SECTION 6 — FOUNDING MEMBER CTA */}
+      {/* SECTION 6 - FOUNDING MEMBER CTA */}
       <section className="py-[100px] bg-foreground text-background">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="inline-block text-xs font-bold uppercase tracking-[0.22em] text-accent mb-6 px-4 py-2 rounded-full bg-accent/15">
@@ -273,7 +275,7 @@ export default function Index() {
             Be a MOXIEMO Founding Member.
           </h2>
           <p className="text-lg md:text-xl text-background/70 max-w-2xl mx-auto mb-10 leading-relaxed">
-            Join the beta and get full platform access — free, forever. We're personally onboarding every founding member with a 1:1 kickoff call.
+            Join the beta and lock in founding member access, free forever. We are personally scheduling a 1:1 kickoff call with every founding member before granting access.
           </p>
 
           <WaitlistForm />
