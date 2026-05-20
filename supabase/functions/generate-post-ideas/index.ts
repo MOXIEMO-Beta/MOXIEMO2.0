@@ -67,6 +67,7 @@ Return ONLY a valid JSON array with exactly 6 items. No explanation, no preamble
     if (!res.ok) {
       const errorText = await res.text();
       console.error("Anthropic API error:", res.status, errorText);
+      notifyAdminCritical(req, { functionName: "generate-post-ideas", status: res.status, detail: errorText });
       throw new Error(`Anthropic API returned ${res.status}: ${errorText}`);
     }
 

@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
+import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -157,6 +158,7 @@ The user will add their own CTA separately in the editor.`;
     if (!aiRes.ok) {
       const errText = await aiRes.text();
       console.error("Anthropic error:", aiRes.status, errText);
+      notifyAdminCritical(req, { functionName: "generate-email", status: aiRes.status, detail: errText });
       return new Response(JSON.stringify({ error: "AI request failed", details: errText }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

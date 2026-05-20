@@ -5,6 +5,7 @@ const corsHeaders = {
 };
 
 import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
+import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const SYSTEM = `You are MOXIEMO, an AI Chief Marketing Officer generating social media content for an expertise-based founder.
 
@@ -115,6 +116,7 @@ For unrequested platforms, return an empty string.`;
     if (!resp.ok) {
       const text = await resp.text();
       console.error("Anthropic error", resp.status, text);
+      notifyAdminCritical(req, { functionName: "generate-social-post", status: resp.status, detail: text });
       return new Response(JSON.stringify({ error: `Anthropic API error: ${resp.status}` }), {
         status: resp.status === 429 ? 429 : 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

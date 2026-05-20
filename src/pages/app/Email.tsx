@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import { usePlan } from "@/hooks/usePlan";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -412,8 +413,7 @@ export default function Email() {
       setShowGenPanel(false);
       toast.success("Draft ready — personalize the brackets before sending");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to generate";
-      toast.error(message);
+      toast.error(aiErrorMessage("content", err));
     } finally {
       setGenerating(false);
     }

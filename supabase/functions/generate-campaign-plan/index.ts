@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
+import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,7 +68,11 @@ Return ONLY valid JSON, no markdown:
         messages: [{ role: "user", content: prompt }],
       }),
     });
-    if (!res.ok) throw new Error(`Anthropic error: ${res.status} ${await res.text()}`);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => "");
+      notifyAdminCritical(req, { functionName: "generate-campaign-plan", status: res.status, detail: errText });
+      throw new Error(`Anthropic error: ${res.status} ${errText}`);
+    }
     const data = await res.json();
     const text = data.content?.[0]?.text?.trim() ?? "{}";
     let result: any = { weeks: [] };

@@ -5,6 +5,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Textarea } from "@/components/ui/textarea";
 import { Target, Copy, Loader2, Check, ChevronDown, Sparkles, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import { supabase } from "@/integrations/supabase/client";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
 
@@ -198,7 +199,7 @@ export function CompetitiveAndMessagingSections() {
       toast.success("Competitive positioning generated — review and refine to make it yours.");
     } catch (e: any) {
       console.error(e);
-      toast.error("Couldn't generate positioning", { description: e?.message });
+      toast.error(aiErrorMessage("generic", e));
     } finally {
       setRegenPositioning(false);
     }
@@ -221,7 +222,7 @@ export function CompetitiveAndMessagingSections() {
       toast.success("Messaging updated. Copy and use anywhere.");
     } catch (e: any) {
       console.error(e);
-      toast.error("Couldn't generate messaging", { description: e?.message });
+      toast.error(aiErrorMessage("generic", e));
     } finally {
       setGenerating(false);
     }

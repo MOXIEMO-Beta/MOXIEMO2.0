@@ -3,6 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 type Action = "improve" | "shorter" | "longer" | "punchier" | "rewrite" | "instruction";
 
@@ -97,6 +98,7 @@ Match the surrounding tone and voice exactly.`;
     if (!resp.ok) {
       const text = await resp.text();
       console.error("Anthropic error", resp.status, text);
+      notifyAdminCritical(req, { functionName: "edit-social-post", status: resp.status, detail: text });
       return new Response(JSON.stringify({ error: `Anthropic API error: ${resp.status}` }), {
         status: resp.status === 429 ? 429 : 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

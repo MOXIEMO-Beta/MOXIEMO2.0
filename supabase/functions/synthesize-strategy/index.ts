@@ -2,6 +2,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const SYSTEM = `You are MOXIEMO's strategy synthesizer. Read a discovery conversation transcript and extract a complete marketing strategy.
 You will save BOTH a base strategy AND an expanded "enhanced_foundation" object that deepens the output (Sprint 1: positioning breakdown, brand archetype, core values, competitive positioning, detailed voice guidelines).
@@ -371,6 +372,7 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       const t = await res.text();
       console.error("Synth error", res.status, t);
+      notifyAdminCritical(req, { functionName: "synthesize-strategy", status: res.status, detail: t });
       return new Response(JSON.stringify({ error: "AI error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 

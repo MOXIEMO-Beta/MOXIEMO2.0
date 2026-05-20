@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -178,6 +179,9 @@ serve(async (req) => {
         lastStatus = r.status;
         lastErrText = await r.text().catch(() => "");
         console.error(`Anthropic error (attempt ${attempt}):`, r.status, lastErrText);
+        if (r.status === 429 || r.status === 402) {
+          notifyAdminCritical(req, { functionName: "discovery-chat", status: r.status, detail: lastErrText });
+        }
 
         // Retry 429 (rate limit) and 5xx. Other 4xx are not retryable.
         const retryable = r.status === 429 || r.status >= 500;

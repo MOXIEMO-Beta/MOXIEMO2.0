@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlan } from "@/hooks/usePlan";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -296,7 +297,9 @@ export default function Content() {
       setTimeout(() => outputRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
     } catch (e: any) {
       console.error(e);
-      toast.error("Couldn't generate", { description: e?.message ?? "Try again." });
+      if (e?.message !== "limit_reached") {
+        toast.error(aiErrorMessage("content", e));
+      }
     } finally {
       setGenerating(false);
     }
@@ -313,7 +316,9 @@ export default function Content() {
       setRefineText("");
     } catch (e: any) {
       console.error(e);
-      toast.error("Couldn't regenerate", { description: e?.message ?? "Try again." });
+      if (e?.message !== "limit_reached") {
+        toast.error(aiErrorMessage("content", e));
+      }
     } finally {
       setGenerating(false);
     }
@@ -343,7 +348,7 @@ export default function Content() {
       setRefineText("");
     } catch (e: any) {
       console.error(e);
-      toast.error("Couldn't refine", { description: e?.message ?? "Try again." });
+      toast.error(aiErrorMessage("content", e));
     } finally {
       setRefining(false);
     }

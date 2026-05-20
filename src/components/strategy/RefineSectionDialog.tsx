@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Sparkles, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { aiErrorMessage } from "@/lib/aiErrors";
 
 const COACHING_PROMPTS: Record<string, { title: string; help: string; placeholder: string }> = {
   positioning_statement: {
@@ -105,7 +106,7 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
       setRationale(data.rationale || "");
       setStep("compare");
     } catch (e: any) {
-      toast.error(e.message || "Couldn't generate refinement.");
+      toast.error(aiErrorMessage("generic", e));
     } finally {
       setLoading(false);
     }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -946,7 +947,7 @@ export default function Strategy() {
       setRecoverableSession(null);
     } catch (e: any) {
       console.error(e);
-      toast.error("Couldn't generate strategy", { description: e?.message || "Try again in a moment." });
+      toast.error(aiErrorMessage("discovery", e));
     } finally {
       setGenerating(false);
     }
