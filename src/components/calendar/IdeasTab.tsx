@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, RefreshCw, X, ArrowRight, AlertTriangle, Lightbulb, Mic, BookOpen, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { aiErrorMessage } from "@/lib/aiErrors";
 import { usePlan } from "@/hooks/usePlan";
 import { asArray } from "./helpers";
 
@@ -56,7 +57,7 @@ export default function IdeasTab({ ctx }: { ctx: any }) {
       void refresh();
       toast.success("Fresh ideas generated");
     } catch (e: any) {
-      toast.error("Could not generate ideas", { description: e.message });
+      toast.error(aiErrorMessage("generic", e));
     } finally {
       setLoadingGen(false);
     }
