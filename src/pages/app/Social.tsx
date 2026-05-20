@@ -456,14 +456,14 @@ function OverviewTab({
       if (error) throw error;
       const ideas = (Array.isArray(data) ? data : data?.ideas ?? []) as PostIdea[];
       if (ideas.length === 0) {
-        toast.error("Couldn't generate ideas", { description: "Try again in a moment" });
+        toast.error(aiErrorMessage("generic"));
         return;
       }
       setAiIdeas(ideas);
       toast.success("Fresh ideas ready");
     } catch (err) {
       console.error(err);
-      toast.error("Couldn't generate ideas", { description: (err as Error).message });
+      toast.error(aiErrorMessage("generic", err));
     } finally {
       setGeneratingIdeas(false);
     }
