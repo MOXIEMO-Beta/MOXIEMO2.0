@@ -603,12 +603,16 @@ function Step8({ betaCode, setBetaCode, applyBetaCode, codeChecking, codeError, 
 
       <div className="mt-8 rounded-xl border border-border p-5">
         <p className="text-sm font-medium">Have a beta code?</p>
-        <div className="mt-3 flex gap-2">
-          <Input value={betaCode} onChange={(e) => { setBetaCode(e.target.value); }} placeholder="MOXIE2026" className="uppercase" />
+        <label className="mt-3 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Beta access code
+        </label>
+        <div className="mt-1.5 flex gap-2">
+          <Input value={betaCode} onChange={(e) => { setBetaCode(e.target.value); }} placeholder="Type your beta code here" className="uppercase" />
           <Button onClick={applyBetaCode} disabled={!betaCode.trim() || codeChecking} variant="outline">
             {codeChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Apply code <ArrowRight className="h-4 w-4 ml-1" /></>}
           </Button>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">Your founding member code is MOXIE2026</p>
         {codeError && <p className="mt-2 text-sm text-destructive">{codeError}</p>}
       </div>
     </div>
