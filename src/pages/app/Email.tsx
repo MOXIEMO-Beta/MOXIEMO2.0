@@ -412,8 +412,7 @@ export default function Email() {
       setShowGenPanel(false);
       toast.success("Draft ready — personalize the brackets before sending");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to generate";
-      toast.error(message);
+      toast.error(aiErrorMessage("content", err));
     } finally {
       setGenerating(false);
     }
