@@ -101,6 +101,15 @@ export default function Discovery() {
   const lastSynthHistoryRef = useRef<Msg[] | null>(null);
   const [cooldown, setCooldown] = useState(false);
   const autoRetryRef = useRef<number | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const next = Math.min(el.scrollHeight, 300);
+    el.style.height = `${next}px`;
+  }, [input]);
 
   // progress: count assistant questions answered = number of user messages
   const answered = messages.filter((m) => m.role === "user").length;
