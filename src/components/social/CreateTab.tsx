@@ -440,7 +440,7 @@ export default function CreateTab({
       }
     } catch (err) {
       console.error(err);
-      toast.error("Edit failed", { description: (err as Error).message });
+      toast.error(aiErrorMessage("generic", err));
     } finally {
       setAiEditing(null);
     }
@@ -602,7 +602,7 @@ export default function CreateTab({
       }
     } catch (err) {
       console.error(err);
-      toast.error("Couldn't generate posts", { description: (err as Error).message });
+      toast.error(aiErrorMessage("content", err));
     } finally {
       setGenerating(false);
     }
@@ -628,7 +628,7 @@ export default function CreateTab({
         .slice(0, 6);
       setHashtags((prev) => ({ ...prev, [p]: tags }));
     } catch (err) {
-      toast.error("Couldn't generate hashtags", { description: (err as Error).message });
+      toast.error(aiErrorMessage("generic", err));
     } finally {
       setHashtagsLoading(null);
     }

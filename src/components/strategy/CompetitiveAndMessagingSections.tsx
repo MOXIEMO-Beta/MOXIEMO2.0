@@ -198,7 +198,7 @@ export function CompetitiveAndMessagingSections() {
       toast.success("Competitive positioning generated — review and refine to make it yours.");
     } catch (e: any) {
       console.error(e);
-      toast.error("Couldn't generate positioning", { description: e?.message });
+      toast.error(aiErrorMessage("generic", e));
     } finally {
       setRegenPositioning(false);
     }
@@ -221,7 +221,7 @@ export function CompetitiveAndMessagingSections() {
       toast.success("Messaging updated. Copy and use anywhere.");
     } catch (e: any) {
       console.error(e);
-      toast.error("Couldn't generate messaging", { description: e?.message });
+      toast.error(aiErrorMessage("generic", e));
     } finally {
       setGenerating(false);
     }

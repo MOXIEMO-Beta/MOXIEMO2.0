@@ -105,7 +105,7 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
       setRationale(data.rationale || "");
       setStep("compare");
     } catch (e: any) {
-      toast.error(e.message || "Couldn't generate refinement.");
+      toast.error(aiErrorMessage("generic", e));
     } finally {
       setLoading(false);
     }

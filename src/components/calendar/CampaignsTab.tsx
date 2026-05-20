@@ -221,7 +221,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
       if (error) throw error;
       setPlan((data as any)?.weeks ?? []);
     } catch (e: any) {
-      toast.error("Could not generate plan", { description: e.message });
+      toast.error(aiErrorMessage("generic", e));
     } finally {
       setPlanLoading(false);
     }
