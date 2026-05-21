@@ -90,10 +90,9 @@ function computeStrength(transcript: string, parsed: any) {
   const weak: any[] = [];
   const strong: any[] = [];
   for (const k of Object.keys(breakdown)) {
-    const ratio = breakdown[k] / labels[k].max;
     const item = { key: k, label: labels[k].label, section: labels[k].section, points: breakdown[k], max: labels[k].max, refineKey: labels[k].refineKey };
-    if (ratio >= 0.85) strong.push(item);
-    else if (ratio < 0.6) weak.push(item);
+    if (breakdown[k] >= labels[k].max) strong.push(item);
+    else weak.push(item);
   }
   // Sort weak by widest gap first
   weak.sort((a, b) => (a.points / a.max) - (b.points / b.max));
