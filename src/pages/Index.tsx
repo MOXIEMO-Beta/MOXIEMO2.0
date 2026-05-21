@@ -122,7 +122,7 @@ export default function Index() {
           <p className="text-xs text-muted-foreground/80">Founding members get free access, forever. No credit card required.</p>
         </div>
 
-        <div className="max-w-[85%] mx-auto px-6 mt-16">
+        <div className="w-full max-w-full md:max-w-[85%] mx-auto px-4 sm:px-6 mt-16 overflow-hidden">
           <MoxiemoDemoShowcase />
         </div>
       </section>

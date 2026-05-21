@@ -8,8 +8,8 @@ const stats = [
 export function StatsBar() {
   return (
     <div
-      className="rounded-2xl bg-[#f8f8f8]"
-      style={{ padding: "60px 80px" }}
+      className="rounded-2xl bg-[#f8f8f8] w-full"
+      style={{ padding: "clamp(32px, 6vw, 60px) clamp(20px, 6vw, 80px)", maxWidth: "100%", boxSizing: "border-box" }}
     >
       <div className="text-center mb-10">
         <h2 className="font-bold text-foreground" style={{ fontSize: 28 }}>
@@ -22,7 +22,7 @@ export function StatsBar() {
           Every founder who runs MOXIEMO Discovery gets a complete marketing strategy in minutes. Here is what founders stop wasting time and money on.
         </p>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 md:gap-0">
         {stats.map((s, i) => (
           <div
             key={s.l}
@@ -37,7 +37,7 @@ export function StatsBar() {
             )}
             <div
               className="font-bold leading-none mb-3"
-              style={{ color: "#ff6b6b", fontSize: 64, whiteSpace: "nowrap", verticalAlign: "middle" }}
+              style={{ color: "#ff6b6b", fontSize: "clamp(36px, 10vw, 64px)", whiteSpace: "nowrap", verticalAlign: "middle" }}
             >
               {s.v}
             </div>
