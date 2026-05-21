@@ -49,13 +49,42 @@ export function NeedHelpButton({ currentQuestion, totalQuestions, firstName }: P
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full text-xs transition hover:opacity-80"
+        aria-label="Need help?"
+        className={
+          "group fixed z-50 flex items-center justify-end overflow-hidden " +
+          "h-11 rounded-[12px] " +
+          "transition-all duration-200 ease-out " +
+          "w-11 hover:w-[132px] active:w-[132px] " +
+          (isMobile
+            ? "bottom-6 right-5"
+            : "right-5 top-1/2 -translate-y-1/2")
+        }
         style={{
-          backgroundColor: "rgba(21,23,28,0.05)",
-          color: "rgba(21,23,28,0.60)",
+          backgroundColor: "#E8E6E1",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+        }}
+        onMouseDown={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(255,107,92,0.12)";
+        }}
+        onMouseUp={(e) => {
+          e.currentTarget.style.backgroundColor = "#E8E6E1";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = "#E8E6E1";
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = "rgba(21,23,28,0.08)";
         }}
       >
-        <HelpCircle className="h-3 w-3" /> Need help?
+        <span
+          className="whitespace-nowrap text-xs font-medium opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200 ease-out pl-3"
+          style={{ color: "rgba(21,23,28,0.70)" }}
+        >
+          Need help?
+        </span>
+        <span className="flex items-center justify-center w-11 h-11 flex-shrink-0">
+          <HelpCircle className="h-5 w-5" style={{ color: "rgba(21,23,28,0.45)" }} />
+        </span>
       </button>
 
       {open && (
