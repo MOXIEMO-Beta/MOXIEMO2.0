@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { aiErrorMessage } from "@/lib/aiErrors";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { StrategyEngineInterstitial } from "@/components/StrategyEngineInterstitial";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -91,6 +92,7 @@ export default function Discovery() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [synthesizing, setSynthesizing] = useState(false);
+  const [strategyReady, setStrategyReady] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
@@ -430,7 +432,7 @@ export default function Discovery() {
         .upsert({ user_id: user.id, ...data, raw_foundation: rawFoundation }, { onConflict: "user_id" });
       setSynthFailed(false);
       toast.success("Your strategy is ready.");
-      setTimeout(() => navigate("/app/strategy"), 1200);
+      setStrategyReady(true);
     } catch (e: any) {
       console.error("synthesize error:", e);
       setSynthFailed(true);
@@ -462,6 +464,12 @@ export default function Discovery() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)]" style={{ backgroundColor: "#FAFAF8" }}>
+      <StrategyEngineInterstitial
+        active={synthesizing || strategyReady}
+        done={strategyReady}
+        estimatedMs={45000}
+        onFadedOut={() => navigate("/app/strategy")}
+      />
       {showWelcome && (
         <div className="border-b border-border bg-accent/5 px-6 lg:px-10 py-4">
           <div className="max-w-3xl mx-auto flex items-start gap-3">
