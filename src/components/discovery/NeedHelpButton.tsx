@@ -56,7 +56,7 @@ export function NeedHelpButton({ currentQuestion, totalQuestions, firstName }: P
     <div
       className={
         "fixed z-50 flex flex-col gap-1.5 " +
-        (isMobile ? "right-0 bottom-20" : "right-0 top-[120px]")
+        (isMobile ? "right-0 bottom-20" : "right-0 top-[170px]")
       }
       style={{ filter: "drop-shadow(0 4px 20px rgba(0,0,0,0.12))" }}
     >
