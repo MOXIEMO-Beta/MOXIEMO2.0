@@ -461,7 +461,7 @@ export default function Discovery() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col h-[calc(100vh-3.5rem)]" style={{ backgroundColor: "#FAFAF8" }}>
       {showWelcome && (
         <div className="border-b border-border bg-accent/5 px-6 lg:px-10 py-4">
           <div className="max-w-3xl mx-auto flex items-start gap-3">
@@ -518,25 +518,79 @@ export default function Discovery() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 lg:px-10 py-8">
-        <div className="max-w-3xl mx-auto space-y-6">
-          {messages.map((m, i) => (
-            <div key={i} className={cn("flex gap-3", m.role === "user" ? "justify-end" : "justify-start")}>
-              {m.role === "assistant" && (
-                <div className="h-8 w-8 rounded-lg bg-foreground flex items-center justify-center flex-shrink-0">
-                  <div className="h-2 w-2 rounded-full bg-accent" />
-                </div>
-              )}
-              <div className={cn(
-                "max-w-[78%] rounded-2xl px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap",
-                m.role === "user" ? "bg-foreground text-background" : "bg-card border border-border shadow-soft text-foreground"
-              )}>
-                {m.content
-                  ? (m.role === "assistant" ? stripModeTag(m.content) : m.content)
-                  : <span className="inline-flex items-center gap-1 text-muted-foreground"><span className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-pulse" /> thinking…</span>}
-              </div>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 lg:px-10 py-8" style={{ backgroundColor: "#FAFAF8" }}>
+        <div className="max-w-3xl mx-auto space-y-5">
+          {messages.length > 0 && (
+            <div className="flex justify-start mb-1">
+              <span
+                style={{
+                  fontSize: "9px",
+                  letterSpacing: "0.1em",
+                  color: "#FF6B5C",
+                  backgroundColor: "rgba(255,107,92,0.10)",
+                  border: "1px solid rgba(255,107,92,0.25)",
+                  borderRadius: "999px",
+                  padding: "4px 10px",
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                }}
+              >
+                ◈ MOXIEMO DISCOVERY
+              </span>
             </div>
-          ))}
+          )}
+          {messages.map((m, i) => {
+            const isUser = m.role === "user";
+            const isEmpty = !m.content;
+            return (
+              <div key={i} className={cn("flex gap-2 items-end", isUser ? "justify-end" : "justify-start")}>
+                {!isUser && (
+                  <div
+                    className="flex items-center justify-center flex-shrink-0"
+                    style={{
+                      height: 28,
+                      width: 28,
+                      borderRadius: "9999px",
+                      backgroundColor: "#FF6B5C",
+                      color: "#fff",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      lineHeight: 1,
+                    }}
+                  >
+                    M
+                  </div>
+                )}
+                <div
+                  className="px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap"
+                  style={{
+                    maxWidth: "72%",
+                    backgroundColor: isUser ? "#FF6B5C" : "#FFFFFF",
+                    color: isUser ? "#FFFFFF" : "#15171C",
+                    borderRadius: isUser ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
+                    boxShadow: isUser ? "none" : "0 1px 6px rgba(0,0,0,0.07)",
+                  }}
+                >
+                  {isEmpty ? (
+                    <span className="inline-flex items-center gap-1">
+                      <span
+                        className="inline-block rounded-full"
+                        style={{ height: 6, width: 6, backgroundColor: "#FF6B5C", animation: "bounce 1.2s ease-in-out infinite", animationDelay: "0s" }}
+                      />
+                      <span
+                        className="inline-block rounded-full"
+                        style={{ height: 6, width: 6, backgroundColor: "#FF6B5C", animation: "bounce 1.2s ease-in-out infinite", animationDelay: "0.2s" }}
+                      />
+                      <span
+                        className="inline-block rounded-full"
+                        style={{ height: 6, width: 6, backgroundColor: "#FF6B5C", animation: "bounce 1.2s ease-in-out infinite", animationDelay: "0.4s" }}
+                      />
+                    </span>
+                  ) : isUser ? m.content : stripModeTag(m.content)}
+                </div>
+              </div>
+            );
+          })}
           {synthesizing && (
             <div className="flex items-center gap-3 justify-center text-sm text-muted-foreground py-6">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />
@@ -580,7 +634,7 @@ export default function Discovery() {
 
       {/* Composer */}
       {!completed && (
-        <div className="border-t border-border bg-background px-4 lg:px-10 py-4">
+        <div className="border-t border-border px-4 lg:px-10 py-4" style={{ backgroundColor: "#FAFAF8" }}>
           <div className="max-w-3xl mx-auto">
             {inlineError && (
               <div
@@ -590,7 +644,13 @@ export default function Discovery() {
                 {inlineError}
               </div>
             )}
-            <div className="flex items-end gap-2 rounded-2xl border border-border bg-card p-2 shadow-soft focus-within:border-foreground/30 transition">
+            <div
+              className="flex items-end gap-2 rounded-2xl p-2 transition bg-white"
+              style={{
+                border: "1px solid #FF6B5C",
+                boxShadow: "0 0 0 3px rgba(255,107,92,0.10)",
+              }}
+            >
               <Textarea
                 ref={textareaRef}
                 value={input}
@@ -602,15 +662,25 @@ export default function Discovery() {
               />
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button onClick={send} disabled={loading || cooldown || (!input.trim() && !inlineError)} size="icon" className="h-9 w-9 rounded-xl bg-foreground hover:bg-foreground/90 text-background flex-shrink-0 self-end">
+                  <Button
+                    onClick={send}
+                    disabled={loading || cooldown || (!input.trim() && !inlineError)}
+                    size="icon"
+                    className="h-9 w-9 rounded-full flex-shrink-0 self-end hover:opacity-90"
+                    style={{ backgroundColor: "#FF6B5C", color: "#FFFFFF" }}
+                  >
                     <ArrowUp className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent className="hidden lg:block">Click to submit</TooltipContent>
               </Tooltip>
             </div>
-            <p className="text-xs text-muted-foreground mt-2 text-center lg:hidden">Tap the arrow to submit your answer</p>
-            <p className="text-xs text-muted-foreground mt-2 text-center hidden lg:block">MOXIEMO adapts to how you answer. Be as detailed or quick as you like.</p>
+            <p
+              className="mt-2 text-center"
+              style={{ fontSize: "11px", color: "rgba(21,23,28,0.50)" }}
+            >
+              Press → to submit your answer
+            </p>
           </div>
         </div>
       )}
