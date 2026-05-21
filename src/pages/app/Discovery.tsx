@@ -11,6 +11,7 @@ import { aiErrorMessage } from "@/lib/aiErrors";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StrategyEngineInterstitial } from "@/components/StrategyEngineInterstitial";
+import { DiscoveryUploadGate, DiscoveryPrefillSummary, type PrefillResult } from "@/components/discovery/DiscoveryUploadGate";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -49,6 +50,26 @@ const CHALLENGE_OPTIONS = [
 function isSkip(text: string) {
   return /^\s*skip\b/i.test(text.trim());
 }
+
+// Map prefill question_id → Q number used in the [Q:N] tag in assistant messages.
+const PREFILL_ID_TO_Q: Record<string, number> = {
+  transformation: 1,
+  ideal_client: 2,
+  pain_point: 3,
+  differentiation: 4,
+  post_feeling: 5,
+  voice_sample: 6,
+  never_sound: 7,
+  topics: 8,
+  channel: 9,
+  format: 10,
+  success_metric: 11,
+  business_goal: 12,
+  time_capacity: 13,
+  revenue_range: 14,
+  biggest_challenge: 15,
+};
+const Q_TAG_RE = /\[Q:(\d+)\]/i;
 
 function matchOption(text: string, options: string[]): string | undefined {
   const t = text.toLowerCase().trim();
@@ -95,6 +116,10 @@ export default function Discovery() {
   const [strategyReady, setStrategyReady] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
+  const [uploadStage, setUploadStage] = useState<"gate" | "summary" | "chat">("chat");
+  const [prefillResult, setPrefillResult] = useState<PrefillResult | null>(null);
+  const prefillByQRef = useRef<Record<number, string>>({});
+  const lastPrefilledQRef = useRef<number | null>(null);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const userContextRef = useRef<UserContext | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -171,17 +196,58 @@ export default function Discovery() {
         setMessages((data.messages as Msg[]) || []);
         if (data.status === "completed") setCompleted(true);
         if (!data.messages || (data.messages as any[]).length === 0) {
-          startConversation(data.id);
+          // New / empty session — show the upload gate before starting the conversation.
+          setUploadStage("gate");
+        } else {
+          setUploadStage("chat");
         }
       } else {
         const { data: created, error } = await supabase.from("discovery_sessions").insert({ user_id: user.id }).select().single();
         if (error) return toast.error(error.message);
         setSessionId(created.id);
-        startConversation(created.id);
+        setUploadStage("gate");
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  // When chat begins, prefill the input with the matching extracted answer
+  // whenever MOXIEMO asks a question we have a prefill for. The assistant's
+  // raw content includes a hidden [Q:N] tag we use to map to the prefill id.
+  useEffect(() => {
+    if (uploadStage !== "chat") return;
+    if (loading) return;
+    if (input.trim()) return;
+    const last = [...messages].reverse().find((m) => m.role === "assistant" && m.content);
+    if (!last) return;
+    const match = Q_TAG_RE.exec(last.content);
+    if (!match) return;
+    const qn = parseInt(match[1], 10);
+    if (!qn || lastPrefilledQRef.current === qn) return;
+    const value = prefillByQRef.current[qn];
+    if (value) {
+      setInput(value);
+      lastPrefilledQRef.current = qn;
+    }
+  }, [messages, uploadStage, loading]);
+
+  function startWithPrefill(result: PrefillResult) {
+    const map: Record<number, string> = {};
+    for (const [id, ans] of Object.entries(result.answers)) {
+      const q = PREFILL_ID_TO_Q[id];
+      if (q && ans) map[q] = ans;
+    }
+    prefillByQRef.current = map;
+    setPrefillResult(result);
+    setUploadStage("summary");
+  }
+
+  function beginChat() {
+    setUploadStage("chat");
+    if (sessionId && messages.length === 0) {
+      startConversation(sessionId);
+    }
+  }
 
   async function startConversation(sid: string) {
     await streamReply([], sid);
@@ -470,6 +536,21 @@ export default function Discovery() {
         estimatedMs={45000}
         onFadedOut={() => navigate("/app/strategy")}
       />
+      {uploadStage === "gate" && sessionId && (
+        <DiscoveryUploadGate
+          onSkip={beginChat}
+          onComplete={startWithPrefill}
+        />
+      )}
+      {uploadStage === "summary" && prefillResult && (
+        <DiscoveryPrefillSummary
+          result={prefillResult}
+          onContinue={beginChat}
+          onSkip={beginChat}
+        />
+      )}
+      {uploadStage === "chat" && (
+        <>
       {showWelcome && (
         <div className="border-b border-border bg-accent/5 px-6 lg:px-10 py-4">
           <div className="max-w-3xl mx-auto flex items-start gap-3">
@@ -691,6 +772,8 @@ export default function Discovery() {
             </p>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );
