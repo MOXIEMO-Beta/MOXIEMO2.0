@@ -485,7 +485,7 @@ export function MoxiemoDemoShowcase() {
   return (
     <div
       className="mx-auto w-full max-w-[1100px] overflow-hidden rounded-2xl"
-      style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.18)", border: `1px solid ${DIVIDER}`, background: "#fff" }}
+      style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.18)", border: `1px solid ${DIVIDER}`, background: "#fff", maxWidth: "min(1100px, 100vw)", boxSizing: "border-box" }}
     >
       <style>{`
         @keyframes mxmDot { 0%,80%,100% { opacity: 0.2; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-2px); } }
@@ -493,21 +493,22 @@ export function MoxiemoDemoShowcase() {
       `}</style>
 
       {/* Browser chrome */}
-      <div className="flex items-center gap-3 px-4 py-2.5" style={{ background: "#1A1A1A" }}>
-        <div className="flex gap-1.5">
+      <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-2.5" style={{ background: "#1A1A1A" }}>
+        <div className="hidden sm:flex gap-1.5">
           <span className="block h-3 w-3 rounded-full" style={{ background: "#ff5f57" }} />
           <span className="block h-3 w-3 rounded-full" style={{ background: "#febc2e" }} />
           <span className="block h-3 w-3 rounded-full" style={{ background: "#28c840" }} />
         </div>
-        <div className="flex flex-1 items-center justify-center gap-1">
+        <div className="flex flex-1 items-center justify-center gap-1 min-w-0 flex-wrap">
           {SCENES.map((s, i) => {
             const active = i === sceneIndex;
             return (
               <button
                 key={s.id}
                 onClick={() => jumpTo(i)}
-                className="rounded-md px-2.5 py-1 text-[10px] font-semibold transition-colors"
+                className="rounded-md px-2 sm:px-2.5 py-1 font-semibold transition-colors whitespace-nowrap"
                 style={{
+                  fontSize: "clamp(9px, 2vw, 11px)",
                   background: active ? "rgba(255,107,92,0.18)" : "rgba(255,255,255,0.06)",
                   color: active ? CORAL : "rgba(255,255,255,0.7)",
                 }}
@@ -535,7 +536,7 @@ export function MoxiemoDemoShowcase() {
       </div>
 
       {/* App shell */}
-      <div className="relative flex" style={{ height: 460 }}>
+      <div className="relative flex w-full" style={{ aspectRatio: "16 / 10", minHeight: 320 }}>
         <Sidebar active={activeNav} />
         <div className="relative flex flex-1 overflow-hidden">
           {sceneIndex === 0 && <DiscoveryScene progress={progress} />}
