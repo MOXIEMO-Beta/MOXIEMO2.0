@@ -8,7 +8,7 @@ import { StatsBar } from "@/components/StatsBar";
 import { ArrowRight, Check, MessageSquare, Target, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { WaitlistForm } from "@/components/WaitlistForm";
-import dashboardImg from "@/assets/home-dashboard.png";
+import { MoxiemoDemoShowcase } from "@/components/MoxiemoDemoShowcase";
 import plannerImg from "@/assets/home-planner-new.png";
 import contentImg from "@/assets/home-execution.png";
 import strategyImg from "@/assets/home-strategy-foundation.png";
@@ -123,7 +123,7 @@ export default function Index() {
         </div>
 
         <div className="max-w-[85%] mx-auto px-6 mt-16">
-          <ProductShot src={dashboardImg} alt="MOXIEMO Dashboard" />
+          <MoxiemoDemoShowcase />
         </div>
       </section>
 
