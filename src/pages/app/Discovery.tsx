@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { StrategyEngineInterstitial } from "@/components/StrategyEngineInterstitial";
 import { DiscoveryUploadGate, DiscoveryPrefillSummary, type PrefillResult } from "@/components/discovery/DiscoveryUploadGate";
+import { NeedHelpButton } from "@/components/discovery/NeedHelpButton";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -580,6 +581,11 @@ export default function Discovery() {
               {answeredDisplay}/{TOTAL_QUESTIONS} answered
               {answered >= REQUIRED_QUESTIONS && answered < TOTAL_QUESTIONS && " · bonus questions"}
             </span>
+            <NeedHelpButton
+              currentQuestion={Math.min(answered + 1, TOTAL_QUESTIONS)}
+              totalQuestions={TOTAL_QUESTIONS}
+              firstName={userContext?.firstName}
+            />
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5">
