@@ -95,7 +95,7 @@ export function WaitlistForm() {
   }
 
   return (
-    <Card id="waitlist" className="p-8 md:p-12 border-border rounded-3xl bg-card shadow-lift max-w-2xl mx-auto scroll-mt-24">
+    <Card id="waitlist" className="p-6 sm:p-8 md:p-12 border-border rounded-3xl bg-card shadow-lift max-w-2xl mx-auto scroll-mt-24 w-full overflow-hidden" style={{ boxSizing: "border-box" }}>
       <div className="text-center mb-5">
         <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-accent bg-accent-soft px-4 py-2 rounded-full mb-5">
           <Sparkles className="h-3.5 w-3.5" />
