@@ -581,11 +581,6 @@ export default function Discovery() {
               {answeredDisplay}/{TOTAL_QUESTIONS} answered
               {answered >= REQUIRED_QUESTIONS && answered < TOTAL_QUESTIONS && " · bonus questions"}
             </span>
-            <NeedHelpButton
-              currentQuestion={Math.min(answered + 1, TOTAL_QUESTIONS)}
-              totalQuestions={TOTAL_QUESTIONS}
-              firstName={userContext?.firstName}
-            />
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1.5">
