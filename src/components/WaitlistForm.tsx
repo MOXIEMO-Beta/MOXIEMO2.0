@@ -109,16 +109,16 @@ export function WaitlistForm() {
         </p>
       </div>
 
-      <ul className="flex flex-col items-start gap-2.5 w-fit mx-auto mb-6" style={{ marginBottom: 24 }}>
+      <ul className="flex flex-col items-start gap-2.5 mx-auto mb-6 w-full sm:w-fit" style={{ marginBottom: 24 }}>
         {[
           "Founding Member access, free forever",
           "Personal 1:1 kickoff call with Karee before you start",
           "First access to new features before public release",
           "Direct line to the team during your first 30 days",
         ].map((perk) => (
-          <li key={perk} className="flex flex-row items-center gap-2.5 text-[15px] text-foreground whitespace-nowrap">
-            <Check className="h-5 w-5 text-accent flex-shrink-0 self-center" />
-            <span>{perk}</span>
+          <li key={perk} className="flex flex-row items-start gap-2.5 text-[15px] text-foreground" style={{ wordWrap: "break-word", whiteSpace: "normal" }}>
+            <Check className="h-5 w-5 text-accent flex-shrink-0 mt-0.5" />
+            <span className="min-w-0">{perk}</span>
           </li>
         ))}
       </ul>
