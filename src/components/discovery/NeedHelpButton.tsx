@@ -77,8 +77,13 @@ export function NeedHelpButton({ currentQuestion, totalQuestions, firstName }: P
       {/* Inline hint bubble */}
       {showHint && hint && (
         <div
-          className="absolute right-12 top-0 w-[280px] p-3 rounded-xl bg-white"
+          className="fixed w-[280px] max-w-[280px] p-3 rounded-xl bg-white"
           style={{
+            right: "16px",
+            bottom: isMobile ? "calc(80px + 132px + 12px)" : "auto",
+            top: isMobile ? "auto" : "calc(170px - 12px)",
+            transform: isMobile ? undefined : "translateY(-100%)",
+            zIndex: 60,
             border: "1.5px solid #FF6B5C",
             boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
           }}
