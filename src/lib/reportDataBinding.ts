@@ -279,10 +279,12 @@ function buildMessagingFormats(s: any, ef: any) {
 
 // ─── CALENDAR ───────────────────────────────────────────────────
 function buildCalendar(s: any) {
-  const src: any[] | undefined =
-    (Array.isArray(s.calendar_entries) && s.calendar_entries.length > 0 && s.calendar_entries) ||
-    (Array.isArray(s.enhanced_foundation?.contentCalendar) && s.enhanced_foundation.contentCalendar.length > 0 && s.enhanced_foundation.contentCalendar) ||
-    undefined;
+  // Prefer the richer/longer source so we surface all 30 days when available.
+  const a: any[] = Array.isArray(s.calendar_entries) ? s.calendar_entries : [];
+  const b: any[] = Array.isArray(s.enhanced_foundation?.contentCalendar) ? s.enhanced_foundation.contentCalendar : [];
+  const src: any[] | undefined = (b.length >= a.length ? b : a).length > 0
+    ? (b.length >= a.length ? b : a)
+    : undefined;
   if (src) {
     return src.map((e: any) => ({
       date:    e.date,
@@ -399,10 +401,14 @@ function buildMetrics(s: any, ef: any, raw: any) {
   const bg = sm.businessGoals ?? {};
   const cp = sm.contentPerformance ?? {};
   const prim = sm.primary ?? {};
-  // Monthly revenue: parse from goals
-  const monthlyRevenue =
-    extractRevenue(bg.revenueGrowth ?? bg.scalingPlan ?? s.business_goal) ||
-    (ef.revenueTarget ? `$${(ef.revenueTarget / 1000).toFixed(0)}k` : '$50k');
+  // Revenue: parse from goals & detect cadence (monthly vs annual)
+  const revenueSrc: string = String(bg.revenueGrowth ?? bg.scalingPlan ?? s.business_goal ?? '');
+  const isAnnual = /\b(arr|annual|annually|year|yearly|\/yr|per\s*year)\b/i.test(revenueSrc);
+  const revenueValue =
+    extractRevenue(revenueSrc) ||
+    (ef.revenueTarget ? `$${(ef.revenueTarget / 1000).toFixed(0)}K` : '$50K');
+  const revenueLabel = isAnnual ? 'Annual Revenue' : 'Monthly Revenue';
+  const revenueDisplay = isAnnual ? revenueValue : `${revenueValue}/mo`;
   const callsWeekly = prim.target?.weekly ?? ef.callsPerWeek ?? '3–4';
   const clientTarget = (bg.scalingPlan?.match(/(\d+)\s*(?:new\s*)?clients?\s*per\s*month/i)?.[1]) ?? ef.clientTarget ?? '3';
   return {
@@ -412,7 +418,7 @@ function buildMetrics(s: any, ef: any, raw: any) {
     qualification: prim.qualification ?? {},
     contentPerformance: cp,
     businessGoals: [
-      { label: 'Monthly Revenue',        value: monthlyRevenue },
+      { label: revenueLabel,             value: revenueDisplay },
       { label: 'New Clients / Month',    value: String(clientTarget) },
       { label: 'Discovery Calls / Week', value: String(callsWeekly) },
       { label: 'Podcast Appearances',    value: '1 / month' },
@@ -529,7 +535,8 @@ function shortChannel(val: any): string | undefined {
     const s = val?.name ?? val?.title ?? val?.channel;
     return typeof s === 'string' ? shortChannel(s) : undefined;
   }
-  const firstSeg = val.split(/[,;\/\n\-\u2014\u2013:\u2022|]/)[0]?.trim() ?? '';
+  // Split on punctuation AND parentheses so "LinkedIn (proven conversion channel)" → "LinkedIn".
+  const firstSeg = val.split(/[,;\/\n\-\u2014\u2013:\u2022|()]/)[0]?.trim() ?? '';
   if (!firstSeg) return undefined;
   const words = firstSeg.split(/\s+/).slice(0, 3).join(' ');
   return words.length > 28 ? words.slice(0, 28).trim() : words;
@@ -547,9 +554,14 @@ function extractRevenue(goalStr: string | null) {
   const m = goalStr.match(/\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?[kKmM]?|\$?\d+(?:\.\d+)?[kKmM]/);
   if (!m) {
     const m2 = goalStr.match(/\$?\d+(?:\.\d+)?/);
-    return m2 ? (m2[0].startsWith('$') ? m2[0] : '$' + m2[0]) : '';
+    if (!m2) return '';
+    const raw = m2[0].replace(/^\$/, '');
+    const n = Number(raw);
+    return isFinite(n) ? '$' + n.toLocaleString('en-US') : '$' + raw;
   }
   let v = m[0];
   if (!v.startsWith('$')) v = '$' + v;
+  // Normalize suffix casing: $10k → $10K, $1m → $1M
+  v = v.replace(/k$/, 'K').replace(/m$/, 'M');
   return v;
 }

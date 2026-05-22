@@ -430,7 +430,7 @@ const ChannelsMetrics = ({ data }: any) => {
         return (
           <View key={tier} style={s.card}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-              <Text style={[s.cardLabel, { fontSize: 8 }]}>{tier.toUpperCase()} · {safe(c.fullName ?? c.name)}</Text>
+              <Text style={[s.cardLabel, { fontSize: 8 }]}>{tier.toUpperCase()} · {safe(c.name || c.fullName)}</Text>
               {c.freq && <Text style={{ fontSize: 9, color: C.muted }}>{safe(c.freq)}</Text>}
             </View>
             {c.tone && <Text style={[s.body, { marginBottom: 6 }]}>{safe(c.tone)}</Text>}
