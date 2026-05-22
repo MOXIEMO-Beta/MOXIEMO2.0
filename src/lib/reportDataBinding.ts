@@ -279,10 +279,12 @@ function buildMessagingFormats(s: any, ef: any) {
 
 // ─── CALENDAR ───────────────────────────────────────────────────
 function buildCalendar(s: any) {
-  const src: any[] | undefined =
-    (Array.isArray(s.calendar_entries) && s.calendar_entries.length > 0 && s.calendar_entries) ||
-    (Array.isArray(s.enhanced_foundation?.contentCalendar) && s.enhanced_foundation.contentCalendar.length > 0 && s.enhanced_foundation.contentCalendar) ||
-    undefined;
+  // Prefer the richer/longer source so we surface all 30 days when available.
+  const a: any[] = Array.isArray(s.calendar_entries) ? s.calendar_entries : [];
+  const b: any[] = Array.isArray(s.enhanced_foundation?.contentCalendar) ? s.enhanced_foundation.contentCalendar : [];
+  const src: any[] | undefined = (b.length >= a.length ? b : a).length > 0
+    ? (b.length >= a.length ? b : a)
+    : undefined;
   if (src) {
     return src.map((e: any) => ({
       date:    e.date,
@@ -529,7 +531,8 @@ function shortChannel(val: any): string | undefined {
     const s = val?.name ?? val?.title ?? val?.channel;
     return typeof s === 'string' ? shortChannel(s) : undefined;
   }
-  const firstSeg = val.split(/[,;\/\n\-\u2014\u2013:\u2022|]/)[0]?.trim() ?? '';
+  // Split on punctuation AND parentheses so "LinkedIn (proven conversion channel)" → "LinkedIn".
+  const firstSeg = val.split(/[,;\/\n\-\u2014\u2013:\u2022|()]/)[0]?.trim() ?? '';
   if (!firstSeg) return undefined;
   const words = firstSeg.split(/\s+/).slice(0, 3).join(' ');
   return words.length > 28 ? words.slice(0, 28).trim() : words;
@@ -547,9 +550,14 @@ function extractRevenue(goalStr: string | null) {
   const m = goalStr.match(/\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?[kKmM]?|\$?\d+(?:\.\d+)?[kKmM]/);
   if (!m) {
     const m2 = goalStr.match(/\$?\d+(?:\.\d+)?/);
-    return m2 ? (m2[0].startsWith('$') ? m2[0] : '$' + m2[0]) : '';
+    if (!m2) return '';
+    const raw = m2[0].replace(/^\$/, '');
+    const n = Number(raw);
+    return isFinite(n) ? '$' + n.toLocaleString('en-US') : '$' + raw;
   }
   let v = m[0];
   if (!v.startsWith('$')) v = '$' + v;
+  // Normalize suffix casing: $10k → $10K, $1m → $1M
+  v = v.replace(/k$/, 'K').replace(/m$/, 'M');
   return v;
 }
