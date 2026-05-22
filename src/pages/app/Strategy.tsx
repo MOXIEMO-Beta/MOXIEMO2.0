@@ -17,7 +17,7 @@ import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
 import { RefineSectionDialog } from "@/components/strategy/RefineSectionDialog";
 import { downloadStrategyPdf } from "@/lib/strategyPdf";
-import { buildStrategyMarkdown } from "@/lib/strategyMarkdown";
+
 import { ContentTab } from "@/components/strategy/tabs/ContentTab";
 import { ChannelsTab } from "@/components/strategy/tabs/ChannelsTab";
 import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
