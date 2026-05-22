@@ -194,11 +194,25 @@ function buildContentStrategy(s: any, ef: any, raw: any) {
     ]
   );
 
-  const quarters = s.content_themes?.length
-    ? s.content_themes
-    : ef.contentThemes?.length
-    ? buildQuartersFromThemes(ef.contentThemes, s)
-    : buildDefaultQuarters(s);
+  let quarters: any[];
+  if (Array.isArray(ef.quarterlyThemes) && ef.quarterlyThemes.length) {
+    quarters = ef.quarterlyThemes.map((q: any) => ({
+      label: q.quarter ?? q.label ?? '',
+      theme: q.theme ?? '',
+      arc:   q.overview ?? q.arc ?? '',
+      rationale:  q.strategicRationale ?? '',
+      cta:        q.cta ?? '',
+      metric:     q.successMetric ?? '',
+      businessGoal: q.businessGoal ?? '',
+      contentTopics: Array.isArray(q.contentTopics) ? q.contentTopics : [],
+    }));
+  } else if (s.content_themes?.length) {
+    quarters = s.content_themes;
+  } else if (ef.contentThemes?.length) {
+    quarters = buildQuartersFromThemes(ef.contentThemes, s);
+  } else {
+    quarters = buildDefaultQuarters(s);
+  }
 
   return {
     pillars,
