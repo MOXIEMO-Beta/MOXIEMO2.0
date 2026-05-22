@@ -16,9 +16,8 @@ import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
 import { RefineSectionDialog } from "@/components/strategy/RefineSectionDialog";
-import { exportStrategyPdf } from "@/lib/exportStrategyPdf";
-import { exportViaHTML2PDF } from "@/lib/pdfExport";
-import MoxieReport from "@/components/MoxieReport";
+import { downloadStrategyPdf } from "@/lib/strategyPdf";
+import { buildStrategyMarkdown } from "@/lib/strategyMarkdown";
 import { ContentTab } from "@/components/strategy/tabs/ContentTab";
 import { ChannelsTab } from "@/components/strategy/tabs/ChannelsTab";
 import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
@@ -50,6 +49,7 @@ function StrategyHeader() {
   const { user } = useAuth();
   const { reportData } = useReportData();
   const [exporting, setExporting] = useState(false);
+  const [exportingMd, setExportingMd] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const ef = (strategy?.enhanced_foundation || {}) as any;
@@ -82,26 +82,42 @@ function StrategyHeader() {
     }
   };
 
-  const handleExport = async () => {
+  const buildFileName = (ext: string) => {
+    const full = String(reportData?.meta?.preparedFor || "Founder").trim();
+    const first = (full.split(/\s+/)[0] || "Founder").replace(/[^A-Za-z0-9_-]/g, "");
+    const d = new Date();
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return `${first}-MOXIEMO-Strategy-${date}.${ext}`;
+  };
+
+  const handleExportPdf = async () => {
+    if (!reportData) { toast.error("Report data not ready yet."); return; }
     if (editing) await saveNow();
     setExporting(true);
     try {
-      let companyName: string | undefined;
-      if (user) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("business_name, full_name")
-          .eq("id", user.id)
-          .maybeSingle();
-        companyName = data?.business_name || data?.full_name || undefined;
-      }
-      await exportStrategyPdf({
-        strategy,
-        companyName,
-        fileName: `moxie-strategy-${new Date().toISOString().slice(0, 10)}.pdf`,
-      });
+      await downloadStrategyPdf(reportData, buildFileName("pdf"));
+    } catch (e: any) {
+      console.error(e);
+      toast.error("PDF export failed", { description: e?.message || "Try again." });
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleExportMd = async () => {
+    if (!reportData) { toast.error("Report data not ready yet."); return; }
+    if (editing) await saveNow();
+    setExportingMd(true);
+    try {
+      const md = buildStrategyMarkdown(reportData);
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = buildFileName("md");
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } finally {
+      setExportingMd(false);
     }
   };
 
@@ -148,18 +164,14 @@ function StrategyHeader() {
             <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
           </Button>
         )}
-        <Button
-          variant="outline"
-          size="sm"
-          className="rounded-lg"
-          data-pdf-export-btn
-          onClick={() =>
-            exportViaHTML2PDF('moxie-report', (strategy as any)?.profiles?.full_name ?? 'Founder')
-          }
-        >
-          <Download className="mr-2 h-3.5 w-3.5" /> Download PDF
+        <Button variant="outline" size="sm" className="rounded-lg" onClick={handleExportPdf} disabled={exporting || !reportData}>
+          {exporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />}
+          Download PDF
         </Button>
-        <Button variant="outline" size="sm" className="rounded-lg"><Share2 className="mr-2 h-3.5 w-3.5" /> Share</Button>
+        <Button variant="outline" size="sm" className="rounded-lg" onClick={handleExportMd} disabled={exportingMd || !reportData}>
+          {exportingMd ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />}
+          Download Markdown
+        </Button>
       </div>
     </div>
   );
@@ -839,24 +851,6 @@ function StrategyContent({ reportData }: { reportData?: any }) {
         }}
       />
 
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "794px",
-          height: "1px",
-          overflow: "hidden",
-          pointerEvents: "none",
-          zIndex: -9999,
-          opacity: 0,
-        }}
-        aria-hidden="true"
-      >
-        <div id="moxie-report">
-          {reportData && <MoxieReport data={reportData} />}
-        </div>
-      </div>
     </div>
   );
 }
