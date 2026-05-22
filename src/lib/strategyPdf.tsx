@@ -121,14 +121,81 @@ const Overview = ({ data }: any) => {
           {a.description && <Text style={s.body}>{safe(a.description)}</Text>}
         </View>
       )}
-      {a.values?.length > 0 && (
-        <View style={s.card}>
-          <Text style={s.cardLabel}>VALUES</Text>
-          <View style={s.pillsWrap}>
-            {a.values.map((v: any, i: number) => <Text key={i} style={s.pill}>{safe(v)}</Text>)}
+      <View style={s.row}>
+        {a.brandInspiration?.length > 0 && (
+          <View style={[s.card, s.col]} wrap={false}>
+            <Text style={s.cardLabel}>BRANDS</Text>
+            <Text style={s.body}>{a.brandInspiration.map(safe).filter(Boolean).join(", ")}</Text>
           </View>
+        )}
+        {a.values?.length > 0 && (
+          <View style={[s.card, s.col]} wrap={false}>
+            <Text style={s.cardLabel}>VALUES</Text>
+            <View style={s.pillsWrap}>
+              {a.values.map((v: any, i: number) => <Text key={i} style={s.pill}>{safe(v)}</Text>)}
+            </View>
+          </View>
+        )}
+      </View>
+      {a.contentApproach && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>CONTENT APPROACH</Text>
+          <Text style={s.body}>{safe(a.contentApproach)}</Text>
         </View>
       )}
+      <View style={s.row}>
+        {a.whyThisFits?.length > 0 && (
+          <View style={[s.card, s.col]} wrap={false}>
+            <Text style={s.cardLabel}>WHY THIS FITS YOU</Text>
+            {a.whyThisFits.map((w: any, i: number) => (
+              <Text key={i} style={[s.body, { marginBottom: 3 }]}>• {safe(w)}</Text>
+            ))}
+          </View>
+        )}
+        {a.howToApply?.length > 0 && (
+          <View style={[s.card, s.col]} wrap={false}>
+            <Text style={s.cardLabel}>HOW TO USE THIS</Text>
+            {a.howToApply.map((w: any, i: number) => (
+              <Text key={i} style={[s.body, { marginBottom: 3 }]}>• {safe(w)}</Text>
+            ))}
+          </View>
+        )}
+      </View>
+    </SectionPage>
+  );
+};
+
+// ─── 01B Core Values ─────────────────────────────────────────────
+const CoreValues = ({ data }: any) => {
+  const values: any[] = data?.coreValues || [];
+  if (!values.length) return null;
+  return (
+    <SectionPage label="01B · CORE VALUES" title="Decision Filters">
+      {values.map((v, i) => (
+        <View key={i} style={s.card} wrap={false}>
+          <Text style={{ fontSize: 16, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 6 }}>{safe(v.name)}</Text>
+          {v.decisionFilter && (
+            <View style={{ backgroundColor: C.coralSoft, padding: 10, borderRadius: 6, marginBottom: 8 }}>
+              <Text style={{ fontSize: 10, fontFamily: "Helvetica-Oblique", color: C.ink }}>&ldquo;{safe(v.decisionFilter)}&rdquo;</Text>
+            </View>
+          )}
+          {v.description && <Text style={[s.body, { marginBottom: 8 }]}>{safe(v.description)}</Text>}
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <View style={{ flex: 1, padding: 8, borderRadius: 6, backgroundColor: "#eaf7ee" }}>
+              <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: C.green, letterSpacing: 1.5, marginBottom: 4 }}>YES</Text>
+              {(v.yesExamples || []).map((y: any, j: number) => (
+                <Text key={j} style={{ fontSize: 9, color: C.body, marginBottom: 2 }}>• {safe(y)}</Text>
+              ))}
+            </View>
+            <View style={{ flex: 1, padding: 8, borderRadius: 6, backgroundColor: "#fdecea" }}>
+              <Text style={{ fontSize: 8, fontFamily: "Helvetica-Bold", color: C.coral, letterSpacing: 1.5, marginBottom: 4 }}>NO</Text>
+              {(v.noExamples || []).map((y: any, j: number) => (
+                <Text key={j} style={{ fontSize: 9, color: C.body, marginBottom: 2 }}>• {safe(y)}</Text>
+              ))}
+            </View>
+          </View>
+        </View>
+      ))}
     </SectionPage>
   );
 };
@@ -136,10 +203,24 @@ const Overview = ({ data }: any) => {
 // ─── 02 Voice ────────────────────────────────────────────────────
 const Voice = ({ data }: any) => {
   const v = data?.voice || {};
-  const tone = v.toneByChannel || {};
+  const tonePlatform = v.toneByPlatform || {};
+  const examples = v.voiceExamples || {};
+  const attrsRich: any[] = v.attributesRich || [];
   return (
     <SectionPage label="02 · VOICE & BRAND IDENTITY" title="How You Sound">
-      {v.attributes?.length > 0 && (
+      {attrsRich.length > 0 ? (
+        <View style={{ marginBottom: 8 }}>
+          <Text style={s.cardLabel}>VOICE ATTRIBUTES</Text>
+          {attrsRich.map((a: any, i: number) => (
+            <View key={i} style={[s.card, { borderLeftWidth: 3, borderLeftColor: C.coral }]} wrap={false}>
+              <Text style={{ fontSize: 12, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 2 }}>{safe(a.trait || a.name)}</Text>
+              {a.meaning && <Text style={[s.body, { marginBottom: 4 }]}>{safe(a.meaning)}</Text>}
+              {a.inPractice && <Text style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>In practice: {safe(a.inPractice)}</Text>}
+              {a.example && <Text style={{ fontSize: 10, fontFamily: "Helvetica-Oblique", color: C.ink }}>&ldquo;{safe(a.example)}&rdquo;</Text>}
+            </View>
+          ))}
+        </View>
+      ) : v.attributes?.length > 0 && (
         <View style={{ marginBottom: 14 }}>
           <Text style={s.cardLabel}>VOICE ATTRIBUTES</Text>
           <View style={s.pillsWrap}>
@@ -147,41 +228,93 @@ const Voice = ({ data }: any) => {
           </View>
         </View>
       )}
-      <View style={s.row}>
-        <View style={[s.card, s.col]} wrap={false}>
-          <Text style={[s.cardLabel, { color: C.green }]}>USE</Text>
-          <Text style={s.body}>{(v.useWords || []).map(safe).filter(Boolean).join(", ") || "—"}</Text>
+      {Array.isArray(v.sentenceStructure) && v.sentenceStructure.length > 0 && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>SENTENCE STRUCTURE</Text>
+          {v.sentenceStructure.map((r: any, i: number) => (
+            <Text key={i} style={[s.body, { marginBottom: 2 }]}>• {safe(r)}</Text>
+          ))}
         </View>
-        <View style={[s.card, s.col]} wrap={false}>
-          <Text style={s.cardLabel}>AVOID</Text>
-          <Text style={s.body}>{(v.avoidWords || []).map(safe).filter(Boolean).join(", ") || "—"}</Text>
-        </View>
-      </View>
-      {v.exampleLine && (
+      )}
+      {v.fullExample && (
         <View style={[s.card, { borderLeftWidth: 3, borderLeftColor: C.coral }]} wrap={false}>
           <Text style={s.cardLabel}>VOICE EXAMPLE</Text>
-          <Text style={{ fontSize: 12, fontFamily: "Helvetica-Oblique", color: C.ink, lineHeight: 1.5 }}>&ldquo;{safe(v.exampleLine)}&rdquo;</Text>
+          <Text style={{ fontSize: 12, fontFamily: "Helvetica-Oblique", color: C.ink, lineHeight: 1.5 }}>&ldquo;{safe(v.fullExample)}&rdquo;</Text>
         </View>
       )}
-      {v.neverSoundLike && (
-        <View style={s.card} wrap={false}>
-          <Text style={s.cardLabelMuted}>NEVER SOUND LIKE</Text>
-          <Text style={s.body}>{safe(v.neverSoundLike)}</Text>
-        </View>
-      )}
-      {Object.keys(tone).length > 0 && (
-        <View>
-          <Text style={[s.cardLabel, { marginBottom: 8 }]}>TONE BY CHANNEL</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 }}>
-            {Object.entries(tone).map(([ch, t]) => (
-              <View key={ch} style={{ width: "33.33%", padding: 4 }} wrap={false}>
-                <View style={{ borderWidth: 1, borderColor: C.cardBorder, borderRadius: 8, padding: 12, backgroundColor: C.white }}>
-                  <Text style={[s.cardLabel, { fontSize: 8 }]}>{ch.toUpperCase()}</Text>
-                  <Text style={s.body}>{safe(t)}</Text>
-                </View>
-              </View>
+      <View style={s.row}>
+        <View style={[s.card, s.col]} wrap={false}>
+          <Text style={[s.cardLabel, { color: C.green }]}>WORDS TO USE</Text>
+          <View style={s.pillsWrap}>
+            {(v.wordsToUse || v.useWords || []).map((w: any, i: number) => (
+              <Text key={i} style={s.pillCoral}>{safe(w)}</Text>
             ))}
           </View>
+        </View>
+        <View style={[s.card, s.col]} wrap={false}>
+          <Text style={s.cardLabelMuted}>WORDS TO AVOID</Text>
+          <View style={s.pillsWrap}>
+            {(v.wordsToAvoid || v.avoidWords || []).map((w: any, i: number) => (
+              <Text key={i} style={{ backgroundColor: "#f1f2f4", color: C.muted, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, fontSize: 9, marginRight: 6, marginBottom: 6, textDecoration: "line-through" }}>{safe(w)}</Text>
+            ))}
+          </View>
+        </View>
+      </View>
+      {Object.keys(tonePlatform).length > 0 && (
+        <View>
+          <Text style={[s.cardLabel, { marginBottom: 8 }]}>TONE BY PLATFORM</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 }}>
+            {Object.entries(tonePlatform).map(([ch, t]: [string, any]) => {
+              const tone = typeof t === "string" ? t : (t?.tone ?? t?.mode ?? "");
+              const mode = typeof t === "object" ? t?.mode : "";
+              const ex   = typeof t === "object" ? t?.example : "";
+              return (
+                <View key={ch} style={{ width: "33.33%", padding: 4 }} wrap={false}>
+                  <View style={{ borderWidth: 1, borderColor: C.cardBorder, borderRadius: 8, padding: 12, backgroundColor: C.white, minHeight: 100 }}>
+                    <Text style={[s.cardLabel, { fontSize: 8 }]}>{ch.toUpperCase()}</Text>
+                    <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 2 }}>{safe(tone)}</Text>
+                    {mode && <Text style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>{safe(mode)}</Text>}
+                    {ex && <Text style={{ fontSize: 9, fontFamily: "Helvetica-Oblique", color: C.body }}>&ldquo;{safe(ex)}&rdquo;</Text>}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      )}
+      {Object.keys(examples).length > 0 && (
+        <View style={{ marginTop: 10 }}>
+          <Text style={[s.cardLabel, { marginBottom: 8 }]}>VOICE EXAMPLES</Text>
+          {Object.entries(examples).map(([key, ex]: [string, any]) => (
+            <View key={key} style={s.card} wrap={false}>
+              <Text style={{ fontSize: 9, fontFamily: "Helvetica-Bold", color: C.coral, letterSpacing: 1.5, marginBottom: 6 }}>{key.replace(/([A-Z])/g, " $1").toUpperCase()}</Text>
+              {ex?.good && (
+                <View style={{ marginBottom: 4 }}>
+                  <Text style={{ fontSize: 8, color: C.green, fontFamily: "Helvetica-Bold" }}>GOOD</Text>
+                  <Text style={{ fontSize: 10, color: C.ink, fontFamily: "Helvetica-Oblique" }}>&ldquo;{safe(ex.good)}&rdquo;</Text>
+                </View>
+              )}
+              {ex?.bad && (
+                <View style={{ marginBottom: 4 }}>
+                  <Text style={{ fontSize: 8, color: C.coral, fontFamily: "Helvetica-Bold" }}>BAD</Text>
+                  <Text style={{ fontSize: 10, color: C.muted, fontFamily: "Helvetica-Oblique", textDecoration: "line-through" }}>&ldquo;{safe(ex.bad)}&rdquo;</Text>
+                </View>
+              )}
+              {ex?.why && <Text style={{ fontSize: 9, color: C.body }}>{safe(ex.why)}</Text>}
+            </View>
+          ))}
+        </View>
+      )}
+      {Array.isArray(v.neverSoundLikeRich) && v.neverSoundLikeRich.length > 0 && (
+        <View style={{ marginTop: 10 }}>
+          <Text style={[s.cardLabel, { marginBottom: 8 }]}>NEVER SOUND LIKE</Text>
+          {v.neverSoundLikeRich.map((n: any, i: number) => (
+            <View key={i} style={s.card} wrap={false}>
+              <Text style={{ fontSize: 11, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 4 }}>{safe(n.style || n.name)}</Text>
+              {n.example && <Text style={{ fontSize: 10, color: C.muted, fontFamily: "Helvetica-Oblique", marginBottom: 3 }}>&ldquo;{safe(n.example)}&rdquo;</Text>}
+              {n.why && <Text style={{ fontSize: 9, color: C.body }}>{safe(n.why)}</Text>}
+            </View>
+          ))}
         </View>
       )}
     </SectionPage>
@@ -216,12 +349,30 @@ const Content = ({ data }: any) => {
         </View>
       )}
       {quarters.map((q, i) => (
-        <View key={i} style={[s.card, { borderLeftWidth: 3, borderLeftColor: C.coral }]} wrap={false}>
+        <View key={i} style={[s.card, { borderLeftWidth: 3, borderLeftColor: C.coral }]}>
           <Text style={s.cardLabel}>{(q.label || `Q${i + 2}`).toUpperCase()}</Text>
           <Text style={{ fontSize: 14, fontFamily: "Helvetica-Bold", color: C.ink, marginBottom: 4 }}>{safe(q.theme)}</Text>
           {q.arc ? <Text style={[s.body, { marginBottom: 6 }]}>{safe(q.arc)}</Text> : null}
-          {q.cta ? <Text style={{ fontSize: 9, color: C.coral, fontFamily: "Helvetica-Bold" }}>CTA · {safe(q.cta)}</Text> : null}
+          {q.rationale ? (
+            <View style={{ marginBottom: 6 }}>
+              <Text style={{ fontSize: 8, color: C.coral, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, marginBottom: 2 }}>WHY THIS QUARTER</Text>
+              <Text style={s.body}>{safe(q.rationale)}</Text>
+            </View>
+          ) : null}
+          {Array.isArray(q.contentTopics) && q.contentTopics.length > 0 && (
+            <View style={{ marginBottom: 6 }}>
+              <Text style={{ fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, marginBottom: 4 }}>CONTENT TOPICS</Text>
+              {q.contentTopics.map((t: any, j: number) => (
+                <View key={j} style={{ marginBottom: 3 }} wrap={false}>
+                  <Text style={{ fontSize: 9, color: C.ink, fontFamily: "Helvetica-Bold" }}>W{t.week ?? j + 1}: {safe(t.topic)}</Text>
+                  {t.keyMessage && <Text style={{ fontSize: 9, color: C.body, lineHeight: 1.4 }}>{safe(t.keyMessage)}</Text>}
+                </View>
+              ))}
+            </View>
+          )}
           {q.metric ? <Text style={{ fontSize: 9, color: C.muted, marginTop: 2 }}>METRIC · {safe(q.metric)}</Text> : null}
+          {q.cta ? <Text style={{ fontSize: 9, color: C.coral, fontFamily: "Helvetica-Bold" }}>CTA · {safe(q.cta)}</Text> : null}
+          {q.businessGoal ? <Text style={{ fontSize: 9, color: C.muted }}>BUSINESS GOAL · {safe(q.businessGoal)}</Text> : null}
         </View>
       ))}
     </SectionPage>
@@ -264,29 +415,67 @@ const ChannelsMetrics = ({ data }: any) => {
   const ch = data?.channels || {};
   const met = data?.metrics || {};
   const goals: any[] = met.businessGoals || [];
+  const leadSources: any[] = met.leadSources || [];
+  const qual = met.qualification || {};
+  const cp = met.contentPerformance || {};
   const bh = met.brandHealth || {};
   const n = (x: any) => { const v = Number(x) || 0; return v > 10 ? v / 10 : v; };
   const aa = n(bh.archetypeAlignment);
   const vc = n(bh.voiceConsistency);
   return (
     <SectionPage label="04 · CHANNELS & METRICS" title="Where & How We Measure">
-      <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4, marginBottom: 8 }}>
-        {(["primary", "secondary", "tertiary"] as const).map((tier) => {
-          const c = ch[tier]; if (!c) return null;
-          return (
-            <View key={tier} style={{ width: "33.33%", padding: 4 }} wrap={false}>
-              <View style={{ borderWidth: 1, borderColor: C.cardBorder, borderRadius: 8, padding: 12, backgroundColor: C.white, minHeight: 110 }}>
-                <Text style={[s.cardLabel, { fontSize: 8 }]}>{tier.toUpperCase()}</Text>
-                <Text style={{ fontSize: 14, fontFamily: "Helvetica-Bold", color: C.ink, marginVertical: 4 }}>{safe(c.name)}</Text>
-                {c.freq ? <Text style={{ fontSize: 9, color: C.muted, marginBottom: 4 }}>{safe(c.freq)}</Text> : null}
-                {(c.bullets || []).slice(0, 4).map((b: string, i: number) => (
-                  <Text key={i} style={{ fontSize: 9, color: C.body, lineHeight: 1.4 }}>• {safe(b)}</Text>
+      {(["primary", "secondary", "tertiary"] as const).map((tier) => {
+        const c = ch[tier]; if (!c) return null;
+        const tb = c.timeBreakdown || {};
+        return (
+          <View key={tier} style={s.card}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+              <Text style={[s.cardLabel, { fontSize: 8 }]}>{tier.toUpperCase()} · {safe(c.fullName ?? c.name)}</Text>
+              {c.freq && <Text style={{ fontSize: 9, color: C.muted }}>{safe(c.freq)}</Text>}
+            </View>
+            {c.tone && <Text style={[s.body, { marginBottom: 6 }]}>{safe(c.tone)}</Text>}
+            {Array.isArray(c.rationale) && c.rationale.length > 0 && (
+              <View style={{ marginBottom: 6 }}>
+                {c.rationale.map((r: any, i: number) => (
+                  <Text key={i} style={{ fontSize: 9, color: C.body, lineHeight: 1.4 }}>• {safe(r)}</Text>
                 ))}
               </View>
-            </View>
-          );
-        })}
-      </View>
+            )}
+            {Array.isArray(c.contentTypes) && c.contentTypes.length > 0 && (
+              <View style={{ marginBottom: 6 }}>
+                <Text style={{ fontSize: 8, color: C.coral, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, marginBottom: 3 }}>CONTENT TYPES</Text>
+                {c.contentTypes.map((t: any, i: number) => (
+                  <Text key={i} style={{ fontSize: 9, color: C.body }}>• {safe(t)}</Text>
+                ))}
+              </View>
+            )}
+            {Array.isArray(c.schedule) && c.schedule.length > 0 && (
+              <View style={{ marginBottom: 6 }}>
+                <Text style={{ fontSize: 8, color: C.coral, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, marginBottom: 3 }}>POSTING SCHEDULE</Text>
+                {c.schedule.map((p: any, i: number) => (
+                  <Text key={i} style={{ fontSize: 9, color: C.body }}>• {safe(p.day)}{p.time ? ` · ${safe(p.time)}` : ""} — {safe(p.type)}{p.example ? `: ${safe(p.example)}` : ""}</Text>
+                ))}
+              </View>
+            )}
+            {c.metrics && Object.keys(c.metrics).length > 0 && (
+              <View style={{ marginBottom: 6 }}>
+                <Text style={{ fontSize: 8, color: C.coral, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, marginBottom: 3 }}>TARGET METRICS</Text>
+                {Object.entries(c.metrics).filter(([_, v]) => v).map(([k, v]) => (
+                  <Text key={k} style={{ fontSize: 9, color: C.body }}>• {k.replace(/([A-Z])/g, " $1")}: {safe(v)}</Text>
+                ))}
+              </View>
+            )}
+            {(c.hrs || Object.keys(tb).length > 0) && (
+              <View>
+                <Text style={{ fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, marginBottom: 3 }}>TIME COMMITMENT {c.hrs ? `· ${safe(c.hrs)}` : ""}</Text>
+                {Object.entries(tb).filter(([_, v]) => v).map(([k, v]) => (
+                  <Text key={k} style={{ fontSize: 9, color: C.body }}>• {k.replace(/([A-Z])/g, " $1")}: {safe(v)}</Text>
+                ))}
+              </View>
+            )}
+          </View>
+        );
+      })}
       {goals.length > 0 && (
         <View style={s.card} wrap={false}>
           <Text style={s.cardLabel}>BUSINESS GOALS</Text>
@@ -294,6 +483,45 @@ const ChannelsMetrics = ({ data }: any) => {
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.rule }}>
               <Text style={s.body}>{safe(g.label || g.goal || g.name)}</Text>
               <Text style={{ fontSize: 10, color: C.coral, fontFamily: "Helvetica-Bold" }}>{safe(g.value || g.target)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {leadSources.length > 0 && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>PROJECTED LEAD SOURCES</Text>
+          {leadSources.map((l: any, i: number) => (
+            <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 4, borderTopWidth: i ? 1 : 0, borderTopColor: C.rule }}>
+              <Text style={s.body}>{safe(l.source)}</Text>
+              <Text style={{ fontSize: 10, color: C.coral, fontFamily: "Helvetica-Bold" }}>{safe(l.percentage)}% · {safe(l.perWeek)}/wk</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {Object.keys(qual).length > 0 && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>LEAD QUALIFICATION MIX</Text>
+          {(["highFit", "mediumFit", "lowFit"] as const).map((k) => {
+            const q: any = qual[k]; if (!q) return null;
+            const label = k === "highFit" ? "High Fit" : k === "mediumFit" ? "Medium Fit" : "Low Fit";
+            return (
+              <View key={k} style={{ paddingVertical: 4, borderTopWidth: k !== "highFit" ? 1 : 0, borderTopColor: C.rule }}>
+                <Text style={{ fontSize: 10, color: C.ink, fontFamily: "Helvetica-Bold" }}>{label} · {safe(q.percentage)}%</Text>
+                {q.definition && <Text style={{ fontSize: 9, color: C.body, lineHeight: 1.4 }}>{safe(q.definition)}</Text>}
+              </View>
+            );
+          })}
+        </View>
+      )}
+      {Object.keys(cp).length > 0 && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>CONTENT PERFORMANCE TARGETS</Text>
+          {Object.entries(cp).map(([channel, m]: [string, any]) => (
+            <View key={channel} style={{ marginTop: 4 }}>
+              <Text style={{ fontSize: 10, fontFamily: "Helvetica-Bold", color: C.ink }}>{channel.toUpperCase()}</Text>
+              {Object.entries(m || {}).map(([k, v]) => (
+                <Text key={k} style={{ fontSize: 9, color: C.body }}>• {k.replace(/([A-Z])/g, " $1")}: {safe(v)}</Text>
+              ))}
             </View>
           ))}
         </View>
@@ -318,17 +546,102 @@ const ChannelsMetrics = ({ data }: any) => {
 
 // ─── 05 Competitive Positioning ──────────────────────────────────
 const Competitive = ({ data }: any) => {
-  const cp = data?.competitive || data?.positioning?.competitive || null;
-  if (!cp || (Array.isArray(cp) && !cp.length) || (typeof cp === "object" && !Object.keys(cp).length)) return null;
-  const items: any[] = Array.isArray(cp) ? cp : Object.entries(cp).map(([k, v]) => ({ label: k, value: v }));
+  const cp = data?.competitive || {};
+  const has = cp.headline || cp.landscape || cp.differentiators?.length || cp.competitiveAdvantages?.length || cp.doNotCompeteOn?.length || cp.antiClient || cp.alternatives || cp.whyYouWin;
+  if (!has) return null;
   return (
     <SectionPage label="05 · COMPETITIVE POSITIONING" title="How You Stand Out">
-      {items.map((it, i) => (
-        <View key={i} style={s.card} wrap={false}>
-          <Text style={s.cardLabel}>{String(it.label || it.name || `Point ${i + 1}`).toUpperCase()}</Text>
-          <Text style={s.body}>{safe(it.value || it.description || it.text || it)}</Text>
+      {cp.headline && (
+        <View style={{ backgroundColor: C.navy, padding: 14, borderRadius: 8, marginBottom: 10 }} wrap={false}>
+          <Text style={{ fontSize: 9, color: C.coral, fontFamily: "Helvetica-Bold", letterSpacing: 2, marginBottom: 4 }}>YOUR POSITION</Text>
+          <Text style={{ fontSize: 12, color: C.white, fontFamily: "Helvetica-Bold", lineHeight: 1.5 }}>{safe(cp.headline)}</Text>
         </View>
-      ))}
+      )}
+      {cp.landscape && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>MARKET GAP</Text>
+          <Text style={s.body}>{safe(cp.landscape)}</Text>
+        </View>
+      )}
+      {Array.isArray(cp.differentiators) && cp.differentiators.length > 0 && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>DIFFERENTIATORS</Text>
+          <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.rule, paddingBottom: 4 }}>
+            <Text style={{ flex: 1, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1.5 }}>FACTOR</Text>
+            <Text style={{ flex: 2, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1.5 }}>YOU</Text>
+            <Text style={{ flex: 2, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1.5 }}>COMPETITORS</Text>
+          </View>
+          {cp.differentiators.map((d: any, i: number) => (
+            <View key={i} style={{ flexDirection: "row", paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: C.rule }} wrap={false}>
+              <Text style={{ flex: 1, fontSize: 9, color: C.ink, fontFamily: "Helvetica-Bold" }}>{safe(d.factor)}</Text>
+              <Text style={{ flex: 2, fontSize: 9, color: C.body }}>{safe(d.you)}</Text>
+              <Text style={{ flex: 2, fontSize: 9, color: C.muted }}>{safe(d.competitors)}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+      {Array.isArray(cp.competitiveAdvantages) && cp.competitiveAdvantages.length > 0 && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>COMPETITIVE ADVANTAGES</Text>
+          {cp.competitiveAdvantages.map((a: any, i: number) => (
+            <Text key={i} style={[s.body, { marginBottom: 2 }]}>• {safe(a)}</Text>
+          ))}
+        </View>
+      )}
+      {Array.isArray(cp.doNotCompeteOn) && cp.doNotCompeteOn.length > 0 && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabelMuted}>WHAT YOU DON'T COMPETE ON</Text>
+          {cp.doNotCompeteOn.map((a: any, i: number) => (
+            <Text key={i} style={[s.body, { marginBottom: 2 }]}>• {safe(a)}</Text>
+          ))}
+        </View>
+      )}
+      {cp.antiClient && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>WHO IS NOT YOUR IDEAL CLIENT</Text>
+          <Text style={s.body}>{safe(cp.antiClient)}</Text>
+        </View>
+      )}
+      {cp.alternatives && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>WHAT ARE THE ALTERNATIVES</Text>
+          <Text style={s.body}>{safe(cp.alternatives)}</Text>
+        </View>
+      )}
+      {cp.whyYouWin && (
+        <View style={[s.card, { borderLeftWidth: 3, borderLeftColor: C.coral }]} wrap={false}>
+          <Text style={s.cardLabel}>WHEN A CLIENT CHOOSES YOU</Text>
+          <Text style={s.body}>{safe(cp.whyYouWin)}</Text>
+        </View>
+      )}
+    </SectionPage>
+  );
+};
+
+// ─── 05B Messaging in Every Format ──────────────────────────────
+const MessagingFormats = ({ data }: any) => {
+  const m = data?.messagingFormats || {};
+  if (!m.oneLiner && !m.short && !m.elevator) return null;
+  return (
+    <SectionPage label="05B · MESSAGING" title="In Every Format">
+      {m.oneLiner && (
+        <View style={[s.card, { borderLeftWidth: 3, borderLeftColor: C.coral }]} wrap={false}>
+          <Text style={s.cardLabel}>ONE-LINER</Text>
+          <Text style={{ fontSize: 13, color: C.ink, lineHeight: 1.5, fontFamily: "Helvetica-Bold" }}>{safe(m.oneLiner)}</Text>
+        </View>
+      )}
+      {m.short && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>SHORT VERSION (160 CHARS)</Text>
+          <Text style={s.bodyDark}>{safe(m.short)}</Text>
+        </View>
+      )}
+      {m.elevator && (
+        <View style={s.card} wrap={false}>
+          <Text style={s.cardLabel}>ELEVATOR PITCH</Text>
+          <Text style={s.bodyDark}>{safe(m.elevator)}</Text>
+        </View>
+      )}
     </SectionPage>
   );
 };
@@ -419,17 +732,21 @@ export const StrategyDocument = ({ data }: { data: any }) => (
   <Document title="MOXIEMO Strategic Report" author="MOXIEMO">
     <Cover data={data} />
     <Overview data={data} />
+    <CoreValues data={data} />
     <Voice data={data} />
     <Content data={data} />
     <Calendar data={data} />
     <ChannelsMetrics data={data} />
     <Competitive data={data} />
+    <MessagingFormats data={data} />
     <ActionPlan data={data} />
     <BackCover data={data} />
   </Document>
 );
 
 export async function downloadStrategyPdf(data: any, filename: string) {
+  // eslint-disable-next-line no-console
+  try { console.log('[strategyPdf] data', data); } catch {}
   const blob = await pdf(<StrategyDocument data={data} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

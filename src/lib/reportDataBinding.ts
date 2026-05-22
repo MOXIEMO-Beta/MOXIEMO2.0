@@ -5,17 +5,23 @@ export function buildReportData(strategy: any = {}, profile: any = {}) {
   const get = (efKey: string, rawKey: string, colVal: any, fallback = '—') =>
     ef[efKey] ?? raw[rawKey] ?? colVal ?? fallback;
 
-  return {
+  const data = {
     meta:            buildMeta(profile, strategy),
     positioning:     buildPositioning(strategy, ef, raw, get),
     archetype:       buildArchetype(strategy, ef, raw),
+    coreValues:      buildCoreValues(strategy, ef),
     voice:           buildVoice(strategy, ef, raw),
     contentStrategy: buildContentStrategy(strategy, ef, raw),
     calendar:        buildCalendar(strategy),
     channels:        buildChannels(strategy, ef, raw),
     metrics:         buildMetrics(strategy, ef, raw),
     actionPlan:      buildActionPlan(strategy, ef, raw),
+    competitive:     buildCompetitive(strategy, ef),
+    messagingFormats: buildMessagingFormats(strategy, ef),
   };
+  // eslint-disable-next-line no-console
+  try { console.log('[reportData]', data, '[raw strategy]', strategy); } catch {}
+  return data;
 }
 
 // ─── META ───────────────────────────────────────────────────────
@@ -39,17 +45,18 @@ function buildPositioning(s: any, ef: any, raw: any, get: Function) {
     raw.positioningStatement ??
     buildPositioningTemplate(s);
 
+  const pb = ef.positioningBreakdown ?? {};
   return {
     statement,
     breakdown: {
-      who:            get('idealClient',    'idealClient',    s.ideal_client),
-      problem:        get('painPoint',      'painPoint',      s.pain_point),
-      solution:       get('positioning',    'positioning',    s.positioning_statement?.slice(0, 80)),
-      result:         get('transformation', 'transformation', s.transformation),
-      method:         s.methodology ?? ef.methodology ?? raw.methodology ?? 'Your Proprietary Framework',
-      transformation: buildTransformationArc(s),
+      who:            pb.idealClient    ?? ef.idealClient    ?? raw.idealClient    ?? s.ideal_client ?? '—',
+      problem:        pb.painPoint      ?? ef.painPoint      ?? raw.painPoint      ?? s.pain_point ?? '—',
+      solution:       pb.uniqueApproach ?? ef.uniqueApproach ?? raw.uniqueApproach ?? s.positioning_statement ?? '—',
+      result:         pb.outcome        ?? pb.transformation ?? ef.transformation  ?? s.transformation ?? '—',
+      method:         pb.method         ?? s.methodology     ?? ef.methodology     ?? raw.methodology ?? '—',
+      transformation: pb.transformation ?? buildTransformationArc(s),
     },
-    variations: buildVariations(statement, s, ef),
+    variations: ef.positioningVariations ?? buildVariations(statement, s, ef),
   };
 }
 
@@ -80,15 +87,53 @@ function buildVariations(statement: string, s: any, ef: any) {
 
 // ─── ARCHETYPE ──────────────────────────────────────────────────
 function buildArchetype(s: any, ef: any, raw: any) {
-  const a = s.archetype ?? ef.archetype ?? raw.archetype ?? {};
-  return {
-    primary:          a.primary          ?? 'The Sage',
-    secondary:        a.secondary        ?? 'The Caregiver',
-    description:      a.description      ?? 'Seeks truth and provides clarity. Uses expertise to guide others through confusion to energized execution.',
-    brandInspiration: a.brandInspiration ?? ef.brandInspiration ?? ['Harvard Business Review', 'Simon Sinek', 'Masterclass'],
-    values:           a.coreValues       ?? ef.coreValues       ?? ['Clarity', 'Authority', 'Humanity'],
-    contentApproach:  a.contentApproach  ?? 'Framework-first teaching that breaks complex problems into simple, actionable paths.',
+  const a = ef.brandArchetype ?? s.archetype ?? ef.archetype ?? raw.archetype ?? {};
+  const cap = (x: any) => {
+    if (!x || typeof x !== 'string') return x;
+    if (/\s/.test(x)) return x; // already formatted
+    return 'The ' + x.charAt(0).toUpperCase() + x.slice(1).toLowerCase();
   };
+  const fmtArchetype = (x: any) => {
+    if (!x) return '';
+    if (typeof x !== 'string') return safeName(x);
+    // Preserve already-formatted like "The Sage", "RULER"
+    if (x === x.toUpperCase() && x.length <= 12) return x;
+    if (x.toLowerCase().startsWith('the ')) return x;
+    return cap(x);
+  };
+  return {
+    primary:          fmtArchetype(a.name ?? a.primary) || 'The Sage',
+    secondary:        fmtArchetype(a.secondary) || '',
+    description:      a.description      ?? '',
+    brandInspiration: a.exampleBrands    ?? a.brandInspiration ?? ef.brandInspiration ?? [],
+    values:           a.coreValues       ?? ef.archetypeValues ?? [],
+    contentApproach:  a.contentApproach  ?? '',
+    whyThisFits:      a.whyThisFits      ?? [],
+    howToApply:       a.howToApply       ?? [],
+    strengths:        a.strengths        ?? [],
+    pitfalls:         a.pitfalls         ?? [],
+    voiceAttributes:  a.voiceAttributes  ?? [],
+  };
+}
+
+function safeName(x: any): string {
+  if (!x) return '';
+  if (typeof x === 'string') return x;
+  return x.name ?? x.title ?? x.label ?? '';
+}
+
+// ─── CORE VALUES ────────────────────────────────────────────────
+function buildCoreValues(s: any, ef: any) {
+  const arr = ef.coreValues ?? s.core_values ?? [];
+  if (!Array.isArray(arr)) return [];
+  return arr.map((v: any) => ({
+    name:           v?.name ?? v?.title ?? '',
+    decisionFilter: v?.decisionFilter ?? v?.filter ?? '',
+    description:    v?.description ?? '',
+    derivedFrom:    v?.derivedFrom ?? '',
+    yesExamples:    Array.isArray(v?.yesExamples) ? v.yesExamples : [],
+    noExamples:     Array.isArray(v?.noExamples)  ? v.noExamples  : [],
+  }));
 }
 
 // ─── VOICE ──────────────────────────────────────────────────────
@@ -97,22 +142,35 @@ function buildVoice(s: any, ef: any, raw: any) {
     typeof w === 'string'
       ? w
       : (w?.name ?? w?.word ?? w?.text ?? w?.value ?? w?.label ?? '');
-  const attrs    = coerceArray(s.voice_attributes ?? ef.personalityTraits ?? ['Authoritative', 'Empathetic', 'Direct']).map(toStr).filter(Boolean);
-  const useWords = coerceArray(s.use_words        ?? ef.extractedVocabulary ?? ['Clarity', 'Relief', 'Framework', 'Path', 'Execution']).map(toStr).filter(Boolean);
-  const avoid    = coerceStringOrArray(s.anti_positioning ?? ef.antiPositioning ?? 'synergy, holistic, leverage, ideation').map(toStr).filter(Boolean);
+  const vg = ef.voiceGuidelines ?? {};
+  const attrsRich: any[] = Array.isArray(vg.attributes) ? vg.attributes : [];
+  const attrs    = attrsRich.length
+    ? attrsRich.map((a: any) => a?.trait ?? a?.name ?? '').filter(Boolean)
+    : coerceArray(s.voice_attributes ?? ef.personalityTraits ?? []).map(toStr).filter(Boolean);
+  const useWords = (vg.vocabulary?.use   ?? coerceArray(s.use_words ?? ef.extractedVocabulary ?? [])).map(toStr).filter(Boolean);
+  const avoid    = (vg.vocabulary?.avoid ?? coerceStringOrArray(s.anti_positioning ?? ef.antiPositioning ?? '')).map(toStr).filter(Boolean);
+  const tonePlatform = vg.toneByPlatform ?? {};
+  const tone: Record<string, string> = {};
+  Object.entries(tonePlatform).forEach(([k, v]: [string, any]) => {
+    tone[k] = typeof v === 'string' ? v : (v?.tone ?? v?.mode ?? '');
+  });
 
   return {
     attributes:     attrs,
+    attributesRich: attrsRich,
     useWords,
+    wordsToUse:     useWords,
     avoidWords:     avoid,
-    exampleLine:    ef.voiceSampleQuote ?? raw.voiceSampleQuote ?? extractVoiceQuote(ef.voiceSample ?? raw.voiceSample),
+    wordsToAvoid:   avoid,
+    exampleLine:    vg.sentenceStructure?.example ?? ef.voiceSampleQuote ?? raw.voiceSampleQuote ?? extractVoiceQuote(ef.voiceSample ?? raw.voiceSample),
+    fullExample:    vg.sentenceStructure?.example ?? '',
+    sentenceStructure: vg.sentenceStructure?.rules ?? [],
     neverSoundLike: s.anti_positioning  ?? 'Corporate jargon and empty buzzwords.',
-    toneByChannel: {
-      email:    ef.emailTone    ?? 'Consultative',
-      linkedin: ef.linkedinTone ?? 'Thought Leader',
-      podcast:  ef.podcastTone  ?? 'Warm Educator',
-    },
-    sentenceRules: [
+    neverSoundLikeRich: Array.isArray(vg.neverSoundLike) ? vg.neverSoundLike : [],
+    toneByChannel:  Object.keys(tone).length ? tone : { email: 'Consultative', linkedin: 'Thought Leader', podcast: 'Warm Educator' },
+    toneByPlatform: tonePlatform,
+    voiceExamples:  vg.voiceExamples ?? {},
+    sentenceRules:  vg.sentenceStructure?.rules ?? [
       'Start with a punchy observation.',
       'Use the Rule of Three for emphasis.',
       'Keep sentences short and rhythmic.',
@@ -136,11 +194,25 @@ function buildContentStrategy(s: any, ef: any, raw: any) {
     ]
   );
 
-  const quarters = s.content_themes?.length
-    ? s.content_themes
-    : ef.contentThemes?.length
-    ? buildQuartersFromThemes(ef.contentThemes, s)
-    : buildDefaultQuarters(s);
+  let quarters: any[];
+  if (Array.isArray(ef.quarterlyThemes) && ef.quarterlyThemes.length) {
+    quarters = ef.quarterlyThemes.map((q: any) => ({
+      label: q.quarter ?? q.label ?? '',
+      theme: q.theme ?? '',
+      arc:   q.overview ?? q.arc ?? '',
+      rationale:  q.strategicRationale ?? '',
+      cta:        q.cta ?? '',
+      metric:     q.successMetric ?? '',
+      businessGoal: q.businessGoal ?? '',
+      contentTopics: Array.isArray(q.contentTopics) ? q.contentTopics : [],
+    }));
+  } else if (s.content_themes?.length) {
+    quarters = s.content_themes;
+  } else if (ef.contentThemes?.length) {
+    quarters = buildQuartersFromThemes(ef.contentThemes, s);
+  } else {
+    quarters = buildDefaultQuarters(s);
+  }
 
   return {
     pillars,
@@ -179,16 +251,49 @@ function buildContentMix(s: any) {
   };
 }
 
+// ─── COMPETITIVE ────────────────────────────────────────────────
+function buildCompetitive(s: any, ef: any) {
+  const cp = ef.competitivePositioning ?? {};
+  return {
+    headline:              cp.yourPosition ?? '',
+    landscape:             cp.marketGap ?? '',
+    differentiators:       Array.isArray(cp.differentiators) ? cp.differentiators : [],
+    competitiveAdvantages: Array.isArray(cp.competitiveAdvantages) ? cp.competitiveAdvantages : [],
+    doNotCompeteOn:        Array.isArray(cp.doNotCompeteOn) ? cp.doNotCompeteOn : [],
+    antiClient:            ef.antiClient ?? '',
+    alternatives:          ef.alternatives ?? '',
+    whyYouWin:             ef.whyYouWin ?? '',
+  };
+}
+
+// ─── MESSAGING FORMATS ──────────────────────────────────────────
+function buildMessagingFormats(s: any, ef: any) {
+  const pv = ef.positioningVariations ?? {};
+  const mv = ef.messagingVariations ?? {};
+  return {
+    oneLiner:  mv.oneLiner  ?? pv.short    ?? '',
+    short:     mv.short     ?? pv.tweet    ?? '',
+    elevator:  mv.elevator  ?? pv.elevator ?? '',
+  };
+}
+
 // ─── CALENDAR ───────────────────────────────────────────────────
 function buildCalendar(s: any) {
-  if (Array.isArray(s.calendar_entries) && s.calendar_entries.length > 0) {
-    return s.calendar_entries.map((e: any) => ({
+  const src: any[] | undefined =
+    (Array.isArray(s.calendar_entries) && s.calendar_entries.length > 0 && s.calendar_entries) ||
+    (Array.isArray(s.enhanced_foundation?.contentCalendar) && s.enhanced_foundation.contentCalendar.length > 0 && s.enhanced_foundation.contentCalendar) ||
+    undefined;
+  if (src) {
+    return src.map((e: any) => ({
       date:    e.date,
-      dayName: e.dayName ?? getDayName(e.date),
+      dayName: e.dayName ?? e.day ?? getDayName(e.date),
       channel: shortChannel(e.channel ?? s.primary_channel) ?? 'LinkedIn',
       type:    e.contentType ?? e.type ?? 'Text Post',
-      title:   pickString(e.topic, e.title, e.name, e.text) ?? '',
-      pillar:  e.pillar      ?? '',
+      title:   pickString(e.title, e.topic, e.name, e.text) ?? '',
+      pillar:  e.pillar ?? e.theme ?? '',
+      theme:   e.theme ?? '',
+      week:    e.week ?? '',
+      length:  e.estimatedLength ?? '',
       status:  e.status      ?? 'pending',
     }));
   }
@@ -227,13 +332,38 @@ function scaffoldCalendar(s: any) {
 
 // ─── CHANNELS ───────────────────────────────────────────────────
 function buildChannels(s: any, ef: any, raw: any) {
-  const ch     = shortChannel(s.primary_channel ?? ef.primaryChannel) ?? 'LinkedIn';
-  const freq   = s.posting_frequency ?? ef.postingFrequency ?? '7 posts/week';
+  const cs = ef.channelStrategy ?? {};
   const hrs    = deriveHours(s.time_capacity);
+  const buildTier = (tier: any, fallback: any) => {
+    if (!tier) return fallback;
+    const ts = tier.contentStrategy ?? {};
+    const ps = Array.isArray(tier.postingSchedule) ? tier.postingSchedule : [];
+    const sm = tier.successMetrics ?? {};
+    const ta = tier.timeAllocation ?? {};
+    return {
+      name:          shortChannel(tier.platform) ?? safeName(tier.platform) ?? fallback.name,
+      fullName:      tier.platform ?? fallback.name,
+      label:         fallback.label,
+      color:         fallback.color,
+      icon:          fallback.icon,
+      freq:          ts.frequency ?? fallback.freq,
+      hrs:           ta.total ?? fallback.hrs,
+      cta:           fallback.cta,
+      rationale:     Array.isArray(tier.rationale) ? tier.rationale : [],
+      tone:          ts.tone ?? '',
+      contentTypes:  Array.isArray(ts.types) ? ts.types : [],
+      schedule:      ps,
+      bullets:       Array.isArray(ts.types) && ts.types.length ? ts.types : fallback.bullets,
+      metrics:       sm,
+      timeBreakdown: ta.breakdown ?? {},
+    };
+  };
+  const ch     = shortChannel(cs.primary?.platform ?? s.primary_channel ?? ef.primaryChannel) ?? 'LinkedIn';
+  const freq   = cs.primary?.contentStrategy?.frequency ?? s.posting_frequency ?? ef.postingFrequency ?? '7 posts/week';
   const metric = s.success_definition ?? ef.successDefinition ?? '3–4 qualified calls/week';
 
-  return {
-    primary: {
+  const defaults = {
+    primary:   {
       name: ch, label: 'Primary', color: '#ff6b6b', icon: '💼',
       freq, hrs: `${Math.round(hrs * 0.65)} hrs/week`,
       cta: 'Book a Discovery Call',
@@ -247,7 +377,7 @@ function buildChannels(s: any, ef: any, raw: any) {
       bullets: ['Weekly Wisdom Newsletter', 'Every Tuesday 7:00 AM EST', 'Deeper dive on primary channel topic', 'Open rate target: >40%'],
       metrics: { openRate: '>40%', clickRate: '>5%', sendsPerMonth: '4', goal: 'Discovery calls' },
     },
-    tertiary: {
+    tertiary:  {
       name: 'Podcast', label: 'Tertiary', color: '#a855f7', icon: '🎙',
       freq: '1x/month', hrs: '3 hrs/month',
       cta: 'Apply for Consultation',
@@ -255,24 +385,46 @@ function buildChannels(s: any, ef: any, raw: any) {
       metrics: { appearances: '1/month', callsAttributed: '1–2/month', goal: 'Authority + reach' },
     },
   };
+  return {
+    primary:   buildTier(cs.primary,   defaults.primary),
+    secondary: buildTier(cs.secondary, defaults.secondary),
+    tertiary:  buildTier(cs.tertiary,  defaults.tertiary),
+  };
 }
 
 // ─── METRICS ────────────────────────────────────────────────────
 function buildMetrics(s: any, ef: any, raw: any) {
-  const bh = s.brand_health ?? ef.brandHealth ?? {};
+  const sm = ef.successMetrics ?? {};
+  const bh = sm.brandHealth ?? s.brand_health ?? ef.brandHealth ?? {};
+  const bg = sm.businessGoals ?? {};
+  const cp = sm.contentPerformance ?? {};
+  const prim = sm.primary ?? {};
+  // Monthly revenue: parse from goals
+  const monthlyRevenue =
+    extractRevenue(bg.revenueGrowth ?? bg.scalingPlan ?? s.business_goal) ||
+    (ef.revenueTarget ? `$${(ef.revenueTarget / 1000).toFixed(0)}k` : '$50k');
+  const callsWeekly = prim.target?.weekly ?? ef.callsPerWeek ?? '3–4';
+  const clientTarget = (bg.scalingPlan?.match(/(\d+)\s*(?:new\s*)?clients?\s*per\s*month/i)?.[1]) ?? ef.clientTarget ?? '3';
   return {
-    northStar: s.success_definition ?? ef.successDefinition ?? 'Qualified discovery calls',
+    northStar: prim.name ?? s.success_definition ?? ef.successDefinition ?? 'Qualified discovery calls',
+    primaryMetric: prim,
+    leadSources: Array.isArray(prim.leadSources) ? prim.leadSources : [],
+    qualification: prim.qualification ?? {},
+    contentPerformance: cp,
     businessGoals: [
-      { label: 'Monthly Revenue',        value: ef.revenueTarget ? `$${(ef.revenueTarget / 1000).toFixed(0)}k` : extractRevenue(s.business_goal) },
-      { label: 'New Clients / Month',    value: ef.clientTarget  ?? '3'   },
-      { label: 'Discovery Calls / Week', value: ef.callsPerWeek  ?? '3–4' },
-      { label: 'Podcast Appearances',    value: '1 / month'               },
+      { label: 'Monthly Revenue',        value: monthlyRevenue },
+      { label: 'New Clients / Month',    value: String(clientTarget) },
+      { label: 'Discovery Calls / Week', value: String(callsWeekly) },
+      { label: 'Podcast Appearances',    value: '1 / month' },
     ],
-    linkedin: { profileViews: '+15% MoM', engagementRate: '>3%', posts: s.posting_frequency ?? '7/week', dms: '10–15 ICP/week' },
-    email:    { openRate: '>40%', clickRate: '>5%', sends: '4/month' },
+    linkedin: cp.linkedin ?? { profileViews: '+15% MoM', engagementRate: '>3%', posts: s.posting_frequency ?? '7/week', dms: '10–15 ICP/week' },
+    email:    cp.email    ?? { openRate: '>40%', clickRate: '>5%', sends: '4/month' },
+    scalingPlan: bg.scalingPlan ?? '',
+    revenueGrowth: bg.revenueGrowth ?? '',
     brandHealth: {
       archetypeAlignment: bh.archetypeAlignment ?? s.strength_score ?? 7.5,
-      voiceConsistency:   bh.voiceConsistency   ?? 8.0,
+      voiceConsistency:   bh.voiceConsistency ?? bh.voiceConsistencyScore ?? 8.0,
+      notes:              bh.notes ?? '',
       archetypeGoal:      9.0,
       voiceGoal:          9.5,
     },
@@ -286,6 +438,33 @@ function buildMetrics(s: any, ef: any, raw: any) {
 function buildActionPlan(s: any, ef: any, raw: any) {
   const method = s.methodology     ?? ef.methodology     ?? 'Your Framework';
   const ch     = s.primary_channel ?? ef.primaryChannel  ?? 'LinkedIn';
+  const apEf = ef.actionPlan ?? {};
+  const efRoutine = apEf.ongoingRoutine ?? {};
+
+  if (apEf.week1 || apEf.week2 || apEf.week3 || apEf.week4) {
+    const weeks = [
+      { week: 'Week 1', color: '#ff6b6b', theme: 'Set the Foundation', tasks: [apEf.week1].filter(Boolean) },
+      { week: 'Week 2', color: '#f59e0b', theme: 'Launch',              tasks: [apEf.week2].filter(Boolean) },
+      { week: 'Week 3', color: '#3b82f6', theme: 'Activate Engagement', tasks: [apEf.week3].filter(Boolean) },
+      { week: 'Week 4', color: '#3cb87a', theme: 'Optimize',            tasks: [apEf.week4].filter(Boolean) },
+    ];
+    const wrapTier = (t: any) => {
+      if (!t) return null;
+      if (Array.isArray(t)) return { tasks: t };
+      // Object { task, time }
+      if (t.task) return { tasks: [[t.task, t.time].filter(Boolean)], hrs: t.time };
+      return { tasks: [] };
+    };
+    return {
+      weeks,
+      ongoingRoutine: {
+        daily:   wrapTier(efRoutine.daily)   ?? { hrs: '1 hr', tasks: [] },
+        weekly:  wrapTier(efRoutine.weekly)  ?? { hrs: '6 hrs', tasks: [] },
+        monthly: wrapTier(efRoutine.monthly) ?? { hrs: '4.5 hrs', tasks: [] },
+        total:   efRoutine.totalTimePerWeek ?? `${deriveHours(s.time_capacity) + 2}–${deriveHours(s.time_capacity) + 4} hrs / week`,
+      },
+    };
+  }
 
   return {
     weeks: [
@@ -363,7 +542,14 @@ function deriveHours(timeCapStr: string | null) {
 }
 
 function extractRevenue(goalStr: string | null) {
-  if (!goalStr) return '$50k';
-  const m = goalStr.match(/\$[\d,]+k?|\d+[kK]/);
-  return m ? m[0] : '$50k';
+  if (!goalStr) return '';
+  // Match $50k, $50K, $300k, $50,000, 50k, $50 — preserve k/K suffix
+  const m = goalStr.match(/\$?\d{1,3}(?:,\d{3})+(?:\.\d+)?[kKmM]?|\$?\d+(?:\.\d+)?[kKmM]/);
+  if (!m) {
+    const m2 = goalStr.match(/\$?\d+(?:\.\d+)?/);
+    return m2 ? (m2[0].startsWith('$') ? m2[0] : '$' + m2[0]) : '';
+  }
+  let v = m[0];
+  if (!v.startsWith('$')) v = '$' + v;
+  return v;
 }
