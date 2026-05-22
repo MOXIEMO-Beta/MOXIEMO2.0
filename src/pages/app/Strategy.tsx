@@ -49,7 +49,6 @@ function StrategyHeader() {
   const { user } = useAuth();
   const { reportData } = useReportData();
   const [exporting, setExporting] = useState(false);
-  const [exportingMd, setExportingMd] = useState(false);
   const [generating, setGenerating] = useState(false);
 
   const ef = (strategy?.enhanced_foundation || {}) as any;
@@ -104,22 +103,6 @@ function StrategyHeader() {
     }
   };
 
-  const handleExportMd = async () => {
-    if (!reportData) { toast.error("Report data not ready yet."); return; }
-    if (editing) await saveNow();
-    setExportingMd(true);
-    try {
-      const md = buildStrategyMarkdown(reportData);
-      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = buildFileName("md");
-      document.body.appendChild(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-    } finally {
-      setExportingMd(false);
-    }
-  };
 
   return (
     <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
@@ -167,10 +150,6 @@ function StrategyHeader() {
         <Button variant="outline" size="sm" className="rounded-lg" onClick={handleExportPdf} disabled={exporting || !reportData}>
           {exporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />}
           Download PDF
-        </Button>
-        <Button variant="outline" size="sm" className="rounded-lg" onClick={handleExportMd} disabled={exportingMd || !reportData}>
-          {exportingMd ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />}
-          Download Markdown
         </Button>
       </div>
     </div>
