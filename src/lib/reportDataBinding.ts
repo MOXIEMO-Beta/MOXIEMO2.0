@@ -401,10 +401,14 @@ function buildMetrics(s: any, ef: any, raw: any) {
   const bg = sm.businessGoals ?? {};
   const cp = sm.contentPerformance ?? {};
   const prim = sm.primary ?? {};
-  // Monthly revenue: parse from goals
-  const monthlyRevenue =
-    extractRevenue(bg.revenueGrowth ?? bg.scalingPlan ?? s.business_goal) ||
-    (ef.revenueTarget ? `$${(ef.revenueTarget / 1000).toFixed(0)}k` : '$50k');
+  // Revenue: parse from goals & detect cadence (monthly vs annual)
+  const revenueSrc: string = String(bg.revenueGrowth ?? bg.scalingPlan ?? s.business_goal ?? '');
+  const isAnnual = /\b(arr|annual|annually|year|yearly|\/yr|per\s*year)\b/i.test(revenueSrc);
+  const revenueValue =
+    extractRevenue(revenueSrc) ||
+    (ef.revenueTarget ? `$${(ef.revenueTarget / 1000).toFixed(0)}K` : '$50K');
+  const revenueLabel = isAnnual ? 'Annual Revenue' : 'Monthly Revenue';
+  const revenueDisplay = isAnnual ? revenueValue : `${revenueValue}/mo`;
   const callsWeekly = prim.target?.weekly ?? ef.callsPerWeek ?? '3–4';
   const clientTarget = (bg.scalingPlan?.match(/(\d+)\s*(?:new\s*)?clients?\s*per\s*month/i)?.[1]) ?? ef.clientTarget ?? '3';
   return {
@@ -414,7 +418,7 @@ function buildMetrics(s: any, ef: any, raw: any) {
     qualification: prim.qualification ?? {},
     contentPerformance: cp,
     businessGoals: [
-      { label: 'Monthly Revenue',        value: monthlyRevenue },
+      { label: revenueLabel,             value: revenueDisplay },
       { label: 'New Clients / Month',    value: String(clientTarget) },
       { label: 'Discovery Calls / Week', value: String(callsWeekly) },
       { label: 'Podcast Appearances',    value: '1 / month' },
