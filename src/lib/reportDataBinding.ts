@@ -438,6 +438,33 @@ function buildMetrics(s: any, ef: any, raw: any) {
 function buildActionPlan(s: any, ef: any, raw: any) {
   const method = s.methodology     ?? ef.methodology     ?? 'Your Framework';
   const ch     = s.primary_channel ?? ef.primaryChannel  ?? 'LinkedIn';
+  const apEf = ef.actionPlan ?? {};
+  const efRoutine = apEf.ongoingRoutine ?? {};
+
+  if (apEf.week1 || apEf.week2 || apEf.week3 || apEf.week4) {
+    const weeks = [
+      { week: 'Week 1', color: '#ff6b6b', theme: 'Set the Foundation', tasks: [apEf.week1].filter(Boolean) },
+      { week: 'Week 2', color: '#f59e0b', theme: 'Launch',              tasks: [apEf.week2].filter(Boolean) },
+      { week: 'Week 3', color: '#3b82f6', theme: 'Activate Engagement', tasks: [apEf.week3].filter(Boolean) },
+      { week: 'Week 4', color: '#3cb87a', theme: 'Optimize',            tasks: [apEf.week4].filter(Boolean) },
+    ];
+    const wrapTier = (t: any) => {
+      if (!t) return null;
+      if (Array.isArray(t)) return { tasks: t };
+      // Object { task, time }
+      if (t.task) return { tasks: [[t.task, t.time].filter(Boolean)], hrs: t.time };
+      return { tasks: [] };
+    };
+    return {
+      weeks,
+      ongoingRoutine: {
+        daily:   wrapTier(efRoutine.daily)   ?? { hrs: '1 hr', tasks: [] },
+        weekly:  wrapTier(efRoutine.weekly)  ?? { hrs: '6 hrs', tasks: [] },
+        monthly: wrapTier(efRoutine.monthly) ?? { hrs: '4.5 hrs', tasks: [] },
+        total:   efRoutine.totalTimePerWeek ?? `${deriveHours(s.time_capacity) + 2}–${deriveHours(s.time_capacity) + 4} hrs / week`,
+      },
+    };
+  }
 
   return {
     weeks: [
