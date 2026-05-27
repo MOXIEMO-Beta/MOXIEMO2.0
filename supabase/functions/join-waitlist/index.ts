@@ -29,9 +29,22 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Extract user_id from auth token if the request is authenticated
+    let user_id: string | null = null;
+    const authHeader = req.headers.get("authorization");
+    if (authHeader) {
+      const userRes = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+        headers: { Authorization: authHeader, apikey: Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")! },
+      });
+      if (userRes.ok) {
+        const u = await userRes.json();
+        user_id = u?.id ?? null;
+      }
+    }
+
     const { error: dbError } = await supabase
       .from("waitlist")
-      .insert({ name, email, role, website_url, company_name, referral_source });
+      .insert({ name, email, role, website_url, company_name, referral_source, user_id });
 
     if (dbError) {
       if ((dbError as any).code === "23505") {
