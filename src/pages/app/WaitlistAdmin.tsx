@@ -122,15 +122,15 @@ export default function WaitlistAdmin() {
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("waitlist")
-      .select("*")
-      .order("created_at", { ascending: false });
-    if (error) {
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-waitlist", {
+        body: { action: "list" },
+      });
+      if (error) throw error;
+      setEntries((data?.entries || []) as WaitlistEntry[]);
+    } catch {
       toast.error("Failed to load waitlist");
       setEntries([]);
-    } else {
-      setEntries((data || []) as WaitlistEntry[]);
     }
     setLoading(false);
   }
@@ -159,14 +159,19 @@ export default function WaitlistAdmin() {
 
   async function updateStatus(id: string, status: string) {
     setActionLoading(id);
-    const { error } = await supabase.from("waitlist").update({ status }).eq("id", id);
-    setActionLoading(null);
-    if (error) {
+    try {
+      const { error } = await supabase.functions.invoke("admin-waitlist", {
+        body: { action: "update_status", id, status },
+      });
+      if (error) throw error;
+      setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
+      return true;
+    } catch {
       toast.error("Failed to update");
       return false;
+    } finally {
+      setActionLoading(null);
     }
-    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, status } : e)));
-    return true;
   }
 
   function handleScheduleCall(entry: WaitlistEntry) {
@@ -224,14 +229,18 @@ export default function WaitlistAdmin() {
   async function saveNotes(id: string) {
     const value = editingNotes[id] ?? "";
     setActionLoading(id);
-    const { error } = await supabase.from("waitlist").update({ notes: value }).eq("id", id);
-    setActionLoading(null);
-    if (error) {
+    try {
+      const { error } = await supabase.functions.invoke("admin-waitlist", {
+        body: { action: "update_notes", id, notes: value },
+      });
+      if (error) throw error;
+      setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, notes: value } : e)));
+      toast.success("Notes saved.");
+    } catch {
       toast.error("Failed to save notes");
-      return;
+    } finally {
+      setActionLoading(null);
     }
-    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, notes: value } : e)));
-    toast.success("Notes saved.");
   }
 
   function exportCsv() {

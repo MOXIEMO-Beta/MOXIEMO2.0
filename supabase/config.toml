@@ -11,3 +11,5 @@ project_id = "mqhipuvkdsvapbhrrzjd"
     verify_jwt = false
   [functions.social-oauth-start]
     verify_jwt = false
+  [functions.admin-waitlist]
+    verify_jwt = true
