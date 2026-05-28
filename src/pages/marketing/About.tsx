@@ -6,7 +6,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import kareeHeadshot from "@/assets/karee-headshot.png";
 import kareeBranson from "@/assets/karee-branson.png";
-import kareePersonal from "@/assets/karee-personal.png";
+import kareePersonal from "@/assets/karee-full-bio.png";
 import kareeTable from "@/assets/karee-table.png";
 import kareeQuote from "@/assets/karee-quote.png";
 
