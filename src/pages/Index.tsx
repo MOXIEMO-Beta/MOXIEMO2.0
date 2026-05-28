@@ -228,7 +228,7 @@ export default function Index() {
             {[
               { img: personaCourseCreator, role: "The course creator", pain: "Charging $10K for a package and spending 3 hrs/week figuring out what to post." },
               { img: personaExecutiveCoach, role: "The executive coach", pain: "Strategic with everyone else's business. Can't find time to market your own." },
-              { img: personaFractionalCmo, role: "The fractional CMO", pain: "8 client strategies in your head. Your own hasn't been touched in months." },
+              { img: personaFractionalCmo, role: "The service or tech founder", pain: "You know exactly what you do. You just can't make it sound like it on the outside." },
               { img: personaConsultant, role: "The consultant", pain: "Fully booked, fully burnt out. Visibility got deprioritized." },
               { img: personaAgencyOwner, role: "The agency owner", pain: "You have the audience. You need the system that actually converts them." },
             ].map((p) => (
