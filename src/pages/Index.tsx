@@ -93,7 +93,7 @@ export default function Index() {
       <SiteHeader />
 
       {/* SECTION 1 - HERO */}
-      <section className="bg-background pt-28 md:pt-32 pb-16">
+      <section className="bg-background pt-10 pb-16">
         <div className="max-w-[1100px] mx-auto px-6">
           <div className="text-[11px] md:text-xs font-bold uppercase tracking-[0.22em] mb-6" style={{ color: "#ff6b6b" }}>
             For founders doing $250K+ who are tired of playing small
