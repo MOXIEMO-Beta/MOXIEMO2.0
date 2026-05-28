@@ -15,6 +15,11 @@ import strategyImg from "@/assets/home-strategy-foundation.png";
 import discoveryImg from "@/assets/home-discovery.png";
 import strategyThemesImg from "@/assets/home-strategy-themes.png";
 import executionImg from "@/assets/home-execution.png";
+import personaCourseCreator from "@/assets/persona-course-creator.jpg";
+import personaExecutiveCoach from "@/assets/persona-executive-coach.jpg";
+import personaFractionalCmo from "@/assets/persona-fractional-cmo.jpg";
+import personaConsultant from "@/assets/persona-consultant.jpg";
+import personaAgencyOwner from "@/assets/persona-agency-owner.jpg";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -89,25 +94,22 @@ export default function Index() {
 
       {/* SECTION 1 - HERO */}
       <section className="bg-background pt-28 md:pt-32 pb-16">
-        <div className="max-w-[1100px] mx-auto px-6 text-center">
-          <SectionLabel>Your AI CMO is ready</SectionLabel>
-          <h1 className="max-w-[1100px] mx-auto text-5xl md:text-7xl lg:text-[88px] font-bold leading-[1.05] tracking-[-0.035em] mb-8 text-foreground">
-            Your brand is not your go-to-market.{" "}
-            <span
-              style={{
-                background: "linear-gradient(90deg, #ff6b6b, #ff9a3c)",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              MOXIEMO builds both.
+        <div className="max-w-[1100px] mx-auto px-6">
+          <div className="text-[11px] md:text-xs font-bold uppercase tracking-[0.22em] mb-6" style={{ color: "#ff6b6b" }}>
+            For founders doing $250K+ who are tired of playing small
+          </div>
+          <h1 className="max-w-[1100px] text-5xl md:text-7xl lg:text-[88px] font-normal leading-[1.05] tracking-[-0.035em] mb-8 text-foreground">
+            You built a real business.
+            <br />
+            Why does your marketing{" "}
+            <span className="italic font-normal" style={{ color: "#ff6b6b" }}>
+              still feel like a mess?
             </span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-[600px] mx-auto mb-10 leading-relaxed">
-            MOXIEMO is your AI Chief Marketing Officer, built for founders at $250K+ who are ready to stop winging it. Build your marketing foundation, plan your content, and publish with strategy behind every post.
+          <p className="text-lg md:text-xl text-muted-foreground max-w-[640px] mb-10 leading-relaxed">
+            MOXIEMO is your AI CMO. One platform that learns your brand, builds your complete marketing strategy, and publishes your content. No more tool chaos. No more starting from scratch.
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mb-4">
+          <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center mb-4">
             <Button
               asChild
               size="lg"
@@ -123,7 +125,49 @@ export default function Index() {
         </div>
 
         <div className="w-full max-w-full md:max-w-[85%] mx-auto px-4 sm:px-6 mt-16 overflow-hidden">
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="#ff6b6b" aria-hidden="true">
+              <path d="M1 0.5 L9 5 L1 9.5 Z" />
+            </svg>
+            <span className="text-[12px] font-bold uppercase tracking-[0.08em]" style={{ color: "#ff6b6b" }}>
+              Watch how it works — 2 minutes
+            </span>
+          </div>
           <MoxiemoDemoShowcase />
+        </div>
+      </section>
+
+      {/* PAIN SECTION */}
+      <section className="py-[70px] bg-white">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="max-w-3xl mb-12">
+            <div className="text-xs font-bold uppercase tracking-[0.22em] mb-5" style={{ color: "#ff6b6b" }}>
+              Sound familiar?
+            </div>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.035em] leading-[1.05] text-foreground">
+              You didn't build a $250K+ business to spend your week{" "}
+              <span className="italic font-bold" style={{ color: "#ff6b6b" }}>like this.</span>
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { n: "01", t: "4+ tools, zero connection", d: "Your Notion, Canva, ChatGPT, and Buffer don't talk to each other. Neither does your marketing." },
+              { n: "02", t: "20+ hours a week on content", d: "Writing, second-guessing, posting, repeating. Still not sure if any of it is actually working." },
+              { n: "03", t: "A strategy that lives in your head", d: "You know what you want to say. Getting it out consistently — that's the part that keeps slipping." },
+            ].map((c) => (
+              <div
+                key={c.n}
+                className="p-7 rounded-2xl"
+                style={{ backgroundColor: "#f8f7f5", border: "1px solid #eeebe6" }}
+              >
+                <div className="text-[13px] font-bold uppercase tracking-[0.08em] mb-4" style={{ color: "#ff6b6b" }}>
+                  {c.n}
+                </div>
+                <h3 className="text-[17px] font-bold mb-3" style={{ color: "#1a1a1a" }}>{c.t}</h3>
+                <p className="text-sm italic leading-[1.65]" style={{ color: "#666" }}>{c.d}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -161,6 +205,57 @@ export default function Index() {
                 </div>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* WHO THIS IS FOR */}
+      <section className="py-[70px]" style={{ backgroundColor: "#faf9f7" }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="mb-12 max-w-3xl">
+            <div className="text-xs font-bold uppercase tracking-[0.22em] mb-5" style={{ color: "#ff6b6b" }}>
+              This was built for
+            </div>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.035em] leading-[1.05] mb-5 text-foreground">
+              Not for everyone.{" "}
+              <span className="italic font-bold" style={{ color: "#ff6b6b" }}>Specifically for you.</span>
+            </h2>
+            <p className="text-base leading-relaxed max-w-[500px]" style={{ color: "#666" }}>
+              MOXIEMO was designed for expertise-based founders already making real money — and ready to stop doing $15/hour marketing work.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+            {[
+              { img: personaCourseCreator, role: "The course creator", pain: "Charging $10K for a package and spending 3 hrs/week figuring out what to post." },
+              { img: personaExecutiveCoach, role: "The executive coach", pain: "Strategic with everyone else's business. Can't find time to market your own." },
+              { img: personaFractionalCmo, role: "The fractional CMO", pain: "8 client strategies in your head. Your own hasn't been touched in months." },
+              { img: personaConsultant, role: "The consultant", pain: "Fully booked, fully burnt out. Visibility got deprioritized." },
+              { img: personaAgencyOwner, role: "The agency owner", pain: "You have the audience. You need the system that actually converts them." },
+            ].map((p) => (
+              <div key={p.role} className="rounded-2xl overflow-hidden bg-white" style={{ border: "1px solid #eeebe6" }}>
+                <div className="aspect-[3/4] w-full overflow-hidden bg-muted">
+                  <img src={p.img} alt={p.role} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <div className="p-4">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.08em] mb-2" style={{ color: "#ff6b6b" }}>
+                    {p.role}
+                  </div>
+                  <p className="text-[12px] italic leading-[1.5]" style={{ color: "#666" }}>{p.pain}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-12">
+            <p className="text-base mb-5" style={{ color: "#444" }}>
+              If you're nodding at any of these — MOXIEMO was made for you.
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 px-7 rounded-full text-base font-semibold"
+            >
+              <a href="#founding-members">Claim Your Founding Member Spot <ArrowRight className="ml-2 h-4 w-4" /></a>
+            </Button>
           </div>
         </div>
       </section>
@@ -266,7 +361,7 @@ export default function Index() {
       </section>
 
       {/* SECTION 6 - FOUNDING MEMBER CTA */}
-      <section className="py-[100px] bg-foreground text-background">
+      <section id="founding-members" className="py-[100px] bg-foreground text-background scroll-mt-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="inline-block text-xs font-bold uppercase tracking-[0.22em] text-accent mb-6 px-4 py-2 rounded-full bg-accent/15">
             Founding members
