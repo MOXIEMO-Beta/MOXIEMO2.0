@@ -15,6 +15,11 @@ import strategyImg from "@/assets/home-strategy-foundation.png";
 import discoveryImg from "@/assets/home-discovery.png";
 import strategyThemesImg from "@/assets/home-strategy-themes.png";
 import executionImg from "@/assets/home-execution.png";
+import personaCourseCreator from "@/assets/persona-course-creator.jpg";
+import personaExecutiveCoach from "@/assets/persona-executive-coach.jpg";
+import personaFractionalCmo from "@/assets/persona-fractional-cmo.jpg";
+import personaConsultant from "@/assets/persona-consultant.jpg";
+import personaAgencyOwner from "@/assets/persona-agency-owner.jpg";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
