@@ -361,7 +361,7 @@ export default function Index() {
       </section>
 
       {/* SECTION 6 - FOUNDING MEMBER CTA */}
-      <section className="py-[100px] bg-foreground text-background">
+      <section id="founding-members" className="py-[100px] bg-foreground text-background scroll-mt-20">
         <div className="max-w-4xl mx-auto px-6 text-center">
           <div className="inline-block text-xs font-bold uppercase tracking-[0.22em] text-accent mb-6 px-4 py-2 rounded-full bg-accent/15">
             Founding members
