@@ -209,6 +209,57 @@ export default function Index() {
         </div>
       </section>
 
+      {/* WHO THIS IS FOR */}
+      <section className="py-[70px]" style={{ backgroundColor: "#faf9f7" }}>
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="mb-12 max-w-3xl">
+            <div className="text-xs font-bold uppercase tracking-[0.22em] mb-5" style={{ color: "#ff6b6b" }}>
+              This was built for
+            </div>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-[-0.035em] leading-[1.05] mb-5 text-foreground">
+              Not for everyone.{" "}
+              <span className="italic font-bold" style={{ color: "#ff6b6b" }}>Specifically for you.</span>
+            </h2>
+            <p className="text-base leading-relaxed max-w-[500px]" style={{ color: "#666" }}>
+              MOXIEMO was designed for expertise-based founders already making real money — and ready to stop doing $15/hour marketing work.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
+            {[
+              { img: personaCourseCreator, role: "The course creator", pain: "Charging $10K for a package and spending 3 hrs/week figuring out what to post." },
+              { img: personaExecutiveCoach, role: "The executive coach", pain: "Strategic with everyone else's business. Can't find time to market your own." },
+              { img: personaFractionalCmo, role: "The fractional CMO", pain: "8 client strategies in your head. Your own hasn't been touched in months." },
+              { img: personaConsultant, role: "The consultant", pain: "Fully booked, fully burnt out. Visibility got deprioritized." },
+              { img: personaAgencyOwner, role: "The agency owner", pain: "You have the audience. You need the system that actually converts them." },
+            ].map((p) => (
+              <div key={p.role} className="rounded-2xl overflow-hidden bg-white" style={{ border: "1px solid #eeebe6" }}>
+                <div className="aspect-[3/4] w-full overflow-hidden bg-muted">
+                  <img src={p.img} alt={p.role} className="w-full h-full object-cover" loading="lazy" />
+                </div>
+                <div className="p-4">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.08em] mb-2" style={{ color: "#ff6b6b" }}>
+                    {p.role}
+                  </div>
+                  <p className="text-[12px] italic leading-[1.5]" style={{ color: "#666" }}>{p.pain}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-12">
+            <p className="text-base mb-5" style={{ color: "#444" }}>
+              If you're nodding at any of these — MOXIEMO was made for you.
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 px-7 rounded-full text-base font-semibold"
+            >
+              <a href="#founding-members">Claim Your Founding Member Spot <ArrowRight className="ml-2 h-4 w-4" /></a>
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* SECTION 4 - PLATFORM FEATURE SHOWCASE */}
       <section className="py-[100px] bg-background">
         <div className="max-w-6xl mx-auto px-6">
