@@ -13,3 +13,5 @@ project_id = "mqhipuvkdsvapbhrrzjd"
     verify_jwt = false
   [functions.admin-waitlist]
     verify_jwt = true
+  [functions.validate-beta-code]
+    verify_jwt = false
