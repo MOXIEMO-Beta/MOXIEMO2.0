@@ -196,18 +196,20 @@ export default function Onboarding() {
     setCodeError(null);
     setCodeData(null);
     try {
-      const { data, error } = await supabase
-        .from("beta_codes")
-        .select("*")
-        .eq("code", code)
-        .eq("active", true)
-        .limit(1)
-        .maybeSingle();
+      const { data, error } = await supabase.functions.invoke("validate-beta-code", {
+        body: { code, action: "validate" },
+      });
       if (error) { setCodeError("Couldn't validate code. Please try again."); return; }
-      if (!data) { setCodeError("Invalid or expired code"); return; }
-      if ((data.uses_count ?? 0) >= (data.max_uses ?? 0)) { setCodeError("This code has reached its maximum uses"); return; }
-      if (data.expires_at && new Date(data.expires_at) < new Date()) { setCodeError("This code has expired"); return; }
-      setCodeData(data);
+      if (!data?.valid) {
+        const msg = data?.error === "max_uses_reached"
+          ? "This code has reached its maximum uses"
+          : data?.error === "expired"
+          ? "This code has expired"
+          : "Invalid or expired code";
+        setCodeError(msg);
+        return;
+      }
+      setCodeData({ code });
     } finally {
       setCodeChecking(false);
     }
@@ -218,11 +220,10 @@ export default function Onboarding() {
     setFinalizing(true);
     try {
       const code = betaCode.toUpperCase().trim();
-      // Bump beta code usage first (non-blocking failure ok)
-      await supabase
-        .from("beta_codes")
-        .update({ uses_count: (codeData.uses_count ?? 0) + 1 })
-        .eq("id", codeData.id);
+      // Consume the code server-side (non-blocking failure ok)
+      await supabase.functions.invoke("validate-beta-code", {
+        body: { code, action: "consume" },
+      });
 
       // Upsert profile (handles case where profile row doesn't yet exist)
       const { data: upserted, error: upsertError } = await supabase
