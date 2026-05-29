@@ -1,0 +1,1 @@
+ALTER TABLE public.discovery_sessions ADD COLUMN IF NOT EXISTS brand_data jsonb;
