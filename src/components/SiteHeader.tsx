@@ -1,8 +1,7 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { MoxieLogo } from "@/components/MoxieLogo";
-import { ArrowRight, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -50,14 +49,6 @@ export function SiteHeader() {
           >
             Sign in
           </Link>
-          <Button
-            asChild
-            className="bg-foreground hover:bg-foreground/90 text-background h-10 px-5 rounded-full font-semibold text-[15px]"
-          >
-            <Link to="/auth?mode=signup">
-              Get started <ArrowRight className="ml-1.5 h-4 w-4" />
-            </Link>
-          </Button>
           <button
             className="lg:hidden p-2 -mr-2 text-foreground"
             onClick={() => setOpen(!open)}
