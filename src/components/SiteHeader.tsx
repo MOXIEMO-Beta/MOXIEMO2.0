@@ -38,13 +38,12 @@ export function SiteHeader() {
               >
                 {item.label}
               </NavLink>
-            );
-          })}
-        </nav>
-
-        <div className="flex items-center gap-3">
           <Link
             to="/auth?mode=signin"
+            className="hidden sm:inline text-[15px] font-medium text-foreground/70 rounded-[50px] border-[1.5px] border-transparent px-[18px] py-2 transition-all duration-200 ease hover:border-[#ff6b6b] hover:text-[#ff6b6b]"
+          >
+            Sign in
+          </Link>
             className="hidden sm:inline text-[15px] font-medium text-foreground/70 rounded-[50px] transition-all duration-200 ease hover:border-[1.5px] hover:border-[#ff6b6b] hover:px-[18px] hover:py-2 hover:text-[#ff6b6b]"
           >
             Sign in
