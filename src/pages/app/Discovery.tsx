@@ -121,6 +121,7 @@ export default function Discovery() {
   const [prefillResult, setPrefillResult] = useState<PrefillResult | null>(null);
   const prefillByQRef = useRef<Record<number, string>>({});
   const lastPrefilledQRef = useRef<number | null>(null);
+  const brandDataRef = useRef<Record<string, any> | null>(null);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const userContextRef = useRef<UserContext | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -239,6 +240,17 @@ export default function Discovery() {
       if (q && ans) map[q] = ans;
     }
     prefillByQRef.current = map;
+    brandDataRef.current = result.brand_data ?? null;
+    // Persist brand_data to the session so it survives reloads and feeds synth.
+    if (sessionId && result.brand_data) {
+      supabase
+        .from("discovery_sessions")
+        .update({ brand_data: result.brand_data as any })
+        .eq("id", sessionId)
+        .then(({ error }) => {
+          if (error) console.warn("brand_data persist failed:", error.message);
+        });
+    }
     setPrefillResult(result);
     setUploadStage("summary");
   }
