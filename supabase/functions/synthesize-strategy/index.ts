@@ -103,7 +103,7 @@ function computeStrength(transcript: string, parsed: any) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge } = await req.json();
+    const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge, brandContext } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
@@ -171,6 +171,17 @@ Deno.serve(async (req) => {
       "Discovery transcript:\n\n" + transcript;
     if (revenueRange) userContent += `\n\nFounder's revenue stage: ${revenueRange}`;
     if (biggestChallenge) userContent += `\nBiggest marketing challenge: ${biggestChallenge}`;
+    if (brandContext && typeof brandContext === "object") {
+      const bc: any = brandContext;
+      const lines: string[] = [];
+      if (bc.mission_or_values) lines.push(`- Mission/values from their site: ${bc.mission_or_values}`);
+      if (bc.founder_background) lines.push(`- Founder background: ${bc.founder_background}`);
+      if (bc.pricing_signals) lines.push(`- Pricing signals on the site: ${bc.pricing_signals}`);
+      if (bc.social_proof) lines.push(`- Social proof on the site: ${bc.social_proof}`);
+      if (lines.length) {
+        userContent += `\n\nADDITIONAL BRAND CONTEXT FROM WEBSITE (weave in where relevant; the transcript is still source of truth):\n${lines.join("\n")}`;
+      }
+    }
 
     const saveStrategyParams = {
               type: "object",
