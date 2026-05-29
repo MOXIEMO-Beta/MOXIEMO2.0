@@ -196,6 +196,7 @@ export default function Discovery() {
       if (data) {
         setSessionId(data.id);
         setMessages((data.messages as Msg[]) || []);
+        if ((data as any).brand_data) brandDataRef.current = (data as any).brand_data;
         if (data.status === "completed") setCompleted(true);
         if (!data.messages || (data.messages as any[]).length === 0) {
           // New / empty session — show the upload gate before starting the conversation.
@@ -300,7 +301,17 @@ export default function Discovery() {
           "Authorization": `Bearer ${authToken}`,
           "apikey": supabaseKey,
         },
-        body: JSON.stringify({ messages: history, userContext: userContextRef.current ?? undefined }),
+        body: JSON.stringify({
+          messages: history,
+          userContext: userContextRef.current ?? undefined,
+          brandContext: brandDataRef.current
+            ? {
+                voice_tone: brandDataRef.current.voice_tone ?? null,
+                transformation_language: brandDataRef.current.transformation_language ?? null,
+                social_proof: brandDataRef.current.social_proof ?? null,
+              }
+            : undefined,
+        }),
       });
 
       if (!resp.ok) {
