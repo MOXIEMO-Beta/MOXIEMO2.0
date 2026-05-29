@@ -470,6 +470,14 @@ export default function Discovery() {
           transcript,
           revenueRange: optional.revenueRange,
           biggestChallenge: optional.biggestChallenge,
+          brandContext: brandDataRef.current
+            ? {
+                mission_or_values: brandDataRef.current.mission_or_values ?? null,
+                founder_background: brandDataRef.current.founder_background ?? null,
+                pricing_signals: brandDataRef.current.pricing_signals ?? null,
+                social_proof: brandDataRef.current.social_proof ?? null,
+              }
+            : undefined,
         }),
       });
 
