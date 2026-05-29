@@ -149,11 +149,28 @@ serve(async (req) => {
     const url: string | undefined = body.url;
 
     let sourceText = text;
-    if (!sourceText && url) {
-      sourceText = await fetchUrlText(url);
+    const isUrlFlow = !sourceText && !!url;
+    if (isUrlFlow) {
+      try {
+        sourceText = await scrapeSite(url!);
+      } catch (e) {
+        console.warn("scrapeSite failed:", String(e));
+        sourceText = "";
+      }
     }
     sourceText = (sourceText || "").slice(0, 40000).trim();
     if (!sourceText) {
+      // Silent fallback for URL flow per spec; explicit error for empty doc text.
+      if (isUrlFlow) {
+        return new Response(
+          JSON.stringify({
+            answers: {},
+            questions: QUESTIONS.map((q) => ({ id: q.id, label: q.label })),
+            brand_data: null,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
       return new Response(JSON.stringify({ error: "No content to analyze" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -171,7 +188,7 @@ serve(async (req) => {
 
     const userPrompt = `SOURCE MATERIAL:\n"""\n${sourceText}\n"""\n\nQUESTIONS:\n${questionsBlock}\n\nReturn STRICT JSON of shape:\n{ "answers": { "<question_id>": "<answer or empty string>", ... } }\nOnly include the ids listed above.`;
 
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const answersPromise = fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -186,6 +203,10 @@ serve(async (req) => {
         response_format: { type: "json_object" },
       }),
     });
+
+    // Brand extraction runs in parallel for URL flows only.
+    const brandPromise = isUrlFlow ? extractBrandData(sourceText) : Promise.resolve(null);
+    const [resp, brand_data] = await Promise.all([answersPromise, brandPromise]);
 
     if (!resp.ok) {
       const errText = await resp.text().catch(() => "");
@@ -219,6 +240,7 @@ serve(async (req) => {
       JSON.stringify({
         answers,
         questions: QUESTIONS.map((q) => ({ id: q.id, label: q.label })),
+        brand_data: brand_data ?? null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
