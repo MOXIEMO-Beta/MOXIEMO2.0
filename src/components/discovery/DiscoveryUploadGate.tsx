@@ -9,6 +9,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
 export type PrefillResult = {
   answers: Record<string, string>;
   questions: { id: string; label: string }[];
+  brand_data?: Record<string, any> | null;
 };
 
 async function extractText(file: File): Promise<string> {

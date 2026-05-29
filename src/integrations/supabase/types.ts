@@ -220,6 +220,7 @@ export type Database = {
       discovery_sessions: {
         Row: {
           answers: Json
+          brand_data: Json | null
           completed_at: string | null
           current_question: number
           current_section: number
@@ -232,6 +233,7 @@ export type Database = {
         }
         Insert: {
           answers?: Json
+          brand_data?: Json | null
           completed_at?: string | null
           current_question?: number
           current_section?: number
@@ -244,6 +246,7 @@ export type Database = {
         }
         Update: {
           answers?: Json
+          brand_data?: Json | null
           completed_at?: string | null
           current_question?: number
           current_section?: number

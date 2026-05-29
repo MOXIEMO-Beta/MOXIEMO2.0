@@ -121,6 +121,7 @@ export default function Discovery() {
   const [prefillResult, setPrefillResult] = useState<PrefillResult | null>(null);
   const prefillByQRef = useRef<Record<number, string>>({});
   const lastPrefilledQRef = useRef<number | null>(null);
+  const brandDataRef = useRef<Record<string, any> | null>(null);
   const [userContext, setUserContext] = useState<UserContext | null>(null);
   const userContextRef = useRef<UserContext | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -195,6 +196,7 @@ export default function Discovery() {
       if (data) {
         setSessionId(data.id);
         setMessages((data.messages as Msg[]) || []);
+        if ((data as any).brand_data) brandDataRef.current = (data as any).brand_data;
         if (data.status === "completed") setCompleted(true);
         if (!data.messages || (data.messages as any[]).length === 0) {
           // New / empty session — show the upload gate before starting the conversation.
@@ -239,6 +241,17 @@ export default function Discovery() {
       if (q && ans) map[q] = ans;
     }
     prefillByQRef.current = map;
+    brandDataRef.current = result.brand_data ?? null;
+    // Persist brand_data to the session so it survives reloads and feeds synth.
+    if (sessionId && result.brand_data) {
+      supabase
+        .from("discovery_sessions")
+        .update({ brand_data: result.brand_data as any })
+        .eq("id", sessionId)
+        .then(({ error }) => {
+          if (error) console.warn("brand_data persist failed:", error.message);
+        });
+    }
     setPrefillResult(result);
     setUploadStage("summary");
   }
@@ -288,7 +301,17 @@ export default function Discovery() {
           "Authorization": `Bearer ${authToken}`,
           "apikey": supabaseKey,
         },
-        body: JSON.stringify({ messages: history, userContext: userContextRef.current ?? undefined }),
+        body: JSON.stringify({
+          messages: history,
+          userContext: userContextRef.current ?? undefined,
+          brandContext: brandDataRef.current
+            ? {
+                voice_tone: brandDataRef.current.voice_tone ?? null,
+                transformation_language: brandDataRef.current.transformation_language ?? null,
+                social_proof: brandDataRef.current.social_proof ?? null,
+              }
+            : undefined,
+        }),
       });
 
       if (!resp.ok) {
@@ -447,6 +470,14 @@ export default function Discovery() {
           transcript,
           revenueRange: optional.revenueRange,
           biggestChallenge: optional.biggestChallenge,
+          brandContext: brandDataRef.current
+            ? {
+                mission_or_values: brandDataRef.current.mission_or_values ?? null,
+                founder_background: brandDataRef.current.founder_background ?? null,
+                pricing_signals: brandDataRef.current.pricing_signals ?? null,
+                social_proof: brandDataRef.current.social_proof ?? null,
+              }
+            : undefined,
         }),
       });
 
