@@ -38,19 +38,105 @@ function htmlToText(html: string): string {
     .trim();
 }
 
-async function fetchUrlText(url: string): Promise<string> {
+async function fetchUrlText(url: string, timeoutMs = 8000): Promise<string> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const r = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; MoxiemoBot/1.0)" },
+      redirect: "follow",
       signal: controller.signal,
     });
     if (!r.ok) throw new Error(`Fetch ${url} → ${r.status}`);
+    // Only follow on-domain redirects (avoid social-login walls etc.)
+    const finalUrl = new URL(r.url);
+    const origUrl = new URL(url);
+    if (finalUrl.host !== origUrl.host) throw new Error("Off-domain redirect");
     const html = await r.text();
-    return htmlToText(html).slice(0, 40000);
+    return htmlToText(html).slice(0, 20000);
   } finally {
     clearTimeout(timer);
+  }
+}
+
+const SUBPATHS = [
+  "/about", "/about-us", "/work-with-me", "/services",
+  "/coaching", "/consulting", "/pricing", "/faq", "/start-here",
+];
+
+async function scrapeSite(rootUrl: string): Promise<string> {
+  const origin = new URL(rootUrl).origin;
+  const home = await fetchUrlText(rootUrl).catch(() => "");
+  // Try subpaths in parallel, keep first 3 successes.
+  const results = await Promise.allSettled(
+    SUBPATHS.map((p) => fetchUrlText(`${origin}${p}`).then((t) => ({ p, t }))),
+  );
+  const extras: { p: string; t: string }[] = [];
+  for (const r of results) {
+    if (r.status === "fulfilled" && r.value.t && r.value.t.length > 100) {
+      extras.push(r.value);
+      if (extras.length >= 3) break;
+    }
+  }
+  const parts: string[] = [];
+  if (home) parts.push(`### PAGE: ${rootUrl}\n${home}`);
+  for (const e of extras) parts.push(`### PAGE: ${origin}${e.p}\n${e.t}`);
+  return parts.join("\n\n").slice(0, 40000);
+}
+
+const BRAND_SYSTEM = `You are a brand intelligence extractor. Given raw website content, extract the following structured data. Return only valid JSON matching the schema below. If a field cannot be confidently determined, return null for that field — do not guess.
+
+{
+  "business_name": string | null,
+  "tagline": string | null,
+  "what_they_do": string | null,
+  "who_they_serve": string | null,
+  "services": string[] | null,
+  "transformation_language": string | null,
+  "voice_tone": string | null,
+  "social_proof": string | null,
+  "founder_name": string | null,
+  "founder_background": string | null,
+  "mission_or_values": string | null,
+  "pricing_signals": string | null
+}`;
+
+async function extractBrandData(sourceText: string): Promise<any | null> {
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return null;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 25000);
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 1500,
+        system: BRAND_SYSTEM,
+        messages: [{
+          role: "user",
+          content: `WEBSITE CONTENT:\n"""\n${sourceText}\n"""\n\nReturn ONLY the JSON object — no prose, no markdown fences.`,
+        }],
+      }),
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
+    if (!resp.ok) {
+      console.warn("brand extraction failed:", resp.status);
+      return null;
+    }
+    const data = await resp.json();
+    const text: string = data?.content?.[0]?.text ?? "";
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) return null;
+    return JSON.parse(match[0]);
+  } catch (e) {
+    console.warn("brand extraction error:", String(e));
+    return null;
   }
 }
 
