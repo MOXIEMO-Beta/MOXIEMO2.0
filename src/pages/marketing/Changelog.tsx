@@ -17,6 +17,14 @@ const DISCORD_URL = "https://discord.gg/wa9JFx7nha";
 
 const entries: Entry[] = [
   {
+    date: "JUNE 3, 2026",
+    tag: "Bug Fix",
+    headline: "Founding Member Signup: Error Message Fix",
+    body:
+      "We launched private beta publicly today. On the same day, we caught a bug in the founding member signup form.\n\nUsers who had submitted before and came back to sign up again were seeing a generic \"Something went wrong\" error. That was wrong. The form was working fine for new signups the whole time. All data was being captured correctly. The problem was that one specific backend response was not being read correctly on the frontend, so it fell back to a generic error instead of telling you what was actually happening.\n\nFixed the same day. The form now correctly tells returning visitors they are already on the list.\n\nIf you saw that error and thought your signup did not go through, you are fine. We have your details. You will hear from us about your 1:1 kickoff call.\n\nSorry it happened on launch day. We caught it fast.",
+    closing: "— The MOXIEMO Team",
+  },
+  {
     date: "MAY 6, 2026",
     tag: "Brand Update",
     headline: "We're now MOXIEMO. Here's why we made the move.",
