@@ -371,6 +371,54 @@ function OverviewTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
+  /* LinkedIn auth signal handling: postMessage (popup) + localStorage (redirect) */
+  useEffect(() => {
+    if (!userId) return;
+
+    const handleSuccess = () => {
+      setConnectingPlatform(null);
+      try {
+        localStorage.removeItem("linkedin_auth_success");
+      } catch {
+        /* ignore */
+      }
+      void loadAll();
+    };
+
+    // Redirect flow: signal stored before navigation
+    try {
+      if (localStorage.getItem("linkedin_auth_success") === "true") {
+        handleSuccess();
+      }
+    } catch {
+      /* ignore */
+    }
+
+    // Popup flow: listen for postMessage from the callback window
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data?.type === "LINKEDIN_AUTH_SUCCESS") {
+        handleSuccess();
+      } else if (event.data?.type === "LINKEDIN_AUTH_ERROR") {
+        setConnectingPlatform(null);
+        toast.error("LinkedIn connection failed. Please try again.");
+      }
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
+
+  /* Spinner timeout fallback (10s) */
+  useEffect(() => {
+    if (!connectingPlatform) return;
+    const t = window.setTimeout(() => {
+      setConnectingPlatform(null);
+      toast.message("Taking longer than expected. Please refresh to check your connection status.");
+    }, 10_000);
+    return () => window.clearTimeout(t);
+  }, [connectingPlatform]);
+
   /* Connect / disconnect */
   const handleConnect = async (platform: string) => {
     if (!userId) return;
