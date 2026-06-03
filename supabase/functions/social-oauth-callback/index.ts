@@ -20,20 +20,41 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const code = url.searchParams.get("code");
-    const stateRaw = url.searchParams.get("state");
-    const error = url.searchParams.get("error");
+    const isPost = req.method === "POST";
+    let code: string | null = null;
+    let stateRaw: string | null = null;
+    let error: string | null = null;
+
+    if (isPost) {
+      const body = await req.json().catch(() => ({}));
+      code = body.code ?? null;
+      stateRaw = body.state ?? null;
+      error = body.error ?? null;
+    } else {
+      code = url.searchParams.get("code");
+      stateRaw = url.searchParams.get("state");
+      error = url.searchParams.get("error");
+    }
+
+    const jsonResp = (status: number, payload: Record<string, unknown>) =>
+      new Response(JSON.stringify(payload), {
+        status,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
 
     if (error) {
+      if (isPost) return jsonResp(400, { ok: false, error });
       return Response.redirect(appRedirect(`/app/social?error=${encodeURIComponent(error)}`), 302);
     }
     if (!code || !stateRaw) {
+      if (isPost) return jsonResp(400, { ok: false, error: "missing_code_or_state" });
       return new Response("Missing code or state", { status: 400, headers: corsHeaders });
     }
 
     const state = JSON.parse(atob(stateRaw));
     const { platform, user_id } = state ?? {};
     if (!platform || !user_id) {
+      if (isPost) return jsonResp(400, { ok: false, error: "invalid_state" });
       return new Response("Invalid state", { status: 400, headers: corsHeaders });
     }
 
@@ -53,6 +74,7 @@ Deno.serve(async (req) => {
     if (!tokenRes.ok) {
       const txt = await tokenRes.text();
       console.error("LinkedIn token exchange failed", txt);
+      if (isPost) return jsonResp(400, { ok: false, error: "token_exchange_failed" });
       return Response.redirect(appRedirect(`/app/social?error=token_exchange_failed`), 302);
     }
     const token = await tokenRes.json();
@@ -87,12 +109,20 @@ Deno.serve(async (req) => {
 
     if (upsertErr) {
       console.error("upsert error", upsertErr);
+      if (isPost) return jsonResp(500, { ok: false, error: "save_failed" });
       return Response.redirect(appRedirect(`/app/social?error=save_failed`), 302);
     }
 
+    if (isPost) return jsonResp(200, { ok: true, platform });
     return Response.redirect(appRedirect(`/app/social?connected=${platform}`), 302);
   } catch (err) {
     console.error("social-oauth-callback error", err);
+    if (req.method === "POST") {
+      return new Response(JSON.stringify({ ok: false, error: "callback_failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     return Response.redirect(appRedirect(`/app/social?error=callback_failed`), 302);
   }
 });
