@@ -9,6 +9,7 @@ import Auth from "./pages/Auth.tsx";
 import ForgotPassword from "./pages/auth/ForgotPassword.tsx";
 import ResetPassword from "./pages/auth/ResetPassword.tsx";
 import AuthCallback from "./pages/auth/Callback.tsx";
+import LinkedInCallback from "./pages/auth/LinkedInCallback.tsx";
 import Platform from "./pages/marketing/Platform.tsx";
 import Solutions from "./pages/marketing/Solutions.tsx";
 import WhyMoxie from "./pages/marketing/WhyMoxie.tsx";
@@ -68,6 +69,7 @@ const App = () => (
             <Route path="/auth/forgot-password" element={<ForgotPassword />} />
             <Route path="/auth/reset-password" element={<ResetPassword />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/auth/linkedin/callback" element={<LinkedInCallback />} />
             <Route path="/platform" element={<Platform />} />
             <Route path="/solutions" element={<Solutions />} />
             <Route path="/why-moxie" element={<WhyMoxie />} />
