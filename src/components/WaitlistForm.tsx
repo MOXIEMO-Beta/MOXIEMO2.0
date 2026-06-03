@@ -50,18 +50,26 @@ export function WaitlistForm() {
           referral_source: referralSource || null,
         },
       });
+      // Try to read JSON body from the error response (supabase-js wraps non-2xx as FunctionsHttpError)
+      let bodyError: string | undefined = (data as any)?.error;
       if (invokeError) {
-        const msg = (invokeError as any)?.context?.error || (invokeError as any)?.message || "";
-        const body = (data as any)?.error || msg;
-        if (typeof body === "string" && body.includes("already_registered")) {
-          setError("already_registered");
-        } else {
-          setError("generic");
-        }
+        try {
+          const ctx: any = (invokeError as any).context;
+          if (ctx && typeof ctx.json === "function") {
+            const parsed = await ctx.json();
+            bodyError = parsed?.error ?? bodyError;
+          } else if (ctx && typeof ctx.text === "function") {
+            const txt = await ctx.text();
+            try { bodyError = JSON.parse(txt)?.error ?? bodyError; } catch { bodyError = txt || bodyError; }
+          }
+        } catch { /* ignore parse failures */ }
+      }
+      if (typeof bodyError === "string" && bodyError.includes("already_registered")) {
+        setError("already_registered");
         return;
       }
-      if ((data as any)?.error === "already_registered") {
-        setError("already_registered");
+      if (invokeError) {
+        setError("generic");
         return;
       }
       setSuccess(true);
