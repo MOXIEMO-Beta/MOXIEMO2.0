@@ -42,7 +42,8 @@ function buildPrompt(opts: {
   const isRich = richFormats.has(opts.platform);
   const isShortScript = opts.platform === "Short-Form Video Script";
   const isLongScript = opts.platform === "Long-Form Video Script";
-  const isScript = isShortScript || isLongScript;
+  const isPodcast = opts.platform === "Podcast Script";
+  const isScript = isShortScript || isLongScript || isPodcast;
   const platformRules = `PLATFORM-SPECIFIC RULES:
 - LinkedIn: 1,200–1,800 characters, sentence case, no em dashes, punchy hook under 60 characters, end with a question, no links in the body
 - Instagram: conversational, 150–300 characters for the caption, 5–10 relevant hashtags at the end
@@ -89,6 +90,25 @@ Generate a long-form YouTube video script. The script should:
 Format output as a full script with section headers. No preamble.`;
     if (opts.contentType === "Interview Style (with suggested questions)") {
       scriptInstructions += `\n\nAdditionally: structure as an interview with 5-8 suggested questions, each followed by talking points the founder can riff from.`;
+    }
+  } else if (isPodcast) {
+    const ct = opts.contentType;
+    if (ct === "Full Episode Script") {
+      scriptInstructions = `PODCAST FULL EPISODE SCRIPT INSTRUCTIONS:
+Generate a full podcast episode script. Structure: cold open (60 seconds, hook with a story or bold statement), intro (30 seconds, who the host is and what the show covers), main content (3-4 segments with natural transitions, each segment 3-5 minutes of speaking content), and outro (60 seconds, summary, CTA, next episode tease). Write in natural spoken language. No bullet points. Sounds like a real conversation, not a formal presentation. Target: 2000-2800 words (approximately 15-20 minutes). Include [PAUSE] or [EMPHASIS] notes sparingly.
+Format the output as the spoken script only. No preamble.`;
+    } else if (ct === "Episode Outline") {
+      scriptInstructions = `PODCAST EPISODE OUTLINE INSTRUCTIONS:
+Generate a structured episode outline. Include: episode title, one-sentence episode hook, 3-5 main talking points each with 2-3 sub-points, suggested guest question if interview format, and a closing CTA. Keep it scannable — this is a planning document, not a script. Target: 400-600 words.`;
+    } else if (ct === "Interview Questions / Guest Prep") {
+      scriptInstructions = `PODCAST INTERVIEW QUESTIONS / GUEST PREP INSTRUCTIONS:
+Generate 10-15 interview questions for a podcast guest, anchored to the host's content pillar and audience. Include: 3 warm-up questions, 6-8 deep-dive questions on the pillar topic, 2 lightning round questions, and 1 closing question. Each question should feel natural in conversation. Add a brief note on what to listen for in each answer.`;
+    } else if (ct === "Episode Intro and Outro") {
+      scriptInstructions = `PODCAST INTRO AND OUTRO INSTRUCTIONS:
+Generate two short scripts: a 45-60 second episode intro and a 30-45 second outro. The intro should hook the listener immediately with the episode's core tension or promise. The outro should summarize the key takeaway, include a specific CTA (subscribe, leave a review, visit the website), and tease the next episode. Both should sound like the host, not a radio announcer. Clearly label the two sections as [INTRO] and [OUTRO].`;
+    } else if (ct === "Show Notes") {
+      scriptInstructions = `PODCAST SHOW NOTES INSTRUCTIONS:
+Generate podcast show notes for publishing. Include: episode title, one-paragraph episode summary (150 words), 5-7 key takeaways as bullet points, 3 notable quotes formatted for social sharing, resources or links mentioned section (leave as placeholders), and a guest bio section if applicable. Optimized for SEO and podcast platform descriptions.`;
     }
   }
 
@@ -237,7 +257,7 @@ Deno.serve(async (req) => {
 
     const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot });
 
-    const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)", "Long-Form Video Script"].includes(platform);
+    const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)", "Long-Form Video Script", "Podcast Script"].includes(platform);
     const res = await callClaude(SYSTEM, prompt, longForm ? 4000 : 1500);
 
     if (!res.ok) {
