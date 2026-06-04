@@ -52,11 +52,13 @@ Deno.serve(async (req) => {
     }
 
     const state = JSON.parse(atob(stateRaw));
-    const { platform, user_id } = state ?? {};
+    const { platform, user_id, redirect_uri: stateRedirectUri } = state ?? {};
     if (!platform || !user_id) {
       if (isPost) return jsonResp(400, { ok: false, error: "invalid_state" });
       return new Response("Invalid state", { status: 400, headers: corsHeaders });
     }
+
+    const redirectUri = (stateRedirectUri ?? Deno.env.get("LINKEDIN_REDIRECT_URI") ?? "").trim();
 
     // Exchange code for token
     const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
@@ -65,7 +67,7 @@ Deno.serve(async (req) => {
       body: new URLSearchParams({
         grant_type: "authorization_code",
         code,
-        redirect_uri: Deno.env.get("LINKEDIN_REDIRECT_URI")!,
+        redirect_uri: redirectUri,
         client_id: Deno.env.get("LINKEDIN_CLIENT_ID")!,
         client_secret: Deno.env.get("LINKEDIN_CLIENT_SECRET")!,
       }),
