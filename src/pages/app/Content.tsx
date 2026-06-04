@@ -629,12 +629,24 @@ export default function Content() {
                   </div>
                 ) : (
                   <div className="p-4">
+                    {isScript && (
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-accent font-medium mb-2">
+                        Video Script
+                      </div>
+                    )}
                     <Textarea
                       value={generated}
                       onChange={(e) => setGenerated(e.target.value)}
                       rows={14}
-                      className="resize-y min-h-[280px] text-sm leading-relaxed border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent"
+                      className={`resize-y min-h-[280px] text-sm leading-relaxed border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent ${
+                        isScript ? "font-mono whitespace-pre-wrap" : ""
+                      }`}
                     />
+                    {isScript && (
+                      <div className="mt-2 text-[11px] text-muted-foreground">
+                        ~{wordCount.toLocaleString()} words · approx. {speakingMinutes} {speakingMinutes === 1 ? "minute" : "minutes"} at speaking pace
+                      </div>
+                    )}
                     {limit !== null && charCount >= limit && (
                       <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
                         <div className="flex-1 h-px bg-border" />
