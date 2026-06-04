@@ -841,6 +841,48 @@ function formatWeekRange(weekOf?: string): string {
   return `${fmtShort(start)} to ${fmtShort(end)}`;
 }
 
+const PLAN_LOADING_MESSAGES = [
+  "Building your week-by-week content plan...",
+  "Mapping your strategy to every channel...",
+  "Writing briefs rooted in your positioning...",
+  "Connecting your goals to your content calendar...",
+  "Almost there — this one is worth the wait.",
+];
+
+function PlanLoadingState() {
+  const [idx, setIdx] = useState(0);
+  const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible(false);
+      setTimeout(() => {
+        setIdx((i) => (i + 1) % PLAN_LOADING_MESSAGES.length);
+        setVisible(true);
+      }, 400);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 animate-fade-in">
+      <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      <p
+        className="mt-6 italic text-center transition-opacity duration-400"
+        style={{
+          fontSize: 16,
+          color: "#888",
+          maxWidth: 340,
+          opacity: visible ? 1 : 0,
+        }}
+      >
+        {PLAN_LOADING_MESSAGES[idx]}
+      </p>
+      <p className="mt-4 text-center text-muted-foreground" style={{ fontSize: 12 }}>
+        This usually takes 30-60 seconds. Grab a coffee. ☕
+      </p>
+    </div>
+  );
+}
+
 function WeekCard({ week }: { week: any }) {
   if (!week) return null;
   const range = formatWeekRange(week.weekOf);
