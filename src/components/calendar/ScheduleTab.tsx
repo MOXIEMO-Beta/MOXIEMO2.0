@@ -574,6 +574,119 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Campaign day drawer */}
+      <Sheet open={!!dayDrawer} onOpenChange={(o) => !o && setDayDrawer(null)}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto p-0">
+          {dayDrawer && (
+            <DayDrawerContent
+              date={dayDrawer.date}
+              items={dayDrawer.items}
+              campaigns={campaigns ?? []}
+              onClose={() => setDayDrawer(null)}
+              onCreate={(channel, brief) => {
+                const params = new URLSearchParams();
+                if (channel) params.set("platform", channel);
+                if (brief) params.set("prompt", brief);
+                setDayDrawer(null);
+                navigate(`/app/content?${params.toString()}`);
+              }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}
+
+function DayDrawerContent({
+  date, items, campaigns, onClose, onCreate,
+}: {
+  date: Date;
+  items: any[];
+  campaigns: any[];
+  onClose: () => void;
+  onCreate: (channel: string, brief: string) => void;
+}) {
+  // Group by campaign
+  const groups = new Map<string, { campaign: any; items: any[] }>();
+  items.forEach((it) => {
+    const c = campaigns.find((x: any) => x.id === it.campaign_id);
+    const key = it.campaign_id;
+    if (!groups.has(key)) groups.set(key, { campaign: c, items: [] });
+    groups.get(key)!.items.push(it);
+  });
+
+  const dateLabel = date.toLocaleDateString("en-US", {
+    weekday: "long", month: "long", day: "numeric",
+  });
+
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-start justify-between p-5 border-b border-border">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Campaign day</div>
+          <div className="font-display text-lg">{dateLabel}</div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-muted-foreground hover:text-foreground p-1"
+          aria-label="Close"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+      <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        {Array.from(groups.values()).map(({ campaign, items: group }) => {
+          const color = campaign?.color || DEFAULT_CAMPAIGN_COLOR;
+          return (
+            <div
+              key={campaign?.id ?? "unknown"}
+              className="border-l-[3px] pl-3"
+              style={{ borderLeftColor: color }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                <div className="font-display text-base">{campaign?.name ?? "Campaign"}</div>
+              </div>
+              <div className="space-y-3">
+                {group.map((it: any) => {
+                  const badge = EXEC_STATUS_BADGE[it.status] ?? EXEC_STATUS_BADGE.not_started;
+                  return (
+                    <div key={it.id} className="rounded-lg border border-border p-3 bg-card">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <PlatformIcon channel={it.channel} className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm font-medium capitalize">{it.channel}</span>
+                        </div>
+                        <span className={cn("inline-flex items-center text-[10px] px-2 py-0.5 rounded-full border", badge.cls)}>
+                          {badge.label}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mb-1">
+                        Week {it.week_number}{it.week_theme ? ` — ${it.week_theme}` : ""}
+                      </div>
+                      {it.content_brief && (
+                        <div className="text-sm text-foreground/90 whitespace-pre-wrap mb-3">
+                          {it.content_brief}
+                        </div>
+                      )}
+                      <Button
+                        size="sm"
+                        className="bg-accent text-accent-foreground hover:bg-accent/90"
+                        onClick={() => onCreate(it.channel, it.content_brief ?? "")}
+                      >
+                        <Sparkles className="w-3 h-3" /> Create content
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
