@@ -13,15 +13,18 @@ Deno.serve(async (req) => {
   try {
     let platform: string | undefined;
     let user_id: string | undefined;
+    let redirect_uri_in: string | undefined;
 
     if (req.method === "GET") {
       const u = new URL(req.url);
       platform = u.searchParams.get("platform") ?? undefined;
       user_id = u.searchParams.get("user_id") ?? undefined;
+      redirect_uri_in = u.searchParams.get("redirect_uri") ?? undefined;
     } else {
       const body = await req.json().catch(() => ({}));
       platform = body.platform;
       user_id = body.user_id;
+      redirect_uri_in = body.redirect_uri;
     }
 
     if (!platform || !user_id) {
@@ -39,7 +42,7 @@ Deno.serve(async (req) => {
     }
 
     const clientId = Deno.env.get("LINKEDIN_CLIENT_ID");
-    const redirectUri = Deno.env.get("LINKEDIN_REDIRECT_URI")?.trim();
+    const redirectUri = (redirect_uri_in ?? Deno.env.get("LINKEDIN_REDIRECT_URI") ?? "").trim();
 
     if (!clientId || !redirectUri) {
       return new Response(
@@ -48,7 +51,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const state = btoa(JSON.stringify({ platform, user_id }));
+    const state = btoa(JSON.stringify({ platform, user_id, redirect_uri: redirectUri }));
     const scope = "openid profile email w_member_social";
     const url =
       `https://www.linkedin.com/oauth/v2/authorization` +
