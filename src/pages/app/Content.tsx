@@ -485,15 +485,31 @@ export default function Content() {
       </div>
 
       <Tabs defaultValue="generate" className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="generate">Generate</TabsTrigger>
-          <TabsTrigger value="queue">
+        <TabsList className="bg-foreground h-auto w-fit mb-6 flex flex-wrap justify-start gap-1 rounded-[12px] p-[6px]">
+          <TabsTrigger
+            value="generate"
+            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
+          >
+            Generate
+          </TabsTrigger>
+          <TabsTrigger
+            value="queue"
+            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
+          >
             Queue {queued.length > 0 && <span className="ml-2 text-xs text-muted-foreground">({queued.length})</span>}
           </TabsTrigger>
-          <TabsTrigger value="drafts">
+          <TabsTrigger
+            value="drafts"
+            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
+          >
             Drafts {drafts.length > 0 && <span className="ml-2 text-xs text-muted-foreground">({drafts.length})</span>}
           </TabsTrigger>
-          <TabsTrigger value="repurpose">Repurpose</TabsTrigger>
+          <TabsTrigger
+            value="repurpose"
+            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
+          >
+            Repurpose
+          </TabsTrigger>
         </TabsList>
 
         {/* GENERATE */}
