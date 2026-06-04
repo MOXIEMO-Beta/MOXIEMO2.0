@@ -180,6 +180,8 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   const [planLoading, setPlanLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [color, setColor] = useState<string>("#F97066");
+  const [goalSuggestions, setGoalSuggestions] = useState<string[]>([]);
+  const [prechecked, setPrechecked] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!open) return;
@@ -191,15 +193,71 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     setEndDate(seed?.end_date ?? "");
     setGoals("");
     setColor(seed?.color ?? "#F97066");
-    if (seed?.channels) {
-      const c: Record<string, boolean> = { linkedin: false, email: false, instagram: false, facebook: false };
-      seed.channels.forEach((ch: string) => { c[ch] = true; });
-      setChannels(c);
+    // Pre-check channels from strategy (primary + active)
+    const stratChannels = new Set<string>();
+    const allChannels = ["linkedin", "email", "instagram", "facebook"];
+    const pc = (strategy?.primary_channel || "").toString().toLowerCase();
+    allChannels.forEach((ch) => { if (pc.includes(ch)) stratChannels.add(ch); });
+    const efChannels = (strategy?.enhanced_foundation as any)?.channels;
+    if (Array.isArray(efChannels)) {
+      efChannels.forEach((c: any) => {
+        const name = (typeof c === "string" ? c : c?.name ?? c?.channel ?? "").toString().toLowerCase();
+        allChannels.forEach((ch) => { if (name.includes(ch)) stratChannels.add(ch); });
+      });
     }
+    if (seed?.channels) seed.channels.forEach((ch: string) => stratChannels.add(ch));
+    const next: Record<string, boolean> = { linkedin: false, email: false, instagram: false, facebook: false };
+    if (stratChannels.size > 0) {
+      stratChannels.forEach((ch) => { next[ch] = true; });
+    } else {
+      next.linkedin = true; next.email = true;
+    }
+    setChannels(next);
+    setPrechecked(stratChannels);
     setPlan([]);
-  }, [open, seed]);
+
+    // Fetch goal suggestions silently
+    (async () => {
+      try {
+        const suggestions: string[] = [];
+        if (strategy?.business_goal) suggestions.push(String(strategy.business_goal));
+        if (strategy?.success_definition) suggestions.push(String(strategy.success_definition));
+        if (user?.id) {
+          const { data } = await supabase
+            .from("goal_entries")
+            .select("notes")
+            .eq("user_id", user.id)
+            .not("notes", "is", null)
+            .order("week_of", { ascending: false })
+            .limit(5);
+          (data ?? []).forEach((r: any) => {
+            const n = (r.notes ?? "").toString().trim();
+            if (n) suggestions.push(n);
+          });
+        }
+        const unique = Array.from(new Set(suggestions.map((s) => s.trim()).filter(Boolean))).slice(0, 3);
+        setGoalSuggestions(unique);
+      } catch {
+        setGoalSuggestions([]);
+      }
+    })();
+  }, [open, seed, strategy, user]);
 
   const themes = asArray<any>(strategy?.content_themes).map((t: any) => typeof t === "string" ? t : (t?.theme ?? t?.title ?? t?.name)).filter(Boolean);
+  const pillarSuggestions: string[] = useMemo(() => {
+    const raw = asArray<any>(strategy?.content_pillars);
+    return raw
+      .map((p: any) => (typeof p === "string" ? p : (p?.name ?? p?.title ?? p?.pillar ?? "")))
+      .map((s: string) => s?.toString().trim())
+      .filter(Boolean)
+      .slice(0, 5);
+  }, [strategy]);
+  const suggestedName = useMemo(() => {
+    if (!theme || !goals) return "";
+    const d = new Date();
+    const mo = d.toLocaleString("en-US", { month: "long" });
+    return `${theme} Campaign — ${mo} ${d.getFullYear()}`;
+  }, [theme, goals]);
   const weeks = useMemo(() => {
     if (!startDate || !endDate) return 0;
     return Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (7 * 86400000)));
@@ -273,7 +331,11 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
             <>
               <div>
                 <Label>Campaign name</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder='e.g. "Q2 Leadership Framework"' />
+                <Input
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder={suggestedName || 'e.g. "Q2 Leadership Framework"'}
+                />
               </div>
               <div>
                 <Label>Campaign type</Label>
