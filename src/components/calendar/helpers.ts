@@ -142,3 +142,65 @@ export function activeCampaignForDate(campaigns: any[], d: Date) {
 }
 
 export const CAMPAIGN_BANNER_CLASS = "bg-accent/15 text-accent border border-accent/30";
+
+// Default day-of-week distribution (offsets from Monday: Mon=0..Sun=6)
+// Spreads weekly post counts across weekdays. 7+ uses all 7 days.
+export function distributionForCount(n: number): number[] {
+  if (n <= 0) return [];
+  if (n === 1) return [2];           // Wed
+  if (n === 2) return [1, 3];        // Tue, Thu
+  if (n === 3) return [0, 2, 4];     // Mon, Wed, Fri
+  if (n === 4) return [0, 1, 3, 4];  // Mon, Tue, Thu, Fri
+  if (n === 5) return [0, 1, 2, 3, 4]; // Mon–Fri
+  if (n === 6) return [0, 1, 2, 3, 4, 5]; // Mon–Sat
+  return [0, 1, 2, 3, 4, 5, 6]; // Daily
+}
+
+/**
+ * Generate per-day execution items for a campaign.
+ * Returns one record per channel per scheduled day.
+ */
+export function generateExecutionItems(opts: {
+  start_date: string | null;
+  end_date: string | null;
+  channels: string[];
+  targets: Record<string, number>;
+  plan?: any[];
+}): Array<{
+  date: string;
+  channel: string;
+  week_number: number;
+  week_theme: string | null;
+  content_brief: string | null;
+}> {
+  const { start_date, end_date, channels, targets, plan } = opts;
+  if (!start_date || !end_date) return [];
+  const start = startOfWeek(new Date(start_date));
+  const end = new Date(end_date);
+  const startBound = new Date(start_date);
+  const items: any[] = [];
+  let cursor = start;
+  let weekIdx = 0;
+  while (cursor <= end) {
+    const weekPlan = (plan ?? [])[weekIdx] ?? {};
+    const weekTheme = weekPlan?.theme ?? null;
+    channels.forEach((ch) => {
+      const n = Math.max(0, Math.round(targets?.[ch] ?? 0));
+      const offsets = distributionForCount(n);
+      offsets.forEach((off) => {
+        const d = addDays(cursor, off);
+        if (d < startBound || d > end) return;
+        items.push({
+          date: ymd(d),
+          channel: ch,
+          week_number: weekIdx + 1,
+          week_theme: weekTheme,
+          content_brief: weekPlan?.[ch] ?? null,
+        });
+      });
+    });
+    cursor = addDays(cursor, 7);
+    weekIdx++;
+  }
+  return items;
+}

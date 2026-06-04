@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { aiErrorMessage } from "@/lib/aiErrors";
 import { usePlan } from "@/hooks/usePlan";
-import { asArray, fmtShort, ymd, generateCampaignSlots, campaignSlotProgress, campaignSlotCounts } from "./helpers";
+import { asArray, fmtShort, ymd, generateCampaignSlots, campaignSlotProgress, campaignSlotCounts, generateExecutionItems } from "./helpers";
 
 const TYPES = [
   { value: "quarterly", label: "Quarterly theme" },
@@ -489,7 +489,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         channels: selectedChannels,
         targets,
       });
-      const { error } = await supabase.from("campaigns").insert({
+      const { data: created, error } = await supabase.from("campaigns").insert({
         user_id: user.id,
         name, theme, goals,
         campaign_type: type,
@@ -499,9 +499,30 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         status: "active",
         color,
         content_plan: { weeks: plan, targets, slots },
-      });
+      }).select("id").single();
       if (error) throw error;
-      toast.success("Campaign created", { description: `${slots.length} content slots added to your planner.` });
+
+      // Generate and insert per-day execution items
+      const execItems = generateExecutionItems({
+        start_date: startDate || null,
+        end_date: endDate || null,
+        channels: selectedChannels,
+        targets,
+        plan,
+      });
+      if (created?.id && execItems.length > 0) {
+        const rows = execItems.map((it) => ({
+          user_id: user.id,
+          campaign_id: created.id,
+          ...it,
+        }));
+        const { error: execErr } = await supabase.from("campaign_execution_items").insert(rows);
+        if (execErr) console.warn("Failed to insert execution items", execErr);
+      }
+
+      toast.success("Campaign created", {
+        description: `${execItems.length} items scheduled across your calendar.`,
+      });
       onCreated();
     } catch (e: any) {
       toast.error("Could not save campaign", { description: e.message });

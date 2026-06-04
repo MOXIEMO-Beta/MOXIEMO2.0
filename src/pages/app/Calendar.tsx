@@ -28,6 +28,7 @@ export default function CalendarPage() {
   const [socialConnections, setSocialConnections] = useState<any[]>([]);
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [ideas, setIdeas] = useState<any[]>([]);
+  const [executionItems, setExecutionItems] = useState<any[]>([]);
 
   // Sub-state to allow Plan -> Schedule navigation with a date filter
   const [scheduleAnchor, setScheduleAnchor] = useState<Date | null>(null);
@@ -45,6 +46,7 @@ export default function CalendarPage() {
       supabase.from("social_connections").select("*").eq("user_id", user.id),
       supabase.from("subscribers").select("id").eq("user_id", user.id).limit(1),
       supabase.from("calendar_ideas").select("*").eq("user_id", user.id).eq("dismissed", false).order("generated_at", { ascending: false }),
+      supabase.from("campaign_execution_items").select("*").eq("user_id", user.id).order("date", { ascending: true }),
     ]);
     const get = (i: number) => r[i].status === "fulfilled" ? (r[i] as any).value?.data : null;
     setStrategy(get(0));
@@ -55,18 +57,19 @@ export default function CalendarPage() {
     setSocialConnections(get(5) ?? []);
     setSubscribers(get(6) ?? []);
     setIdeas(get(7) ?? []);
+    setExecutionItems(get(8) ?? []);
     setLoading(false);
   }, [user]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
   const ctx = useMemo(() => ({
-    strategy, socialPosts, contentItems, emailSends, campaigns,
+    strategy, socialPosts, contentItems, emailSends, campaigns, executionItems,
     socialConnections, subscribers, ideas, loading, refresh,
     user, navigate,
     setTab, setScheduleAnchor, setCampaignSeed,
     scheduleAnchor, campaignSeed,
-  }), [strategy, socialPosts, contentItems, emailSends, campaigns, socialConnections, subscribers, ideas, loading, refresh, user, navigate, scheduleAnchor, campaignSeed]);
+  }), [strategy, socialPosts, contentItems, emailSends, campaigns, executionItems, socialConnections, subscribers, ideas, loading, refresh, user, navigate, scheduleAnchor, campaignSeed]);
 
   return (
     <div className="px-6 lg:px-10 py-8 max-w-7xl mx-auto">

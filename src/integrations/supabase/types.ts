@@ -104,6 +104,48 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_execution_items: {
+        Row: {
+          campaign_id: string
+          channel: string
+          content_brief: string | null
+          created_at: string
+          date: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+          week_number: number | null
+          week_theme: string | null
+        }
+        Insert: {
+          campaign_id: string
+          channel: string
+          content_brief?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          week_number?: number | null
+          week_theme?: string | null
+        }
+        Update: {
+          campaign_id?: string
+          channel?: string
+          content_brief?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          week_number?: number | null
+          week_theme?: string | null
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           campaign_type: string | null
