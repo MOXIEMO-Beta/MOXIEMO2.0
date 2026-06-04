@@ -787,13 +787,23 @@ function StrategyContent({ reportData }: { reportData?: any }) {
         />
       )}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="bg-muted/60 h-auto p-1 mb-6 flex flex-wrap justify-start gap-1">
-          <TabsTrigger value="overview" className="rounded-md">Overview</TabsTrigger>
-          <TabsTrigger value="voice" className="rounded-md">Voice & Brand</TabsTrigger>
-          <TabsTrigger value="content" className="rounded-md">Content</TabsTrigger>
-          <TabsTrigger value="channels" className="rounded-md">Channels</TabsTrigger>
-          <TabsTrigger value="metrics" className="rounded-md">Metrics</TabsTrigger>
-          <TabsTrigger value="action" className="rounded-md">Action Plan</TabsTrigger>
+        <TabsList className="bg-foreground h-auto w-full mb-6 flex flex-wrap justify-start gap-1 rounded-[12px] p-[6px]">
+          {[
+            { v: "overview", l: "Overview" },
+            { v: "voice", l: "Voice & Brand" },
+            { v: "content", l: "Content" },
+            { v: "channels", l: "Channels" },
+            { v: "metrics", l: "Metrics" },
+            { v: "action", l: "Action Plan" },
+          ].map((t) => (
+            <TabsTrigger
+              key={t.v}
+              value={t.v}
+              className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
+            >
+              {t.l}
+            </TabsTrigger>
+          ))}
         </TabsList>
         <TabsContent value="overview" className="mt-0 data-[state=inactive]:hidden" forceMount>
           <div id="strategy-export-overview"><OverviewTab /></div>
