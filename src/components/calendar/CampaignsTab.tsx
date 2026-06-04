@@ -801,6 +801,85 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   );
 }
 
+const CHANNEL_META: Record<string, { label: string; Icon: any }> = {
+  linkedin: { label: "LinkedIn", Icon: Linkedin },
+  email: { label: "Email", Icon: Mail },
+  instagram: { label: "Instagram", Icon: Instagram },
+  facebook: { label: "Facebook", Icon: Facebook },
+};
+
+function formatWeekRange(weekOf?: string): string {
+  if (!weekOf) return "";
+  const start = new Date(weekOf);
+  if (isNaN(start.getTime())) return "";
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return `${fmtShort(start)} to ${fmtShort(end)}`;
+}
+
+function WeekCard({ week }: { week: any }) {
+  if (!week) return null;
+  const range = formatWeekRange(week.weekOf);
+  const channels = (["linkedin", "email", "instagram", "facebook"] as const).filter((ch) => !!week[ch]);
+  return (
+    <div className="border border-border rounded-[12px] w-full overflow-hidden bg-background">
+      <div className="p-4">
+        <div className="text-xs text-muted-foreground mb-2">
+          Week {week.weekNumber}{range ? ` — ${range}` : ""}
+        </div>
+        {week.theme && (
+          <div className="border-l-[3px] border-accent pl-3 py-0.5">
+            <div className="text-base font-bold leading-snug">Theme: {week.theme}</div>
+          </div>
+        )}
+      </div>
+      {channels.length > 0 && (
+        <div className="border-t border-border">
+          {channels.map((ch, i) => (
+            <ChannelRow
+              key={ch}
+              channel={ch}
+              text={String(week[ch] ?? "")}
+              tinted={i % 2 === 1}
+              divider={i < channels.length - 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChannelRow({ channel, text, tinted, divider }: { channel: string; text: string; tinted: boolean; divider: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const meta = CHANNEL_META[channel] ?? { label: channel, Icon: Sparkles };
+  const Icon = meta.Icon;
+  // Heuristic: assume truncation if >~140 chars (since line-clamp-2)
+  const canExpand = text.length > 140;
+  return (
+    <div
+      className={`flex items-start gap-3 px-4 py-3 ${tinted ? "bg-[#faf9f7]" : "bg-background"} ${divider ? "border-b border-border" : ""}`}
+    >
+      <div className="flex items-center gap-1.5 min-w-[110px] pt-0.5">
+        <Icon className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm font-bold">{meta.label}</span>
+      </div>
+      <div className="flex-1 text-sm text-foreground/90">
+        <div className={expanded ? "" : "line-clamp-2"}>{text}</div>
+        {canExpand && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-1 text-xs text-accent hover:underline"
+          >
+            {expanded ? "Collapse" : "Expand"}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CampaignDetail({ c, ctx, onChanged, setTab }: any) {
   const linkedPosts = ctx.socialPosts.filter((p: any) => p.campaign_id === c.id);
   const linkedEmails = ctx.emailSends.filter((e: any) => e.campaign_id === c.id);
