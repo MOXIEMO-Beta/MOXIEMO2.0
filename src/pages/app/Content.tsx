@@ -460,6 +460,7 @@ export default function Content() {
 
   const isRich = lockedMeta && RICH_PLATFORMS.has(lockedMeta.platform);
   const isScript = !!lockedMeta && SCRIPT_PLATFORMS.has(lockedMeta.platform);
+  const isPodcast = !!lockedMeta && PODCAST_PLATFORMS.has(lockedMeta.platform);
   const charCount = useMemo(() => htmlToPlain(generated).length, [generated]);
   const wordCount = useMemo(() => {
     const t = htmlToPlain(generated).trim();
@@ -643,7 +644,7 @@ export default function Content() {
                   <div className="p-4">
                     {isScript && (
                       <div className="text-[11px] uppercase tracking-[0.18em] text-accent font-medium mb-2">
-                        Video Script
+                        {isPodcast ? "Podcast Script" : "Video Script"}
                       </div>
                     )}
                     <Textarea
