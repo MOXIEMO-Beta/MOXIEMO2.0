@@ -46,6 +46,9 @@ import {
   RotateCcw,
   Video,
   Mic,
+  Upload,
+  X,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
