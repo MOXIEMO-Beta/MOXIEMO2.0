@@ -399,6 +399,33 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                           </span>
                         </div>
                         <div className="space-y-0.5 flex-1">
+                          {inMonth && execItemsForDay(d).length > 0 && (
+                            <div className="space-y-0.5 mb-0.5">
+                              {execItemsForDay(d).slice(0, 3).map((ex: any) => {
+                                const camp = campaignById(ex.campaign_id);
+                                const color = camp?.color || DEFAULT_CAMPAIGN_COLOR;
+                                return (
+                                  <button
+                                    key={ex.id}
+                                    onClick={(e) => { e.stopPropagation(); openDayDrawer(d); }}
+                                    className="w-full h-5 flex items-center gap-1 px-1 rounded border border-border bg-card text-[9px] font-medium hover:bg-muted/40"
+                                    title={`${camp?.name ?? "Campaign"} · ${ex.channel}`}
+                                  >
+                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                    <span>{CHANNEL_ABBR[ex.channel] ?? ex.channel.slice(0, 2).toUpperCase()}</span>
+                                  </button>
+                                );
+                              })}
+                              {execItemsForDay(d).length > 3 && (
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); openDayDrawer(d); }}
+                                  className="text-[9px] text-muted-foreground hover:underline"
+                                >
+                                  +{execItemsForDay(d).length - 3} more
+                                </button>
+                              )}
+                            </div>
+                          )}
                           {items.slice(0, 2).map((it, idx) => {
                             const ch = itemChannel(it);
                             const color = campaignColorForItem(it);
