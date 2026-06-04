@@ -4,11 +4,25 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Plus, Sparkles, ArrowRight, AlertTriangle, Target, Linkedin, Instagram, Facebook, Mail, FileText, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Sparkles, ArrowRight, AlertTriangle, Target, Linkedin, Instagram, Facebook, Mail, FileText, Check, X } from "lucide-react";
 import { startOfWeek, addDays, sameDay, fmtShort, ymd, PLATFORM_LABELS, activeCampaignForDate } from "./helpers";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_CAMPAIGN_COLOR = "#F97066";
+
+const CHANNEL_ABBR: Record<string, string> = {
+  linkedin: "LI",
+  email: "EM",
+  instagram: "IG",
+  facebook: "FB",
+  content: "C",
+};
+
+const EXEC_STATUS_BADGE: Record<string, { label: string; cls: string }> = {
+  not_started: { label: "Not started", cls: "bg-muted text-muted-foreground border-border" },
+  draft: { label: "Draft", cls: "bg-amber-50 text-amber-700 border-amber-200" },
+  published: { label: "Published", cls: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+};
 
 function PlatformIcon({ channel, className }: { channel: string; className?: string }) {
   const cls = cn("w-4 h-4", className);
@@ -43,13 +57,38 @@ function statusBadge(s: ReturnType<typeof itemStatus>) {
 type ChannelKey = "linkedin" | "email" | "instagram" | "facebook" | "content";
 
 export default function ScheduleTab({ ctx }: { ctx: any }) {
-  const { socialPosts, contentItems, emailSends, socialConnections, subscribers, campaigns, scheduleAnchor, setTab, navigate } = ctx;
+  const { socialPosts, contentItems, emailSends, socialConnections, subscribers, campaigns, executionItems, scheduleAnchor, setTab, navigate } = ctx;
   const [view, setView] = useState<"week" | "month">("week");
   const [anchor, setAnchor] = useState<Date>(scheduleAnchor ?? new Date());
   useEffect(() => { if (scheduleAnchor) setAnchor(scheduleAnchor); }, [scheduleAnchor]);
 
   const [openItem, setOpenItem] = useState<any>(null);
   const [quickCreate, setQuickCreate] = useState<{ date: Date; channel: ChannelKey } | null>(null);
+  const [dayDrawer, setDayDrawer] = useState<{ date: Date; items: any[] } | null>(null);
+
+  const execItemsByDate = useMemo(() => {
+    const map = new Map<string, any[]>();
+    (executionItems ?? []).forEach((it: any) => {
+      const arr = map.get(it.date) ?? [];
+      arr.push(it);
+      map.set(it.date, arr);
+    });
+    return map;
+  }, [executionItems]);
+
+  function campaignById(id: string) {
+    return (campaigns ?? []).find((c: any) => c.id === id);
+  }
+
+  function execItemsForDay(d: Date) {
+    return execItemsByDate.get(ymd(d)) ?? [];
+  }
+
+  function openDayDrawer(d: Date) {
+    const items = execItemsForDay(d);
+    if (items.length === 0) return;
+    setDayDrawer({ date: d, items });
+  }
 
   function campaignColorForItem(it: any): string {
     if (it._campaign?.color) return it._campaign.color;
