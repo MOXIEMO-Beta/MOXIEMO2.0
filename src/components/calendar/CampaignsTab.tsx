@@ -294,6 +294,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   const [planLoading, setPlanLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [color, setColor] = useState<string>("#F97066");
+  const [currentWeekIdx, setCurrentWeekIdx] = useState(0);
   const [goalSuggestions, setGoalSuggestions] = useState<string[]>([]);
   const [prechecked, setPrechecked] = useState<Set<string>>(new Set());
   const [cmoText, setCmoText] = useState<string>("");
@@ -333,6 +334,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     setChannels(next);
     setPrechecked(stratChannels);
     setPlan([]);
+    setCurrentWeekIdx(0);
 
     // Fetch goal suggestions silently
     (async () => {
