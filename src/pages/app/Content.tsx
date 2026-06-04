@@ -536,7 +536,14 @@ export default function Content() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Platform</label>
-                <Select value={platform} onValueChange={setPlatform}>
+                <Select
+                  value={platform}
+                  onValueChange={(v) => {
+                    setPlatform(v);
+                    const opts = contentTypeOptionsFor(v);
+                    if (!opts.includes(contentType)) setContentType(opts[0]);
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PLATFORMS.map((p) => (
@@ -550,7 +557,7 @@ export default function Content() {
                 <Select value={contentType} onValueChange={setContentType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {CONTENT_TYPES.map((c) => (
+                    {contentTypeOptionsFor(platform).map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
