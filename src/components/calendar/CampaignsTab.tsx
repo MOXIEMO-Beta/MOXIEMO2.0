@@ -49,6 +49,67 @@ const COLOR_PALETTE = [
   { name: "Sage", value: "#4D7C0F" },
 ];
 
+type GoalType = "awareness" | "leadgen" | "thought" | "engagement";
+
+const GOAL_KEYWORDS: Record<GoalType, string[]> = {
+  leadgen: ["lead", "sale", "revenue", "client", "booking", "call", "conversion", "discovery"],
+  thought: ["authority", "expertise", "thought leader", "credibility", "position", "known"],
+  engagement: ["engagement", "community", "connection", "conversation", "relationship"],
+  awareness: ["awareness", "visibility", "reach", "grow", "audience", "follower", "brand"],
+};
+
+const GOAL_LABEL: Record<GoalType, string> = {
+  awareness: "awareness",
+  leadgen: "lead generation",
+  thought: "thought leadership",
+  engagement: "engagement",
+};
+
+const CADENCE: Record<GoalType, Record<string, number>> = {
+  awareness:   { linkedin: 4, email: 1, instagram: 5, facebook: 3 },
+  leadgen:     { linkedin: 5, email: 2, instagram: 3, facebook: 2 },
+  thought:     { linkedin: 5, email: 1, instagram: 3, facebook: 2 },
+  engagement:  { linkedin: 3, email: 1, instagram: 5, facebook: 4 },
+};
+
+const RATIONALE: Record<string, Record<GoalType, string>> = {
+  linkedin: {
+    awareness: "LinkedIn rewards consistency. Daily posting builds compound visibility over the campaign window.",
+    leadgen: "Higher frequency on LinkedIn drives more touchpoints with decision-makers in your ICP.",
+    thought: "Daily presence on LinkedIn is the single highest-leverage action for positioning.",
+    engagement: "3x per week gives your audience time to engage before the next post lands.",
+  },
+  email: {
+    awareness: "One email per week keeps you present without overwhelming your list.",
+    leadgen: "2x per week during a campaign creates urgency and nurtures intent.",
+    thought: "A weekly email builds the habit of your audience reading you.",
+    engagement: "Consistent weekly sends outperform sporadic high-volume sends every time.",
+  },
+  instagram: {
+    awareness: "5x per week maximizes Reels and feed reach during the campaign window.",
+    leadgen: "3x per week with strong CTAs keeps the channel focused on conversion.",
+    thought: "Mix carousel posts with short-form video to establish expertise on the platform.",
+    engagement: "Daily posting signals to the algorithm that your account is active and rewards reach.",
+  },
+  facebook: {
+    awareness: "3x per week is the recommended baseline for organic Facebook reach.",
+    leadgen: "Focus on value-led posts that drive clicks rather than high raw frequency.",
+    thought: "2x per week with long-form content performs better than frequent short posts.",
+    engagement: "4x per week keeps your community active and the algorithm rewarding your posts.",
+  },
+};
+
+function classifyGoal(text: string): GoalType {
+  const t = (text || "").toLowerCase();
+  if (!t.trim()) return "awareness";
+  for (const type of ["leadgen", "thought", "engagement", "awareness"] as GoalType[]) {
+    if (GOAL_KEYWORDS[type].some((k) => t.includes(k))) return type;
+  }
+  return "awareness";
+}
+
+const DEFAULT_CMO_TEXT = "Based on your goal, consistency matters more than volume. Start with your strongest channel and build cadence before expanding.";
+
 export default function CampaignsTab({ ctx }: { ctx: any }) {
   const { campaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
   const [openNew, setOpenNew] = useState(false);
@@ -182,6 +243,10 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   const [color, setColor] = useState<string>("#F97066");
   const [goalSuggestions, setGoalSuggestions] = useState<string[]>([]);
   const [prechecked, setPrechecked] = useState<Set<string>>(new Set());
+  const [cmoText, setCmoText] = useState<string>("");
+  const [cmoLoading, setCmoLoading] = useState(false);
+  const [userTopGoal, setUserTopGoal] = useState<string>("");
+  const [cadenceApplied, setCadenceApplied] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -222,6 +287,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         const suggestions: string[] = [];
         if (strategy?.business_goal) suggestions.push(String(strategy.business_goal));
         if (strategy?.success_definition) suggestions.push(String(strategy.success_definition));
+        let topGoal = strategy?.business_goal ? String(strategy.business_goal) : "";
         if (user?.id) {
           const { data } = await supabase
             .from("goal_entries")
@@ -234,13 +300,17 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
             const n = (r.notes ?? "").toString().trim();
             if (n) suggestions.push(n);
           });
+          if (!topGoal && data && data[0]?.notes) topGoal = String(data[0].notes);
         }
+        setUserTopGoal(topGoal);
         const unique = Array.from(new Set(suggestions.map((s) => s.trim()).filter(Boolean))).slice(0, 3);
         setGoalSuggestions(unique);
       } catch {
         setGoalSuggestions([]);
       }
     })();
+    setCmoText("");
+    setCadenceApplied(false);
   }, [open, seed, strategy, user]);
 
   const themes = asArray<any>(strategy?.content_themes).map((t: any) => typeof t === "string" ? t : (t?.theme ?? t?.title ?? t?.name)).filter(Boolean);
@@ -265,6 +335,45 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
 
   const selectedChannels = Object.keys(channels).filter(k => channels[k]);
   const { checkGenerationLimit, handleGenerationResponse } = usePlan();
+
+  const goalType: GoalType = useMemo(() => classifyGoal(goals), [goals]);
+
+  // When Step 3 first renders, prefill cadence and request CMO recommendation.
+  useEffect(() => {
+    if (step !== 3) return;
+    if (!cadenceApplied) {
+      const c = CADENCE[goalType];
+      setTargets((prev) => ({ ...prev, ...c }));
+      setCadenceApplied(true);
+    }
+    if (cmoText || cmoLoading) return;
+    setCmoLoading(true);
+    const ac = new AbortController();
+    const timer = setTimeout(() => {
+      ac.abort();
+      setCmoText((t) => t || DEFAULT_CMO_TEXT);
+      setCmoLoading(false);
+    }, 3000);
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("cmo-cadence-recommendation", {
+          body: { campaignGoal: goals, campaignTheme: theme, userGoal: userTopGoal },
+        });
+        clearTimeout(timer);
+        if (error || !data?.recommendation) {
+          setCmoText((t) => t || DEFAULT_CMO_TEXT);
+        } else {
+          setCmoText(String(data.recommendation));
+        }
+      } catch {
+        setCmoText((t) => t || DEFAULT_CMO_TEXT);
+      } finally {
+        setCmoLoading(false);
+      }
+    })();
+    return () => { clearTimeout(timer); ac.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   async function generatePlan() {
     if (!(await checkGenerationLimit())) return;
@@ -446,18 +555,39 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
 
           {step === 3 && (
             <>
+              <div className="rounded-lg border border-accent/30 bg-accent-soft p-3">
+                <div className="text-[11px] uppercase tracking-wider text-accent font-semibold mb-1">
+                  Your CMO recommends
+                </div>
+                <div className="text-sm text-foreground/90 min-h-[1.25rem]">
+                  {cmoLoading && !cmoText ? (
+                    <span className="inline-flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Thinking…
+                    </span>
+                  ) : (
+                    cmoText || DEFAULT_CMO_TEXT
+                  )}
+                </div>
+              </div>
               <Label>Which channels will this campaign use?</Label>
               {(["linkedin", "email", "instagram", "facebook"] as const).map(ch => (
-                <div key={ch} className="flex items-center justify-between border border-border rounded-md p-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <Checkbox checked={channels[ch]} onCheckedChange={(v) => setChannels({ ...channels, [ch]: !!v })} />
-                    <span className="capitalize">{ch}</span>
-                  </label>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    Target:
-                    <Input type="number" min={0} className="w-16 h-8" value={targets[ch]} onChange={e => setTargets({ ...targets, [ch]: Number(e.target.value) || 0 })} />
-                    /week
+                <div key={ch} className="border border-border rounded-md p-3">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <Checkbox checked={channels[ch]} onCheckedChange={(v) => setChannels({ ...channels, [ch]: !!v })} />
+                      <span className="capitalize">{ch}</span>
+                    </label>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      Target:
+                      <Input type="number" min={0} className="w-16 h-8" value={targets[ch]} onChange={e => setTargets({ ...targets, [ch]: Number(e.target.value) || 0 })} />
+                      /week
+                    </div>
                   </div>
+                  {channels[ch] && (
+                    <div className="mt-2 text-[12px] italic text-muted-foreground">
+                      {RATIONALE[ch][goalType]}
+                    </div>
+                  )}
                 </div>
               ))}
               {prechecked.size > 0 && (
@@ -465,8 +595,8 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
               )}
               {weeks > 0 && (
                 <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
-                  Over {weeks} weeks this campaign needs:{" "}
-                  {selectedChannels.map(ch => `${weeks * (targets[ch] || 0)} ${ch}`).join(" · ")}
+                  Based on your {GOAL_LABEL[goalType]} goal — over {weeks} weeks this campaign needs:{" "}
+                  {selectedChannels.map(ch => `${weeks * (targets[ch] || 0)} ${ch === "linkedin" ? "LinkedIn" : ch}`).join(" · ")}
                 </div>
               )}
               <div className="flex justify-between pt-3">
