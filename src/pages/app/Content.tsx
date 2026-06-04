@@ -44,6 +44,7 @@ import {
   Copy as CopyIcon,
   Check,
   RotateCcw,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
@@ -71,6 +72,8 @@ const PLATFORMS = [
   { value: "Newsletter Section", icon: Mail, limit: null },
   { value: "Long-Form Article", icon: Newspaper, limit: null },
   { value: "Standalone Newsletter (full)", icon: Mail, limit: null },
+  { value: "Short-Form Video Script", icon: Video, limit: null },
+  { value: "Long-Form Video Script", icon: Video, limit: null },
 ];
 
 const CONTENT_TYPES = [
@@ -82,6 +85,27 @@ const CONTENT_TYPES = [
   "Personal story",
   "Promotional",
 ];
+
+const SHORT_VIDEO_TYPES = [
+  "Direct to Camera",
+  "Talking Head with B-Roll Notes",
+  "Listicle / Tips Format",
+];
+
+const LONG_VIDEO_TYPES = [
+  "Educational / How-To",
+  "Opinion / My Take",
+  "Story-Driven",
+  "Interview Style (with suggested questions)",
+];
+
+const SCRIPT_PLATFORMS = new Set(["Short-Form Video Script", "Long-Form Video Script"]);
+
+function contentTypeOptionsFor(platform: string): string[] {
+  if (platform === "Short-Form Video Script") return SHORT_VIDEO_TYPES;
+  if (platform === "Long-Form Video Script") return LONG_VIDEO_TYPES;
+  return CONTENT_TYPES;
+}
 
 const RICH_PLATFORMS = new Set([
   "Newsletter Section",
@@ -423,7 +447,13 @@ export default function Content() {
   }
 
   const isRich = lockedMeta && RICH_PLATFORMS.has(lockedMeta.platform);
+  const isScript = !!lockedMeta && SCRIPT_PLATFORMS.has(lockedMeta.platform);
   const charCount = useMemo(() => htmlToPlain(generated).length, [generated]);
+  const wordCount = useMemo(() => {
+    const t = htmlToPlain(generated).trim();
+    return t ? t.split(/\s+/).length : 0;
+  }, [generated]);
+  const speakingMinutes = Math.max(1, Math.round(wordCount / 140));
   const limit = lockedMeta ? platformLimit(lockedMeta.platform) : null;
   const nearLimit = limit !== null && charCount >= limit * 0.85;
 
@@ -506,7 +536,14 @@ export default function Content() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Platform</label>
-                <Select value={platform} onValueChange={setPlatform}>
+                <Select
+                  value={platform}
+                  onValueChange={(v) => {
+                    setPlatform(v);
+                    const opts = contentTypeOptionsFor(v);
+                    if (!opts.includes(contentType)) setContentType(opts[0]);
+                  }}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {PLATFORMS.map((p) => (
@@ -520,7 +557,7 @@ export default function Content() {
                 <Select value={contentType} onValueChange={setContentType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {CONTENT_TYPES.map((c) => (
+                    {contentTypeOptionsFor(platform).map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
                     ))}
                   </SelectContent>
@@ -592,12 +629,24 @@ export default function Content() {
                   </div>
                 ) : (
                   <div className="p-4">
+                    {isScript && (
+                      <div className="text-[11px] uppercase tracking-[0.18em] text-accent font-medium mb-2">
+                        Video Script
+                      </div>
+                    )}
                     <Textarea
                       value={generated}
                       onChange={(e) => setGenerated(e.target.value)}
                       rows={14}
-                      className="resize-y min-h-[280px] text-sm leading-relaxed border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent"
+                      className={`resize-y min-h-[280px] text-sm leading-relaxed border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent ${
+                        isScript ? "font-mono whitespace-pre-wrap" : ""
+                      }`}
                     />
+                    {isScript && (
+                      <div className="mt-2 text-[11px] text-muted-foreground">
+                        ~{wordCount.toLocaleString()} words · approx. {speakingMinutes} {speakingMinutes === 1 ? "minute" : "minutes"} at speaking pace
+                      </div>
+                    )}
                     {limit !== null && charCount >= limit && (
                       <div className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground">
                         <div className="flex-1 h-px bg-border" />
