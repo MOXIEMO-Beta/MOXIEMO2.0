@@ -935,3 +935,421 @@ function DraftEditor({
     </div>
   );
 }
+
+const REPURPOSE_PIECES = [
+  "LinkedIn Post (from a key insight)",
+  "LinkedIn Post (from a quotable moment)",
+  "Instagram Caption",
+  "Short-Form Video Script (from a key story)",
+  "Email Section",
+  "Newsletter Introduction",
+  "Show Notes",
+  "Twitter / X Thread",
+] as const;
+
+const DEFAULT_REPURPOSE_SELECTION = new Set<string>([
+  "LinkedIn Post (from a key insight)",
+  "Email Section",
+]);
+
+const REPURPOSE_TO_PLATFORM: Record<string, string> = {
+  "LinkedIn Post (from a key insight)": "LinkedIn Post",
+  "LinkedIn Post (from a quotable moment)": "LinkedIn Post",
+  "Instagram Caption": "Instagram Caption",
+  "Short-Form Video Script (from a key story)": "Short-Form Video Script",
+  "Email Section": "Newsletter Section",
+  "Newsletter Introduction": "Newsletter Section",
+  "Show Notes": "Podcast Script",
+  "Twitter / X Thread": "X / Twitter",
+};
+
+const REPURPOSE_MAX_BYTES = 10 * 1024 * 1024;
+
+async function extractTranscriptText(file: File): Promise<string> {
+  const name = file.name.toLowerCase();
+  if (name.endsWith(".txt") || file.type === "text/plain") {
+    return await file.text();
+  }
+  if (name.endsWith(".docx") || file.type.includes("word")) {
+    const mammoth = await import("mammoth/mammoth.browser");
+    const buf = await file.arrayBuffer();
+    const res = await (mammoth as any).extractRawText({ arrayBuffer: buf });
+    return res.value || "";
+  }
+  if (name.endsWith(".pdf") || file.type === "application/pdf") {
+    const pdfjs: any = await import("pdfjs-dist");
+    try {
+      const workerUrl = (await import("pdfjs-dist/build/pdf.worker.mjs?url")).default;
+      pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+    } catch {
+      /* ignore */
+    }
+    const buf = await file.arrayBuffer();
+    const doc = await pdfjs.getDocument({ data: buf }).promise;
+    let out = "";
+    const limit = Math.min(doc.numPages, 80);
+    for (let i = 1; i <= limit; i++) {
+      const page = await doc.getPage(i);
+      const content = await page.getTextContent();
+      out += content.items.map((it: any) => it.str).join(" ") + "\n\n";
+      if (out.length > 120000) break;
+    }
+    return out;
+  }
+  throw new Error("Unsupported file type. Please upload a PDF, DOCX, or TXT file.");
+}
+
+function RepurposeTab({
+  userId,
+  strategy,
+  onSavedToDrafts,
+}: {
+  userId: string | null;
+  strategy: any;
+  onSavedToDrafts: (item: ContentItem) => void;
+}) {
+  const { checkGenerationLimit, handleGenerationResponse } = usePlan();
+  const [file, setFile] = useState<File | null>(null);
+  const [transcript, setTranscript] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set(DEFAULT_REPURPOSE_SELECTION));
+  const [generating, setGenerating] = useState(false);
+  const [stage, setStage] = useState<string>("");
+  const [results, setResults] = useState<{ type: string; body: string }[]>([]);
+  const [copyIdx, setCopyIdx] = useState<number | null>(null);
+  const [savedIdx, setSavedIdx] = useState<number | null>(null);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const allSelected = selected.size === REPURPOSE_PIECES.length;
+
+  function toggleSelect(label: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label);
+      else next.add(label);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    if (allSelected) setSelected(new Set());
+    else setSelected(new Set(REPURPOSE_PIECES));
+  }
+
+  async function pickFile(f: File | null) {
+    if (!f) return;
+    if (f.size > REPURPOSE_MAX_BYTES) {
+      toast.error("File too large — max 10MB.");
+      return;
+    }
+    setFile(f);
+    setExtracting(true);
+    try {
+      const text = await extractTranscriptText(f);
+      if (!text || text.trim().length < 100) {
+        throw new Error("Couldn't read enough text from that file.");
+      }
+      setTranscript(text);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(e?.message || "Couldn't read that file.");
+      setFile(null);
+      setTranscript("");
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  async function handleGenerate() {
+    if (!transcript.trim()) {
+      toast.error("Upload a transcript first.");
+      return;
+    }
+    if (selected.size === 0) {
+      toast.error("Select at least one piece to generate.");
+      return;
+    }
+    const missingStrategy =
+      !strategy?.positioning_statement ||
+      !(Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes.length : strategy?.voice_attributes);
+    if (missingStrategy) {
+      toast.error("Complete your Brand Strategy first", {
+        description: "MOXIE needs your positioning and voice to repurpose content that sounds like you.",
+      });
+      return;
+    }
+    if (!(await checkGenerationLimit())) return;
+    setGenerating(true);
+    setResults([]);
+    setStage("Reading your transcript and finding the best moments...");
+    try {
+      // brief delay so users see the first stage message
+      setTimeout(() => setStage(`Generating ${selected.size} piece${selected.size === 1 ? "" : "s"} of content...`), 1200);
+      const { data, error } = await supabase.functions.invoke("repurpose-content", {
+        body: {
+          transcript,
+          sourceName: file?.name ?? "transcript",
+          pieces: Array.from(selected),
+          strategy,
+        },
+      });
+      if (handleGenerationResponse(data, error)) return;
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      const pieces = ((data as any).pieces ?? []) as { type: string; body: string }[];
+      if (!pieces.length) throw new Error("No content returned.");
+      setResults(pieces);
+    } catch (e: any) {
+      console.error(e);
+      toast.error(aiErrorMessage("content", e));
+    } finally {
+      setGenerating(false);
+      setStage("");
+    }
+  }
+
+  async function handleCopy(idx: number, body: string) {
+    try {
+      await navigator.clipboard.writeText(body);
+      setCopyIdx(idx);
+      setTimeout(() => setCopyIdx((c) => (c === idx ? null : c)), 2000);
+    } catch {
+      toast.error("Couldn't copy");
+    }
+  }
+
+  async function handleSaveToDrafts(idx: number, piece: { type: string; body: string }) {
+    if (!userId) return;
+    const platform = REPURPOSE_TO_PLATFORM[piece.type] ?? "LinkedIn Post";
+    const { data, error } = await supabase
+      .from("content_items")
+      .insert({
+        user_id: userId,
+        platform,
+        content_type: piece.type,
+        topic: `Repurposed from ${file?.name ?? "transcript"}`,
+        body: piece.body,
+        status: "draft",
+      })
+      .select()
+      .single();
+    if (error) {
+      toast.error("Couldn't save", { description: error.message });
+      return;
+    }
+    onSavedToDrafts(data as ContentItem);
+    setSavedIdx(idx);
+    setTimeout(() => setSavedIdx((c) => (c === idx ? null : c)), 2000);
+  }
+
+  function handleEditBody(idx: number, body: string) {
+    setResults((prev) => prev.map((p, i) => (i === idx ? { ...p, body } : p)));
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="font-display text-2xl md:text-3xl tracking-tight mb-2 leading-tight">
+          Turn one piece of content into many.
+        </h2>
+        <p className="text-sm text-muted-foreground max-w-2xl">
+          Upload a podcast transcript, webinar recording, or long-form article. MOXIEMO extracts the best moments and turns them into content across every platform.
+        </p>
+      </div>
+
+      {/* Step 1 — Upload */}
+      <Card className="p-6 border-border shadow-soft space-y-3">
+        <div>
+          <div className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Step 1</div>
+          <label className="text-sm font-medium text-foreground block">Upload your transcript</label>
+        </div>
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            pickFile(e.dataTransfer.files?.[0] ?? null);
+          }}
+          onClick={() => !file && inputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          className={`cursor-pointer rounded-xl px-6 py-8 text-center transition-colors ${
+            dragOver ? "border-accent bg-accent-soft/30" : "border-border bg-muted/20 hover:bg-muted/40"
+          } border-2 border-dashed`}
+        >
+          <input
+            ref={inputRef}
+            type="file"
+            accept=".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+            className="hidden"
+            onChange={(e) => pickFile(e.target.files?.[0] ?? null)}
+          />
+          {file ? (
+            <div className="flex items-center justify-center gap-2">
+              {extracting ? (
+                <Loader2 className="h-5 w-5 text-accent animate-spin" />
+              ) : (
+                <FileText className="h-5 w-5 text-accent" />
+              )}
+              <span className="text-sm font-medium text-foreground">{file.name}</span>
+              {!extracting && transcript && (
+                <span className="text-xs text-muted-foreground">
+                  · {transcript.length.toLocaleString()} chars
+                </span>
+              )}
+              {!extracting && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setFile(null); setTranscript(""); }}
+                  className="ml-1 rounded-full p-1 hover:bg-black/5"
+                  aria-label="Remove file"
+                >
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <Upload className="mx-auto h-7 w-7 text-accent" />
+              <p className="mt-3 text-sm font-medium text-foreground">
+                Drop your transcript here
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+              >
+                Browse files
+              </Button>
+              <p className="mt-3 text-xs text-muted-foreground">
+                PDF, TXT, or DOCX — max 10MB
+              </p>
+            </>
+          )}
+        </div>
+      </Card>
+
+      {/* Step 2 — Select */}
+      <Card className="p-6 border-border shadow-soft space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Step 2</div>
+            <label className="text-sm font-medium text-foreground block">Select what to generate</label>
+          </div>
+          <button
+            type="button"
+            onClick={toggleAll}
+            className="text-xs text-accent font-medium hover:underline shrink-0"
+          >
+            {allSelected ? "Clear all" : "Select all"}
+          </button>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {REPURPOSE_PIECES.map((label) => {
+            const checked = selected.has(label);
+            return (
+              <label
+                key={label}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors text-sm ${
+                  checked
+                    ? "border-accent bg-accent-soft/30 text-foreground"
+                    : "border-border bg-background text-foreground hover:border-foreground/30"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleSelect(label)}
+                  className="h-4 w-4 accent-accent shrink-0"
+                />
+                <span>{label}</span>
+              </label>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Step 3 — Generate */}
+      <div className="space-y-3">
+        <Button
+          onClick={handleGenerate}
+          disabled={generating || extracting || !transcript || selected.size === 0}
+          className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg w-full sm:w-auto"
+        >
+          {generating ? (
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Repurposing...</>
+          ) : (
+            <><Wand2 className="mr-2 h-4 w-4" /> Repurpose with MOXIEMO</>
+          )}
+        </Button>
+        {generating && stage && (
+          <div className="text-sm text-muted-foreground italic">{stage}</div>
+        )}
+      </div>
+
+      {/* Results */}
+      {results.length > 0 && (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <Sparkles className="h-3 w-3 text-accent" />
+            <span className="font-medium text-foreground">{results.length}</span> piece{results.length === 1 ? "" : "s"} generated from {file?.name ?? "your transcript"}
+          </div>
+          {results.map((piece, idx) => (
+            <Card key={idx} className="border-border shadow-soft overflow-hidden">
+              <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/30">
+                <span className="text-[11px] font-medium px-2 py-1 rounded-full bg-background border border-border">
+                  {piece.type}
+                </span>
+                <span className="text-xs text-muted-foreground tabular-nums">
+                  {piece.body.length.toLocaleString()} chars
+                </span>
+              </div>
+              <div className="p-4">
+                {editingIdx === idx ? (
+                  <Textarea
+                    value={piece.body}
+                    onChange={(e) => handleEditBody(idx, e.target.value)}
+                    rows={10}
+                    className="resize-y min-h-[200px] text-sm leading-relaxed"
+                  />
+                ) : (
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
+                    {piece.body}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2 px-4 py-3 border-t border-border">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleCopy(idx, piece.body)}
+                >
+                  {copyIdx === idx ? <><Check className="mr-2 h-4 w-4" /> Copied!</> : <><CopyIcon className="mr-2 h-4 w-4" /> Copy</>}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => handleSaveToDrafts(idx, piece)}
+                >
+                  {savedIdx === idx ? <><Check className="mr-2 h-4 w-4" /> Saved to Drafts</> : "Save to Drafts"}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setEditingIdx(editingIdx === idx ? null : idx)}
+                >
+                  <Pencil className="mr-2 h-4 w-4" /> {editingIdx === idx ? "Done" : "Edit"}
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
