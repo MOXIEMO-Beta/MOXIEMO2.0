@@ -371,11 +371,29 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
             <>
               <div>
                 <Label>Theme / focus</Label>
-                {themes.length > 0 && (
-                  <Select value={theme} onValueChange={setTheme}>
-                    <SelectTrigger><SelectValue placeholder="Pick from your strategy themes" /></SelectTrigger>
-                    <SelectContent>{themes.map((t: string) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                  </Select>
+                {pillarSuggestions.length > 0 && (
+                  <div className="mt-1 mb-2">
+                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">From your strategy</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {pillarSuggestions.map((p) => {
+                        const active = theme === p;
+                        return (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setTheme(p)}
+                            className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                              active
+                                ? "bg-accent text-accent-foreground border-accent"
+                                : "bg-background text-accent border-accent hover:bg-accent/10"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
                 <Input className="mt-2" value={theme} onChange={e => setTheme(e.target.value)} placeholder="Or write a custom theme" />
               </div>
@@ -392,6 +410,31 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
               {weeks > 0 && <div className="text-xs text-muted-foreground">Duration: {weeks} weeks</div>}
               <div>
                 <Label>Campaign goal</Label>
+                {goalSuggestions.length > 0 && (
+                  <div className="mt-1 mb-2">
+                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">From your goals</div>
+                    <div className="space-y-1.5">
+                      {goalSuggestions.map((g, i) => {
+                        const active = goals === g;
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setGoals(g)}
+                            className={`w-full text-left text-sm px-3 py-2 rounded-lg border transition-colors ${
+                              active
+                                ? "border-accent bg-accent-soft"
+                                : "border-border bg-muted/40 hover:bg-muted/60"
+                            }`}
+                            style={{ borderRadius: 8 }}
+                          >
+                            {g}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <Textarea rows={3} value={goals} onChange={e => setGoals(e.target.value)} placeholder='e.g. "Book 10 discovery calls from LinkedIn"' />
               </div>
               <div className="flex justify-between pt-3">
@@ -417,6 +460,9 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   </div>
                 </div>
               ))}
+              {prechecked.size > 0 && (
+                <div className="text-xs text-muted-foreground">Pre-selected based on your strategy. Adjust as needed.</div>
+              )}
               {weeks > 0 && (
                 <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
                   Over {weeks} weeks this campaign needs:{" "}
