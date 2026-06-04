@@ -180,6 +180,8 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   const [planLoading, setPlanLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [color, setColor] = useState<string>("#F97066");
+  const [goalSuggestions, setGoalSuggestions] = useState<string[]>([]);
+  const [prechecked, setPrechecked] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!open) return;
@@ -191,15 +193,71 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     setEndDate(seed?.end_date ?? "");
     setGoals("");
     setColor(seed?.color ?? "#F97066");
-    if (seed?.channels) {
-      const c: Record<string, boolean> = { linkedin: false, email: false, instagram: false, facebook: false };
-      seed.channels.forEach((ch: string) => { c[ch] = true; });
-      setChannels(c);
+    // Pre-check channels from strategy (primary + active)
+    const stratChannels = new Set<string>();
+    const allChannels = ["linkedin", "email", "instagram", "facebook"];
+    const pc = (strategy?.primary_channel || "").toString().toLowerCase();
+    allChannels.forEach((ch) => { if (pc.includes(ch)) stratChannels.add(ch); });
+    const efChannels = (strategy?.enhanced_foundation as any)?.channels;
+    if (Array.isArray(efChannels)) {
+      efChannels.forEach((c: any) => {
+        const name = (typeof c === "string" ? c : c?.name ?? c?.channel ?? "").toString().toLowerCase();
+        allChannels.forEach((ch) => { if (name.includes(ch)) stratChannels.add(ch); });
+      });
     }
+    if (seed?.channels) seed.channels.forEach((ch: string) => stratChannels.add(ch));
+    const next: Record<string, boolean> = { linkedin: false, email: false, instagram: false, facebook: false };
+    if (stratChannels.size > 0) {
+      stratChannels.forEach((ch) => { next[ch] = true; });
+    } else {
+      next.linkedin = true; next.email = true;
+    }
+    setChannels(next);
+    setPrechecked(stratChannels);
     setPlan([]);
-  }, [open, seed]);
+
+    // Fetch goal suggestions silently
+    (async () => {
+      try {
+        const suggestions: string[] = [];
+        if (strategy?.business_goal) suggestions.push(String(strategy.business_goal));
+        if (strategy?.success_definition) suggestions.push(String(strategy.success_definition));
+        if (user?.id) {
+          const { data } = await supabase
+            .from("goal_entries")
+            .select("notes")
+            .eq("user_id", user.id)
+            .not("notes", "is", null)
+            .order("week_of", { ascending: false })
+            .limit(5);
+          (data ?? []).forEach((r: any) => {
+            const n = (r.notes ?? "").toString().trim();
+            if (n) suggestions.push(n);
+          });
+        }
+        const unique = Array.from(new Set(suggestions.map((s) => s.trim()).filter(Boolean))).slice(0, 3);
+        setGoalSuggestions(unique);
+      } catch {
+        setGoalSuggestions([]);
+      }
+    })();
+  }, [open, seed, strategy, user]);
 
   const themes = asArray<any>(strategy?.content_themes).map((t: any) => typeof t === "string" ? t : (t?.theme ?? t?.title ?? t?.name)).filter(Boolean);
+  const pillarSuggestions: string[] = useMemo(() => {
+    const raw = asArray<any>(strategy?.content_pillars);
+    return raw
+      .map((p: any) => (typeof p === "string" ? p : (p?.name ?? p?.title ?? p?.pillar ?? "")))
+      .map((s: string) => s?.toString().trim())
+      .filter(Boolean)
+      .slice(0, 5);
+  }, [strategy]);
+  const suggestedName = useMemo(() => {
+    if (!theme || !goals) return "";
+    const d = new Date();
+    const mo = d.toLocaleString("en-US", { month: "long" });
+    return `${theme} Campaign — ${mo} ${d.getFullYear()}`;
+  }, [theme, goals]);
   const weeks = useMemo(() => {
     if (!startDate || !endDate) return 0;
     return Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (7 * 86400000)));
@@ -273,7 +331,11 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
             <>
               <div>
                 <Label>Campaign name</Label>
-                <Input value={name} onChange={e => setName(e.target.value)} placeholder='e.g. "Q2 Leadership Framework"' />
+                <Input
+                  value={name}
+                  onChange={e => setName(e.target.value)}
+                  placeholder={suggestedName || 'e.g. "Q2 Leadership Framework"'}
+                />
               </div>
               <div>
                 <Label>Campaign type</Label>
@@ -309,11 +371,29 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
             <>
               <div>
                 <Label>Theme / focus</Label>
-                {themes.length > 0 && (
-                  <Select value={theme} onValueChange={setTheme}>
-                    <SelectTrigger><SelectValue placeholder="Pick from your strategy themes" /></SelectTrigger>
-                    <SelectContent>{themes.map((t: string) => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
-                  </Select>
+                {pillarSuggestions.length > 0 && (
+                  <div className="mt-1 mb-2">
+                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">From your strategy</div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {pillarSuggestions.map((p) => {
+                        const active = theme === p;
+                        return (
+                          <button
+                            key={p}
+                            type="button"
+                            onClick={() => setTheme(p)}
+                            className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                              active
+                                ? "bg-accent text-accent-foreground border-accent"
+                                : "bg-background text-accent border-accent hover:bg-accent/10"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
                 <Input className="mt-2" value={theme} onChange={e => setTheme(e.target.value)} placeholder="Or write a custom theme" />
               </div>
@@ -330,6 +410,31 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
               {weeks > 0 && <div className="text-xs text-muted-foreground">Duration: {weeks} weeks</div>}
               <div>
                 <Label>Campaign goal</Label>
+                {goalSuggestions.length > 0 && (
+                  <div className="mt-1 mb-2">
+                    <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1.5">From your goals</div>
+                    <div className="space-y-1.5">
+                      {goalSuggestions.map((g, i) => {
+                        const active = goals === g;
+                        return (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setGoals(g)}
+                            className={`w-full text-left text-sm px-3 py-2 rounded-lg border transition-colors ${
+                              active
+                                ? "border-accent bg-accent-soft"
+                                : "border-border bg-muted/40 hover:bg-muted/60"
+                            }`}
+                            style={{ borderRadius: 8 }}
+                          >
+                            {g}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <Textarea rows={3} value={goals} onChange={e => setGoals(e.target.value)} placeholder='e.g. "Book 10 discovery calls from LinkedIn"' />
               </div>
               <div className="flex justify-between pt-3">
@@ -355,6 +460,9 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   </div>
                 </div>
               ))}
+              {prechecked.size > 0 && (
+                <div className="text-xs text-muted-foreground">Pre-selected based on your strategy. Adjust as needed.</div>
+              )}
               {weeks > 0 && (
                 <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
                   Over {weeks} weeks this campaign needs:{" "}
