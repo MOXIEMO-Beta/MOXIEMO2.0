@@ -44,6 +44,7 @@ import {
   Copy as CopyIcon,
   Check,
   RotateCcw,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
@@ -71,6 +72,8 @@ const PLATFORMS = [
   { value: "Newsletter Section", icon: Mail, limit: null },
   { value: "Long-Form Article", icon: Newspaper, limit: null },
   { value: "Standalone Newsletter (full)", icon: Mail, limit: null },
+  { value: "Short-Form Video Script", icon: Video, limit: null },
+  { value: "Long-Form Video Script", icon: Video, limit: null },
 ];
 
 const CONTENT_TYPES = [
@@ -82,6 +85,27 @@ const CONTENT_TYPES = [
   "Personal story",
   "Promotional",
 ];
+
+const SHORT_VIDEO_TYPES = [
+  "Direct to Camera",
+  "Talking Head with B-Roll Notes",
+  "Listicle / Tips Format",
+];
+
+const LONG_VIDEO_TYPES = [
+  "Educational / How-To",
+  "Opinion / My Take",
+  "Story-Driven",
+  "Interview Style (with suggested questions)",
+];
+
+const SCRIPT_PLATFORMS = new Set(["Short-Form Video Script", "Long-Form Video Script"]);
+
+function contentTypeOptionsFor(platform: string): string[] {
+  if (platform === "Short-Form Video Script") return SHORT_VIDEO_TYPES;
+  if (platform === "Long-Form Video Script") return LONG_VIDEO_TYPES;
+  return CONTENT_TYPES;
+}
 
 const RICH_PLATFORMS = new Set([
   "Newsletter Section",
@@ -423,7 +447,13 @@ export default function Content() {
   }
 
   const isRich = lockedMeta && RICH_PLATFORMS.has(lockedMeta.platform);
+  const isScript = !!lockedMeta && SCRIPT_PLATFORMS.has(lockedMeta.platform);
   const charCount = useMemo(() => htmlToPlain(generated).length, [generated]);
+  const wordCount = useMemo(() => {
+    const t = htmlToPlain(generated).trim();
+    return t ? t.split(/\s+/).length : 0;
+  }, [generated]);
+  const speakingMinutes = Math.max(1, Math.round(wordCount / 140));
   const limit = lockedMeta ? platformLimit(lockedMeta.platform) : null;
   const nearLimit = limit !== null && charCount >= limit * 0.85;
 
