@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Plus, Target, Sparkles, Loader2, Pause, CheckCircle2, MoreHorizontal, CalendarDays } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Target, Sparkles, Loader2, Pause, CheckCircle2, MoreHorizontal, CalendarDays, Linkedin, Mail, Instagram, Facebook, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { aiErrorMessage } from "@/lib/aiErrors";
@@ -294,6 +294,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   const [planLoading, setPlanLoading] = useState(false);
   const [creating, setCreating] = useState(false);
   const [color, setColor] = useState<string>("#F97066");
+  const [currentWeekIdx, setCurrentWeekIdx] = useState(0);
   const [goalSuggestions, setGoalSuggestions] = useState<string[]>([]);
   const [prechecked, setPrechecked] = useState<Set<string>>(new Set());
   const [cmoText, setCmoText] = useState<string>("");
@@ -333,6 +334,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     setChannels(next);
     setPrechecked(stratChannels);
     setPlan([]);
+    setCurrentWeekIdx(0);
 
     // Fetch goal suggestions silently
     (async () => {
@@ -734,18 +736,32 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   Click "Generate plan" to have MOXIEMO draft a week-by-week topic plan.
                 </div>
               )}
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {plan.map((w: any, idx: number) => (
-                  <div key={idx} className="border border-border rounded-md p-3">
-                    <div className="text-xs text-muted-foreground mb-1">Week {w.weekNumber}{w.weekOf ? ` — ${fmtShort(new Date(w.weekOf))}` : ""}</div>
-                    {w.theme && <div className="font-medium text-sm mb-2">Theme: {w.theme}</div>}
-                    {w.linkedin && <div className="text-xs mb-1"><b>LinkedIn:</b> {w.linkedin}</div>}
-                    {w.email && <div className="text-xs mb-1"><b>Email:</b> {w.email}</div>}
-                    {w.instagram && <div className="text-xs mb-1"><b>Instagram:</b> {w.instagram}</div>}
-                    {w.facebook && <div className="text-xs mb-1"><b>Facebook:</b> {w.facebook}</div>}
+              {plan.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentWeekIdx((i) => Math.max(0, i - 1))}
+                      disabled={currentWeekIdx === 0}
+                      className="inline-flex items-center gap-1 text-sm text-foreground disabled:text-muted-foreground/50 disabled:cursor-not-allowed hover:text-accent transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" /> Prev
+                    </button>
+                    <div className="text-sm font-medium">
+                      Week {currentWeekIdx + 1} of {plan.length}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentWeekIdx((i) => Math.min(plan.length - 1, i + 1))}
+                      disabled={currentWeekIdx >= plan.length - 1}
+                      className="inline-flex items-center gap-1 text-sm text-foreground disabled:text-muted-foreground/50 disabled:cursor-not-allowed hover:text-accent transition-colors"
+                    >
+                      Next <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                ))}
-              </div>
+                  <WeekCard week={plan[currentWeekIdx]} />
+                </>
+              )}
               <div className="flex justify-between pt-3">
                 <Button variant="outline" onClick={() => setStep(3)}><ArrowLeft className="w-4 h-4" /> Back</Button>
                 <Button onClick={() => setStep(5)}>Next <ArrowRight className="w-4 h-4" /></Button>
@@ -782,6 +798,85 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+const CHANNEL_META: Record<string, { label: string; Icon: any }> = {
+  linkedin: { label: "LinkedIn", Icon: Linkedin },
+  email: { label: "Email", Icon: Mail },
+  instagram: { label: "Instagram", Icon: Instagram },
+  facebook: { label: "Facebook", Icon: Facebook },
+};
+
+function formatWeekRange(weekOf?: string): string {
+  if (!weekOf) return "";
+  const start = new Date(weekOf);
+  if (isNaN(start.getTime())) return "";
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return `${fmtShort(start)} to ${fmtShort(end)}`;
+}
+
+function WeekCard({ week }: { week: any }) {
+  if (!week) return null;
+  const range = formatWeekRange(week.weekOf);
+  const channels = (["linkedin", "email", "instagram", "facebook"] as const).filter((ch) => !!week[ch]);
+  return (
+    <div className="border border-border rounded-[12px] w-full overflow-hidden bg-background">
+      <div className="p-4">
+        <div className="text-xs text-muted-foreground mb-2">
+          Week {week.weekNumber}{range ? ` — ${range}` : ""}
+        </div>
+        {week.theme && (
+          <div className="border-l-[3px] border-accent pl-3 py-0.5">
+            <div className="text-base font-bold leading-snug">Theme: {week.theme}</div>
+          </div>
+        )}
+      </div>
+      {channels.length > 0 && (
+        <div className="border-t border-border">
+          {channels.map((ch, i) => (
+            <ChannelRow
+              key={ch}
+              channel={ch}
+              text={String(week[ch] ?? "")}
+              tinted={i % 2 === 1}
+              divider={i < channels.length - 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChannelRow({ channel, text, tinted, divider }: { channel: string; text: string; tinted: boolean; divider: boolean }) {
+  const [expanded, setExpanded] = useState(false);
+  const meta = CHANNEL_META[channel] ?? { label: channel, Icon: Sparkles };
+  const Icon = meta.Icon;
+  // Heuristic: assume truncation if >~140 chars (since line-clamp-2)
+  const canExpand = text.length > 140;
+  return (
+    <div
+      className={`flex items-start gap-3 px-4 py-3 ${tinted ? "bg-[#faf9f7]" : "bg-background"} ${divider ? "border-b border-border" : ""}`}
+    >
+      <div className="flex items-center gap-1.5 min-w-[110px] pt-0.5">
+        <Icon className="w-4 h-4 text-muted-foreground" />
+        <span className="text-sm font-bold">{meta.label}</span>
+      </div>
+      <div className="flex-1 text-sm text-foreground/90">
+        <div className={expanded ? "" : "line-clamp-2"}>{text}</div>
+        {canExpand && (
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="mt-1 text-xs text-accent hover:underline"
+          >
+            {expanded ? "Collapse" : "Expand"}
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
