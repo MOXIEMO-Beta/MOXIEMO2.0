@@ -865,18 +865,23 @@ function PlanLoadingState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 animate-fade-in">
       <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      <p
-        className="mt-6 italic text-center transition-opacity duration-400"
-        style={{
-          fontSize: 16,
-          color: "#888",
-          maxWidth: 340,
-          opacity: visible ? 1 : 0,
-        }}
+      <div
+        className="flex items-center justify-center mt-6"
+        style={{ minHeight: 56, maxWidth: 340 }}
       >
-        {PLAN_LOADING_MESSAGES[idx]}
-      </p>
-      <p className="mt-4 text-center text-muted-foreground" style={{ fontSize: 12 }}>
+        <p
+          className="italic text-center transition-opacity duration-400"
+          style={{
+            fontSize: 16,
+            color: "#888",
+            opacity: visible ? 1 : 0,
+            margin: 0,
+          }}
+        >
+          {PLAN_LOADING_MESSAGES[idx]}
+        </p>
+      </div>
+      <p className="text-center text-muted-foreground" style={{ fontSize: 12, marginTop: 16 }}>
         This usually takes 30-60 seconds. Grab a coffee. ☕
       </p>
     </div>
