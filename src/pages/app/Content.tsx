@@ -493,6 +493,7 @@ export default function Content() {
           <TabsTrigger value="drafts">
             Drafts {drafts.length > 0 && <span className="ml-2 text-xs text-muted-foreground">({drafts.length})</span>}
           </TabsTrigger>
+          <TabsTrigger value="repurpose">Repurpose</TabsTrigger>
         </TabsList>
 
         {/* GENERATE */}
