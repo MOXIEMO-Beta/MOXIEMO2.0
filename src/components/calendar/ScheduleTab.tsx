@@ -234,11 +234,14 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
         {view === "week" ? (
           <Card className="p-3 shadow-soft border-border overflow-x-auto">
             <div className="min-w-[760px]">
-              {/* Campaign banners */}
+              {/* Campaign name markers — only render on the campaign's first day in the visible week */}
               {visibleCampaigns.length > 0 && (
                 <div className="mb-2 space-y-1">
                   {visibleCampaigns.map((c: any) => {
-                    const { startCol, span } = spanForCampaign(c);
+                    const cStart = new Date(c.start_date);
+                    // Only show the marker if the campaign starts within the visible week
+                    if (cStart < weekStart || cStart > addDays(weekStart, 6)) return null;
+                    const startCol = Math.floor((cStart.getTime() - weekStart.getTime()) / 86400000);
                     const color = c.color || DEFAULT_CAMPAIGN_COLOR;
                     return (
                       <div
@@ -251,12 +254,12 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                           onClick={() => navigate("/app/calendar?tab=campaigns")}
                           style={{
                             gridColumnStart: startCol + 1,
-                            gridColumnEnd: `span ${span}`,
+                            gridColumnEnd: `span 1`,
                             backgroundColor: color,
                             borderLeft: `3px solid ${color}`,
                           }}
                           className="h-6 px-2 rounded-md text-white text-[11px] font-medium flex items-center gap-1.5 truncate hover:opacity-90 transition-opacity text-left"
-                          title={`${c.name} · ${fmtShort(new Date(c.start_date))} – ${fmtShort(new Date(c.end_date))}`}
+                          title={`${c.name} · starts ${fmtShort(cStart)}`}
                         >
                           <Target className="w-3 h-3 shrink-0" />
                           <span className="truncate">{c.name}</span>
@@ -280,6 +283,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                 {weekDays.map(d => {
                   const items = dayItems(d);
                   const isToday = sameDay(d, new Date());
+                  const execItems = execItemsForDay(d);
                   return (
                     <div
                       key={`col-${d.toISOString()}`}
@@ -288,6 +292,27 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                         isToday && "bg-accent-soft/40"
                       )}
                     >
+                      {/* Campaign execution pills */}
+                      {execItems.length > 0 && (
+                        <div className="space-y-1 mb-1.5">
+                          {execItems.map((ex: any) => {
+                            const camp = campaignById(ex.campaign_id);
+                            const color = camp?.color || DEFAULT_CAMPAIGN_COLOR;
+                            return (
+                              <button
+                                key={ex.id}
+                                onClick={() => openDayDrawer(d)}
+                                className="w-full h-6 flex items-center gap-1.5 px-1.5 rounded-md border border-border bg-card text-[10px] font-medium hover:bg-muted/40 transition-colors"
+                                title={`${camp?.name ?? "Campaign"} · ${ex.channel}`}
+                              >
+                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                <PlatformIcon channel={ex.channel} className="w-3 h-3 text-muted-foreground shrink-0" />
+                                <span>{CHANNEL_ABBR[ex.channel] ?? ex.channel.slice(0, 2).toUpperCase()}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                       <div className="space-y-1.5">
                         {items.map((it, idx) => {
                           const ch = itemChannel(it);
