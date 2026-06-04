@@ -521,6 +521,38 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
           {step === 1 && (
             <>
               <div>
+                <div
+                  className={`text-[11px] uppercase tracking-wider mb-2 font-semibold ${
+                    highlightedCardKeys.size > 0 ? "text-accent" : "text-muted-foreground"
+                  }`}
+                >
+                  {highlightedCardKeys.size > 0 ? "Recommended for your goals" : "Choose a campaign type"}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {CAMPAIGN_TYPE_CARDS.map((card) => {
+                    const highlighted = highlightedCardKeys.has(card.key);
+                    return (
+                      <button
+                        key={card.key}
+                        type="button"
+                        onClick={() => pickCampaignTypeCard(card)}
+                        className={`text-left rounded-lg border p-3 transition-colors hover:bg-muted/40 ${
+                          highlighted ? "border-accent" : "border-border"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg leading-none">{card.icon}</span>
+                          <span className="font-semibold text-sm">{card.label}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground leading-snug">
+                          {card.description}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
                 <Label>Campaign name</Label>
                 <Input
                   value={name}
