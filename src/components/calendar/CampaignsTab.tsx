@@ -757,9 +757,12 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   Click "Generate plan" to have MOXIEMO draft a week-by-week topic plan.
                 </div>
               )}
-              {plan.length > 0 && (
+              {planLoading && (
+                <PlanLoadingState />
+              )}
+              {plan.length > 0 && !planLoading && (
                 <>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between animate-fade-in">
                     <button
                       type="button"
                       onClick={() => setCurrentWeekIdx((i) => Math.max(0, i - 1))}
