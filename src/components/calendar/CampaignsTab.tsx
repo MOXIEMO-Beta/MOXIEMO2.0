@@ -736,18 +736,32 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   Click "Generate plan" to have MOXIEMO draft a week-by-week topic plan.
                 </div>
               )}
-              <div className="space-y-3 max-h-[400px] overflow-y-auto">
-                {plan.map((w: any, idx: number) => (
-                  <div key={idx} className="border border-border rounded-md p-3">
-                    <div className="text-xs text-muted-foreground mb-1">Week {w.weekNumber}{w.weekOf ? ` — ${fmtShort(new Date(w.weekOf))}` : ""}</div>
-                    {w.theme && <div className="font-medium text-sm mb-2">Theme: {w.theme}</div>}
-                    {w.linkedin && <div className="text-xs mb-1"><b>LinkedIn:</b> {w.linkedin}</div>}
-                    {w.email && <div className="text-xs mb-1"><b>Email:</b> {w.email}</div>}
-                    {w.instagram && <div className="text-xs mb-1"><b>Instagram:</b> {w.instagram}</div>}
-                    {w.facebook && <div className="text-xs mb-1"><b>Facebook:</b> {w.facebook}</div>}
+              {plan.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentWeekIdx((i) => Math.max(0, i - 1))}
+                      disabled={currentWeekIdx === 0}
+                      className="inline-flex items-center gap-1 text-sm text-foreground disabled:text-muted-foreground/50 disabled:cursor-not-allowed hover:text-accent transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4" /> Prev
+                    </button>
+                    <div className="text-sm font-medium">
+                      Week {currentWeekIdx + 1} of {plan.length}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentWeekIdx((i) => Math.min(plan.length - 1, i + 1))}
+                      disabled={currentWeekIdx >= plan.length - 1}
+                      className="inline-flex items-center gap-1 text-sm text-foreground disabled:text-muted-foreground/50 disabled:cursor-not-allowed hover:text-accent transition-colors"
+                    >
+                      Next <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                ))}
-              </div>
+                  <WeekCard week={plan[currentWeekIdx]} />
+                </>
+              )}
               <div className="flex justify-between pt-3">
                 <Button variant="outline" onClick={() => setStep(3)}><ArrowLeft className="w-4 h-4" /> Back</Button>
                 <Button onClick={() => setStep(5)}>Next <ArrowRight className="w-4 h-4" /></Button>
