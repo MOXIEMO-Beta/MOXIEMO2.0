@@ -40,6 +40,9 @@ function buildPrompt(opts: {
 
   const richFormats = new Set(["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"]);
   const isRich = richFormats.has(opts.platform);
+  const isShortScript = opts.platform === "Short-Form Video Script";
+  const isLongScript = opts.platform === "Long-Form Video Script";
+  const isScript = isShortScript || isLongScript;
   const platformRules = `PLATFORM-SPECIFIC RULES:
 - LinkedIn: 1,200–1,800 characters, sentence case, no em dashes, punchy hook under 60 characters, end with a question, no links in the body
 - Instagram: conversational, 150–300 characters for the caption, 5–10 relevant hashtags at the end
@@ -49,9 +52,45 @@ function buildPrompt(opts: {
 - Long-Form Article: 800–1,500 words, clear intro/body/conclusion structure
 - Standalone Newsletter (full): 500–900 words, greeting, body with subheads, sign-off
 - X / Twitter: under 280 characters total, punchy, no fluff`;
-  const formatHint = isRich
-    ? "Return formatted HTML using <h1>, <h2>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <hr>. No <html> or <body> wrappers. No code fences."
-    : "Return only plain text. No markdown, no HTML, no code fences.";
+  const formatHint = isScript
+    ? "Return only the spoken script as plain text. No markdown, no HTML, no code fences, no preamble, no title."
+    : isRich
+      ? "Return formatted HTML using <h1>, <h2>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <hr>. No <html> or <body> wrappers. No code fences."
+      : "Return only plain text. No markdown, no HTML, no code fences.";
+
+  let scriptInstructions = "";
+  if (isShortScript) {
+    scriptInstructions = `SHORT-FORM VIDEO SCRIPT INSTRUCTIONS:
+Generate a short-form video script for a 45-90 second direct-to-camera video. The script should:
+- Open with a single punchy hook sentence that stops the scroll — no "Hey guys" or "Welcome back"
+- Sound exactly like natural spoken conversation — no bullet points, no formal structure, no em-dashes
+- Flow as one continuous thought the creator can speak directly to camera without sounding scripted
+- End with one clear CTA sentence
+- Include a [PAUSE] or [EMPHASIZE] stage note maximum once if it genuinely helps delivery
+- Target word count: 120-180 words (approximately 60-90 seconds at natural speaking pace)
+- Do not include a title or scene headings — just the script
+Format the output as the spoken script only. No preamble.`;
+    if (opts.contentType === "Talking Head with B-Roll Notes") {
+      scriptInstructions += `\n\nAdditionally: include bracketed [B-ROLL: description] notes at relevant moments suggesting visual cutaways.`;
+    } else if (opts.contentType === "Listicle / Tips Format") {
+      scriptInstructions += `\n\nAdditionally: structure as hook → numbered points (3-5) → CTA.`;
+    }
+  } else if (isLongScript) {
+    scriptInstructions = `LONG-FORM VIDEO SCRIPT INSTRUCTIONS:
+Generate a long-form YouTube video script. The script should:
+- Open with a 30-45 second hook section that states the problem or promise clearly — no slow intros
+- Include a brief "what we're covering today" transition after the hook
+- Structured into 3-5 clearly labeled sections with section headers in [SECTION: Title] format
+- Each section: main point, supporting example or story, one key takeaway
+- Conversational but authoritative — sounds like the creator teaching, not reading
+- Close with a clear summary, CTA, and channel engagement prompt (subscribe/comment/share)
+- Target word count: 1800-2500 words (approximately 10-14 minutes at natural speaking pace)
+- Include estimated section timestamps based on word count
+Format output as a full script with section headers. No preamble.`;
+    if (opts.contentType === "Interview Style (with suggested questions)") {
+      scriptInstructions += `\n\nAdditionally: structure as an interview with 5-8 suggested questions, each followed by talking points the founder can riff from.`;
+    }
+  }
 
   const campaignBlock = c && (c.name || c.goals || c.theme)
     ? `CAMPAIGN CONTEXT:
@@ -85,6 +124,7 @@ Founder's idea / angle: ${opts.topic}
 
 ${platformRules}
 
+${scriptInstructions ? scriptInstructions + "\n\n" : ""}
 Generate ONE piece of content for this platform that:
 1. Advances the campaign goal stated above
 2. Maps to one of the content pillars${slot.pillar ? ` (use "${slot.pillar}" as the anchor pillar)` : ""}
@@ -197,8 +237,8 @@ Deno.serve(async (req) => {
 
     const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot });
 
-    const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"].includes(platform);
-    const res = await callClaude(SYSTEM, prompt, longForm ? 3000 : 1024);
+    const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)", "Long-Form Video Script"].includes(platform);
+    const res = await callClaude(SYSTEM, prompt, longForm ? 4000 : 1500);
 
     if (!res.ok) {
       if (res.status === 429) {
