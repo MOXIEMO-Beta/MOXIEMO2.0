@@ -110,6 +110,59 @@ function classifyGoal(text: string): GoalType {
 
 const DEFAULT_CMO_TEXT = "Based on your goal, consistency matters more than volume. Start with your strongest channel and build cadence before expanding.";
 
+const CAMPAIGN_TYPE_CARDS: Array<{
+  key: string;
+  icon: string;
+  label: string;
+  description: string;
+  typeValue: string;
+  keywords: string[];
+}> = [
+  {
+    key: "leadgen",
+    icon: "🎯",
+    label: "Lead Generation",
+    description: "Fill your pipeline with qualified prospects ready to buy.",
+    typeValue: "launch",
+    keywords: ["revenue", "lead", "client", "sale", "pipeline", "booking", "discovery"],
+  },
+  {
+    key: "audience",
+    icon: "📣",
+    label: "Audience Awareness",
+    description: "Reach new people who need what you do but do not know you yet.",
+    typeValue: "visibility",
+    keywords: ["awareness", "reach", "audience", "follower", "grow", "visibility"],
+  },
+  {
+    key: "bizdev",
+    icon: "💼",
+    label: "Business Development",
+    description: "Open doors to partnerships, referrals, and strategic relationships.",
+    typeValue: "custom",
+    keywords: ["partnership", "referral", "relationship", "network", "bizdev"],
+  },
+  {
+    key: "brand",
+    icon: "🏷",
+    label: "Brand Awareness",
+    description: "Make your name the one people think of first in your category.",
+    typeValue: "visibility",
+    keywords: ["awareness", "reach", "audience", "brand", "recognition"],
+  },
+  {
+    key: "sales",
+    icon: "💰",
+    label: "Sales Campaign",
+    description: "Drive direct revenue from your existing audience and warm leads.",
+    typeValue: "launch",
+    keywords: ["revenue", "lead", "client", "sale", "promo", "offer"],
+  },
+];
+
+const REVENUE_KEYWORDS = ["revenue", "lead", "client", "sale", "pipeline", "booking"];
+const AWARENESS_KEYWORDS = ["awareness", "reach", "audience", "follower", "visibility"];
+
 export default function CampaignsTab({ ctx }: { ctx: any }) {
   const { campaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
   const [openNew, setOpenNew] = useState(false);
