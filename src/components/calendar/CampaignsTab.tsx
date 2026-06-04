@@ -110,6 +110,59 @@ function classifyGoal(text: string): GoalType {
 
 const DEFAULT_CMO_TEXT = "Based on your goal, consistency matters more than volume. Start with your strongest channel and build cadence before expanding.";
 
+const CAMPAIGN_TYPE_CARDS: Array<{
+  key: string;
+  icon: string;
+  label: string;
+  description: string;
+  typeValue: string;
+  keywords: string[];
+}> = [
+  {
+    key: "leadgen",
+    icon: "🎯",
+    label: "Lead Generation",
+    description: "Fill your pipeline with qualified prospects ready to buy.",
+    typeValue: "launch",
+    keywords: ["revenue", "lead", "client", "sale", "pipeline", "booking", "discovery"],
+  },
+  {
+    key: "audience",
+    icon: "📣",
+    label: "Audience Awareness",
+    description: "Reach new people who need what you do but do not know you yet.",
+    typeValue: "visibility",
+    keywords: ["awareness", "reach", "audience", "follower", "grow", "visibility"],
+  },
+  {
+    key: "bizdev",
+    icon: "💼",
+    label: "Business Development",
+    description: "Open doors to partnerships, referrals, and strategic relationships.",
+    typeValue: "custom",
+    keywords: ["partnership", "referral", "relationship", "network", "bizdev"],
+  },
+  {
+    key: "brand",
+    icon: "🏷",
+    label: "Brand Awareness",
+    description: "Make your name the one people think of first in your category.",
+    typeValue: "visibility",
+    keywords: ["awareness", "reach", "audience", "brand", "recognition"],
+  },
+  {
+    key: "sales",
+    icon: "💰",
+    label: "Sales Campaign",
+    description: "Drive direct revenue from your existing audience and warm leads.",
+    typeValue: "launch",
+    keywords: ["revenue", "lead", "client", "sale", "promo", "offer"],
+  },
+];
+
+const REVENUE_KEYWORDS = ["revenue", "lead", "client", "sale", "pipeline", "booking"];
+const AWARENESS_KEYWORDS = ["awareness", "reach", "audience", "follower", "visibility"];
+
 export default function CampaignsTab({ ctx }: { ctx: any }) {
   const { campaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
   const [openNew, setOpenNew] = useState(false);
@@ -338,6 +391,35 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
 
   const goalType: GoalType = useMemo(() => classifyGoal(goals), [goals]);
 
+  // Goal text for campaign-type card matching (Step 1)
+  const goalMatchText = useMemo(() => {
+    return [
+      userTopGoal,
+      strategy?.business_goal,
+      strategy?.success_definition,
+      strategy?.positioning_statement,
+    ].filter(Boolean).join(" ").toLowerCase();
+  }, [userTopGoal, strategy]);
+
+  const highlightedCardKeys = useMemo(() => {
+    const keys = new Set<string>();
+    if (!goalMatchText) return keys;
+    if (REVENUE_KEYWORDS.some((k) => goalMatchText.includes(k))) {
+      keys.add("leadgen"); keys.add("sales");
+    }
+    if (AWARENESS_KEYWORDS.some((k) => goalMatchText.includes(k))) {
+      keys.add("audience"); keys.add("brand");
+    }
+    return keys;
+  }, [goalMatchText]);
+
+  function pickCampaignTypeCard(card: typeof CAMPAIGN_TYPE_CARDS[number]) {
+    const d = new Date();
+    const mo = d.toLocaleString("en-US", { month: "long" });
+    setName(`${card.label} Campaign — ${mo} ${d.getFullYear()}`);
+    setType(card.typeValue);
+  }
+
   // When Step 3 first renders, prefill cadence and request CMO recommendation.
   useEffect(() => {
     if (step !== 3) return;
@@ -438,6 +520,38 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         <div className="mt-6 space-y-4">
           {step === 1 && (
             <>
+              <div>
+                <div
+                  className={`text-[11px] uppercase tracking-wider mb-2 font-semibold ${
+                    highlightedCardKeys.size > 0 ? "text-accent" : "text-muted-foreground"
+                  }`}
+                >
+                  {highlightedCardKeys.size > 0 ? "Recommended for your goals" : "Choose a campaign type"}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {CAMPAIGN_TYPE_CARDS.map((card) => {
+                    const highlighted = highlightedCardKeys.has(card.key);
+                    return (
+                      <button
+                        key={card.key}
+                        type="button"
+                        onClick={() => pickCampaignTypeCard(card)}
+                        className={`text-left rounded-lg border p-3 transition-colors hover:bg-muted/40 ${
+                          highlighted ? "border-accent" : "border-border"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg leading-none">{card.icon}</span>
+                          <span className="font-semibold text-sm">{card.label}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground leading-snug">
+                          {card.description}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div>
                 <Label>Campaign name</Label>
                 <Input
