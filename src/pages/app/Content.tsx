@@ -45,6 +45,7 @@ import {
   Check,
   RotateCcw,
   Video,
+  Mic,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
@@ -74,6 +75,7 @@ const PLATFORMS = [
   { value: "Standalone Newsletter (full)", icon: Mail, limit: null },
   { value: "Short-Form Video Script", icon: Video, limit: null },
   { value: "Long-Form Video Script", icon: Video, limit: null },
+  { value: "Podcast Script", icon: Mic, limit: null },
 ];
 
 const CONTENT_TYPES = [
@@ -99,11 +101,21 @@ const LONG_VIDEO_TYPES = [
   "Interview Style (with suggested questions)",
 ];
 
-const SCRIPT_PLATFORMS = new Set(["Short-Form Video Script", "Long-Form Video Script"]);
+const PODCAST_TYPES = [
+  "Full Episode Script",
+  "Episode Outline",
+  "Interview Questions / Guest Prep",
+  "Episode Intro and Outro",
+  "Show Notes",
+];
+
+const SCRIPT_PLATFORMS = new Set(["Short-Form Video Script", "Long-Form Video Script", "Podcast Script"]);
+const PODCAST_PLATFORMS = new Set(["Podcast Script"]);
 
 function contentTypeOptionsFor(platform: string): string[] {
   if (platform === "Short-Form Video Script") return SHORT_VIDEO_TYPES;
   if (platform === "Long-Form Video Script") return LONG_VIDEO_TYPES;
+  if (platform === "Podcast Script") return PODCAST_TYPES;
   return CONTENT_TYPES;
 }
 
