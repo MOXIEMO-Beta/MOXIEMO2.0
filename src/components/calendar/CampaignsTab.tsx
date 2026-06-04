@@ -391,6 +391,35 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
 
   const goalType: GoalType = useMemo(() => classifyGoal(goals), [goals]);
 
+  // Goal text for campaign-type card matching (Step 1)
+  const goalMatchText = useMemo(() => {
+    return [
+      userTopGoal,
+      strategy?.business_goal,
+      strategy?.success_definition,
+      strategy?.positioning_statement,
+    ].filter(Boolean).join(" ").toLowerCase();
+  }, [userTopGoal, strategy]);
+
+  const highlightedCardKeys = useMemo(() => {
+    const keys = new Set<string>();
+    if (!goalMatchText) return keys;
+    if (REVENUE_KEYWORDS.some((k) => goalMatchText.includes(k))) {
+      keys.add("leadgen"); keys.add("sales");
+    }
+    if (AWARENESS_KEYWORDS.some((k) => goalMatchText.includes(k))) {
+      keys.add("audience"); keys.add("brand");
+    }
+    return keys;
+  }, [goalMatchText]);
+
+  function pickCampaignTypeCard(card: typeof CAMPAIGN_TYPE_CARDS[number]) {
+    const d = new Date();
+    const mo = d.toLocaleString("en-US", { month: "long" });
+    setName(`${card.label} Campaign — ${mo} ${d.getFullYear()}`);
+    setType(card.typeValue);
+  }
+
   // When Step 3 first renders, prefill cadence and request CMO recommendation.
   useEffect(() => {
     if (step !== 3) return;
