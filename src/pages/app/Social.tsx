@@ -425,7 +425,11 @@ function OverviewTab({
     setConnectingPlatform(platform);
     try {
       const { data, error } = await supabase.functions.invoke("social-oauth-start", {
-        body: { platform, user_id: userId },
+        body: {
+          platform,
+          user_id: userId,
+          redirect_uri: `${window.location.origin}/auth/linkedin/callback`,
+        },
       });
       if (error) throw error;
       if (data?.url) {
