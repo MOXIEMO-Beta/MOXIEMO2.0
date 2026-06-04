@@ -839,6 +839,15 @@ export default function Content() {
             ))
           )}
         </TabsContent>
+
+        {/* REPURPOSE */}
+        <TabsContent value="repurpose" className="space-y-6">
+          <RepurposeTab
+            userId={user?.id ?? null}
+            strategy={strategy}
+            onSavedToDrafts={(item) => setItems((prev) => [item, ...prev])}
+          />
+        </TabsContent>
       </Tabs>
 
       <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
