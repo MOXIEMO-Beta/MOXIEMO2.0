@@ -275,7 +275,9 @@ function OverviewTab() {
                 <EditableList
                   items={archetype?.exampleBrands || []}
                   onChange={(next) => setEnhanced(["brandArchetype", "exampleBrands"], next)}
-                  renderItem={(it) => <span key={it}>{it}</span>}
+                  renderItem={(it, i) => (
+                    <p key={i} className="mb-2 last:mb-0">{it}</p>
+                  )}
                 />
               </div>
             </div>
@@ -285,7 +287,9 @@ function OverviewTab() {
                 <EditableList
                   items={archetype?.coreValues || []}
                   onChange={(next) => setEnhanced(["brandArchetype", "coreValues"], next)}
-                  renderItem={(it) => <span key={it}>{it}</span>}
+                  renderItem={(it, i) => (
+                    <p key={i} className="mb-2 last:mb-0">{it}</p>
+                  )}
                 />
               </div>
             </div>
