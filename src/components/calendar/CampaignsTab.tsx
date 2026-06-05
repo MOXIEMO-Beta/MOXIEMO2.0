@@ -206,9 +206,16 @@ const META_CMO = "Paid Meta campaigns perform best when you test 2-3 creative va
 const GOOGLE_CMO = "Search campaigns work best with tightly grouped ad sets per keyword theme. Start with 3 headlines and 2 descriptions per ad group and let Google optimize.";
 
 export default function CampaignsTab({ ctx }: { ctx: any }) {
-  const { campaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
+  const { allCampaigns, campaigns: activeCampaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
+  const sourceCampaigns = allCampaigns ?? activeCampaigns ?? [];
   const [openNew, setOpenNew] = useState(false);
   const [openDetail, setOpenDetail] = useState<any>(null);
+  const [showArchived, setShowArchived] = useState(false);
+
+  const visibleCampaigns = sourceCampaigns.filter((c: any) =>
+    showArchived ? c?.archived : !c?.archived
+  );
+  const archivedCount = sourceCampaigns.filter((c: any) => c?.archived).length;
 
   // Open new flow if seeded from Plan tab
   useEffect(() => { if (campaignSeed) { setOpenNew(true); } }, [campaignSeed]);
@@ -220,33 +227,49 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
           <h2 className="font-display text-2xl">Campaigns</h2>
           <p className="text-sm text-muted-foreground">Organize your marketing by initiative.</p>
         </div>
-        <Button onClick={() => { setCampaignSeed(null); setOpenNew(true); }}>
-          <Plus className="w-4 h-4" /> New campaign
-        </Button>
+        <div className="flex items-center gap-4 flex-wrap">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+            <Switch checked={showArchived} onCheckedChange={setShowArchived} />
+            Show archived{archivedCount > 0 ? ` (${archivedCount})` : ""}
+          </label>
+          <Button onClick={() => { setCampaignSeed(null); setOpenNew(true); }}>
+            <Plus className="w-4 h-4" /> New campaign
+          </Button>
+        </div>
       </div>
 
-      {campaigns.length === 0 ? (
+      {visibleCampaigns.length === 0 ? (
         <Card className="p-10 border-dashed border-border text-center max-w-2xl mx-auto">
           <Target className="w-12 h-12 text-accent mx-auto mb-3" />
-          <h3 className="font-display text-xl mb-1">No campaigns yet</h3>
+          <h3 className="font-display text-xl mb-1">
+            {showArchived ? "No archived campaigns" : "No campaigns yet"}
+          </h3>
           <p className="text-muted-foreground text-sm mb-5 max-w-md mx-auto">
-            Campaigns help you organize your marketing around specific goals and themes — launches, quarterly focuses, or any initiative.
+            {showArchived
+              ? "Campaigns you archive will appear here. They stay out of your active view and calendar but are never deleted."
+              : "Campaigns help you organize your marketing around specific goals and themes — launches, quarterly focuses, or any initiative."}
           </p>
-          <Button onClick={() => setOpenNew(true)}><Plus className="w-4 h-4" /> Create your first campaign</Button>
-          <div className="mt-6">
-            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Or start from a template</div>
-            <div className="flex flex-wrap gap-2 justify-center">
-              {TEMPLATES.map(t => (
-                <Button key={t.id} variant="outline" size="sm" onClick={() => { setCampaignSeed({ ...t, name: t.name }); setOpenNew(true); }}>
-                  {t.name}
-                </Button>
-              ))}
-            </div>
-          </div>
+          {!showArchived && (
+            <>
+              <Button onClick={() => setOpenNew(true)}><Plus className="w-4 h-4" /> Create your first campaign</Button>
+              <div className="mt-6">
+                <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Or start from a template</div>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {TEMPLATES.map(t => (
+                    <Button key={t.id} variant="outline" size="sm" onClick={() => { setCampaignSeed({ ...t, name: t.name }); setOpenNew(true); }}>
+                      {t.name}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {campaigns.map((c: any) => <CampaignCard key={c.id} c={c} ctx={ctx} onOpen={() => setOpenDetail(c)} />)}
+          {visibleCampaigns.map((c: any) => (
+            <CampaignCard key={c.id} c={c} ctx={ctx} onOpen={() => setOpenDetail(c)} onChanged={() => void refresh()} />
+          ))}
         </div>
       )}
 
