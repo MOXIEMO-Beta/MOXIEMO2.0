@@ -12,6 +12,9 @@ export default function PlanTab({ ctx }: { ctx: any }) {
   const quarters = useMemo(() => nextQuarters(3), []);
   const cq = currentQuarter();
 
+  const today = new Date();
+  const [viewMonth, setViewMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
+
   if (loading) {
     return <div className="space-y-6">
       <Skeleton className="h-44 w-full" />
@@ -76,8 +79,6 @@ export default function PlanTab({ ctx }: { ctx: any }) {
   });
 
   // Coverage heatmap — current month
-  const today = new Date();
-  const [viewMonth, setViewMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
   const monthStart = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
   const monthEnd = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0);
   const firstWeekStart = startOfWeek(monthStart);
