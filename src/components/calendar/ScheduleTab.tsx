@@ -203,8 +203,8 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr,260px] gap-6">
-      <div>
+    <div className={cn("grid grid-cols-1 gap-6", view === "week" && "lg:grid-cols-[1fr,260px]")}>
+      <div className="w-full min-w-0">
         {/* Top bar */}
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <div className="flex items-center gap-2">
