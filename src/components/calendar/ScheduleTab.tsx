@@ -58,7 +58,7 @@ type ChannelKey = "linkedin" | "email" | "instagram" | "facebook" | "content";
 
 export default function ScheduleTab({ ctx }: { ctx: any }) {
   const { socialPosts, contentItems, emailSends, socialConnections, subscribers, campaigns, executionItems, scheduleAnchor, setTab, navigate } = ctx;
-  const [view, setView] = useState<"week" | "month">("week");
+  const [view, setView] = useState<"week" | "month">("month");
   const [anchor, setAnchor] = useState<Date>(scheduleAnchor ?? new Date());
   useEffect(() => { if (scheduleAnchor) setAnchor(scheduleAnchor); }, [scheduleAnchor]);
 
@@ -388,7 +388,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                       <div
                         key={`cell-${row}-${i}`}
                         className={cn(
-                          "group bg-card min-h-[88px] p-1.5 text-left relative flex flex-col",
+                          "group bg-card min-h-[140px] p-1.5 text-left relative flex flex-col",
                           inMonth ? "" : "opacity-40",
                           isToday && "bg-accent-soft/40"
                         )}
@@ -408,7 +408,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                                   <button
                                     key={ex.id}
                                     onClick={(e) => { e.stopPropagation(); openDayDrawer(d); }}
-                                    className="w-full h-5 flex items-center gap-1 px-1 rounded border border-border bg-card text-[9px] font-medium hover:bg-muted/40"
+                                    className="w-full flex items-center gap-1 px-1 py-1 rounded border border-border bg-card text-[9px] font-medium leading-snug hover:bg-muted/40"
                                     title={`${camp?.name ?? "Campaign"} · ${ex.channel}`}
                                   >
                                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -419,7 +419,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                               {execItemsForDay(d).length > 3 && (
                                 <button
                                   onClick={(e) => { e.stopPropagation(); openDayDrawer(d); }}
-                                  className="text-[9px] text-muted-foreground hover:underline"
+                                  className="text-[9px] text-muted-foreground hover:underline mt-2"
                                 >
                                   +{execItemsForDay(d).length - 3} more
                                 </button>
@@ -434,7 +434,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                               <button
                                 key={idx}
                                 onClick={(e) => { e.stopPropagation(); setOpenItem(it); }}
-                                className="w-full flex items-center gap-1 bg-card pl-1.5 pr-1 py-0.5 rounded border border-border text-left hover:bg-muted/40"
+                                className="w-full flex items-center gap-1 bg-card pl-1.5 pr-1 py-1 rounded border border-border text-left leading-snug hover:bg-muted/40"
                                 style={{ borderLeft: `3px solid ${color}` }}
                                 title={`${it._text} · ${statusBadge(status).label}`}
                               >
@@ -446,7 +446,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                           {items.length > 2 && (
                             <button
                               onClick={() => { setAnchor(d); setView("week"); }}
-                              className="text-[9px] font-medium hover:underline"
+                              className="text-[9px] font-medium hover:underline mt-2 self-start"
                               style={{ color: "#6B7280" }}
                             >
                               +{items.length - 2} more
