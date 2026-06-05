@@ -474,7 +474,8 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   function pickCampaignTypeCard(card: typeof CAMPAIGN_TYPE_CARDS[number]) {
     const d = new Date();
     const mo = d.toLocaleString("en-US", { month: "long" });
-    setName(`${card.label} Campaign — ${mo} ${d.getFullYear()}`);
+    const base = card.label.endsWith("Campaign") ? card.label : `${card.label} Campaign`;
+    setName(`${base} — ${mo} ${d.getFullYear()}`);
     setType(card.typeValue);
     if (card.mode === "paid" && card.adPlatform) {
       setCampaignMode("paid");
