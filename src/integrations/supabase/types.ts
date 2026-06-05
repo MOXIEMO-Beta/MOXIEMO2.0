@@ -148,6 +148,7 @@ export type Database = {
       }
       campaigns: {
         Row: {
+          archived: boolean
           campaign_type: string | null
           channels: string[] | null
           color: string
@@ -165,6 +166,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          archived?: boolean
           campaign_type?: string | null
           channels?: string[] | null
           color?: string
@@ -182,6 +184,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          archived?: boolean
           campaign_type?: string | null
           channels?: string[] | null
           color?: string
