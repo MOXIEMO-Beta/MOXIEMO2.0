@@ -336,6 +336,18 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   const [userTopGoal, setUserTopGoal] = useState<string>("");
   const [cadenceApplied, setCadenceApplied] = useState(false);
 
+  // Paid campaign state
+  const [campaignMode, setCampaignMode] = useState<"organic" | "paid">("organic");
+  const [adPlatform, setAdPlatform] = useState<"meta" | "google" | null>(null);
+  const [metaObjective, setMetaObjective] = useState<string>("Leads");
+  const [metaFormat, setMetaFormat] = useState<string>("Single Image or Video");
+  const [metaBudget, setMetaBudget] = useState<string>("$25 to $50/day");
+  const [metaVariations, setMetaVariations] = useState<number>(3);
+  const [googleType, setGoogleType] = useState<string>("Search");
+  const [googleKeyword, setGoogleKeyword] = useState<string>("");
+  const [googleBudget, setGoogleBudget] = useState<string>("$25 to $50/day");
+  const [googleAdGroups, setGoogleAdGroups] = useState<number>(2);
+
   useEffect(() => {
     if (!open) return;
     setStep(1);
@@ -369,6 +381,8 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     setPrechecked(stratChannels);
     setPlan([]);
     setCurrentWeekIdx(0);
+    setCampaignMode("organic");
+    setAdPlatform(null);
 
     // Fetch goal suggestions silently
     (async () => {
@@ -454,11 +468,23 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     const mo = d.toLocaleString("en-US", { month: "long" });
     setName(`${card.label} Campaign — ${mo} ${d.getFullYear()}`);
     setType(card.typeValue);
+    if (card.mode === "paid" && card.adPlatform) {
+      setCampaignMode("paid");
+      setAdPlatform(card.adPlatform);
+    } else {
+      setCampaignMode("organic");
+      setAdPlatform(null);
+    }
   }
 
   // When Step 3 first renders, prefill cadence and request CMO recommendation.
   useEffect(() => {
     if (step !== 3) return;
+    if (campaignMode === "paid") {
+      setCmoText(adPlatform === "google" ? GOOGLE_CMO : META_CMO);
+      setCmoLoading(false);
+      return;
+    }
     if (!cadenceApplied) {
       const c = CADENCE[goalType];
       setTargets((prev) => ({ ...prev, ...c }));
@@ -497,10 +523,16 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     if (!(await checkGenerationLimit())) return;
     setPlanLoading(true);
     try {
+      const adConfig = campaignMode === "paid"
+        ? (adPlatform === "meta"
+            ? { platform: "meta", objective: metaObjective, format: metaFormat, budget: metaBudget, numVariations: metaVariations }
+            : { platform: "google", googleType, keyword: googleKeyword, budget: googleBudget, numAdGroups: googleAdGroups })
+        : null;
       const { data, error } = await supabase.functions.invoke("generate-campaign-plan", {
         body: {
           campaign: { name, theme, goals, channels: selectedChannels, start_date: startDate, end_date: endDate },
           strategy,
+          adConfig,
         },
       });
       if (handleGenerationResponse(data, error)) return;
@@ -517,6 +549,16 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     if (!user) return;
     setCreating(true);
     try {
+      // For paid, the "channel" is the ad platform and the per-week brief
+      // is stored on weekPlan[adPlatform] so execution items pick it up.
+      const planForSave = campaignMode === "paid" && adPlatform
+        ? plan.map((w: any) => {
+            const brief = adPlatform === "meta"
+              ? formatMetaBrief(w?.meta)
+              : formatGoogleBrief(w?.google);
+            return { ...w, [adPlatform]: brief };
+          })
+        : plan;
       const slots = generateCampaignSlots({
         start_date: startDate || null,
         end_date: endDate || null,
@@ -532,7 +574,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         channels: selectedChannels,
         status: "active",
         color,
-        content_plan: { weeks: plan, targets, slots },
+        content_plan: { weeks: planForSave, targets, slots, mode: campaignMode, adPlatform },
       }).select("id").single();
       if (error) throw error;
 
@@ -542,7 +584,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         end_date: endDate || null,
         channels: selectedChannels,
         targets,
-        plan,
+        plan: planForSave,
       });
       if (created?.id && execItems.length > 0) {
         const rows = execItems.map((it) => ({
