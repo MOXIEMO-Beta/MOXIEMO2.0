@@ -291,11 +291,42 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
   );
 }
 
-function CampaignCard({ c, ctx, onOpen }: any) {
+function CampaignCard({ c, ctx, onOpen, onChanged }: any) {
   const counts = campaignSlotCounts(c);
   const { pct, filled, total } = campaignSlotProgress(c);
   const channels = c.channels ?? [];
   const color = c.color || "#F97066";
+  const isArchived = !!c.archived;
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function toggleArchive() {
+    setBusy(true);
+    const { error } = await supabase
+      .from("campaigns")
+      .update({ archived: !isArchived })
+      .eq("id", c.id);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(isArchived ? "Campaign restored" : "Campaign archived");
+    onChanged?.();
+  }
+
+  async function deleteCampaign() {
+    setBusy(true);
+    const { error: execErr } = await supabase
+      .from("campaign_execution_items")
+      .delete()
+      .eq("campaign_id", c.id);
+    if (execErr) { setBusy(false); toast.error(execErr.message); return; }
+    const { error } = await supabase.from("campaigns").delete().eq("id", c.id);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Campaign deleted");
+    setConfirmDelete(false);
+    onChanged?.();
+  }
+
   const summaryParts: string[] = [];
   if (counts.linkedin) summaryParts.push(`${counts.linkedin} linkedin`);
   if (counts.email) summaryParts.push(`${counts.email} email`);
@@ -312,8 +343,41 @@ function CampaignCard({ c, ctx, onOpen }: any) {
         <div className="font-display text-lg flex items-center gap-2">
           <span className="inline-block w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
           {c.name}
+          {isArchived && (
+            <Badge variant="outline" className="text-[10px] font-normal">Archived</Badge>
+          )}
         </div>
-        <Badge className={STATUS_BADGE[c.status] ?? "bg-muted"}>{c.status}</Badge>
+        <div className="flex items-center gap-1.5">
+          <Badge className={STATUS_BADGE[c.status] ?? "bg-muted"}>{c.status}</Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label="Campaign actions"
+                disabled={busy}
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={toggleArchive} disabled={busy}>
+                {isArchived ? (
+                  <><ArchiveRestore className="w-4 h-4" /> Restore campaign</>
+                ) : (
+                  <><Archive className="w-4 h-4" /> Archive campaign</>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setConfirmDelete(true)}
+                className="text-[hsl(var(--accent))] focus:text-[hsl(var(--accent))]"
+                disabled={busy}
+              >
+                <Trash2 className="w-4 h-4" /> Delete campaign
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="text-xs text-muted-foreground mb-3">
         {c.start_date ? fmtShort(new Date(c.start_date)) : "—"} – {c.end_date ? fmtShort(new Date(c.end_date)) : "—"}
@@ -341,6 +405,27 @@ function CampaignCard({ c, ctx, onOpen }: any) {
           <CalendarDays className="w-3 h-3" /> View in Planner <ArrowRight className="w-3 h-3" />
         </Button>
       </div>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this campaign?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this campaign and all its scheduled content. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); void deleteCampaign(); }}
+              disabled={busy}
+              className="bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent))]/90"
+            >
+              {busy ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
