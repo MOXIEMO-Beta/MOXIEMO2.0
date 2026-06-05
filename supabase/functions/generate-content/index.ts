@@ -43,6 +43,9 @@ function buildPrompt(opts: {
   const isShortScript = opts.platform === "Short-Form Video Script";
   const isLongScript = opts.platform === "Long-Form Video Script";
   const isPodcast = opts.platform === "Podcast Script";
+  const isMetaAds = opts.platform === "Meta Ads";
+  const isGoogleAds = opts.platform === "Google Ads";
+  const isAd = isMetaAds || isGoogleAds;
   const isScript = isShortScript || isLongScript || isPodcast;
   const platformRules = `PLATFORM-SPECIFIC RULES:
 - LinkedIn: 1,200–1,800 characters, sentence case, no em dashes, punchy hook under 60 characters, end with a question, no links in the body
@@ -55,7 +58,9 @@ function buildPrompt(opts: {
 - X / Twitter: under 280 characters total, punchy, no fluff`;
   const formatHint = isScript
     ? "Return only the spoken script as plain text. No markdown, no HTML, no code fences, no preamble, no title."
-    : isRich
+    : isAd
+      ? "Return only the structured ad copy as plain text using the exact LABEL format described. Each labeled field on its own line as `LABEL (N chars max): value`. Section headers (like variation names) on their own line ending with a colon. No markdown, no HTML, no code fences, no preamble."
+      : isRich
       ? "Return formatted HTML using <h1>, <h2>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <hr>. No <html> or <body> wrappers. No code fences."
       : "Return only plain text. No markdown, no HTML, no code fences.";
 
@@ -109,6 +114,125 @@ Generate two short scripts: a 45-60 second episode intro and a 30-45 second outr
     } else if (ct === "Show Notes") {
       scriptInstructions = `PODCAST SHOW NOTES INSTRUCTIONS:
 Generate podcast show notes for publishing. Include: episode title, one-paragraph episode summary (150 words), 5-7 key takeaways as bullet points, 3 notable quotes formatted for social sharing, resources or links mentioned section (leave as placeholders), and a guest bio section if applicable. Optimized for SEO and podcast platform descriptions.`;
+    }
+  } else if (isMetaAds) {
+    const ct = opts.contentType;
+    if (ct === "Full Ad Set") {
+      scriptInstructions = `META FULL AD SET INSTRUCTIONS:
+Generate a complete Meta ad set. Output exactly this structure with labels:
+
+HEADLINE (40 chars max): [one punchy headline]
+PRIMARY TEXT (125 chars max): [the main ad body — lead with the pain or outcome, not the product]
+DESCRIPTION (30 chars max): [supporting line]
+CTA: [choose one: Learn More / Book Now / Get Started / Sign Up / Download]
+
+Then generate 2 alternative headline options below as:
+ALT HEADLINE 1 (40 chars max): ...
+ALT HEADLINE 2 (40 chars max): ...
+
+The ad must speak directly to the ICP from the strategy. Lead with their specific pain or desired outcome. No generic language. No em-dashes. Sound like the founder, not an ad agency. Character limits are hard — do not exceed them.`;
+    } else if (ct === "Primary Text") {
+      scriptInstructions = `META PRIMARY TEXT INSTRUCTIONS:
+Generate 3 variations of Meta ad primary text. Each under 125 characters. Each leads with a different angle: (1) pain-led, (2) outcome-led, (3) social proof or authority-led. Label each variation clearly using this exact format:
+
+PAIN-LED (125 chars max): ...
+OUTCOME-LED (125 chars max): ...
+AUTHORITY-LED (125 chars max): ...
+
+No em-dashes. Speak directly to the ICP. Character limits are hard.`;
+    } else if (ct === "Headline Variations") {
+      scriptInstructions = `META HEADLINE VARIATIONS INSTRUCTIONS:
+Generate 5 Meta ad headline variations. Each under 40 characters. Each uses a different hook style. Output exactly:
+
+QUESTION (40 chars max): ...
+BOLD STATEMENT (40 chars max): ...
+OUTCOME PROMISE (40 chars max): ...
+NUMBER-LED (40 chars max): ...
+DIRECT TO ICP (40 chars max): ...
+
+No em-dashes. Character limits are hard.`;
+    } else if (ct === "Retargeting Ad") {
+      scriptInstructions = `META RETARGETING AD INSTRUCTIONS:
+Generate a Meta retargeting ad for a warm audience — people who have already visited the website or engaged with content. They know who the founder is. Skip the introduction. Output exactly:
+
+HEADLINE (40 chars max): [re-engagement focused]
+PRIMARY TEXT (125 chars max): [acknowledge they've shown interest, remove a specific objection, create urgency]
+CTA: [choose one most relevant to the campaign goal]
+
+Tone: warmer and more direct than a cold audience ad. They already know you. No em-dashes. Character limits are hard.`;
+    } else if (ct === "Lead Gen Ad") {
+      scriptInstructions = `META LEAD GEN AD INSTRUCTIONS:
+Generate a Meta lead gen ad designed to capture an email or booking, not a sale. Output exactly:
+
+HEADLINE (40 chars max): [lead magnet or offer-focused]
+PRIMARY TEXT (125 chars max): [what they get, why it matters, zero friction]
+DESCRIPTION (30 chars max): [reinforce the free/low-risk nature of the offer]
+CTA: Sign Up or Download
+
+The offer should align with the user's campaign goal and content pillar. No em-dashes. Character limits are hard.`;
+    }
+  } else if (isGoogleAds) {
+    const ct = opts.contentType;
+    if (ct === "Search Ad") {
+      scriptInstructions = `GOOGLE SEARCH AD INSTRUCTIONS:
+Generate a Google Search ad. Output exactly this structure:
+
+HEADLINE 1 (30 chars max): ...
+HEADLINE 2 (30 chars max): ...
+HEADLINE 3 (30 chars max): ...
+DESCRIPTION 1 (90 chars max): ...
+DESCRIPTION 2 (90 chars max): ...
+
+Headlines should be distinct — different angles, not repetitive. Include at least one headline with the ICP keyword. Descriptions expand on the offer and include a clear CTA. No em-dashes. Character limits are hard — do not exceed them.`;
+    } else if (ct === "Responsive Display Ad") {
+      scriptInstructions = `GOOGLE RESPONSIVE DISPLAY AD INSTRUCTIONS:
+Generate responsive display ad copy. Output exactly:
+
+SHORT HEADLINE 1 (30 chars max): ...
+SHORT HEADLINE 2 (30 chars max): ...
+SHORT HEADLINE 3 (30 chars max): ...
+SHORT HEADLINE 4 (30 chars max): ...
+SHORT HEADLINE 5 (30 chars max): ...
+LONG HEADLINE 1 (90 chars max): ...
+LONG HEADLINE 2 (90 chars max): ...
+DESCRIPTION 1 (90 chars max): ...
+DESCRIPTION 2 (90 chars max): ...
+DESCRIPTION 3 (90 chars max): ...
+
+Each variation uses a different angle. This is display — lead with outcome and visual language. No em-dashes. Character limits are hard.`;
+    } else if (ct === "YouTube Bumper Script (6 sec)") {
+      scriptInstructions = `YOUTUBE BUMPER (6 SEC) INSTRUCTIONS:
+Generate a 6-second YouTube bumper ad script. Maximum 20 words. Must work with no audio (assume captions). One single message — the boldest, most specific thing about what the founder does for their ICP. End with one-word or two-word brand cue. No questions. No em-dashes. Output exactly:
+
+BUMPER SCRIPT (20 words max): ...
+BRAND CUE (2 words max): ...`;
+    } else if (ct === "YouTube Pre-Roll Script (15 sec)") {
+      scriptInstructions = `YOUTUBE PRE-ROLL (15 SEC) INSTRUCTIONS:
+Generate a 15-second YouTube pre-roll script. Structure: 0-3 sec hook, 3-12 sec value, 12-15 sec CTA. Approximately 45 words total. Include [ON SCREEN TEXT] notes for any text that should appear as captions. Conversational, not scripted-sounding. Output exactly:
+
+HOOK 0-3 SEC: ...
+VALUE 3-12 SEC: ...
+CTA 12-15 SEC: ...`;
+    } else if (ct === "Ad Variations") {
+      scriptInstructions = `GOOGLE AD VARIATIONS INSTRUCTIONS:
+Generate 3 complete ad variations for A/B testing. Each variation uses a different core angle. Output exactly:
+
+VARIATION A - PAIN-LED:
+HEADLINE (30 chars max): ...
+PRIMARY TEXT (90 chars max): ...
+CTA: ...
+
+VARIATION B - OUTCOME-LED:
+HEADLINE (30 chars max): ...
+PRIMARY TEXT (90 chars max): ...
+CTA: ...
+
+VARIATION C - AUTHORITY-LED:
+HEADLINE (30 chars max): ...
+PRIMARY TEXT (90 chars max): ...
+CTA: ...
+
+No em-dashes. Character limits are hard.`;
     }
   }
 
