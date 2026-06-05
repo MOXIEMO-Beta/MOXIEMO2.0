@@ -10,7 +10,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Plus, Target, Sparkles, Loader2, Pause, CheckCircle2, MoreHorizontal, CalendarDays, Linkedin, Mail, Instagram, Facebook, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Target, Sparkles, Loader2, Pause, CheckCircle2, MoreHorizontal, CalendarDays, Linkedin, Mail, Instagram, Facebook, ChevronLeft, ChevronRight, Megaphone, Search } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { aiErrorMessage } from "@/lib/aiErrors";
@@ -117,6 +118,8 @@ const CAMPAIGN_TYPE_CARDS: Array<{
   description: string;
   typeValue: string;
   keywords: string[];
+  mode?: "organic" | "paid";
+  adPlatform?: "meta" | "google";
 }> = [
   {
     key: "leadgen",
@@ -158,10 +161,41 @@ const CAMPAIGN_TYPE_CARDS: Array<{
     typeValue: "launch",
     keywords: ["revenue", "lead", "client", "sale", "promo", "offer"],
   },
+  {
+    key: "meta_ads",
+    icon: "📣",
+    label: "Meta Ads Campaign",
+    description: "Run a paid campaign on Facebook and Instagram. MOXIEMO builds the ad creative brief anchored to your strategy.",
+    typeValue: "launch",
+    keywords: [],
+    mode: "paid",
+    adPlatform: "meta",
+  },
+  {
+    key: "google_ads",
+    icon: "🔍",
+    label: "Google Ads Campaign",
+    description: "Capture search intent with Google. MOXIEMO writes your headlines, descriptions, and ad variations.",
+    typeValue: "launch",
+    keywords: [],
+    mode: "paid",
+    adPlatform: "google",
+  },
 ];
 
 const REVENUE_KEYWORDS = ["revenue", "lead", "client", "sale", "pipeline", "booking"];
 const AWARENESS_KEYWORDS = ["awareness", "reach", "audience", "follower", "visibility"];
+
+const BUDGET_OPTIONS = [
+  "Under $25/day",
+  "$25 to $50/day",
+  "$50 to $100/day",
+  "$100 to $250/day",
+  "$250+/day",
+];
+
+const META_CMO = "Paid Meta campaigns perform best when you test 2-3 creative variations in week one. Start with a lead generation objective targeting your warm audience before scaling to cold.";
+const GOOGLE_CMO = "Search campaigns work best with tightly grouped ad sets per keyword theme. Start with 3 headlines and 2 descriptions per ad group and let Google optimize.";
 
 export default function CampaignsTab({ ctx }: { ctx: any }) {
   const { campaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
