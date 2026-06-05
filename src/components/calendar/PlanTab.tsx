@@ -1,9 +1,9 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowRight, Plus, Target } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Plus, Target } from "lucide-react";
 import { quarterRange, currentQuarter, nextQuarters, isBetween, asArray, fmtShort, addDays, startOfWeek, ymd, activeCampaignForDate, campaignSlotProgress, campaignSlotCounts } from "./helpers";
 
 export default function PlanTab({ ctx }: { ctx: any }) {
@@ -77,14 +77,15 @@ export default function PlanTab({ ctx }: { ctx: any }) {
 
   // Coverage heatmap — current month
   const today = new Date();
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const [viewMonth, setViewMonth] = useState<Date>(new Date(today.getFullYear(), today.getMonth(), 1));
+  const monthStart = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
+  const monthEnd = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0);
   const firstWeekStart = startOfWeek(monthStart);
   const cellsCount = Math.ceil((((monthEnd.getTime() - firstWeekStart.getTime()) / 86400000) + 1) / 7) * 7;
   const days: { date: Date; inMonth: boolean }[] = [];
   for (let i = 0; i < cellsCount; i++) {
     const d = addDays(firstWeekStart, i);
-    days.push({ date: d, inMonth: d.getMonth() === today.getMonth() });
+    days.push({ date: d, inMonth: d.getMonth() === viewMonth.getMonth() && d.getFullYear() === viewMonth.getFullYear() });
   }
 
   function dayDots(d: Date) {
@@ -160,9 +161,25 @@ export default function PlanTab({ ctx }: { ctx: any }) {
 
       {/* Section 2: coverage heatmap */}
       <section>
-        <h2 className="font-display text-xl mb-3">
-          Coverage at a glance — {today.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-        </h2>
+        <div className="flex items-center justify-center gap-3 mb-3">
+          <button
+            onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}
+            className="w-6 h-6 inline-flex items-center justify-center text-foreground hover:text-[#ff6b6b] transition-colors"
+            aria-label="Previous month"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <h2 className="font-display text-xl text-center">
+            Coverage at a glance — {viewMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+          </h2>
+          <button
+            onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}
+            className="w-6 h-6 inline-flex items-center justify-center text-foreground hover:text-[#ff6b6b] transition-colors"
+            aria-label="Next month"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </div>
         <Card className="p-4 shadow-soft border-border">
           <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden mb-4" style={{ backgroundColor: "#E5E7EB" }}>
             {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
