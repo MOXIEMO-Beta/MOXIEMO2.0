@@ -1139,3 +1139,220 @@ function CampaignDetail({ c, ctx, onChanged, setTab }: any) {
     </div>
   );
 }
+
+// ---------------- Paid campaign helpers & components ----------------
+
+function formatMetaBrief(meta: any): string {
+  if (!meta) return "";
+  const vars = Array.isArray(meta.variations) ? meta.variations : [];
+  const lines: string[] = [];
+  vars.forEach((v: any) => {
+    lines.push(`AD VARIATION ${v.label ?? ""} — ${v.angle ?? ""}`);
+    if (v.headline) lines.push(`Headline: ${v.headline}`);
+    if (v.primaryText) lines.push(`Primary Text: ${v.primaryText}`);
+    if (v.cta) lines.push(`CTA: ${v.cta}`);
+    lines.push("");
+  });
+  if (meta.targetingNote) lines.push(`TARGETING NOTE: ${meta.targetingNote}`);
+  if (meta.creativeNote) lines.push(`CREATIVE NOTE: ${meta.creativeNote}`);
+  return lines.join("\n").trim();
+}
+
+function formatGoogleBrief(google: any): string {
+  if (!google) return "";
+  const groups = Array.isArray(google.adGroups) ? google.adGroups : [];
+  const lines: string[] = [];
+  groups.forEach((g: any, i: number) => {
+    lines.push(`AD GROUP ${i + 1}: ${g.name ?? ""}`);
+    (g.headlines ?? []).forEach((h: string, idx: number) => lines.push(`Headline ${idx + 1}: ${h}`));
+    (g.descriptions ?? []).forEach((d: string, idx: number) => lines.push(`Description ${idx + 1}: ${d}`));
+    lines.push("");
+  });
+  if (google.keywordNote) lines.push(`KEYWORD NOTE: ${google.keywordNote}`);
+  if (google.bidNote) lines.push(`BID NOTE: ${google.bidNote}`);
+  return lines.join("\n").trim();
+}
+
+function MetaConfig({
+  objective, setObjective, format, setFormat, budget, setBudget, variations, setVariations,
+}: any) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label>Campaign objective</Label>
+        <RadioGroup value={objective} onValueChange={setObjective} className="grid grid-cols-2 gap-2 mt-2">
+          {["Awareness", "Traffic", "Leads", "Sales"].map((o) => (
+            <label key={o} className="flex items-center gap-2 border border-border rounded-md p-2 cursor-pointer hover:bg-muted/40">
+              <RadioGroupItem value={o} id={`obj-${o}`} />
+              <span className="text-sm">{o}</span>
+            </label>
+          ))}
+        </RadioGroup>
+      </div>
+      <div>
+        <Label>Ad format</Label>
+        <RadioGroup value={format} onValueChange={setFormat} className="grid grid-cols-1 gap-2 mt-2">
+          {["Single Image or Video", "Carousel", "Stories"].map((o) => (
+            <label key={o} className="flex items-center gap-2 border border-border rounded-md p-2 cursor-pointer hover:bg-muted/40">
+              <RadioGroupItem value={o} id={`fmt-${o}`} />
+              <span className="text-sm">{o}</span>
+            </label>
+          ))}
+        </RadioGroup>
+      </div>
+      <div>
+        <Label>Daily budget range</Label>
+        <Select value={budget} onValueChange={setBudget}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {BUDGET_OPTIONS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>How many creative variations?</Label>
+        <Stepper value={variations} onChange={setVariations} min={1} max={6} />
+        <div className="text-xs text-muted-foreground mt-1">We recommend 3 variations minimum for testing.</div>
+      </div>
+    </div>
+  );
+}
+
+function GoogleConfig({
+  googleType, setGoogleType, keyword, setKeyword, budget, setBudget, adGroups, setAdGroups,
+}: any) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label>Campaign type</Label>
+        <RadioGroup value={googleType} onValueChange={setGoogleType} className="grid grid-cols-3 gap-2 mt-2">
+          {["Search", "Display", "YouTube"].map((o) => (
+            <label key={o} className="flex items-center gap-2 border border-border rounded-md p-2 cursor-pointer hover:bg-muted/40">
+              <RadioGroupItem value={o} id={`gt-${o}`} />
+              <span className="text-sm">{o}</span>
+            </label>
+          ))}
+        </RadioGroup>
+      </div>
+      <div>
+        <Label>What are you trying to be found for?</Label>
+        <Input
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder='e.g. "executive coaching for founders"'
+        />
+      </div>
+      <div>
+        <Label>Daily budget range</Label>
+        <Select value={budget} onValueChange={setBudget}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {BUDGET_OPTIONS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>How many ad groups?</Label>
+        <Stepper value={adGroups} onChange={setAdGroups} min={1} max={6} />
+        <div className="text-xs text-muted-foreground mt-1">Each ad group targets a different keyword theme.</div>
+      </div>
+    </div>
+  );
+}
+
+function Stepper({ value, onChange, min = 1, max = 10 }: { value: number; onChange: (v: number) => void; min?: number; max?: number }) {
+  return (
+    <div className="inline-flex items-center gap-2 mt-1">
+      <Button type="button" size="sm" variant="outline" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}>−</Button>
+      <span className="text-sm font-medium w-8 text-center">{value}</span>
+      <Button type="button" size="sm" variant="outline" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}>+</Button>
+    </div>
+  );
+}
+
+function AdWeekCard({ week, platform }: { week: any; platform: "meta" | "google" }) {
+  if (!week) return null;
+  const range = formatWeekRange(week.weekOf);
+  return (
+    <div className="border border-border rounded-[12px] w-full overflow-hidden bg-background">
+      <div className="p-4">
+        <div className="text-xs text-muted-foreground mb-2">
+          Week {week.weekNumber}{range ? ` — ${range}` : ""}
+        </div>
+        {week.theme && (
+          <div className="border-l-[3px] border-accent pl-3 py-0.5">
+            <div className="text-base font-bold leading-snug">Theme: {week.theme}</div>
+          </div>
+        )}
+      </div>
+      {platform === "meta" && week.meta && (
+        <div className="border-t border-border">
+          {(week.meta.variations ?? []).map((v: any, i: number, arr: any[]) => (
+            <AdRow
+              key={i}
+              title={`Variation ${v.label ?? ""} — ${v.angle ?? ""}`}
+              tinted={i % 2 === 1}
+              divider={i < arr.length - 1 || !!week.meta.targetingNote || !!week.meta.creativeNote}
+            >
+              {v.headline && <div><span className="text-xs uppercase tracking-wide text-muted-foreground">Headline </span>{v.headline}</div>}
+              {v.primaryText && <div className="mt-1"><span className="text-xs uppercase tracking-wide text-muted-foreground">Primary text </span>{v.primaryText}</div>}
+              {v.cta && <div className="mt-1"><span className="text-xs uppercase tracking-wide text-muted-foreground">CTA </span>{v.cta}</div>}
+            </AdRow>
+          ))}
+          {(week.meta.targetingNote || week.meta.creativeNote) && (
+            <div className="px-4 py-3 bg-muted/30 text-xs text-muted-foreground space-y-1">
+              {week.meta.targetingNote && <div><b>Targeting:</b> {week.meta.targetingNote}</div>}
+              {week.meta.creativeNote && <div><b>Creative:</b> {week.meta.creativeNote}</div>}
+            </div>
+          )}
+        </div>
+      )}
+      {platform === "google" && week.google && (
+        <div className="border-t border-border">
+          {(week.google.adGroups ?? []).map((g: any, i: number, arr: any[]) => (
+            <AdRow
+              key={i}
+              title={`Ad Group ${i + 1}: ${g.name ?? ""}`}
+              tinted={i % 2 === 1}
+              divider={i < arr.length - 1 || !!week.google.keywordNote || !!week.google.bidNote}
+            >
+              {(g.headlines ?? []).map((h: string, idx: number) => (
+                <div key={`h-${idx}`}>
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">Headline {idx + 1} </span>{h}
+                </div>
+              ))}
+              {(g.descriptions ?? []).map((d: string, idx: number) => (
+                <div key={`d-${idx}`} className="mt-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">Description {idx + 1} </span>{d}
+                </div>
+              ))}
+            </AdRow>
+          ))}
+          {(week.google.keywordNote || week.google.bidNote) && (
+            <div className="px-4 py-3 bg-muted/30 text-xs text-muted-foreground space-y-1">
+              {week.google.keywordNote && <div><b>Keywords:</b> {week.google.keywordNote}</div>}
+              {week.google.bidNote && <div><b>Bidding:</b> {week.google.bidNote}</div>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdRow({ title, children, tinted, divider }: { title: string; children: React.ReactNode; tinted: boolean; divider: boolean }) {
+  const [expanded, setExpanded] = useState(true);
+  return (
+    <div className={`px-4 py-3 ${tinted ? "bg-[#faf9f7]" : "bg-background"} ${divider ? "border-b border-border" : ""}`}>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center justify-between w-full text-left"
+      >
+        <span className="text-sm font-bold">{title}</span>
+        <span className="text-xs text-accent">{expanded ? "Collapse" : "Expand"}</span>
+      </button>
+      {expanded && <div className="mt-2 text-sm text-foreground/90">{children}</div>}
+    </div>
+  );
+}
