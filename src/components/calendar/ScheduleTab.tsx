@@ -388,19 +388,19 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                       <div
                         key={`cell-${row}-${i}`}
                         className={cn(
-                          "group bg-card min-h-[140px] p-1.5 text-left relative flex flex-col",
+                          "group bg-card min-h-[140px] px-1.5 py-2 text-left relative flex flex-col",
                           inMonth ? "" : "opacity-40",
                           isToday && "bg-accent-soft/40"
                         )}
                       >
-                        <div className="mb-1">
+                        <div className="mb-1 pt-1.5">
                           <span className={cn("text-[10px]", isToday ? "font-bold text-foreground" : "text-muted-foreground")}>
                             {d.getDate()}
                           </span>
                         </div>
-                        <div className="space-y-0.5 flex-1">
+                        <div className="space-y-1 flex-1">
                           {inMonth && execItemsForDay(d).length > 0 && (
-                            <div className="space-y-0.5 mb-0.5">
+                            <div className="space-y-1 mb-1">
                               {execItemsForDay(d).slice(0, 3).map((ex: any) => {
                                 const camp = campaignById(ex.campaign_id);
                                 const color = camp?.color || DEFAULT_CAMPAIGN_COLOR;
