@@ -63,13 +63,29 @@ export default function CalendarPage() {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
+  const activeCampaigns = useMemo(
+    () => (campaigns ?? []).filter((c: any) => !c?.archived),
+    [campaigns]
+  );
+  const archivedIds = useMemo(
+    () => new Set((campaigns ?? []).filter((c: any) => c?.archived).map((c: any) => c.id)),
+    [campaigns]
+  );
+  const activeExecutionItems = useMemo(
+    () => (executionItems ?? []).filter((it: any) => !archivedIds.has(it.campaign_id)),
+    [executionItems, archivedIds]
+  );
+
   const ctx = useMemo(() => ({
-    strategy, socialPosts, contentItems, emailSends, campaigns, executionItems,
+    strategy, socialPosts, contentItems, emailSends,
+    campaigns: activeCampaigns,
+    allCampaigns: campaigns,
+    executionItems: activeExecutionItems,
     socialConnections, subscribers, ideas, loading, refresh,
     user, navigate,
     setTab, setScheduleAnchor, setCampaignSeed,
     scheduleAnchor, campaignSeed,
-  }), [strategy, socialPosts, contentItems, emailSends, campaigns, executionItems, socialConnections, subscribers, ideas, loading, refresh, user, navigate, scheduleAnchor, campaignSeed]);
+  }), [strategy, socialPosts, contentItems, emailSends, campaigns, activeCampaigns, activeExecutionItems, socialConnections, subscribers, ideas, loading, refresh, user, navigate, scheduleAnchor, campaignSeed]);
 
   return (
     <div className="px-6 lg:px-10 py-8 max-w-7xl mx-auto">
