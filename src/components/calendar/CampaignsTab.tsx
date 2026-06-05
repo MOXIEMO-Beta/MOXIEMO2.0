@@ -10,7 +10,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Plus, Target, Sparkles, Loader2, Pause, CheckCircle2, MoreHorizontal, CalendarDays, Linkedin, Mail, Instagram, Facebook, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Target, Sparkles, Loader2, Pause, CheckCircle2, MoreHorizontal, CalendarDays, Linkedin, Mail, Instagram, Facebook, ChevronLeft, ChevronRight, Megaphone, Search } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { aiErrorMessage } from "@/lib/aiErrors";
@@ -117,6 +118,8 @@ const CAMPAIGN_TYPE_CARDS: Array<{
   description: string;
   typeValue: string;
   keywords: string[];
+  mode?: "organic" | "paid";
+  adPlatform?: "meta" | "google";
 }> = [
   {
     key: "leadgen",
@@ -158,10 +161,41 @@ const CAMPAIGN_TYPE_CARDS: Array<{
     typeValue: "launch",
     keywords: ["revenue", "lead", "client", "sale", "promo", "offer"],
   },
+  {
+    key: "meta_ads",
+    icon: "📣",
+    label: "Meta Ads Campaign",
+    description: "Run a paid campaign on Facebook and Instagram. MOXIEMO builds the ad creative brief anchored to your strategy.",
+    typeValue: "launch",
+    keywords: [],
+    mode: "paid",
+    adPlatform: "meta",
+  },
+  {
+    key: "google_ads",
+    icon: "🔍",
+    label: "Google Ads Campaign",
+    description: "Capture search intent with Google. MOXIEMO writes your headlines, descriptions, and ad variations.",
+    typeValue: "launch",
+    keywords: [],
+    mode: "paid",
+    adPlatform: "google",
+  },
 ];
 
 const REVENUE_KEYWORDS = ["revenue", "lead", "client", "sale", "pipeline", "booking"];
 const AWARENESS_KEYWORDS = ["awareness", "reach", "audience", "follower", "visibility"];
+
+const BUDGET_OPTIONS = [
+  "Under $25/day",
+  "$25 to $50/day",
+  "$50 to $100/day",
+  "$100 to $250/day",
+  "$250+/day",
+];
+
+const META_CMO = "Paid Meta campaigns perform best when you test 2-3 creative variations in week one. Start with a lead generation objective targeting your warm audience before scaling to cold.";
+const GOOGLE_CMO = "Search campaigns work best with tightly grouped ad sets per keyword theme. Start with 3 headlines and 2 descriptions per ad group and let Google optimize.";
 
 export default function CampaignsTab({ ctx }: { ctx: any }) {
   const { campaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
@@ -302,6 +336,18 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
   const [userTopGoal, setUserTopGoal] = useState<string>("");
   const [cadenceApplied, setCadenceApplied] = useState(false);
 
+  // Paid campaign state
+  const [campaignMode, setCampaignMode] = useState<"organic" | "paid">("organic");
+  const [adPlatform, setAdPlatform] = useState<"meta" | "google" | null>(null);
+  const [metaObjective, setMetaObjective] = useState<string>("Leads");
+  const [metaFormat, setMetaFormat] = useState<string>("Single Image or Video");
+  const [metaBudget, setMetaBudget] = useState<string>("$25 to $50/day");
+  const [metaVariations, setMetaVariations] = useState<number>(3);
+  const [googleType, setGoogleType] = useState<string>("Search");
+  const [googleKeyword, setGoogleKeyword] = useState<string>("");
+  const [googleBudget, setGoogleBudget] = useState<string>("$25 to $50/day");
+  const [googleAdGroups, setGoogleAdGroups] = useState<number>(2);
+
   useEffect(() => {
     if (!open) return;
     setStep(1);
@@ -335,6 +381,8 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     setPrechecked(stratChannels);
     setPlan([]);
     setCurrentWeekIdx(0);
+    setCampaignMode("organic");
+    setAdPlatform(null);
 
     // Fetch goal suggestions silently
     (async () => {
@@ -388,7 +436,15 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     return Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (7 * 86400000)));
   }, [startDate, endDate]);
 
-  const selectedChannels = Object.keys(channels).filter(k => channels[k]);
+  const selectedChannels = campaignMode === "paid" && adPlatform
+    ? [adPlatform]
+    : Object.keys(channels).filter(k => channels[k]);
+
+  // Effective per-week targets used by save() & exec items
+  const effectiveTargets: Record<string, number> = campaignMode === "paid" && adPlatform
+    ? { [adPlatform]: adPlatform === "meta" ? metaVariations : googleAdGroups }
+    : targets;
+
   const { checkGenerationLimit, handleGenerationResponse } = usePlan();
 
   const goalType: GoalType = useMemo(() => classifyGoal(goals), [goals]);
@@ -420,11 +476,23 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     const mo = d.toLocaleString("en-US", { month: "long" });
     setName(`${card.label} Campaign — ${mo} ${d.getFullYear()}`);
     setType(card.typeValue);
+    if (card.mode === "paid" && card.adPlatform) {
+      setCampaignMode("paid");
+      setAdPlatform(card.adPlatform);
+    } else {
+      setCampaignMode("organic");
+      setAdPlatform(null);
+    }
   }
 
   // When Step 3 first renders, prefill cadence and request CMO recommendation.
   useEffect(() => {
     if (step !== 3) return;
+    if (campaignMode === "paid") {
+      setCmoText(adPlatform === "google" ? GOOGLE_CMO : META_CMO);
+      setCmoLoading(false);
+      return;
+    }
     if (!cadenceApplied) {
       const c = CADENCE[goalType];
       setTargets((prev) => ({ ...prev, ...c }));
@@ -463,10 +531,16 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     if (!(await checkGenerationLimit())) return;
     setPlanLoading(true);
     try {
+      const adConfig = campaignMode === "paid"
+        ? (adPlatform === "meta"
+            ? { platform: "meta", objective: metaObjective, format: metaFormat, budget: metaBudget, numVariations: metaVariations }
+            : { platform: "google", googleType, keyword: googleKeyword, budget: googleBudget, numAdGroups: googleAdGroups })
+        : null;
       const { data, error } = await supabase.functions.invoke("generate-campaign-plan", {
         body: {
           campaign: { name, theme, goals, channels: selectedChannels, start_date: startDate, end_date: endDate },
           strategy,
+          adConfig,
         },
       });
       if (handleGenerationResponse(data, error)) return;
@@ -483,11 +557,21 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     if (!user) return;
     setCreating(true);
     try {
+      // For paid, the "channel" is the ad platform and the per-week brief
+      // is stored on weekPlan[adPlatform] so execution items pick it up.
+      const planForSave = campaignMode === "paid" && adPlatform
+        ? plan.map((w: any) => {
+            const brief = adPlatform === "meta"
+              ? formatMetaBrief(w?.meta)
+              : formatGoogleBrief(w?.google);
+            return { ...w, [adPlatform]: brief };
+          })
+        : plan;
       const slots = generateCampaignSlots({
         start_date: startDate || null,
         end_date: endDate || null,
         channels: selectedChannels,
-        targets,
+        targets: effectiveTargets,
       });
       const { data: created, error } = await supabase.from("campaigns").insert({
         user_id: user.id,
@@ -498,7 +582,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         channels: selectedChannels,
         status: "active",
         color,
-        content_plan: { weeks: plan, targets, slots },
+        content_plan: { weeks: planForSave, targets: effectiveTargets, slots, mode: campaignMode, adPlatform },
       }).select("id").single();
       if (error) throw error;
 
@@ -507,8 +591,8 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         start_date: startDate || null,
         end_date: endDate || null,
         channels: selectedChannels,
-        targets,
-        plan,
+        targets: effectiveTargets,
+        plan: planForSave,
       });
       if (created?.id && execItems.length > 0) {
         const rows = execItems.map((it) => ({
@@ -706,8 +790,10 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   )}
                 </div>
               </div>
-              <Label>Which channels will this campaign use?</Label>
-              {(["linkedin", "email", "instagram", "facebook"] as const).map(ch => (
+              {campaignMode === "organic" && (
+                <Label>Which channels will this campaign use?</Label>
+              )}
+              {campaignMode === "organic" && (["linkedin", "email", "instagram", "facebook"] as const).map(ch => (
                 <div key={ch} className="border border-border rounded-md p-3">
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -727,18 +813,46 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   )}
                 </div>
               ))}
-              {prechecked.size > 0 && (
+              {campaignMode === "paid" && adPlatform === "meta" && (
+                <MetaConfig
+                  objective={metaObjective} setObjective={setMetaObjective}
+                  format={metaFormat} setFormat={setMetaFormat}
+                  budget={metaBudget} setBudget={setMetaBudget}
+                  variations={metaVariations} setVariations={setMetaVariations}
+                />
+              )}
+              {campaignMode === "paid" && adPlatform === "google" && (
+                <GoogleConfig
+                  googleType={googleType} setGoogleType={setGoogleType}
+                  keyword={googleKeyword} setKeyword={setGoogleKeyword}
+                  budget={googleBudget} setBudget={setGoogleBudget}
+                  adGroups={googleAdGroups} setAdGroups={setGoogleAdGroups}
+                />
+              )}
+              {campaignMode === "organic" && prechecked.size > 0 && (
                 <div className="text-xs text-muted-foreground">Pre-selected based on your strategy. Adjust as needed.</div>
               )}
-              {weeks > 0 && (
+              {campaignMode === "organic" && weeks > 0 && (
                 <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
                   Based on your {GOAL_LABEL[goalType]} goal — over {weeks} weeks this campaign needs:{" "}
                   {selectedChannels.map(ch => `${weeks * (targets[ch] || 0)} ${ch === "linkedin" ? "LinkedIn" : ch}`).join(" · ")}
                 </div>
               )}
+              {campaignMode === "paid" && weeks > 0 && adPlatform === "meta" && (
+                <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
+                  Over {weeks} weeks: {weeks * metaVariations} ad creative sets to produce
+                </div>
+              )}
+              {campaignMode === "paid" && weeks > 0 && adPlatform === "google" && (
+                <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
+                  Over {weeks} weeks: {weeks * googleAdGroups} ad groups, {weeks * googleAdGroups * 3} headline variations, {weeks * googleAdGroups * 2} description variations
+                </div>
+              )}
               <div className="flex justify-between pt-3">
                 <Button variant="outline" onClick={() => setStep(2)}><ArrowLeft className="w-4 h-4" /> Back</Button>
-                <Button onClick={() => setStep(4)} disabled={selectedChannels.length === 0}>Next <ArrowRight className="w-4 h-4" /></Button>
+                <Button onClick={() => setStep(4)} disabled={selectedChannels.length === 0 || (campaignMode === "paid" && adPlatform === "google" && !googleKeyword.trim())}>
+                  Next <ArrowRight className="w-4 h-4" />
+                </Button>
               </div>
             </>
           )}
@@ -746,19 +860,22 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
           {step === 4 && (
             <>
               <div className="flex items-center justify-between">
-                <Label>Content scaffold</Label>
+                <Label>{campaignMode === "paid" ? "Ad creative brief" : "Content scaffold"}</Label>
                 <Button variant="outline" size="sm" onClick={generatePlan} disabled={planLoading}>
                   {planLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                   {plan.length > 0 ? "Regenerate" : "Generate plan"}
                 </Button>
               </div>
+              {campaignMode === "paid" && (
+                <div className="text-[11px] uppercase tracking-wider text-accent font-semibold">AD BRIEF</div>
+              )}
               {plan.length === 0 && !planLoading && (
                 <div className="text-sm text-muted-foreground border border-dashed border-border rounded-md p-6 text-center">
-                  Click "Generate plan" to have MOXIEMO draft a week-by-week topic plan.
+                  Click "Generate plan" to have MOXIEMO draft a week-by-week {campaignMode === "paid" ? "ad creative brief" : "topic plan"}.
                 </div>
               )}
               {planLoading && (
-                <PlanLoadingState />
+                <PlanLoadingState paid={campaignMode === "paid"} />
               )}
               {plan.length > 0 && !planLoading && (
                 <>
@@ -783,7 +900,10 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                       Next <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
-                  <WeekCard week={plan[currentWeekIdx]} />
+                  {campaignMode === "paid"
+                    ? <AdWeekCard week={plan[currentWeekIdx]} platform={adPlatform!} />
+                    : <WeekCard week={plan[currentWeekIdx]} />
+                  }
                 </>
               )}
               <div className="flex justify-between pt-3">
@@ -849,19 +969,28 @@ const PLAN_LOADING_MESSAGES = [
   "Almost there — this one is worth the wait.",
 ];
 
-function PlanLoadingState() {
+function PlanLoadingState({ paid = false }: { paid?: boolean }) {
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
+  const messages = paid
+    ? [
+        "Writing your ad creative brief...",
+        "Mapping your strategy to every variation...",
+        "Crafting headlines anchored to your positioning...",
+        "Tuning copy to your ICP and brand voice...",
+        "Almost there — this one is worth the wait.",
+      ]
+    : PLAN_LOADING_MESSAGES;
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
-        setIdx((i) => (i + 1) % PLAN_LOADING_MESSAGES.length);
+        setIdx((i) => (i + 1) % messages.length);
         setVisible(true);
       }, 400);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [messages.length]);
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 animate-fade-in">
       <Loader2 className="w-8 h-8 animate-spin text-accent" />
@@ -878,7 +1007,7 @@ function PlanLoadingState() {
             margin: 0,
           }}
         >
-          {PLAN_LOADING_MESSAGES[idx]}
+          {messages[idx]}
         </p>
       </div>
       <p className="text-center text-muted-foreground" style={{ fontSize: 12, marginTop: 16 }}>
@@ -1007,6 +1136,223 @@ function CampaignDetail({ c, ctx, onChanged, setTab }: any) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ---------------- Paid campaign helpers & components ----------------
+
+function formatMetaBrief(meta: any): string {
+  if (!meta) return "";
+  const vars = Array.isArray(meta.variations) ? meta.variations : [];
+  const lines: string[] = [];
+  vars.forEach((v: any) => {
+    lines.push(`AD VARIATION ${v.label ?? ""} — ${v.angle ?? ""}`);
+    if (v.headline) lines.push(`Headline: ${v.headline}`);
+    if (v.primaryText) lines.push(`Primary Text: ${v.primaryText}`);
+    if (v.cta) lines.push(`CTA: ${v.cta}`);
+    lines.push("");
+  });
+  if (meta.targetingNote) lines.push(`TARGETING NOTE: ${meta.targetingNote}`);
+  if (meta.creativeNote) lines.push(`CREATIVE NOTE: ${meta.creativeNote}`);
+  return lines.join("\n").trim();
+}
+
+function formatGoogleBrief(google: any): string {
+  if (!google) return "";
+  const groups = Array.isArray(google.adGroups) ? google.adGroups : [];
+  const lines: string[] = [];
+  groups.forEach((g: any, i: number) => {
+    lines.push(`AD GROUP ${i + 1}: ${g.name ?? ""}`);
+    (g.headlines ?? []).forEach((h: string, idx: number) => lines.push(`Headline ${idx + 1}: ${h}`));
+    (g.descriptions ?? []).forEach((d: string, idx: number) => lines.push(`Description ${idx + 1}: ${d}`));
+    lines.push("");
+  });
+  if (google.keywordNote) lines.push(`KEYWORD NOTE: ${google.keywordNote}`);
+  if (google.bidNote) lines.push(`BID NOTE: ${google.bidNote}`);
+  return lines.join("\n").trim();
+}
+
+function MetaConfig({
+  objective, setObjective, format, setFormat, budget, setBudget, variations, setVariations,
+}: any) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label>Campaign objective</Label>
+        <RadioGroup value={objective} onValueChange={setObjective} className="grid grid-cols-2 gap-2 mt-2">
+          {["Awareness", "Traffic", "Leads", "Sales"].map((o) => (
+            <label key={o} className="flex items-center gap-2 border border-border rounded-md p-2 cursor-pointer hover:bg-muted/40">
+              <RadioGroupItem value={o} id={`obj-${o}`} />
+              <span className="text-sm">{o}</span>
+            </label>
+          ))}
+        </RadioGroup>
+      </div>
+      <div>
+        <Label>Ad format</Label>
+        <RadioGroup value={format} onValueChange={setFormat} className="grid grid-cols-1 gap-2 mt-2">
+          {["Single Image or Video", "Carousel", "Stories"].map((o) => (
+            <label key={o} className="flex items-center gap-2 border border-border rounded-md p-2 cursor-pointer hover:bg-muted/40">
+              <RadioGroupItem value={o} id={`fmt-${o}`} />
+              <span className="text-sm">{o}</span>
+            </label>
+          ))}
+        </RadioGroup>
+      </div>
+      <div>
+        <Label>Daily budget range</Label>
+        <Select value={budget} onValueChange={setBudget}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {BUDGET_OPTIONS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>How many creative variations?</Label>
+        <Stepper value={variations} onChange={setVariations} min={1} max={6} />
+        <div className="text-xs text-muted-foreground mt-1">We recommend 3 variations minimum for testing.</div>
+      </div>
+    </div>
+  );
+}
+
+function GoogleConfig({
+  googleType, setGoogleType, keyword, setKeyword, budget, setBudget, adGroups, setAdGroups,
+}: any) {
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label>Campaign type</Label>
+        <RadioGroup value={googleType} onValueChange={setGoogleType} className="grid grid-cols-3 gap-2 mt-2">
+          {["Search", "Display", "YouTube"].map((o) => (
+            <label key={o} className="flex items-center gap-2 border border-border rounded-md p-2 cursor-pointer hover:bg-muted/40">
+              <RadioGroupItem value={o} id={`gt-${o}`} />
+              <span className="text-sm">{o}</span>
+            </label>
+          ))}
+        </RadioGroup>
+      </div>
+      <div>
+        <Label>What are you trying to be found for?</Label>
+        <Input
+          value={keyword}
+          onChange={(e) => setKeyword(e.target.value)}
+          placeholder='e.g. "executive coaching for founders"'
+        />
+      </div>
+      <div>
+        <Label>Daily budget range</Label>
+        <Select value={budget} onValueChange={setBudget}>
+          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {BUDGET_OPTIONS.map((b) => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      <div>
+        <Label>How many ad groups?</Label>
+        <Stepper value={adGroups} onChange={setAdGroups} min={1} max={6} />
+        <div className="text-xs text-muted-foreground mt-1">Each ad group targets a different keyword theme.</div>
+      </div>
+    </div>
+  );
+}
+
+function Stepper({ value, onChange, min = 1, max = 10 }: { value: number; onChange: (v: number) => void; min?: number; max?: number }) {
+  return (
+    <div className="inline-flex items-center gap-2 mt-1">
+      <Button type="button" size="sm" variant="outline" onClick={() => onChange(Math.max(min, value - 1))} disabled={value <= min}>−</Button>
+      <span className="text-sm font-medium w-8 text-center">{value}</span>
+      <Button type="button" size="sm" variant="outline" onClick={() => onChange(Math.min(max, value + 1))} disabled={value >= max}>+</Button>
+    </div>
+  );
+}
+
+function AdWeekCard({ week, platform }: { week: any; platform: "meta" | "google" }) {
+  if (!week) return null;
+  const range = formatWeekRange(week.weekOf);
+  return (
+    <div className="border border-border rounded-[12px] w-full overflow-hidden bg-background">
+      <div className="p-4">
+        <div className="text-xs text-muted-foreground mb-2">
+          Week {week.weekNumber}{range ? ` — ${range}` : ""}
+        </div>
+        {week.theme && (
+          <div className="border-l-[3px] border-accent pl-3 py-0.5">
+            <div className="text-base font-bold leading-snug">Theme: {week.theme}</div>
+          </div>
+        )}
+      </div>
+      {platform === "meta" && week.meta && (
+        <div className="border-t border-border">
+          {(week.meta.variations ?? []).map((v: any, i: number, arr: any[]) => (
+            <AdRow
+              key={i}
+              title={`Variation ${v.label ?? ""} — ${v.angle ?? ""}`}
+              tinted={i % 2 === 1}
+              divider={i < arr.length - 1 || !!week.meta.targetingNote || !!week.meta.creativeNote}
+            >
+              {v.headline && <div><span className="text-xs uppercase tracking-wide text-muted-foreground">Headline </span>{v.headline}</div>}
+              {v.primaryText && <div className="mt-1"><span className="text-xs uppercase tracking-wide text-muted-foreground">Primary text </span>{v.primaryText}</div>}
+              {v.cta && <div className="mt-1"><span className="text-xs uppercase tracking-wide text-muted-foreground">CTA </span>{v.cta}</div>}
+            </AdRow>
+          ))}
+          {(week.meta.targetingNote || week.meta.creativeNote) && (
+            <div className="px-4 py-3 bg-muted/30 text-xs text-muted-foreground space-y-1">
+              {week.meta.targetingNote && <div><b>Targeting:</b> {week.meta.targetingNote}</div>}
+              {week.meta.creativeNote && <div><b>Creative:</b> {week.meta.creativeNote}</div>}
+            </div>
+          )}
+        </div>
+      )}
+      {platform === "google" && week.google && (
+        <div className="border-t border-border">
+          {(week.google.adGroups ?? []).map((g: any, i: number, arr: any[]) => (
+            <AdRow
+              key={i}
+              title={`Ad Group ${i + 1}: ${g.name ?? ""}`}
+              tinted={i % 2 === 1}
+              divider={i < arr.length - 1 || !!week.google.keywordNote || !!week.google.bidNote}
+            >
+              {(g.headlines ?? []).map((h: string, idx: number) => (
+                <div key={`h-${idx}`}>
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">Headline {idx + 1} </span>{h}
+                </div>
+              ))}
+              {(g.descriptions ?? []).map((d: string, idx: number) => (
+                <div key={`d-${idx}`} className="mt-1">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">Description {idx + 1} </span>{d}
+                </div>
+              ))}
+            </AdRow>
+          ))}
+          {(week.google.keywordNote || week.google.bidNote) && (
+            <div className="px-4 py-3 bg-muted/30 text-xs text-muted-foreground space-y-1">
+              {week.google.keywordNote && <div><b>Keywords:</b> {week.google.keywordNote}</div>}
+              {week.google.bidNote && <div><b>Bidding:</b> {week.google.bidNote}</div>}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdRow({ title, children, tinted, divider }: { title: string; children: React.ReactNode; tinted: boolean; divider: boolean }) {
+  const [expanded, setExpanded] = useState(true);
+  return (
+    <div className={`px-4 py-3 ${tinted ? "bg-[#faf9f7]" : "bg-background"} ${divider ? "border-b border-border" : ""}`}>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex items-center justify-between w-full text-left"
+      >
+        <span className="text-sm font-bold">{title}</span>
+        <span className="text-xs text-accent">{expanded ? "Collapse" : "Expand"}</span>
+      </button>
+      {expanded && <div className="mt-2 text-sm text-foreground/90">{children}</div>}
     </div>
   );
 }
