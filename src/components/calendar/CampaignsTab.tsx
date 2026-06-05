@@ -860,19 +860,22 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
           {step === 4 && (
             <>
               <div className="flex items-center justify-between">
-                <Label>Content scaffold</Label>
+                <Label>{campaignMode === "paid" ? "Ad creative brief" : "Content scaffold"}</Label>
                 <Button variant="outline" size="sm" onClick={generatePlan} disabled={planLoading}>
                   {planLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                   {plan.length > 0 ? "Regenerate" : "Generate plan"}
                 </Button>
               </div>
+              {campaignMode === "paid" && (
+                <div className="text-[11px] uppercase tracking-wider text-accent font-semibold">AD BRIEF</div>
+              )}
               {plan.length === 0 && !planLoading && (
                 <div className="text-sm text-muted-foreground border border-dashed border-border rounded-md p-6 text-center">
-                  Click "Generate plan" to have MOXIEMO draft a week-by-week topic plan.
+                  Click "Generate plan" to have MOXIEMO draft a week-by-week {campaignMode === "paid" ? "ad creative brief" : "topic plan"}.
                 </div>
               )}
               {planLoading && (
-                <PlanLoadingState />
+                <PlanLoadingState paid={campaignMode === "paid"} />
               )}
               {plan.length > 0 && !planLoading && (
                 <>
@@ -897,7 +900,10 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                       Next <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
-                  <WeekCard week={plan[currentWeekIdx]} />
+                  {campaignMode === "paid"
+                    ? <AdWeekCard week={plan[currentWeekIdx]} platform={adPlatform!} />
+                    : <WeekCard week={plan[currentWeekIdx]} />
+                  }
                 </>
               )}
               <div className="flex justify-between pt-3">
