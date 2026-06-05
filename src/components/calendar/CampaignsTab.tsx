@@ -436,7 +436,15 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
     return Math.max(1, Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (7 * 86400000)));
   }, [startDate, endDate]);
 
-  const selectedChannels = Object.keys(channels).filter(k => channels[k]);
+  const selectedChannels = campaignMode === "paid" && adPlatform
+    ? [adPlatform]
+    : Object.keys(channels).filter(k => channels[k]);
+
+  // Effective per-week targets used by save() & exec items
+  const effectiveTargets: Record<string, number> = campaignMode === "paid" && adPlatform
+    ? { [adPlatform]: adPlatform === "meta" ? metaVariations : googleAdGroups }
+    : targets;
+
   const { checkGenerationLimit, handleGenerationResponse } = usePlan();
 
   const goalType: GoalType = useMemo(() => classifyGoal(goals), [goals]);
@@ -563,7 +571,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         start_date: startDate || null,
         end_date: endDate || null,
         channels: selectedChannels,
-        targets,
+        targets: effectiveTargets,
       });
       const { data: created, error } = await supabase.from("campaigns").insert({
         user_id: user.id,
@@ -574,7 +582,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         channels: selectedChannels,
         status: "active",
         color,
-        content_plan: { weeks: planForSave, targets, slots, mode: campaignMode, adPlatform },
+        content_plan: { weeks: planForSave, targets: effectiveTargets, slots, mode: campaignMode, adPlatform },
       }).select("id").single();
       if (error) throw error;
 
@@ -583,7 +591,7 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
         start_date: startDate || null,
         end_date: endDate || null,
         channels: selectedChannels,
-        targets,
+        targets: effectiveTargets,
         plan: planForSave,
       });
       if (created?.id && execItems.length > 0) {
