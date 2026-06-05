@@ -938,6 +938,181 @@ function EmptyState({ message }: { message: string }) {
   );
 }
 
+type AdBlock =
+  | { kind: "field"; label: string; limit: number | null; value: string }
+  | { kind: "header"; text: string }
+  | { kind: "text"; text: string };
+
+const AD_FIELD_RE = /^([A-Z][A-Z0-9 \/\-]*?)(?:\s*\(([^)]+)\))?:\s*(.*)$/;
+
+function parseAdCopy(src: string): AdBlock[] {
+  const lines = (src ?? "").split(/\r?\n/);
+  const blocks: AdBlock[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const raw = lines[i];
+    const line = raw.trimEnd();
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
+    const m = line.match(AD_FIELD_RE);
+    if (m) {
+      const label = m[1].trim();
+      const paren = m[2]?.trim() ?? "";
+      const inline = (m[3] ?? "").trim();
+      const limitMatch = paren.match(/(\d+)\s*(chars?|words?)/i);
+      const limit = limitMatch ? parseInt(limitMatch[1], 10) : null;
+      // Header detection: no value on this line AND no parenthetical limit
+      if (!inline && !limit) {
+        blocks.push({ kind: "header", text: label });
+        i++;
+        continue;
+      }
+      // Collect continuation lines until blank line or next label
+      const parts: string[] = inline ? [inline] : [];
+      let j = i + 1;
+      while (j < lines.length) {
+        const next = lines[j];
+        if (!next.trim()) break;
+        if (AD_FIELD_RE.test(next.trim())) break;
+        parts.push(next.trim());
+        j++;
+      }
+      blocks.push({ kind: "field", label, limit, value: parts.join(" ") });
+      i = j;
+      continue;
+    }
+    blocks.push({ kind: "text", text: line });
+    i++;
+  }
+  return blocks;
+}
+
+function serializeAdCopy(blocks: AdBlock[]): string {
+  const out: string[] = [];
+  blocks.forEach((b, idx) => {
+    const prev = blocks[idx - 1];
+    if (idx > 0 && (b.kind !== "text" || prev?.kind !== "text")) out.push("");
+    if (b.kind === "field") {
+      const lim = b.limit ? ` (${b.limit} chars max)` : "";
+      out.push(`${b.label}${lim}: ${b.value}`);
+    } else if (b.kind === "header") {
+      out.push(`${b.text}:`);
+    } else {
+      out.push(b.text);
+    }
+  });
+  return out.join("\n");
+}
+
+function AdCopyEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const blocks = useMemo(() => parseAdCopy(value), [value]);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  const hasFields = blocks.some((b) => b.kind === "field");
+
+  if (!hasFields) {
+    return (
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        rows={14}
+        className="resize-y min-h-[280px] text-sm leading-relaxed border-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 bg-transparent font-mono whitespace-pre-wrap"
+      />
+    );
+  }
+
+  function updateField(idx: number, newVal: string) {
+    const next = blocks.map((b, i) =>
+      i === idx && b.kind === "field" ? { ...b, value: newVal } : b,
+    );
+    onChange(serializeAdCopy(next));
+  }
+
+  async function copyField(idx: number, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx((c) => (c === idx ? null : c)), 1500);
+    } catch {
+      toast.error("Couldn't copy");
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      {blocks.map((b, idx) => {
+        if (b.kind === "header") {
+          return (
+            <div
+              key={idx}
+              className="pt-2 text-xs font-semibold uppercase tracking-wider text-foreground"
+            >
+              {b.text}
+            </div>
+          );
+        }
+        if (b.kind === "text") {
+          return (
+            <p key={idx} className="text-xs text-muted-foreground">
+              {b.text}
+            </p>
+          );
+        }
+        const len = b.value.length;
+        const over = b.limit != null && len > b.limit;
+        return (
+          <div key={idx} className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                {b.label}
+              </label>
+              <button
+                type="button"
+                onClick={() => copyField(idx, b.value)}
+                className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                aria-label={`Copy ${b.label}`}
+              >
+                {copiedIdx === idx ? (
+                  <>
+                    <Check className="h-3 w-3" /> Copied
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon className="h-3 w-3" /> Copy
+                  </>
+                )}
+              </button>
+            </div>
+            <Textarea
+              value={b.value}
+              onChange={(e) => updateField(idx, e.target.value)}
+              rows={b.limit && b.limit > 60 ? 3 : 1}
+              className="resize-y text-sm leading-relaxed min-h-[36px] py-2"
+            />
+            {b.limit != null && (
+              <div
+                className={`text-[11px] tabular-nums ${
+                  over ? "text-accent font-medium" : "text-muted-foreground"
+                }`}
+              >
+                {len} / {b.limit} characters{over ? " — over limit" : ""}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function DraftEditor({
   item,
   onPatch,
