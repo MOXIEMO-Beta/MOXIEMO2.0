@@ -969,19 +969,28 @@ const PLAN_LOADING_MESSAGES = [
   "Almost there — this one is worth the wait.",
 ];
 
-function PlanLoadingState() {
+function PlanLoadingState({ paid = false }: { paid?: boolean }) {
   const [idx, setIdx] = useState(0);
   const [visible, setVisible] = useState(true);
+  const messages = paid
+    ? [
+        "Writing your ad creative brief...",
+        "Mapping your strategy to every variation...",
+        "Crafting headlines anchored to your positioning...",
+        "Tuning copy to your ICP and brand voice...",
+        "Almost there — this one is worth the wait.",
+      ]
+    : PLAN_LOADING_MESSAGES;
   useEffect(() => {
     const interval = setInterval(() => {
       setVisible(false);
       setTimeout(() => {
-        setIdx((i) => (i + 1) % PLAN_LOADING_MESSAGES.length);
+        setIdx((i) => (i + 1) % messages.length);
         setVisible(true);
       }, 400);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [messages.length]);
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 animate-fade-in">
       <Loader2 className="w-8 h-8 animate-spin text-accent" />
@@ -998,7 +1007,7 @@ function PlanLoadingState() {
             margin: 0,
           }}
         >
-          {PLAN_LOADING_MESSAGES[idx]}
+          {messages[idx]}
         </p>
       </div>
       <p className="text-center text-muted-foreground" style={{ fontSize: 12, marginTop: 16 }}>
