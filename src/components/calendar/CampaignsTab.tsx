@@ -790,8 +790,10 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   )}
                 </div>
               </div>
-              <Label>Which channels will this campaign use?</Label>
-              {(["linkedin", "email", "instagram", "facebook"] as const).map(ch => (
+              {campaignMode === "organic" && (
+                <Label>Which channels will this campaign use?</Label>
+              )}
+              {campaignMode === "organic" && (["linkedin", "email", "instagram", "facebook"] as const).map(ch => (
                 <div key={ch} className="border border-border rounded-md p-3">
                   <div className="flex items-center justify-between">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -811,18 +813,46 @@ function NewCampaignFlow({ open, onClose, seed, strategy, user, onCreated }: any
                   )}
                 </div>
               ))}
-              {prechecked.size > 0 && (
+              {campaignMode === "paid" && adPlatform === "meta" && (
+                <MetaConfig
+                  objective={metaObjective} setObjective={setMetaObjective}
+                  format={metaFormat} setFormat={setMetaFormat}
+                  budget={metaBudget} setBudget={setMetaBudget}
+                  variations={metaVariations} setVariations={setMetaVariations}
+                />
+              )}
+              {campaignMode === "paid" && adPlatform === "google" && (
+                <GoogleConfig
+                  googleType={googleType} setGoogleType={setGoogleType}
+                  keyword={googleKeyword} setKeyword={setGoogleKeyword}
+                  budget={googleBudget} setBudget={setGoogleBudget}
+                  adGroups={googleAdGroups} setAdGroups={setGoogleAdGroups}
+                />
+              )}
+              {campaignMode === "organic" && prechecked.size > 0 && (
                 <div className="text-xs text-muted-foreground">Pre-selected based on your strategy. Adjust as needed.</div>
               )}
-              {weeks > 0 && (
+              {campaignMode === "organic" && weeks > 0 && (
                 <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
                   Based on your {GOAL_LABEL[goalType]} goal — over {weeks} weeks this campaign needs:{" "}
                   {selectedChannels.map(ch => `${weeks * (targets[ch] || 0)} ${ch === "linkedin" ? "LinkedIn" : ch}`).join(" · ")}
                 </div>
               )}
+              {campaignMode === "paid" && weeks > 0 && adPlatform === "meta" && (
+                <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
+                  Over {weeks} weeks: {weeks * metaVariations} ad creative sets to produce
+                </div>
+              )}
+              {campaignMode === "paid" && weeks > 0 && adPlatform === "google" && (
+                <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
+                  Over {weeks} weeks: {weeks * googleAdGroups} ad groups, {weeks * googleAdGroups * 3} headline variations, {weeks * googleAdGroups * 2} description variations
+                </div>
+              )}
               <div className="flex justify-between pt-3">
                 <Button variant="outline" onClick={() => setStep(2)}><ArrowLeft className="w-4 h-4" /> Back</Button>
-                <Button onClick={() => setStep(4)} disabled={selectedChannels.length === 0}>Next <ArrowRight className="w-4 h-4" /></Button>
+                <Button onClick={() => setStep(4)} disabled={selectedChannels.length === 0 || (campaignMode === "paid" && adPlatform === "google" && !googleKeyword.trim())}>
+                  Next <ArrowRight className="w-4 h-4" />
+                </Button>
               </div>
             </>
           )}
