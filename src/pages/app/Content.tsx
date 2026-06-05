@@ -49,6 +49,7 @@ import {
   Upload,
   X,
   Wand2,
+  Megaphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
@@ -79,6 +80,8 @@ const PLATFORMS = [
   { value: "Short-Form Video Script", icon: Video, limit: null },
   { value: "Long-Form Video Script", icon: Video, limit: null },
   { value: "Podcast Script", icon: Mic, limit: null },
+  { value: "Meta Ads", icon: Megaphone, limit: null },
+  { value: "Google Ads", icon: Megaphone, limit: null },
 ];
 
 const CONTENT_TYPES = [
@@ -112,13 +115,32 @@ const PODCAST_TYPES = [
   "Show Notes",
 ];
 
+const META_ADS_TYPES = [
+  "Full Ad Set",
+  "Primary Text",
+  "Headline Variations",
+  "Retargeting Ad",
+  "Lead Gen Ad",
+];
+
+const GOOGLE_ADS_TYPES = [
+  "Search Ad",
+  "Responsive Display Ad",
+  "YouTube Bumper Script (6 sec)",
+  "YouTube Pre-Roll Script (15 sec)",
+  "Ad Variations",
+];
+
 const SCRIPT_PLATFORMS = new Set(["Short-Form Video Script", "Long-Form Video Script", "Podcast Script"]);
 const PODCAST_PLATFORMS = new Set(["Podcast Script"]);
+const AD_PLATFORMS = new Set(["Meta Ads", "Google Ads"]);
 
 function contentTypeOptionsFor(platform: string): string[] {
   if (platform === "Short-Form Video Script") return SHORT_VIDEO_TYPES;
   if (platform === "Long-Form Video Script") return LONG_VIDEO_TYPES;
   if (platform === "Podcast Script") return PODCAST_TYPES;
+  if (platform === "Meta Ads") return META_ADS_TYPES;
+  if (platform === "Google Ads") return GOOGLE_ADS_TYPES;
   return CONTENT_TYPES;
 }
 
