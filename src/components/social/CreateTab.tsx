@@ -516,6 +516,22 @@ export default function CreateTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* prefill pillar + platform from Calendar coverage link */
+  const [pillarBannerDismissed, setPillarBannerDismissed] = useState(false);
+  useEffect(() => {
+    if (prefillPillar) {
+      setFocusMode("pillar");
+      setSelectedPillar(prefillPillar);
+      setPillarBannerDismissed(false);
+    }
+  }, [prefillPillar]);
+  useEffect(() => {
+    if (prefillPlatform) {
+      setPlatforms([prefillPlatform]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillPlatform]);
+
   /* default platform: LinkedIn if connected */
   useEffect(() => {
     if (platforms.length === 0 && isLinkedInConnected) {
