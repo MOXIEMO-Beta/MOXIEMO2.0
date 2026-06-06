@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import ImportFromContentDrawer from "./ImportFromContentDrawer";
 
 type Platform = "linkedin" | "facebook" | "instagram";
 type Status = "draft" | "queued" | "scheduled" | "published";
@@ -171,6 +172,12 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [pillars, setPillars] = useState<string[]>([]);
+  const [importOpen, setImportOpen] = useState(false);
+  const openImport = () => {
+    setImportOpen(true);
+    // keep parent callback firing in case it wants to track usage
+    try { onImportFromContent?.(); } catch { /* noop */ }
+  };
 
   const [view, setView] = useState<ViewMode>(() => {
     const v = localStorage.getItem("social_calendar_view");
@@ -611,7 +618,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
         </div>
 
         {noContent ? (
-          <EmptyCalendar onCreate={() => onCreateAtDate(new Date().toISOString())} onImport={onImportFromContent} />
+          <EmptyCalendar onCreate={() => onCreateAtDate(new Date().toISOString())} onImport={openImport} />
         ) : view === "month" ? (
           <MonthGrid
             cursor={cursor}
@@ -825,6 +832,13 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
           </div>
         </div>
       )}
+      <ImportFromContentDrawer
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        userId={userId}
+        pillars={pillars}
+        onScheduled={fetchPosts}
+      />
     </div>
   );
 }
