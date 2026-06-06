@@ -337,7 +337,6 @@ export default function Discovery() {
         throw new Error("Missing Supabase environment variables");
       }
 
-      const url = `${supabaseUrl}/functions/v1/discovery-chat`;
       const endpoint = laneRef.current === "lane2" ? "discovery-chat-lane2" : "discovery-chat";
       const callUrl = `${supabaseUrl}/functions/v1/${endpoint}`;
       const { data: { session } } = await supabase.auth.getSession();
@@ -660,12 +659,12 @@ export default function Discovery() {
           <div className="flex items-center gap-3">
             <Sparkles className="h-4 w-4 text-accent" />
             <span className="text-sm font-medium">MOXIEMO Discovery</span>
-            <span className="text-xs text-muted-foreground">Section {currentSection} of {SECTIONS.length} — {SECTIONS[currentSection - 1]}</span>
+            <span className="text-xs text-muted-foreground">Section {currentSection} of {sections.length} — {sections[currentSection - 1]}</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium text-muted-foreground">
-              {answeredDisplay}/{TOTAL_QUESTIONS} answered
-              {answered >= REQUIRED_QUESTIONS && answered < TOTAL_QUESTIONS && " · bonus questions"}
+              {answeredDisplay}/{total} answered
+              {!isLane2 && answered >= REQUIRED_QUESTIONS && answered < TOTAL_QUESTIONS && " · bonus questions"}
             </span>
             <AlertDialog>
               <AlertDialogTrigger asChild>
