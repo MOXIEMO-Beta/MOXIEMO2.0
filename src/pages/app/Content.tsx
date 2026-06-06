@@ -904,30 +904,6 @@ export default function Content() {
             ))
           )}
         </TabsContent>
-        {/* placeholder removed below */}
-        {false && (
-          <div>
-            <Input
-                        type="datetime-local"
-                        value={toLocalInputValue(it.scheduled_for)}
-                        onChange={(e) =>
-                          patchItem(it.id, {
-                            scheduled_for: e.target.value ? new Date(e.target.value).toISOString() : null,
-                            status: e.target.value ? "scheduled" : "queued",
-                          })
-                        }
-                        className="h-9 w-56"
-                      />
-                      <StatusBadge status={it.status} />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handlePublishNow(it)}
-                      >
-                        <Send className="mr-2 h-3.5 w-3.5" /> Publish now
-                      </Button>
-          </div>
-        )}
 
         {/* DRAFTS */}
         <TabsContent value="drafts" className="space-y-3">
