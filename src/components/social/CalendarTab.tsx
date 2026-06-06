@@ -50,6 +50,11 @@ type Props = {
   onEditPost: (postId: string) => void;
   onCreateAtDate: (dateIso: string, pillar?: string) => void;
   onImportFromContent: () => void;
+  onCreateForPillar?: (args: {
+    pillar: string;
+    platform: Platform;
+    monthLabel: string;
+  }) => void;
 };
 
 const PLATFORM_COLORS: Record<Platform, string> = {
