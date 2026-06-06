@@ -734,11 +734,17 @@ export default function CreateTab({
 
   async function handleSaveDraft() {
     const id = await savePost("draft", null);
-    if (id) toast.success("Draft saved");
+    if (id) {
+      toast.success("Draft saved");
+      onAfterSave?.();
+    }
   }
   async function handleAddToQueue() {
     const id = await savePost("queued", null);
-    if (id) toast.success("Added to queue");
+    if (id) {
+      toast.success("Added to queue");
+      onAfterSave?.();
+    }
   }
   async function handleConfirmSchedule() {
     if (!scheduleDate) {
@@ -754,6 +760,7 @@ export default function CreateTab({
     if (id) {
       toast.success("Scheduled");
       setShowSchedule(false);
+      onAfterSave?.();
     }
   }
 
