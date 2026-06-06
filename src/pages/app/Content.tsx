@@ -897,27 +897,7 @@ export default function Content() {
                     <div className="text-sm text-foreground line-clamp-2 mb-3">
                       {htmlToPlain(it.body ?? "").slice(0, 80)}{(htmlToPlain(it.body ?? "")).length > 80 ? "…" : ""}
                     </div>
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <Input
-                        type="datetime-local"
-                        value={toLocalInputValue(it.scheduled_for)}
-                        onChange={(e) =>
-                          patchItem(it.id, {
-                            scheduled_for: e.target.value ? new Date(e.target.value).toISOString() : null,
-                            status: e.target.value ? "scheduled" : "queued",
-                          })
-                        }
-                        className="h-9 w-56"
-                      />
-                      <StatusBadge status={it.status} />
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handlePublishNow(it)}
-                      >
-                        <Send className="mr-2 h-3.5 w-3.5" /> Publish now
-                      </Button>
-                    </div>
+                    <QueueCardActions item={it} onPatch={patchItem} onPublish={handlePublishNow} />
                   </div>
                 </div>
               </Card>
@@ -1236,6 +1216,69 @@ function DraftEditor({
           }}
         >
           Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function QueueCardActions({
+  item,
+  onPatch,
+  onPublish,
+}: {
+  item: ContentItem;
+  onPatch: (id: string, patch: Partial<ContentItem>) => void;
+  onPublish: (item: ContentItem) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [body, setBody] = useState(item.body ?? "");
+  return (
+    <div className="space-y-3">
+      {editing && (
+        <div className="space-y-2">
+          <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} />
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                onPatch(item.id, { body });
+                setEditing(false);
+              }}
+            >
+              Save
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setBody(item.body ?? "");
+                setEditing(false);
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Input
+          type="datetime-local"
+          value={toLocalInputValue(item.scheduled_for)}
+          onChange={(e) =>
+            onPatch(item.id, {
+              scheduled_for: e.target.value ? new Date(e.target.value).toISOString() : null,
+              status: e.target.value ? "scheduled" : "queued",
+            })
+          }
+          className="h-9 w-56"
+        />
+        <StatusBadge status={item.status} />
+        <Button size="sm" variant="ghost" onClick={() => setEditing((v) => !v)}>
+          <Pencil className="mr-2 h-3.5 w-3.5" /> {editing ? "Close" : "Edit"}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => onPublish(item)}>
+          <Send className="mr-2 h-3.5 w-3.5" /> Publish now
         </Button>
       </div>
     </div>
