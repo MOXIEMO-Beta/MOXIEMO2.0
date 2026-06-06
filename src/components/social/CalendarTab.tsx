@@ -617,6 +617,9 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                 </button>
               ))}
             </div>
+            <Button size="sm" variant="outline" onClick={openImport}>
+              Import from drafts
+            </Button>
             <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => onCreateAtDate(new Date().toISOString())}>
               <Plus className="mr-1 h-3.5 w-3.5" /> New Post
             </Button>
