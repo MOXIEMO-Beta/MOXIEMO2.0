@@ -23,15 +23,15 @@ export function PublishLockBadge({ platform, feature, className }: Props) {
     if (p !== "linkedin") {
       const platformLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
       return (
-        <span
+        <div
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground",
+            "flex items-start gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm font-medium text-muted-foreground",
             className,
           )}
         >
-          <Clock className="h-3 w-3" />
-          {`${platformLabel} direct publishing is coming soon. We'll notify you when it's available.`}
-        </span>
+          <Clock className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>{`${platformLabel} direct publishing is coming soon. We'll notify you when it's available.`}</span>
+        </div>
       );
     }
   }
