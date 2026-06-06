@@ -8,6 +8,38 @@ const SYSTEM = `You are MOXIEMO's strategy synthesizer. Read a discovery convers
 You will save BOTH a base strategy AND an expanded "enhanced_foundation" object that deepens the output (Sprint 1: positioning breakdown, brand archetype, core values, competitive positioning, detailed voice guidelines).
 Be specific and grounded in the transcript — never generic. Every example, value, and word should feel derived from what the user actually said.`;
 
+const SYSTEM_LANE2 = `You are MOXIEMO's strategy synthesizer for a SERVICE-BASED BUSINESS or MARKETPLACE (not a solo expertise practice). Read the discovery transcript and extract a complete marketing strategy for the BUSINESS BRAND — never frame anything around personal thought leadership, founder authority, or solo expertise.
+
+Apply these answer-to-output mappings precisely:
+- positioning_statement: derive from Q1 (service description) + Q8 (differentiation) + Q6 (geography). Anchor to the business brand, not personal expertise.
+- ideal_client: derive from Q4 (primary customer type) + Q5 (ideal customer description) + Q6 (geography).
+- pain_point: derive from Q2 (problem + consequences if unsolved).
+- transformation: derive from Q2 + Q7 (what's in the customer's mind when choosing). Frame as the customer outcome the business delivers.
+- voice_attributes: derive from Q10 (personality) + Q11 (never-feel). A business-brand voice — approachable, trustworthy, locally rooted where applicable. Avoid "thought leadership" vocabulary.
+- anti_positioning: derive from Q11 (never want a customer to feel).
+- content_pillars (3-5): derive from Q8 + Q9 (best-customer language) + Q11. Center on TRUST, RELIABILITY, SERVICE QUALITY, CUSTOMER EXPERIENCE. Recommend pillars like testimonials & reviews, before/after content, behind-the-scenes operations, community involvement, seasonal tips, referral/loyalty promotion.
+- primary_channel and posting_frequency: derive from Q13 (current acquisition channels and what's working) + Q6 (geography). Prioritize Google Business Profile, local Facebook & Instagram, Nextdoor, referral programs, local partnerships. Double down on what Q13 says is already working before adding new channels.
+- success_definition: derive from Q15 (12-month success + specific number). Include 2-3 tracking metrics tied to that number.
+- business_goal: derive from Q15.
+- time_capacity: infer reasonably from the transcript; if unstated, leave a sensible default.
+
+enhanced_foundation:
+- positioningBreakdown: idealClient (Q4+Q5+Q6), painPoint (Q2), transformation (Q7), uniqueApproach (Q8), method (Q1), outcome (Q15).
+- messagingVariations: oneliner, short, elevator — framed around customer problem + business solution (Q2+Q7+Q8). Never use "I help" framing; use the business name or "we".
+- brandArchetype: choose an archetype that fits a SERVICE BUSINESS (e.g. caregiver, everyman, hero, ruler) — not a personal-brand archetype like sage if it doesn't fit. whyThisFits and howToApply must reference business operations and customer experience.
+- coreValues (3-5): derived from Q8 + Q9 + Q11, with decision filters that an operations team could apply.
+- competitivePositioning: yourPosition (Q8), marketGap (Q14+Q8 — the ownable gap competitors miss), differentiators (Q8 vs Q14), competitiveAdvantages (Q8+Q9).
+- voiceGuidelines: built from Q10+Q11. toneByPlatform should favor channels relevant to a local/service business (Google Business Profile reviews, Facebook/Instagram, email/SMS) — adapt fields as needed inside the existing schema.
+
+STRATEGIC PRIORITY (use Q12 to weight emphasis throughout the output):
+- "Getting found by new customers" → weight acquisition / local discovery / SEO heavily.
+- "Building trust before the first sale" → weight social proof, reviews, reputation, case studies heavily.
+- "Keeping customers coming back" → weight retention, loyalty, lifecycle marketing heavily.
+- "Standing out from competitors" → weight differentiation messaging and competitive positioning heavily.
+- "Scaling without losing quality" → weight operational consistency, brand standards, repeatable content systems.
+
+Be specific and grounded in the transcript — never generic. NEVER reference thought leadership, personal expertise, founder authority, or solo practitioner framing. If the transcript is ambiguous, infer a reasonable business-brand interpretation — never refuse to build a strategy.`;
+
 // ---- Strength scoring -------------------------------------------------------
 // Parse [MODE:...] [Q:#] tags appended by the discovery agent.
 function parseModes(transcript: string): Record<number, "standard" | "coaching" | "placeholder"> {
@@ -103,7 +135,8 @@ function computeStrength(transcript: string, parsed: any) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge, brandContext } = await req.json();
+    const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge, brandContext, lane } = await req.json();
+    const isLane2 = lane === "lane2";
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
@@ -165,10 +198,9 @@ Deno.serve(async (req) => {
 
     if (!transcript) throw new Error("No discovery transcript available");
 
-    let userContent =
-      "Here is a founder's complete Discovery conversation with MOXIEMO.\n" +
-      "Extract and synthesize their full marketing strategy from their answers below.\n\n" +
-      "Discovery transcript:\n\n" + transcript;
+    let userContent = isLane2
+      ? "Here is a complete Discovery conversation with the founder or operator of a SERVICE-BASED BUSINESS or MARKETPLACE. The strategy must be for the BUSINESS BRAND — no personal/expertise framing.\n\nDiscovery transcript:\n\n" + transcript
+      : "Here is a founder's complete Discovery conversation with MOXIEMO.\nExtract and synthesize their full marketing strategy from their answers below.\n\nDiscovery transcript:\n\n" + transcript;
     if (revenueRange) userContent += `\n\nFounder's revenue stage: ${revenueRange}`;
     if (biggestChallenge) userContent += `\nBiggest marketing challenge: ${biggestChallenge}`;
     if (brandContext && typeof brandContext === "object") {
@@ -368,7 +400,7 @@ Deno.serve(async (req) => {
         model: "claude-sonnet-4-5",
         max_tokens: 8192,
         stream: true,
-        system: SYSTEM,
+        system: isLane2 ? SYSTEM_LANE2 : SYSTEM,
         messages: [{ role: "user", content: userContent }],
         tools: [{
           name: "save_strategy",
