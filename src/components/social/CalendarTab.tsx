@@ -832,6 +832,13 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
           </div>
         </div>
       )}
+      <ImportFromContentDrawer
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        userId={userId}
+        pillars={pillars}
+        onScheduled={fetchPosts}
+      />
     </div>
   );
 }
