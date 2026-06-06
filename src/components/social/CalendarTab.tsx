@@ -27,6 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import ImportFromContentDrawer from "./ImportFromContentDrawer";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Platform = "linkedin" | "facebook" | "instagram";
 type Status = "draft" | "queued" | "scheduled" | "published";
