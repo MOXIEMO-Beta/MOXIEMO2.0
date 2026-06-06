@@ -829,7 +829,24 @@ export default function CreateTab({
 
   return (
     <TooltipProvider>
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)_340px]">
+      <div className="space-y-4">
+        {pillarContext && !pillarBannerDismissed && (
+          <div className="flex items-start justify-between gap-3 rounded-md border border-accent/30 bg-accent-soft/50 px-4 py-3 text-sm text-foreground">
+            <p>
+              Creating for pillar: <span className="font-semibold">{pillarContext.name}</span>
+              {" — "}this will count toward your {pillarContext.monthLabel} coverage.
+            </p>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+              onClick={() => setPillarBannerDismissed(true)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)_340px]">
         {/* =================== LEFT: focus + format =================== */}
         <Card className="border-accent/20 bg-accent-soft/40">
           <CardHeader className="pb-3">
