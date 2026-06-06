@@ -31,6 +31,15 @@ const SECTIONS = [
 const TOTAL_QUESTIONS = 16;
 const REQUIRED_QUESTIONS = 13;
 
+const LANE2_SECTIONS = [
+  "Business Foundation",
+  "Market & Customer",
+  "Differentiation & Brand",
+  "Growth & Current State",
+  "Vision",
+];
+const LANE2_TOTAL = 15;
+
 // Strip the hidden mode-tracking tag from assistant messages before displaying.
 const MODE_TAG_RE = /\n?\[MODE:(standard|coaching|placeholder)\]\s*\[Q:\d+\]\s*$/i;
 const stripModeTag = (text: string) => text.replace(MODE_TAG_RE, "").trimEnd();
@@ -119,6 +128,10 @@ export default function Discovery() {
   const [completed, setCompleted] = useState(false);
   const [uploadStage, setUploadStage] = useState<"gate" | "summary" | "chat">("chat");
   const [prefillResult, setPrefillResult] = useState<PrefillResult | null>(null);
+  const [lane, setLane] = useState<"lane1" | "lane2" | null>(null);
+  const [otherDetectorText, setOtherDetectorText] = useState("");
+  const [showOtherDetector, setShowOtherDetector] = useState(false);
+  const laneRef = useRef<"lane1" | "lane2" | null>(null);
   const prefillByQRef = useRef<Record<number, string>>({});
   const lastPrefilledQRef = useRef<number | null>(null);
   const brandDataRef = useRef<Record<string, any> | null>(null);
@@ -143,12 +156,16 @@ export default function Discovery() {
 
   // progress: count assistant questions answered = number of user messages
   const answered = messages.filter((m) => m.role === "user").length;
-  const answeredDisplay = Math.min(answered, TOTAL_QUESTIONS);
-  const progress = Math.min(100, Math.round((answered / TOTAL_QUESTIONS) * 100));
-  // Sections 1-5 cover Q1-Q13 (~3 each); section 6 covers Q14-Q15 (optional).
-  const currentSection = answered >= REQUIRED_QUESTIONS
-    ? 6
-    : Math.min(5, Math.floor(answered / 3) + 1);
+  const isLane2 = lane === "lane2";
+  const total = isLane2 ? LANE2_TOTAL : TOTAL_QUESTIONS;
+  const sections = isLane2 ? LANE2_SECTIONS : SECTIONS;
+  const answeredDisplay = Math.min(answered, total);
+  const progress = Math.min(100, Math.round((answered / total) * 100));
+  // Lane 1: Sections 1-5 cover Q1-Q13 (~3 each); section 6 covers Q14-Q15 (optional).
+  // Lane 2: 5 sections covering Q1-Q15 grouped 3-4-4-3-1.
+  const currentSection = isLane2
+    ? (answered >= 14 ? 5 : answered >= 11 ? 4 : answered >= 7 ? 3 : answered >= 3 ? 2 : 1)
+    : (answered >= REQUIRED_QUESTIONS ? 6 : Math.min(5, Math.floor(answered / 3) + 1));
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -197,6 +214,11 @@ export default function Discovery() {
         setSessionId(data.id);
         setMessages((data.messages as Msg[]) || []);
         if ((data as any).brand_data) brandDataRef.current = (data as any).brand_data;
+        const savedLane = (data as any).lane as "lane1" | "lane2" | null | undefined;
+        if (savedLane === "lane1" || savedLane === "lane2") {
+          setLane(savedLane);
+          laneRef.current = savedLane;
+        }
         if (data.status === "completed") setCompleted(true);
         if (!data.messages || (data.messages as any[]).length === 0) {
           // New / empty session — show the upload gate before starting the conversation.
@@ -258,9 +280,34 @@ export default function Discovery() {
 
   function beginChat() {
     setUploadStage("chat");
-    if (sessionId && messages.length === 0) {
+    // Chat only starts after the lane detector resolves. If the lane is
+    // already chosen (returning user mid-session), kick off the first message.
+    if (sessionId && messages.length === 0 && laneRef.current) {
       startConversation(sessionId);
     }
+  }
+
+  async function chooseLane(next: "lane1" | "lane2") {
+    setLane(next);
+    laneRef.current = next;
+    if (sessionId) {
+      await supabase
+        .from("discovery_sessions")
+        .update({ lane: next } as any)
+        .eq("id", sessionId);
+    }
+    if (sessionId && messages.length === 0) {
+      await startConversation(sessionId);
+    }
+  }
+
+  function classifyOtherText(text: string): "lane1" | "lane2" {
+    const t = text.toLowerCase();
+    // Solo expertise patterns → Lane 1.
+    if (/(1[:\-]1|one[\s-]on[\s-]one|coach|consult|advisor|advisory|fractional|solo practitioner|just me|i am the|i'm the only)/.test(t)) {
+      return "lane1";
+    }
+    return "lane2";
   }
 
   async function startConversation(sid: string) {
@@ -290,11 +337,12 @@ export default function Discovery() {
         throw new Error("Missing Supabase environment variables");
       }
 
-      const url = `${supabaseUrl}/functions/v1/discovery-chat`;
+      const endpoint = laneRef.current === "lane2" ? "discovery-chat-lane2" : "discovery-chat";
+      const callUrl = `${supabaseUrl}/functions/v1/${endpoint}`;
       const { data: { session } } = await supabase.auth.getSession();
       const authToken = session?.access_token ?? supabaseKey;
 
-      const resp = await fetch(url, {
+      const resp = await fetch(callUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -304,7 +352,7 @@ export default function Discovery() {
         body: JSON.stringify({
           messages: history,
           userContext: userContextRef.current ?? undefined,
-          brandContext: brandDataRef.current
+          brandContext: laneRef.current !== "lane2" && brandDataRef.current
             ? {
                 voice_tone: brandDataRef.current.voice_tone ?? null,
                 transformation_language: brandDataRef.current.transformation_language ?? null,
@@ -470,6 +518,7 @@ export default function Discovery() {
           transcript,
           revenueRange: optional.revenueRange,
           biggestChallenge: optional.biggestChallenge,
+          lane: laneRef.current ?? "lane1",
           brandContext: brandDataRef.current
             ? {
                 mission_or_values: brandDataRef.current.mission_or_values ?? null,
@@ -584,10 +633,78 @@ export default function Discovery() {
       {uploadStage === "chat" && (
         <>
       <NeedHelpButton
-        currentQuestion={Math.min(answered + 1, TOTAL_QUESTIONS)}
-        totalQuestions={TOTAL_QUESTIONS}
+        currentQuestion={Math.min(answered + 1, total)}
+        totalQuestions={total}
         firstName={userContext?.firstName}
       />
+      {lane === null && messages.length === 0 && (
+        <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-10" style={{ backgroundColor: "#FAFAF8" }}>
+          <div className="max-w-2xl mx-auto">
+            <div className="rounded-2xl border border-border bg-background p-6 lg:p-8 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-accent">First, a quick question</span>
+              </div>
+              <h2 className="text-xl font-semibold mb-1">How would you describe your business model?</h2>
+              <p className="text-sm text-muted-foreground mb-5">This helps MOXIEMO tailor the discovery to your business.</p>
+              {!showOtherDetector ? (
+                <div className="grid gap-2">
+                  <button
+                    onClick={() => chooseLane("lane1")}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">I sell my expertise directly</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Coaching, consulting, advisory, or fractional services</div>
+                  </button>
+                  <button
+                    onClick={() => chooseLane("lane2")}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">I run a service-based business</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Services delivered through a team or providers</div>
+                  </button>
+                  <button
+                    onClick={() => chooseLane("lane2")}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">I operate a platform or marketplace</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Connecting customers with service providers</div>
+                  </button>
+                  <button
+                    onClick={() => setShowOtherDetector(true)}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">Other</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Tell us a bit more about how your business works</div>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Tell us a little more about how your business works</label>
+                  <Textarea
+                    value={otherDetectorText}
+                    onChange={(e) => setOtherDetectorText(e.target.value)}
+                    placeholder="e.g. We're a 10-person agency delivering branding for retail clients…"
+                    className="min-h-[110px]"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => chooseLane(classifyOtherText(otherDetectorText))}
+                      disabled={otherDetectorText.trim().length < 4}
+                      className="bg-foreground text-background hover:bg-foreground/90"
+                    >
+                      Continue
+                    </Button>
+                    <Button variant="ghost" onClick={() => setShowOtherDetector(false)}>Back</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {lane !== null && (
+        <>
       {showWelcome && (
         <div className="border-b border-border bg-accent/5 px-6 lg:px-10 py-4">
           <div className="max-w-3xl mx-auto flex items-start gap-3">
@@ -610,12 +727,12 @@ export default function Discovery() {
           <div className="flex items-center gap-3">
             <Sparkles className="h-4 w-4 text-accent" />
             <span className="text-sm font-medium">MOXIEMO Discovery</span>
-            <span className="text-xs text-muted-foreground">Section {currentSection} of {SECTIONS.length} — {SECTIONS[currentSection - 1]}</span>
+            <span className="text-xs text-muted-foreground">Section {currentSection} of {sections.length} — {sections[currentSection - 1]}</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium text-muted-foreground">
-              {answeredDisplay}/{TOTAL_QUESTIONS} answered
-              {answered >= REQUIRED_QUESTIONS && answered < TOTAL_QUESTIONS && " · bonus questions"}
+              {answeredDisplay}/{total} answered
+              {!isLane2 && answered >= REQUIRED_QUESTIONS && answered < TOTAL_QUESTIONS && " · bonus questions"}
             </span>
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -809,6 +926,8 @@ export default function Discovery() {
             </p>
           </div>
         </div>
+      )}
+        </>
       )}
         </>
       )}

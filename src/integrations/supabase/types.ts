@@ -311,6 +311,7 @@ export type Database = {
           current_question: number
           current_section: number
           id: string
+          lane: string | null
           messages: Json
           started_at: string
           status: string
@@ -324,6 +325,7 @@ export type Database = {
           current_question?: number
           current_section?: number
           id?: string
+          lane?: string | null
           messages?: Json
           started_at?: string
           status?: string
@@ -337,6 +339,7 @@ export type Database = {
           current_question?: number
           current_section?: number
           id?: string
+          lane?: string | null
           messages?: Json
           started_at?: string
           status?: string
