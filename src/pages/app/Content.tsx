@@ -928,23 +928,12 @@ export default function Content() {
                       {htmlToPlain(it.body ?? "").slice(0, 80)}{(htmlToPlain(it.body ?? "")).length > 80 ? "…" : ""}
                     </div>
                     <DraftEditor item={it} onPatch={patchItem} />
-                    <div className="flex items-center gap-2 flex-wrap mt-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => patchItem(it.id, { status: "queued" })}
-                      >
-                        <ArrowRight className="mr-2 h-3.5 w-3.5" /> Move to Queue
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setDeleteId(it.id)}
-                      >
-                        <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
-                      </Button>
-                    </div>
+                    <DraftActions
+                      item={it}
+                      onPatch={patchItem}
+                      onPublish={handlePublishNow}
+                      onDelete={() => setDeleteId(it.id)}
+                    />
                   </div>
                 </div>
               </Card>
