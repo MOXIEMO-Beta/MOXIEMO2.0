@@ -19,6 +19,7 @@ import {
   Instagram,
   Image as ImageIcon,
   Palette,
+  FolderOpen,
   X,
   Calendar as CalendarIcon,
   Send,
@@ -68,6 +69,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import LibraryAssetsDrawer from "./LibraryAssetsDrawer";
 import { cn } from "@/lib/utils";
 
 type Strategy = {
@@ -461,6 +463,7 @@ export default function CreateTab({
   const canvaInputRef = useRef<HTMLInputElement | null>(null);
   const [canvaOpen, setCanvaOpen] = useState(false);
   const [canvaLink, setCanvaLink] = useState("");
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   // Schedule
   const [showSchedule, setShowSchedule] = useState(false);
@@ -1505,6 +1508,9 @@ export default function CreateTab({
               <Button variant="outline" size="sm" onClick={() => setCanvaOpen(true)}>
                 <Palette className="h-3.5 w-3.5" /> Import from Canva
               </Button>
+              <Button variant="outline" size="sm" onClick={() => setLibraryOpen(true)}>
+                <FolderOpen className="h-3.5 w-3.5" /> From library
+              </Button>
               {mediaUrls.map((url, i) => (
                 <div key={i} className="relative h-16 w-16 overflow-hidden rounded border">
                   {url.startsWith("data:") || url.match(/\.(jpe?g|png|gif|webp)$/i) ? (
@@ -1622,6 +1628,13 @@ export default function CreateTab({
           )}
         </Card>
       </div>
+
+      <LibraryAssetsDrawer
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        userId={userId}
+        onSelect={(url) => setMediaUrls((prev) => [...prev, url])}
+      />
 
       {/* Canva modal */}
       <Dialog open={canvaOpen} onOpenChange={setCanvaOpen}>
