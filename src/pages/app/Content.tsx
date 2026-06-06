@@ -897,9 +897,17 @@ export default function Content() {
                     <div className="text-sm text-foreground line-clamp-2 mb-3">
                       {htmlToPlain(it.body ?? "").slice(0, 80)}{(htmlToPlain(it.body ?? "")).length > 80 ? "…" : ""}
                     </div>
-                    <DraftEditor item={it} onPatch={patchItem} />
-                    <div className="flex items-center gap-3 flex-wrap mt-3">
-                      <Input
+                    <QueueCardActions item={it} onPatch={patchItem} onPublish={handlePublishNow} />
+                  </div>
+                </div>
+              </Card>
+            ))
+          )}
+        </TabsContent>
+        {/* placeholder removed below */}
+        {false && (
+          <div>
+            <Input
                         type="datetime-local"
                         value={toLocalInputValue(it.scheduled_for)}
                         onChange={(e) =>
@@ -918,13 +926,8 @@ export default function Content() {
                       >
                         <Send className="mr-2 h-3.5 w-3.5" /> Publish now
                       </Button>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            ))
-          )}
-        </TabsContent>
+          </div>
+        )}
 
         {/* DRAFTS */}
         <TabsContent value="drafts" className="space-y-3">
