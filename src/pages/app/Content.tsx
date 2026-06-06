@@ -503,6 +503,63 @@ export default function Content() {
     setDeleteId(null);
   }
 
+  async function handlePublishNow(it: ContentItem) {
+    if (!user) return;
+    const rawPlatform = (it.platform ?? "").toLowerCase();
+    const targetPlatform = rawPlatform.includes("linkedin")
+      ? "linkedin"
+      : rawPlatform.includes("facebook")
+      ? "facebook"
+      : rawPlatform.includes("instagram")
+      ? "instagram"
+      : rawPlatform.includes("twitter") || rawPlatform.includes("x /")
+      ? "twitter"
+      : rawPlatform;
+
+    const { data: conns } = await supabase
+      .from("social_connections")
+      .select("platform")
+      .eq("user_id", user.id);
+    const isConnected = (conns ?? []).some(
+      (c) => (c.platform ?? "").toLowerCase() === targetPlatform,
+    );
+
+    if (!isConnected) {
+      toast.error(`Connect ${it.platform ?? "platform"} in Settings to publish directly`, {
+        action: {
+          label: "Settings",
+          onClick: () => {
+            window.location.href = "/app/settings";
+          },
+        },
+      });
+      return;
+    }
+
+    if (targetPlatform !== "linkedin") {
+      toast.error(`Direct publishing not yet supported for ${it.platform}`);
+      return;
+    }
+
+    try {
+      const content = htmlToPlain(it.body ?? "").trim();
+      if (!content) throw new Error("Post is empty");
+      const { data, error } = await supabase.functions.invoke("publish-social-post", {
+        body: { user_id: user.id, post_id: it.id, platform: "linkedin", content },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      await patchItem(it.id, {
+        status: "published",
+        published_at: new Date().toISOString(),
+      });
+      toast.success("Published to LinkedIn.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Publish failed", { description: (err as Error).message });
+    }
+  }
+
   const isRich = lockedMeta && RICH_PLATFORMS.has(lockedMeta.platform);
   const isScript = !!lockedMeta && SCRIPT_PLATFORMS.has(lockedMeta.platform);
   const isPodcast = !!lockedMeta && PODCAST_PLATFORMS.has(lockedMeta.platform);
