@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      assets: {
+        Row: {
+          file_size_kb: number | null
+          file_type: string | null
+          filename: string | null
+          id: string
+          platform_tag: string | null
+          uploaded_at: string | null
+          url: string
+          user_id: string | null
+        }
+        Insert: {
+          file_size_kb?: number | null
+          file_type?: string | null
+          filename?: string | null
+          id?: string
+          platform_tag?: string | null
+          uploaded_at?: string | null
+          url: string
+          user_id?: string | null
+        }
+        Update: {
+          file_size_kb?: number | null
+          file_type?: string | null
+          filename?: string | null
+          id?: string
+          platform_tag?: string | null
+          uploaded_at?: string | null
+          url?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       beta_codes: {
         Row: {
           active: boolean | null
