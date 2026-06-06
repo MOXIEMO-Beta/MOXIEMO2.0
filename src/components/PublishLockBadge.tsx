@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { Lock } from "lucide-react";
+import { Lock, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PLAN_LABEL, PlanId, requiredPlanForPlatform } from "@/lib/planConfig";
+import { usePlan } from "@/hooks/usePlan";
 
 type Props = {
   /** Platform name like "facebook", or use `feature` for non-platform locks like email send. */
@@ -12,6 +13,29 @@ type Props = {
 };
 
 export function PublishLockBadge({ platform, feature, className }: Props) {
+  const { plan } = usePlan();
+
+  // Founding Members are on the highest plan — non-LinkedIn platforms aren't
+  // gated by plan, they're simply not wired up yet. Show "coming soon" instead
+  // of an upgrade prompt.
+  if (platform && plan === "founding_member" && !feature) {
+    const p = platform.toLowerCase();
+    if (p !== "linkedin") {
+      const platformLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
+      return (
+        <span
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground",
+            className,
+          )}
+        >
+          <Clock className="h-3 w-3" />
+          {`${platformLabel} direct publishing is coming soon. We'll notify you when it's available.`}
+        </span>
+      );
+    }
+  }
+
   let label: string;
   if (feature) {
     label = `Upgrade to ${PLAN_LABEL[feature.requiredPlan]} to ${feature.label}`;
