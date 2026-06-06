@@ -246,7 +246,7 @@ export default function Social() {
             setActiveTab("create");
           }}
           onImportFromContent={() => {
-            toast.info("Content import coming soon");
+            // Drawer handles import; nothing to do here.
           }}
           onCreateForPillar={({ pillar, platform, monthLabel }) => {
             setCreatePillar(pillar);
