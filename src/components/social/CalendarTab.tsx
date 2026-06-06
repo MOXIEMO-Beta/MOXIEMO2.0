@@ -172,9 +172,7 @@ function bestTimeFor(date: Date): string | null {
 }
 
 /* ============================================================ */
-export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImportFromContent }: Props) {
-  // eslint-disable-next-line react/destructuring-assignment
-  const onCreateForPillar = (arguments[0] as Props).onCreateForPillar;
+export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImportFromContent, onCreateForPillar }: Props) {
   const { plan } = usePlan();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [loading, setLoading] = useState(true);
