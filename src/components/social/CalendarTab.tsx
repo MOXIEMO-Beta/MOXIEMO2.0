@@ -27,6 +27,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import ImportFromContentDrawer from "./ImportFromContentDrawer";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 type Platform = "linkedin" | "facebook" | "instagram";
 type Status = "draft" | "queued" | "scheduled" | "published";
@@ -627,6 +628,18 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
             <p className="text-xs text-muted-foreground">
               Your strategy has identified these content pillars. Start scheduling to build consistent coverage.
             </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                className="bg-[#ff6b6b] text-white hover:bg-[#ff6b6b]/90"
+                onClick={() => onCreateAtDate(new Date().toISOString())}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" /> Create new post
+              </Button>
+              <Button size="sm" variant="outline" onClick={openImport}>
+                Import from library
+              </Button>
+            </div>
             <Card className="space-y-3 p-4">
               <p className="text-sm font-semibold text-foreground">Content Pillar Coverage — {fmtMonth(cursor)}</p>
               <div className="space-y-2">
@@ -696,7 +709,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                         <span>"{c.name}" is underrepresented this month.</span>
                         <button
                           type="button"
-                          className="font-medium text-[#c43d3d] hover:underline"
+                          className="inline-flex items-center gap-1 rounded-full border border-[#ff6b6b]/40 px-2.5 py-1 text-[11px] font-medium text-[#c43d3d] transition-colors hover:bg-[#ff6b6b]/10"
                           onClick={() => {
                             // Count this-month posts per platform for this pillar
                             const inMonth = (d: Date) =>
@@ -734,7 +747,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                             }
                           }}
                         >
-                          + Create a post for this pillar
+                          <Plus className="h-3 w-3" /> Create a post for this pillar
                         </button>
                       </div>
                     ))}
@@ -1031,10 +1044,38 @@ function MonthGrid({
                   {d.getDate()}
                 </span>
                 {best && inMonth && (
-                  <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
-                    <Clock className="h-2.5 w-2.5" />
-                    {best}
-                  </span>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const m = best.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                            const next = new Date(d);
+                            if (m) {
+                              let h = parseInt(m[1], 10);
+                              const min = parseInt(m[2], 10);
+                              const isPm = m[3].toUpperCase() === "PM";
+                              if (isPm && h !== 12) h += 12;
+                              if (!isPm && h === 12) h = 0;
+                              next.setHours(h, min, 0, 0);
+                            } else {
+                              next.setHours(9, 0, 0, 0);
+                            }
+                            onAddAtDate(next);
+                          }}
+                          className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[9px] text-muted-foreground transition-colors hover:bg-[#ff6b6b]/10 hover:text-[#c43d3d]"
+                        >
+                          <Plus className="h-2.5 w-2.5" />
+                          {best}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Click to schedule content at this time.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
               <div className="space-y-1">
