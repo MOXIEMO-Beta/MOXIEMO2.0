@@ -1629,6 +1629,13 @@ export default function CreateTab({
         </Card>
       </div>
 
+      <LibraryAssetsDrawer
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        userId={userId}
+        onSelect={(url) => setMediaUrls((prev) => [...prev, url])}
+      />
+
       {/* Canva modal */}
       <Dialog open={canvaOpen} onOpenChange={setCanvaOpen}>
         <DialogContent>
