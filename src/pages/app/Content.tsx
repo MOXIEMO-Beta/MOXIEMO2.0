@@ -207,6 +207,26 @@ export default function Content() {
   const [copyState, setCopyState] = useState(false);
   const [savedState, setSavedState] = useState(false);
   const [queuedState, setQueuedState] = useState(false);
+  const [queueConfirmOpen, setQueueConfirmOpen] = useState(false);
+
+  function handleQueueClick() {
+    if (sessionStorage.getItem("contentQueueConfirmSkip") === "1") {
+      void saveItem("queued");
+      return;
+    }
+    setQueueConfirmOpen(true);
+  }
+
+  function handleQueueAnyway() {
+    sessionStorage.setItem("contentQueueConfirmSkip", "1");
+    setQueueConfirmOpen(false);
+    void saveItem("queued");
+  }
+
+  function handleSaveToDraftsInstead() {
+    setQueueConfirmOpen(false);
+    void saveItem("draft");
+  }
   const [savingAction, setSavingAction] = useState(false);
   const [dotCount, setDotCount] = useState(1);
 
