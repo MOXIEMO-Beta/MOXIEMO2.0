@@ -164,6 +164,8 @@ function OverviewTab() {
   const archetype = ef.brandArchetype;
   const competitive = ef.competitivePositioning;
   const coreValues: any[] = ef.coreValues || [];
+  const distribution = ef.distribution;
+  const isService = strategy?.strategy_lane === "service";
 
   const breakdownFields: [string, string, string][] = [
     ["Who", "idealClient", "Who you serve"],
@@ -178,7 +180,9 @@ function OverviewTab() {
     <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
       {/* Positioning */}
       <Card className="report-card p-8 bg-foreground text-background border-0">
-        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">Positioning statement</div>
+        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">
+          {isService ? "Brand positioning" : "Positioning statement"}
+        </div>
         <div className="font-display text-2xl md:text-3xl leading-relaxed mb-6">
           <EditableField
             value={strategy.positioning_statement}
@@ -308,7 +312,7 @@ function OverviewTab() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <EditableBulletList
-              label="Why this fits you"
+              label={isService ? "Why this fits your brand" : "Why this fits you"}
               items={archetype?.whyThisFits || []}
               onChange={(next) => setEnhanced(["brandArchetype", "whyThisFits"], next)}
               bullet="•"
@@ -326,9 +330,9 @@ function OverviewTab() {
       {/* Audience snapshot */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: "Ideal client", key: "ideal_client" },
-          { label: "Pain point", key: "pain_point" },
-          { label: "Transformation", key: "transformation" },
+          { label: isService ? "Ideal customer" : "Ideal client", key: "ideal_client" },
+          { label: isService ? "Customer pain point" : "Pain point", key: "pain_point" },
+          { label: isService ? "Customer outcome" : "Transformation", key: "transformation" },
         ].map((s) => (
           <Card key={s.key} className="report-card p-5 border-border shadow-soft">
             <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">{s.label}</div>
@@ -412,7 +416,9 @@ function OverviewTab() {
       {/* Competitive positioning */}
       {(competitive || editing) && (
         <Card className="report-card p-7 border-border shadow-soft">
-          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Competitive positioning</div>
+          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">
+            {isService ? "Competitive positioning — your ownable gap" : "Competitive positioning"}
+          </div>
           <p className="font-display text-xl tracking-[-0.01em] mb-3">
             <EditableField
               value={competitive?.yourPosition}
@@ -452,6 +458,74 @@ function OverviewTab() {
               />
             </div>
           </div>
+        </Card>
+      )}
+
+      {/* Distribution (service strategies) */}
+      {isService && (distribution || editing) && (
+        <Card className="report-card p-7 border-border shadow-soft">
+          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Distribution channels</div>
+          {(distribution?.doubleDownOn || editing) && (
+            <div className="rounded-xl bg-accent-soft/40 p-5 mb-5">
+              <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">Double down on what's working</div>
+              <p className="font-display text-xl tracking-[-0.01em] mb-1">
+                <EditableField
+                  value={distribution?.doubleDownOn}
+                  onChange={(v) => setEnhanced(["distribution", "doubleDownOn"], v)}
+                  placeholder="The channel already winning for you"
+                />
+              </p>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                <EditableField
+                  value={distribution?.doubleDownRationale}
+                  onChange={(v) => setEnhanced(["distribution", "doubleDownRationale"], v)}
+                  multiline
+                  placeholder="Why doubling down beats adding more channels"
+                />
+              </p>
+            </div>
+          )}
+          {(distribution?.recommendedChannels?.length || editing) && (
+            <>
+              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Recommended local channels</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {(distribution?.recommendedChannels || []).map((c: any, i: number) => (
+                  <div key={i} className="p-4 rounded-lg border border-border bg-background">
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <p className="font-medium text-sm">
+                        <EditableField
+                          value={c.name}
+                          onChange={(v) => setEnhanced(["distribution", "recommendedChannels", i, "name"], v)}
+                          placeholder="Channel"
+                        />
+                      </p>
+                      {c.priority && (
+                        <Badge variant="secondary" className="bg-accent-soft text-accent border-0 hover:bg-accent-soft text-[10px] uppercase tracking-wider">
+                          {c.priority}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      <EditableField
+                        value={c.why}
+                        onChange={(v) => setEnhanced(["distribution", "recommendedChannels", i, "why"], v)}
+                        multiline
+                        placeholder="Why this channel fits"
+                      />
+                    </p>
+                  </div>
+                ))}
+                {editing && (
+                  <button
+                    onClick={() => setEnhanced(["distribution", "recommendedChannels"], [...(distribution?.recommendedChannels || []), { name: "", why: "", priority: "medium" }])}
+                    className="p-4 rounded-lg border border-dashed border-accent/50 text-sm text-accent hover:bg-accent/5"
+                  >
+                    + Add channel
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </Card>
       )}
 
