@@ -30,6 +30,7 @@ enhanced_foundation:
 - coreValues (3-5): derived from Q8 + Q9 + Q11, with decision filters that an operations team could apply.
 - competitivePositioning: yourPosition (Q8), marketGap (Q14+Q8 — the ownable gap competitors miss), differentiators (Q8 vs Q14), competitiveAdvantages (Q8+Q9).
 - voiceGuidelines: built from Q10+Q11. toneByPlatform should favor channels relevant to a local/service business (Google Business Profile reviews, Facebook/Instagram, email/SMS) — adapt fields as needed inside the existing schema.
+- distribution: REQUIRED for service strategies. doubleDownOn = the existing channel from Q13 that's already working best (be specific, in the user's words). doubleDownRationale = one short sentence on why doubling down beats adding new channels. recommendedChannels = 3-6 entries prioritized for local/service businesses (Google Business Profile, local Facebook & Instagram, Nextdoor, referral programs, local partnerships, email/SMS), each with a one-sentence "why" rooted in Q6 (geography) and Q4 (customer type).
 
 STRATEGIC PRIORITY (use Q12 to weight emphasis throughout the output):
 - "Getting found by new customers" → weight acquisition / local discovery / SEO heavily.
