@@ -628,6 +628,18 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
             <p className="text-xs text-muted-foreground">
               Your strategy has identified these content pillars. Start scheduling to build consistent coverage.
             </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                className="bg-[#ff6b6b] text-white hover:bg-[#ff6b6b]/90"
+                onClick={() => onCreateAtDate(new Date().toISOString())}
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" /> Create new post
+              </Button>
+              <Button size="sm" variant="outline" onClick={openImport}>
+                Import from library
+              </Button>
+            </div>
             <Card className="space-y-3 p-4">
               <p className="text-sm font-semibold text-foreground">Content Pillar Coverage — {fmtMonth(cursor)}</p>
               <div className="space-y-2">
