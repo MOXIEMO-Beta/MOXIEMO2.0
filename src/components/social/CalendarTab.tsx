@@ -1044,10 +1044,38 @@ function MonthGrid({
                   {d.getDate()}
                 </span>
                 {best && inMonth && (
-                  <span className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
-                    <Clock className="h-2.5 w-2.5" />
-                    {best}
-                  </span>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const m = best.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                            const next = new Date(d);
+                            if (m) {
+                              let h = parseInt(m[1], 10);
+                              const min = parseInt(m[2], 10);
+                              const isPm = m[3].toUpperCase() === "PM";
+                              if (isPm && h !== 12) h += 12;
+                              if (!isPm && h === 12) h = 0;
+                              next.setHours(h, min, 0, 0);
+                            } else {
+                              next.setHours(9, 0, 0, 0);
+                            }
+                            onAddAtDate(next);
+                          }}
+                          className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[9px] text-muted-foreground transition-colors hover:bg-[#ff6b6b]/10 hover:text-[#c43d3d]"
+                        >
+                          <Plus className="h-2.5 w-2.5" />
+                          {best}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="text-xs">
+                        Click to schedule content at this time.
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )}
               </div>
               <div className="space-y-1">
