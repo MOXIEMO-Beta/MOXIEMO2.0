@@ -69,6 +69,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import LibraryAssetsDrawer from "./LibraryAssetsDrawer";
 import { cn } from "@/lib/utils";
 
 type Strategy = {
