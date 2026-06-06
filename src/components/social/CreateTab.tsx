@@ -153,10 +153,18 @@ export default function CreateTab({
   userId,
   prefillTopic,
   isLinkedInConnected,
+  prefillPillar,
+  prefillPlatform,
+  pillarContext,
+  onAfterSave,
 }: {
   userId: string | null;
   prefillTopic?: string;
   isLinkedInConnected: boolean;
+  prefillPillar?: string;
+  prefillPlatform?: Platform;
+  pillarContext?: { name: string; monthLabel: string } | null;
+  onAfterSave?: () => void;
 }) {
   /* ---------------- state ---------------- */
   const { plan, checkGenerationLimit, handleGenerationResponse } = usePlan();
