@@ -637,7 +637,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                 <Plus className="mr-1 h-3.5 w-3.5" /> Create new post
               </Button>
               <Button size="sm" variant="outline" onClick={openImport}>
-                Import from library
+                Import from drafts
               </Button>
             </div>
             <Card className="space-y-3 p-4">
@@ -1353,7 +1353,7 @@ function EmptyCalendar({ onCreate, onImport }: { onCreate: () => void; onImport:
           <Plus className="mr-1 h-4 w-4" /> Create your first post
         </Button>
         <Button variant="outline" onClick={onImport}>
-          Import from Content page
+          Import from drafts
         </Button>
       </div>
     </Card>

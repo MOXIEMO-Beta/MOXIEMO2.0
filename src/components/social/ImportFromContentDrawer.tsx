@@ -141,7 +141,7 @@ export default function ImportFromContentDrawer({ open, onOpenChange, userId, pi
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-[480px]">
         <SheetHeader className="border-b border-border p-5">
-          <SheetTitle className="text-base">Import from Content page</SheetTitle>
+          <SheetTitle className="text-base">Import from drafts</SheetTitle>
         </SheetHeader>
 
         {/* Filters */}
