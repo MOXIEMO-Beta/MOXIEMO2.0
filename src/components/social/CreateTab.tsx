@@ -462,6 +462,7 @@ export default function CreateTab({
   const canvaInputRef = useRef<HTMLInputElement | null>(null);
   const [canvaOpen, setCanvaOpen] = useState(false);
   const [canvaLink, setCanvaLink] = useState("");
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   // Schedule
   const [showSchedule, setShowSchedule] = useState(false);
@@ -1505,6 +1506,9 @@ export default function CreateTab({
               </Button>
               <Button variant="outline" size="sm" onClick={() => setCanvaOpen(true)}>
                 <Palette className="h-3.5 w-3.5" /> Import from Canva
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setLibraryOpen(true)}>
+                <FolderOpen className="h-3.5 w-3.5" /> From library
               </Button>
               {mediaUrls.map((url, i) => (
                 <div key={i} className="relative h-16 w-16 overflow-hidden rounded border">
