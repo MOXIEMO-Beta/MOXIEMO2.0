@@ -872,6 +872,7 @@ export type Database = {
           primary_channel: string | null
           raw_foundation: Json | null
           report_cached: Json | null
+          strategy_lane: string | null
           strength_breakdown: Json | null
           strength_score: number | null
           strong_areas: Json | null
@@ -904,6 +905,7 @@ export type Database = {
           primary_channel?: string | null
           raw_foundation?: Json | null
           report_cached?: Json | null
+          strategy_lane?: string | null
           strength_breakdown?: Json | null
           strength_score?: number | null
           strong_areas?: Json | null
@@ -936,6 +938,7 @@ export type Database = {
           primary_channel?: string | null
           raw_foundation?: Json | null
           report_cached?: Json | null
+          strategy_lane?: string | null
           strength_breakdown?: Json | null
           strength_score?: number | null
           strong_areas?: Json | null
