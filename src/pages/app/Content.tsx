@@ -856,15 +856,7 @@ export default function Content() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => {
-                          patchItem(it.id, {
-                            status: "published",
-                            published_at: new Date().toISOString(),
-                          });
-                          toast.success("Marked as published", {
-                            description: "Direct publishing isn't connected yet.",
-                          });
-                        }}
+                        onClick={() => handlePublishNow(it)}
                       >
                         <Send className="mr-2 h-3.5 w-3.5" /> Publish now
                       </Button>
