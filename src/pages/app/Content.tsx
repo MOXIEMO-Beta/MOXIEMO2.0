@@ -761,12 +761,28 @@ export default function Content() {
                   <Button
                     variant="outline"
                     className="flex-1"
-                    onClick={() => saveItem("queued")}
+                    onClick={handleQueueClick}
                     disabled={savingAction || !generated.trim()}
                   >
                     {queuedState ? <><Check className="mr-2 h-4 w-4" /> Added to Queue</> : "Add to Queue"}
                   </Button>
                 </div>
+
+                {queueConfirmOpen && (
+                  <div className="mx-4 mb-3 rounded-md border border-border bg-muted/40 p-3 text-xs">
+                    <p className="mb-2 text-foreground">
+                      This will queue your post without an image or link. To add media or a URL first, save to Drafts and import via Social &gt; Calendar.
+                    </p>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button size="sm" variant="ghost" onClick={handleSaveToDraftsInstead} disabled={savingAction}>
+                        Save to drafts instead
+                      </Button>
+                      <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleQueueAnyway} disabled={savingAction}>
+                        Queue anyway
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 {/* Refine row */}
                 <div className="px-4 py-3 border-t border-border bg-muted/20">
