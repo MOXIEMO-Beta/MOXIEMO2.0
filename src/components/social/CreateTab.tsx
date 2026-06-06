@@ -671,6 +671,30 @@ export default function CreateTab({
     }
     const url = await fileToDataUrl(file);
     setMediaUrls((prev) => [...prev, url]);
+    // Also save to the user's asset library (background, non-blocking).
+    if (userId) {
+      void (async () => {
+        try {
+          const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+          const path = `${userId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+          const { error: upErr } = await supabase.storage
+            .from("social-assets")
+            .upload(path, file, { contentType: file.type, upsert: false });
+          if (upErr) throw upErr;
+          const { data: pub } = supabase.storage.from("social-assets").getPublicUrl(path);
+          await supabase.from("assets").insert({
+            user_id: userId,
+            url: pub.publicUrl,
+            filename: file.name,
+            file_type: file.type,
+            file_size_kb: Math.round(file.size / 1024),
+            uploaded_at: new Date().toISOString(),
+          });
+        } catch (err) {
+          console.error("Failed to save asset to library", err);
+        }
+      })();
+    }
   }
 
   function handleCanvaSave() {
