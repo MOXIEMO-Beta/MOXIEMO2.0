@@ -25,7 +25,7 @@ export function PublishLockBadge({ platform, feature, className }: Props) {
       return (
         <div
           className={cn(
-            "flex items-start gap-2 rounded-md border border-border bg-muted px-3 py-2 text-sm font-medium text-muted-foreground",
+            "flex items-start gap-2 rounded-[8px] border border-border bg-muted px-3 py-2 text-[13px] font-medium text-muted-foreground",
             className,
           )}
         >
