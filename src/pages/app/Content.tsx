@@ -50,6 +50,7 @@ import {
   X,
   Wand2,
   Megaphone,
+  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
@@ -927,23 +928,12 @@ export default function Content() {
                       {htmlToPlain(it.body ?? "").slice(0, 80)}{(htmlToPlain(it.body ?? "")).length > 80 ? "…" : ""}
                     </div>
                     <DraftEditor item={it} onPatch={patchItem} />
-                    <div className="flex items-center gap-2 flex-wrap mt-3">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => patchItem(it.id, { status: "queued" })}
-                      >
-                        <ArrowRight className="mr-2 h-3.5 w-3.5" /> Move to Queue
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive"
-                        onClick={() => setDeleteId(it.id)}
-                      >
-                        <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
-                      </Button>
-                    </div>
+                    <DraftActions
+                      item={it}
+                      onPatch={patchItem}
+                      onPublish={handlePublishNow}
+                      onDelete={() => setDeleteId(it.id)}
+                    />
                   </div>
                 </div>
               </Card>
@@ -1281,6 +1271,84 @@ function QueueCardActions({
           <Send className="mr-2 h-3.5 w-3.5" /> Publish now
         </Button>
       </div>
+    </div>
+  );
+}
+
+function DraftActions({
+  item,
+  onPatch,
+  onPublish,
+  onDelete,
+}: {
+  item: ContentItem;
+  onPatch: (id: string, patch: Partial<ContentItem>) => void;
+  onPublish: (item: ContentItem) => void;
+  onDelete: () => void;
+}) {
+  const [scheduling, setScheduling] = useState(false);
+  const [when, setWhen] = useState<string>("");
+  return (
+    <div className="space-y-2 mt-3">
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button size="sm" variant="outline" onClick={() => onPublish(item)}>
+          <Send className="mr-2 h-3.5 w-3.5" /> Publish now
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => setScheduling((v) => !v)}>
+          <CalendarClock className="mr-2 h-3.5 w-3.5" /> Schedule
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onPatch(item.id, { status: "queued" })}
+        >
+          <ArrowRight className="mr-2 h-3.5 w-3.5" /> Move to Queue
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-destructive hover:text-destructive"
+          onClick={onDelete}
+        >
+          <Trash2 className="mr-2 h-3.5 w-3.5" /> Delete
+        </Button>
+      </div>
+      {scheduling && (
+        <div className="flex items-center gap-2 flex-wrap rounded-md border border-border bg-muted/40 p-3">
+          <Input
+            type="datetime-local"
+            value={when}
+            onChange={(e) => setWhen(e.target.value)}
+            className="h-9 w-56"
+          />
+          <Button
+            size="sm"
+            disabled={!when}
+            onClick={() => {
+              if (!when) return;
+              onPatch(item.id, {
+                scheduled_for: new Date(when).toISOString(),
+                status: "scheduled",
+              });
+              setScheduling(false);
+              setWhen("");
+              toast.success("Scheduled");
+            }}
+          >
+            Confirm
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setScheduling(false);
+              setWhen("");
+            }}
+          >
+            Cancel
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
