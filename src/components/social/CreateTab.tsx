@@ -153,10 +153,18 @@ export default function CreateTab({
   userId,
   prefillTopic,
   isLinkedInConnected,
+  prefillPillar,
+  prefillPlatform,
+  pillarContext,
+  onAfterSave,
 }: {
   userId: string | null;
   prefillTopic?: string;
   isLinkedInConnected: boolean;
+  prefillPillar?: string;
+  prefillPlatform?: Platform;
+  pillarContext?: { name: string; monthLabel: string } | null;
+  onAfterSave?: () => void;
 }) {
   /* ---------------- state ---------------- */
   const { plan, checkGenerationLimit, handleGenerationResponse } = usePlan();
@@ -508,6 +516,22 @@ export default function CreateTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /* prefill pillar + platform from Calendar coverage link */
+  const [pillarBannerDismissed, setPillarBannerDismissed] = useState(false);
+  useEffect(() => {
+    if (prefillPillar) {
+      setFocusMode("pillar");
+      setSelectedPillar(prefillPillar);
+      setPillarBannerDismissed(false);
+    }
+  }, [prefillPillar]);
+  useEffect(() => {
+    if (prefillPlatform) {
+      setPlatforms([prefillPlatform]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillPlatform]);
+
   /* default platform: LinkedIn if connected */
   useEffect(() => {
     if (platforms.length === 0 && isLinkedInConnected) {
@@ -710,11 +734,17 @@ export default function CreateTab({
 
   async function handleSaveDraft() {
     const id = await savePost("draft", null);
-    if (id) toast.success("Draft saved");
+    if (id) {
+      toast.success("Draft saved");
+      onAfterSave?.();
+    }
   }
   async function handleAddToQueue() {
     const id = await savePost("queued", null);
-    if (id) toast.success("Added to queue");
+    if (id) {
+      toast.success("Added to queue");
+      onAfterSave?.();
+    }
   }
   async function handleConfirmSchedule() {
     if (!scheduleDate) {
@@ -730,6 +760,7 @@ export default function CreateTab({
     if (id) {
       toast.success("Scheduled");
       setShowSchedule(false);
+      onAfterSave?.();
     }
   }
 
@@ -798,7 +829,24 @@ export default function CreateTab({
 
   return (
     <TooltipProvider>
-      <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)_340px]">
+      <div className="space-y-4">
+        {pillarContext && !pillarBannerDismissed && (
+          <div className="flex items-start justify-between gap-3 rounded-md border border-accent/30 bg-accent-soft/50 px-4 py-3 text-sm text-foreground">
+            <p>
+              Creating for pillar: <span className="font-semibold">{pillarContext.name}</span>
+              {" — "}this will count toward your {pillarContext.monthLabel} coverage.
+            </p>
+            <button
+              type="button"
+              aria-label="Dismiss"
+              className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground"
+              onClick={() => setPillarBannerDismissed(true)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)_340px]">
         {/* =================== LEFT: focus + format =================== */}
         <Card className="border-accent/20 bg-accent-soft/40">
           <CardHeader className="pb-3">
@@ -1665,6 +1713,7 @@ export default function CreateTab({
           </button>
         </div>
       )}
+      </div>
     </TooltipProvider>
   );
 }

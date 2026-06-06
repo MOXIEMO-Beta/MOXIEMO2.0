@@ -134,6 +134,8 @@ export default function Social() {
   const [createPrefill, setCreatePrefill] = useState<string>("");
   const [createScheduleDate, setCreateScheduleDate] = useState<string>("");
   const [createPillar, setCreatePillar] = useState<string>("");
+  const [createPlatform, setCreatePlatform] = useState<"linkedin" | "facebook" | "instagram" | "">("");
+  const [pillarContext, setPillarContext] = useState<{ name: string; monthLabel: string } | null>(null);
   const [editPostId, setEditPostId] = useState<string>("");
 
   // LinkedIn connection state shared across tabs
@@ -213,6 +215,15 @@ export default function Social() {
           userId={user?.id ?? null}
           prefillTopic={createPrefill}
           isLinkedInConnected={isLinkedInConnected}
+          prefillPillar={createPillar || undefined}
+          prefillPlatform={createPlatform || undefined}
+          pillarContext={pillarContext}
+          onAfterSave={() => {
+            setPillarContext(null);
+            setCreatePillar("");
+            setCreatePlatform("");
+            setActiveTab("calendar");
+          }}
         />
       )}
       {activeTab === "calendar" && (
@@ -236,6 +247,12 @@ export default function Social() {
           }}
           onImportFromContent={() => {
             toast.info("Content import coming soon");
+          }}
+          onCreateForPillar={({ pillar, platform, monthLabel }) => {
+            setCreatePillar(pillar);
+            setCreatePlatform(platform);
+            setPillarContext({ name: pillar, monthLabel });
+            setActiveTab("create");
           }}
         />
       )}
