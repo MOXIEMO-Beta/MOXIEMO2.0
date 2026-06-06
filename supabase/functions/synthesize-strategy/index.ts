@@ -322,6 +322,27 @@ Deno.serve(async (req) => {
                         competitiveAdvantages: { type: "array", items: { type: "string" } },
                       },
                     },
+                    distribution: {
+                      type: "object",
+                      description: "Lane 2 only — recommended local/service distribution channels plus which existing Q13 channel to double down on. Leave empty for non-service strategies.",
+                      properties: {
+                        doubleDownOn: { type: "string", description: "The existing channel from Q13 that is working best — double down before adding new ones." },
+                        doubleDownRationale: { type: "string" },
+                        recommendedChannels: {
+                          type: "array",
+                          description: "3-6 recommended channels prioritized for local/service businesses (e.g. Google Business Profile, local Facebook & Instagram, Nextdoor, referrals, partnerships).",
+                          items: {
+                            type: "object",
+                            properties: {
+                              name: { type: "string" },
+                              why: { type: "string" },
+                              priority: { type: "string", enum: ["high", "medium", "low"] },
+                            },
+                            required: ["name", "why"],
+                          },
+                        },
+                      },
+                    },
                     voiceGuidelines: {
                       type: "object",
                       properties: {
@@ -484,6 +505,10 @@ Deno.serve(async (req) => {
           } catch (e) {
             console.error("strength scoring failed", e);
           }
+
+          // Tag the strategy with the originating discovery lane so the
+          // Strategy page can render the correct labels and sections.
+          parsed.strategy_lane = isLane2 ? "service" : "expertise";
 
           sendEvent({ type: "complete", strategy: parsed });
         } catch (e) {
