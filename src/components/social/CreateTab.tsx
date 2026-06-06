@@ -19,6 +19,7 @@ import {
   Instagram,
   Image as ImageIcon,
   Palette,
+  FolderOpen,
   X,
   Calendar as CalendarIcon,
   Send,
