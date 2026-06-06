@@ -709,7 +709,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                         <span>"{c.name}" is underrepresented this month.</span>
                         <button
                           type="button"
-                          className="font-medium text-[#c43d3d] hover:underline"
+                          className="inline-flex items-center gap-1 rounded-full border border-[#ff6b6b]/40 px-2.5 py-1 text-[11px] font-medium text-[#c43d3d] transition-colors hover:bg-[#ff6b6b]/10"
                           onClick={() => {
                             // Count this-month posts per platform for this pillar
                             const inMonth = (d: Date) =>
@@ -747,7 +747,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                             }
                           }}
                         >
-                          + Create a post for this pillar
+                          <Plus className="h-3 w-3" /> Create a post for this pillar
                         </button>
                       </div>
                     ))}
