@@ -50,6 +50,7 @@ import {
   X,
   Wand2,
   Megaphone,
+  CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
