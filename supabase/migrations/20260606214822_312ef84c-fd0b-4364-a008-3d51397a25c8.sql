@@ -1,0 +1,1 @@
+ALTER TABLE public.strategies ADD COLUMN IF NOT EXISTS strategy_lane text;

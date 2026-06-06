@@ -30,6 +30,7 @@ enhanced_foundation:
 - coreValues (3-5): derived from Q8 + Q9 + Q11, with decision filters that an operations team could apply.
 - competitivePositioning: yourPosition (Q8), marketGap (Q14+Q8 — the ownable gap competitors miss), differentiators (Q8 vs Q14), competitiveAdvantages (Q8+Q9).
 - voiceGuidelines: built from Q10+Q11. toneByPlatform should favor channels relevant to a local/service business (Google Business Profile reviews, Facebook/Instagram, email/SMS) — adapt fields as needed inside the existing schema.
+- distribution: REQUIRED for service strategies. doubleDownOn = the existing channel from Q13 that's already working best (be specific, in the user's words). doubleDownRationale = one short sentence on why doubling down beats adding new channels. recommendedChannels = 3-6 entries prioritized for local/service businesses (Google Business Profile, local Facebook & Instagram, Nextdoor, referral programs, local partnerships, email/SMS), each with a one-sentence "why" rooted in Q6 (geography) and Q4 (customer type).
 
 STRATEGIC PRIORITY (use Q12 to weight emphasis throughout the output):
 - "Getting found by new customers" → weight acquisition / local discovery / SEO heavily.
@@ -322,6 +323,27 @@ Deno.serve(async (req) => {
                         competitiveAdvantages: { type: "array", items: { type: "string" } },
                       },
                     },
+                    distribution: {
+                      type: "object",
+                      description: "Lane 2 only — recommended local/service distribution channels plus which existing Q13 channel to double down on. Leave empty for non-service strategies.",
+                      properties: {
+                        doubleDownOn: { type: "string", description: "The existing channel from Q13 that is working best — double down before adding new ones." },
+                        doubleDownRationale: { type: "string" },
+                        recommendedChannels: {
+                          type: "array",
+                          description: "3-6 recommended channels prioritized for local/service businesses (e.g. Google Business Profile, local Facebook & Instagram, Nextdoor, referrals, partnerships).",
+                          items: {
+                            type: "object",
+                            properties: {
+                              name: { type: "string" },
+                              why: { type: "string" },
+                              priority: { type: "string", enum: ["high", "medium", "low"] },
+                            },
+                            required: ["name", "why"],
+                          },
+                        },
+                      },
+                    },
                     voiceGuidelines: {
                       type: "object",
                       properties: {
@@ -484,6 +506,10 @@ Deno.serve(async (req) => {
           } catch (e) {
             console.error("strength scoring failed", e);
           }
+
+          // Tag the strategy with the originating discovery lane so the
+          // Strategy page can render the correct labels and sections.
+          parsed.strategy_lane = isLane2 ? "service" : "expertise";
 
           sendEvent({ type: "complete", strategy: parsed });
         } catch (e) {
