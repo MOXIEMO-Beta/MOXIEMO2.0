@@ -1713,6 +1713,7 @@ export default function CreateTab({
           </button>
         </div>
       )}
+      </div>
     </TooltipProvider>
   );
 }
