@@ -697,7 +697,42 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                         <button
                           type="button"
                           className="font-medium text-[#c43d3d] hover:underline"
-                          onClick={() => onCreateAtDate(new Date().toISOString(), c.name)}
+                          onClick={() => {
+                            // Count this-month posts per platform for this pillar
+                            const inMonth = (d: Date) =>
+                              d.getMonth() === cursor.getMonth() &&
+                              d.getFullYear() === cursor.getFullYear();
+                            const counts: Record<Platform, number> = {
+                              linkedin: 0,
+                              facebook: 0,
+                              instagram: 0,
+                            };
+                            posts.forEach((p) => {
+                              if (p.pillar !== c.name) return;
+                              const d = postDate(p);
+                              if (!d || !inMonth(d)) return;
+                              (p.platforms ?? []).forEach((pl) => {
+                                if (pl === "linkedin" || pl === "facebook" || pl === "instagram") {
+                                  counts[pl] += 1;
+                                }
+                              });
+                            });
+                            const order: Platform[] = ["linkedin", "facebook", "instagram"];
+                            let lowest: Platform = "linkedin";
+                            let min = Infinity;
+                            for (const pl of order) {
+                              if (counts[pl] < min) {
+                                min = counts[pl];
+                                lowest = pl;
+                              }
+                            }
+                            const monthLabel = cursor.toLocaleDateString(undefined, { month: "long" });
+                            if (onCreateForPillar) {
+                              onCreateForPillar({ pillar: c.name, platform: lowest, monthLabel });
+                            } else {
+                              onCreateAtDate(new Date().toISOString(), c.name);
+                            }
+                          }}
                         >
                           + Create a post for this pillar
                         </button>
