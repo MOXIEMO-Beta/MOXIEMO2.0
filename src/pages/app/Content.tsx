@@ -897,7 +897,8 @@ export default function Content() {
                     <div className="text-sm text-foreground line-clamp-2 mb-3">
                       {htmlToPlain(it.body ?? "").slice(0, 80)}{(htmlToPlain(it.body ?? "")).length > 80 ? "…" : ""}
                     </div>
-                    <div className="flex items-center gap-3 flex-wrap">
+                    <DraftEditor item={it} onPatch={patchItem} />
+                    <div className="flex items-center gap-3 flex-wrap mt-3">
                       <Input
                         type="datetime-local"
                         value={toLocalInputValue(it.scheduled_for)}
