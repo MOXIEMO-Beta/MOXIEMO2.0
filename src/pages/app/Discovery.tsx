@@ -507,6 +507,9 @@ export default function Discovery() {
       const { data: { session } } = await supabase.auth.getSession();
       const authToken = session?.access_token ?? supabaseKey;
 
+      const abortController = new AbortController();
+      const timeoutId = setTimeout(() => abortController.abort(), 120000);
+      let timedOut = false;
       const resp = await fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
         method: "POST",
         headers: {
@@ -514,6 +517,7 @@ export default function Discovery() {
           "Authorization": `Bearer ${authToken}`,
           "apikey": supabaseKey,
         },
+        signal: abortController.signal,
         body: JSON.stringify({
           transcript,
           revenueRange: optional.revenueRange,
@@ -528,6 +532,12 @@ export default function Discovery() {
               }
             : undefined,
         }),
+      }).catch((err) => {
+        if (err?.name === "AbortError") {
+          timedOut = true;
+          throw new Error("__TIMEOUT__");
+        }
+        throw err;
       });
 
       if (!resp.ok || !resp.body) {
@@ -541,7 +551,8 @@ export default function Discovery() {
       let data: any = null;
       let streamError: string | null = null;
 
-      while (true) {
+      try {
+        while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
@@ -563,7 +574,17 @@ export default function Discovery() {
             // ignore non-JSON heartbeat lines
           }
         }
+        }
+      } catch (readErr: any) {
+        if (readErr?.name === "AbortError") {
+          timedOut = true;
+          throw new Error("__TIMEOUT__");
+        }
+        throw readErr;
+      } finally {
+        clearTimeout(timeoutId);
       }
+      clearTimeout(timeoutId);
 
       if (streamError) throw new Error(streamError);
       if (!data) throw new Error("Stream ended before strategy was generated");
@@ -583,7 +604,11 @@ export default function Discovery() {
     } catch (e: any) {
       console.error("synthesize error:", e);
       setSynthFailed(true);
-      toast.error(aiErrorMessage("discovery", e));
+      if (e?.message === "__TIMEOUT__") {
+        toast.error("Strategy generation timed out — please retry");
+      } else {
+        toast.error(aiErrorMessage("discovery", e));
+      }
     } finally {
       setSynthesizing(false);
     }

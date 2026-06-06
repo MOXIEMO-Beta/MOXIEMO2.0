@@ -420,7 +420,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5",
-        max_tokens: 8192,
+        max_tokens: 16384,
         stream: true,
         system: isLane2 ? SYSTEM_LANE2 : SYSTEM,
         messages: [{ role: "user", content: userContent }],
@@ -492,7 +492,7 @@ Deno.serve(async (req) => {
             parsed = toolJson ? JSON.parse(toolJson) : {};
           } catch (e) {
             console.error("Failed to parse tool json", e, toolJson.slice(0, 500));
-            sendEvent({ type: "error", message: "Failed to parse strategy output" });
+            sendEvent({ type: "error", message: "Strategy output was longer than expected. Please retry — this usually resolves on the second attempt." });
             controller.close();
             return;
           }
