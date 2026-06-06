@@ -633,10 +633,78 @@ export default function Discovery() {
       {uploadStage === "chat" && (
         <>
       <NeedHelpButton
-        currentQuestion={Math.min(answered + 1, TOTAL_QUESTIONS)}
-        totalQuestions={TOTAL_QUESTIONS}
+        currentQuestion={Math.min(answered + 1, total)}
+        totalQuestions={total}
         firstName={userContext?.firstName}
       />
+      {lane === null && messages.length === 0 && (
+        <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-10" style={{ backgroundColor: "#FAFAF8" }}>
+          <div className="max-w-2xl mx-auto">
+            <div className="rounded-2xl border border-border bg-background p-6 lg:p-8 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-accent">First, a quick question</span>
+              </div>
+              <h2 className="text-xl font-semibold mb-1">How would you describe your business model?</h2>
+              <p className="text-sm text-muted-foreground mb-5">This helps MOXIEMO tailor the discovery to your business.</p>
+              {!showOtherDetector ? (
+                <div className="grid gap-2">
+                  <button
+                    onClick={() => chooseLane("lane1")}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">I sell my expertise directly</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Coaching, consulting, advisory, or fractional services</div>
+                  </button>
+                  <button
+                    onClick={() => chooseLane("lane2")}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">I run a service-based business</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Services delivered through a team or providers</div>
+                  </button>
+                  <button
+                    onClick={() => chooseLane("lane2")}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">I operate a platform or marketplace</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Connecting customers with service providers</div>
+                  </button>
+                  <button
+                    onClick={() => setShowOtherDetector(true)}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">Other</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Tell us a bit more about how your business works</div>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="text-sm font-medium">Tell us a little more about how your business works</label>
+                  <Textarea
+                    value={otherDetectorText}
+                    onChange={(e) => setOtherDetectorText(e.target.value)}
+                    placeholder="e.g. We're a 10-person agency delivering branding for retail clients…"
+                    className="min-h-[110px]"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button
+                      onClick={() => chooseLane(classifyOtherText(otherDetectorText))}
+                      disabled={otherDetectorText.trim().length < 4}
+                      className="bg-foreground text-background hover:bg-foreground/90"
+                    >
+                      Continue
+                    </Button>
+                    <Button variant="ghost" onClick={() => setShowOtherDetector(false)}>Back</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {lane !== null && (
+        <>
       {showWelcome && (
         <div className="border-b border-border bg-accent/5 px-6 lg:px-10 py-4">
           <div className="max-w-3xl mx-auto flex items-start gap-3">
