@@ -411,43 +411,114 @@ Deno.serve(async (req) => {
               required: ["positioning_statement", "ideal_client", "pain_point", "transformation", "voice_attributes", "content_pillars", "primary_channel", "success_definition"],
     } as const;
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-5",
-        max_tokens: 16384,
-        stream: true,
-        system: isLane2 ? SYSTEM_LANE2 : SYSTEM,
-        messages: [{ role: "user", content: userContent }],
-        tools: [{
-          name: "save_strategy",
-          description: "Save the synthesized marketing strategy.",
-          input_schema: saveStrategyParams,
-        }],
-        tool_choice: { type: "tool", name: "save_strategy" },
-      }),
-    });
+    const REQUIRED_TOP_FIELDS = [
+      "positioning_statement",
+      "ideal_client",
+      "pain_point",
+      "transformation",
+      "voice_attributes",
+      "content_pillars",
+      "primary_channel",
+      "success_definition",
+    ];
 
-    if (!res.ok) {
-      const t = await res.text();
-      console.error("Synth error", res.status, t);
-      notifyAdminCritical(req, { functionName: "synthesize-strategy", status: res.status, detail: t });
-      return new Response(JSON.stringify({ error: "AI error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    // Single attempt: open the Anthropic streaming call, drain it (forwarding
+    // progress events to the client), and return the accumulated tool JSON.
+    // Uses a 180s AbortController to give Lane 2 (longer outputs) enough headroom.
+    async function callAnthropicOnce(opts: {
+      onProgress: (bytes: number) => void;
+    }): Promise<{ ok: true; toolJson: string } | { ok: false; status: number; detail: string }> {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 180_000);
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-5",
+            max_tokens: 16384,
+            stream: true,
+            system: isLane2 ? SYSTEM_LANE2 : SYSTEM,
+            messages: [{ role: "user", content: userContent }],
+            tools: [{
+              name: "save_strategy",
+              description: "Save the synthesized marketing strategy.",
+              input_schema: saveStrategyParams,
+            }],
+            tool_choice: { type: "tool", name: "save_strategy" },
+          }),
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          const t = await res.text().catch(() => "");
+          return { ok: false, status: res.status, detail: t };
+        }
+        const reader = res.body!.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let toolJson = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const dataStr = line.slice(6).trim();
+            if (!dataStr || dataStr === "[DONE]") continue;
+            try {
+              const evt = JSON.parse(dataStr);
+              if (evt.type === "content_block_delta") {
+                const d = evt.delta;
+                if (d?.type === "input_json_delta" && typeof d.partial_json === "string") {
+                  toolJson += d.partial_json;
+                  opts.onProgress(toolJson.length);
+                }
+              }
+            } catch {
+              // ignore malformed line
+            }
+          }
+        }
+        try { reader.releaseLock(); } catch {}
+        return { ok: true, toolJson };
+      } catch (e) {
+        return { ok: false, status: 0, detail: String(e) };
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function validateStrategy(toolJson: string): { ok: true; parsed: any } | { ok: false; reason: string } {
+      if (!toolJson) return { ok: false, reason: "empty output" };
+      let parsed: any;
+      try {
+        parsed = JSON.parse(toolJson);
+      } catch (e) {
+        return { ok: false, reason: `parse error: ${String(e)}` };
+      }
+      const missing = REQUIRED_TOP_FIELDS.filter((k) => {
+        const v = parsed?.[k];
+        if (v === undefined || v === null) return true;
+        if (Array.isArray(v) && v.length === 0) return true;
+        if (typeof v === "string" && v.trim().length === 0) return true;
+        return false;
+      });
+      if (missing.length > 0) {
+        return { ok: false, reason: `missing required fields: ${missing.join(", ")}` };
+      }
+      return { ok: true, parsed };
     }
 
     const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
 
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = res.body!.getReader();
-        let buffer = "";
-        let toolJson = "";
         const sendEvent = (obj: any) => {
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
         };
@@ -462,40 +533,38 @@ Deno.serve(async (req) => {
         }, 10000);
 
         try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
-            for (const line of lines) {
-              if (!line.startsWith("data: ")) continue;
-              const dataStr = line.slice(6).trim();
-              if (!dataStr || dataStr === "[DONE]") continue;
-              try {
-                const evt = JSON.parse(dataStr);
-                if (evt.type === "content_block_delta") {
-                  const d = evt.delta;
-                  if (d?.type === "input_json_delta" && typeof d.partial_json === "string") {
-                    toolJson += d.partial_json;
-                    sendEvent({ type: "progress", bytes: toolJson.length });
-                  }
-                }
-              } catch {
-                // ignore malformed line
-              }
+          const onProgress = (bytes: number) => sendEvent({ type: "progress", bytes });
+
+          // Attempt 1
+          let attempt = await callAnthropicOnce({ onProgress });
+          let validation = attempt.ok
+            ? validateStrategy(attempt.toolJson)
+            : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
+
+          // Auto-retry once if upstream failed OR output was incomplete/truncated.
+          if (!validation.ok) {
+            console.warn("synthesize-strategy: attempt 1 failed —", (validation as any).reason, "— retrying once");
+            sendEvent({ type: "progress", bytes: 0, retry: true });
+            if (attempt.ok === false && (attempt.status === 429 || attempt.status === 402)) {
+              notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status, detail: attempt.detail });
             }
+            attempt = await callAnthropicOnce({ onProgress });
+            validation = attempt.ok
+              ? validateStrategy(attempt.toolJson)
+              : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
           }
 
-          let parsed: any = {};
-          try {
-            parsed = toolJson ? JSON.parse(toolJson) : {};
-          } catch (e) {
-            console.error("Failed to parse tool json", e, toolJson.slice(0, 500));
+          if (!validation.ok) {
+            console.error("synthesize-strategy: both attempts failed —", (validation as any).reason);
+            if (attempt.ok === false) {
+              notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status || 0, detail: attempt.detail });
+            }
             sendEvent({ type: "error", message: "Strategy output was longer than expected. Please retry — this usually resolves on the second attempt." });
             controller.close();
             return;
           }
+
+          const parsed = validation.parsed;
 
           try {
             const strength = computeStrength(transcript || "", parsed);
@@ -517,7 +586,6 @@ Deno.serve(async (req) => {
           try { sendEvent({ type: "error", message: String(e) }); } catch {}
         } finally {
           clearInterval(heartbeat);
-          try { reader.releaseLock(); } catch {}
           controller.close();
         }
       },
