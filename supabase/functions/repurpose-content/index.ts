@@ -12,8 +12,7 @@ You write in the founder's voice — never generic marketing speak. Every piece 
 - Sound like the founder based on the brand voice provided
 - Be anchored to a relevant content pillar
 - Use only material present in the transcript — do not invent facts, stats, or stories
-- Follow the platform-specific format requested
-- Include a final line: "Source: {sourceName}"`;
+- Follow the platform-specific format requested`;
 
 type Piece = { type: string; instruction: string };
 
@@ -79,10 +78,10 @@ ${pieceBlocks}
 
 OUTPUT FORMAT — Return ONLY a JSON array (no prose, no code fences, no preamble) of this exact shape:
 [
-  { "type": "<exact TYPE string above>", "body": "<the generated content as plain text, including the final 'Source: ${opts.sourceName}' line>" }
+  { "type": "<exact TYPE string above>", "body": "<the generated content as plain text>" }
 ]
 
-Return one object per requested piece, in the same order. Plain text only inside "body" — no markdown, no HTML.`;
+Return one object per requested piece, in the same order. Plain text only inside "body" — no markdown, no HTML, and do NOT include any "Source:" attribution line.`;
 }
 
 function tryParseJsonArray(text: string): { type: string; body: string }[] | null {
