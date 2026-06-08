@@ -1180,7 +1180,6 @@ function DraftEditor({
   onPatch: (id: string, patch: Partial<ContentItem>) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [body, setBody] = useState(item.body ?? "");
   if (!open) {
     return (
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
@@ -1189,30 +1188,14 @@ function DraftEditor({
     );
   }
   return (
-    <div className="space-y-2">
-      <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} />
-      <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          onClick={() => {
-            onPatch(item.id, { body });
-            setOpen(false);
-          }}
-        >
-          Save
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setBody(item.body ?? "");
-            setOpen(false);
-          }}
-        >
-          Cancel
-        </Button>
-      </div>
-    </div>
+    <EditPanel
+      item={item}
+      onSave={(patch) => {
+        onPatch(item.id, patch);
+        setOpen(false);
+      }}
+      onCancel={() => setOpen(false)}
+    />
   );
 }
 
