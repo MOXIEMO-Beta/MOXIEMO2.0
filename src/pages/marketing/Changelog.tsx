@@ -25,6 +25,14 @@ const entries: Entry[] = [
     closing: "— The MOXIEMO Team",
   },
   {
+    date: "JUNE 4, 2026",
+    tag: "New Feature",
+    headline: "The Campaign Builder got a full upgrade.",
+    body:
+      "We rebuilt the New Campaign modal from the ground up to feel less like a form and more like working with a CMO.\n\nStep 1 now shows suggested campaign types based on your active goals and strategy. Business Development, Lead Generation, Brand Awareness, and others surface automatically. Pick one and the name and type pre-fill. No more starting from scratch.\n\nStep 2 pulls your strategy content pillars as clickable theme suggestions and surfaces your active goals as quick-select options for campaign goal. Your strategy does the heavy lifting.\n\nStep 3 now pre-fills recommended posting cadences per channel based on your campaign goal — with a brief CMO rationale for each recommendation. Adjust if you want to. But you start from a smart default, not a blank field.\n\nStep 4 was completely redesigned. The content scaffold is now a week-by-week navigator — one week visible at a time, with the week theme, date range, and per-channel briefs clearly separated. Much easier to read. Much easier to use.\n\nCampaign calendar execution is now mapped to specific days. When you save a campaign, content items are distributed across your calendar based on your posting cadence. Click any day and a drawer opens showing the scheduled channel, content brief, week theme, and execution status. Hit Create content from the drawer and it opens directly in the Content tab with the brief pre-filled.\n\nThe Campaign Builder also now supports Meta Ads and Google Ads as campaign types. Select either and the modal swaps to ad-specific configuration: campaign objective, ad format, daily budget range, and keyword focus. Step 4 generates a week-by-week ad creative brief instead of an organic content scaffold.",
+    closing: "— The MOXIEMO Team",
+  },
+  {
     date: "JUNE 3, 2026",
     tag: "Bug Fix",
     headline: "Founding Member Signup: Error Message Fix",
