@@ -1561,7 +1561,8 @@ function RepurposeTab({
         topic: `Repurposed from ${file?.name ?? "transcript"}`,
         body: piece.body,
         status: "draft",
-      })
+        source_filename: file?.name ?? null,
+      } as any)
       .select()
       .single();
     if (error) {
