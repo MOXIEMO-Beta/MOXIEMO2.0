@@ -55,6 +55,7 @@ import {
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
 import RichTextEditor from "@/components/email/RichTextEditor";
+import LibraryAssetsDrawer from "@/components/social/LibraryAssetsDrawer";
 
 type ContentItem = {
   id: string;
@@ -68,6 +69,9 @@ type ContentItem = {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  image_url?: string | null;
+  link_url?: string | null;
+  source_filename?: string | null;
 };
 
 const PLATFORMS = [
@@ -543,10 +547,19 @@ export default function Content() {
     }
 
     try {
-      const content = htmlToPlain(it.body ?? "").trim();
+      let content = htmlToPlain(it.body ?? "").trim();
+      if (it.link_url) {
+        content = `${content}\n\n${it.link_url}`.trim();
+      }
       if (!content) throw new Error("Post is empty");
       const { data, error } = await supabase.functions.invoke("publish-social-post", {
-        body: { user_id: user.id, post_id: it.id, platform: "linkedin", content },
+        body: {
+          user_id: user.id,
+          post_id: it.id,
+          platform: "linkedin",
+          content,
+          image_url: it.image_url ?? undefined,
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -1168,6 +1181,142 @@ function AdCopyEditor({
   );
 }
 
+function EditPanel({
+  item,
+  onSave,
+  onCancel,
+}: {
+  item: ContentItem;
+  onSave: (patch: Partial<ContentItem>) => void;
+  onCancel: () => void;
+}) {
+  const { user } = useAuth();
+  const [body, setBody] = useState(item.body ?? "");
+  const [imageUrl, setImageUrl] = useState<string | null>(item.image_url ?? null);
+  const [linkUrl, setLinkUrl] = useState<string>(item.link_url ?? "");
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  async function handleUpload(file: File | undefined) {
+    if (!file || !user) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image too large", { description: "Max 10MB" });
+      return;
+    }
+    if (!/^image\//.test(file.type)) {
+      toast.error("Please choose an image file");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("social-assets")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("social-assets").getPublicUrl(path);
+      await supabase.from("assets").insert({
+        user_id: user.id,
+        url: pub.publicUrl,
+        filename: file.name,
+        file_type: file.type,
+        file_size_kb: Math.round(file.size / 1024),
+        uploaded_at: new Date().toISOString(),
+      });
+      setImageUrl(pub.publicUrl);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Upload failed", { description: err?.message });
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} />
+
+      <div className="space-y-1.5">
+        <div className="text-xs font-medium text-foreground">Add image</div>
+        {imageUrl ? (
+          <div className="relative inline-block">
+            <img src={imageUrl} alt="" className="h-16 w-16 rounded-md border border-border object-cover" />
+            <button
+              type="button"
+              onClick={() => setImageUrl(null)}
+              className="absolute -right-1.5 -top-1.5 rounded-full bg-foreground text-background p-0.5 hover:bg-foreground/80"
+              aria-label="Remove image"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleUpload(e.target.files?.[0])}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Upload className="mr-2 h-3.5 w-3.5" />}
+              Upload
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setLibraryOpen(true)}>
+              From library
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-foreground block">Add a link</label>
+        <Input
+          type="url"
+          value={linkUrl}
+          onChange={(e) => setLinkUrl(e.target.value)}
+          placeholder="Paste a URL to include in your post."
+          className="h-9 text-sm"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          onClick={() =>
+            onSave({
+              body,
+              image_url: imageUrl,
+              link_url: linkUrl.trim() ? linkUrl.trim() : null,
+            } as Partial<ContentItem>)
+          }
+        >
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+
+      <LibraryAssetsDrawer
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        userId={user?.id ?? null}
+        onSelect={(url) => setImageUrl(url)}
+      />
+    </div>
+  );
+}
+
 function DraftEditor({
   item,
   onPatch,
@@ -1176,7 +1325,6 @@ function DraftEditor({
   onPatch: (id: string, patch: Partial<ContentItem>) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [body, setBody] = useState(item.body ?? "");
   if (!open) {
     return (
       <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
@@ -1185,30 +1333,14 @@ function DraftEditor({
     );
   }
   return (
-    <div className="space-y-2">
-      <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} />
-      <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          onClick={() => {
-            onPatch(item.id, { body });
-            setOpen(false);
-          }}
-        >
-          Save
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => {
-            setBody(item.body ?? "");
-            setOpen(false);
-          }}
-        >
-          Cancel
-        </Button>
-      </div>
-    </div>
+    <EditPanel
+      item={item}
+      onSave={(patch) => {
+        onPatch(item.id, patch);
+        setOpen(false);
+      }}
+      onCancel={() => setOpen(false)}
+    />
   );
 }
 
@@ -1222,34 +1354,17 @@ function QueueCardActions({
   onPublish: (item: ContentItem) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [body, setBody] = useState(item.body ?? "");
   return (
     <div className="space-y-3">
       {editing && (
-        <div className="space-y-2">
-          <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} />
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => {
-                onPatch(item.id, { body });
-                setEditing(false);
-              }}
-            >
-              Save
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setBody(item.body ?? "");
-                setEditing(false);
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
+        <EditPanel
+          item={item}
+          onSave={(patch) => {
+            onPatch(item.id, patch);
+            setEditing(false);
+          }}
+          onCancel={() => setEditing(false)}
+        />
       )}
       <div className="flex items-center gap-3 flex-wrap">
         <Input
@@ -1517,7 +1632,15 @@ function RepurposeTab({
       if ((data as any)?.error) throw new Error((data as any).error);
       const pieces = ((data as any).pieces ?? []) as { type: string; body: string }[];
       if (!pieces.length) throw new Error("No content returned.");
-      setResults(pieces);
+      // Defensively strip any "Source: ..." attribution line the model may still emit.
+      const cleaned = pieces.map((p) => ({
+        ...p,
+        body: (p.body ?? "")
+          .replace(/(\r?\n)+\s*Source:\s*.+?\s*$/gim, "")
+          .replace(/^\s*Source:\s*.+?\s*$/gim, "")
+          .trim(),
+      }));
+      setResults(cleaned);
     } catch (e: any) {
       console.error(e);
       toast.error(aiErrorMessage("content", e));
@@ -1549,7 +1672,8 @@ function RepurposeTab({
         topic: `Repurposed from ${file?.name ?? "transcript"}`,
         body: piece.body,
         status: "draft",
-      })
+        source_filename: file?.name ?? null,
+      } as any)
       .select()
       .single();
     if (error) {

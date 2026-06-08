@@ -252,10 +252,13 @@ export type Database = {
           created_at: string
           engagement: Json
           id: string
+          image_url: string | null
+          link_url: string | null
           platform: string | null
           platform_post_id: string | null
           published_at: string | null
           scheduled_for: string | null
+          source_filename: string | null
           status: string
           topic: string | null
           updated_at: string
@@ -268,10 +271,13 @@ export type Database = {
           created_at?: string
           engagement?: Json
           id?: string
+          image_url?: string | null
+          link_url?: string | null
           platform?: string | null
           platform_post_id?: string | null
           published_at?: string | null
           scheduled_for?: string | null
+          source_filename?: string | null
           status?: string
           topic?: string | null
           updated_at?: string
@@ -284,10 +290,13 @@ export type Database = {
           created_at?: string
           engagement?: Json
           id?: string
+          image_url?: string | null
+          link_url?: string | null
           platform?: string | null
           platform_post_id?: string | null
           published_at?: string | null
           scheduled_for?: string | null
+          source_filename?: string | null
           status?: string
           topic?: string | null
           updated_at?: string
