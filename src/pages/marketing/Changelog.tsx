@@ -17,6 +17,14 @@ const DISCORD_URL = "https://discord.gg/wa9JFx7nha";
 
 const entries: Entry[] = [
   {
+    date: "JUNE 5, 2026",
+    tag: "New Feature",
+    headline: "New content types, ad copy generation, and a homepage refresh.",
+    body:
+      "Three new content types are now live in the Content page.\n\nPodcast Script. Generate full episode scripts, episode outlines, interview question sets, guest prep documents, episode intros and outros, and show notes — all in your brand voice and anchored to your content pillars. If you have a podcast, this was built for you.\n\nMeta Ads and Google Ads copy. Generate strategy-anchored ad creative directly from the Content page. Meta ad sets include headline, primary text, description, and CTA — with per-field character counts and individual copy buttons so you can paste directly into Ads Manager. Google Search ads include three headlines and two descriptions, all within platform character limits. No API connection to your ad account required.\n\nPodcast transcript repurposing. Upload a transcript from a podcast episode, webinar, or keynote — and MOXIEMO atomizes it into LinkedIn posts, Instagram captions, email sections, newsletter content, and short-form video scripts. One piece of long-form content becomes many. All of it in your voice, all tied to your strategy.\n\nThe homepage was also refreshed. It now leads with a pain statement before introducing the product, includes a new outcome strip, and adds a \"Who This Is For\" section with founder archetype cards. The page now leads with identity before features.",
+    closing: "— The MOXIEMO Team",
+  },
+  {
     date: "JUNE 3, 2026",
     tag: "Bug Fix",
     headline: "Founding Member Signup: Error Message Fix",
