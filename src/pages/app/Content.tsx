@@ -55,6 +55,7 @@ import {
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
 import RichTextEditor from "@/components/email/RichTextEditor";
+import LibraryAssetsDrawer from "@/components/social/LibraryAssetsDrawer";
 
 type ContentItem = {
   id: string;
@@ -68,6 +69,9 @@ type ContentItem = {
   published_at: string | null;
   created_at: string;
   updated_at: string;
+  image_url?: string | null;
+  link_url?: string | null;
+  source_filename?: string | null;
 };
 
 const PLATFORMS = [
