@@ -1521,7 +1521,15 @@ function RepurposeTab({
       if ((data as any)?.error) throw new Error((data as any).error);
       const pieces = ((data as any).pieces ?? []) as { type: string; body: string }[];
       if (!pieces.length) throw new Error("No content returned.");
-      setResults(pieces);
+      // Defensively strip any "Source: ..." attribution line the model may still emit.
+      const cleaned = pieces.map((p) => ({
+        ...p,
+        body: (p.body ?? "")
+          .replace(/(\r?\n)+\s*Source:\s*.+?\s*$/gim, "")
+          .replace(/^\s*Source:\s*.+?\s*$/gim, "")
+          .trim(),
+      }));
+      setResults(cleaned);
     } catch (e: any) {
       console.error(e);
       toast.error(aiErrorMessage("content", e));
