@@ -1172,6 +1172,142 @@ function AdCopyEditor({
   );
 }
 
+function EditPanel({
+  item,
+  onSave,
+  onCancel,
+}: {
+  item: ContentItem;
+  onSave: (patch: Partial<ContentItem>) => void;
+  onCancel: () => void;
+}) {
+  const { user } = useAuth();
+  const [body, setBody] = useState(item.body ?? "");
+  const [imageUrl, setImageUrl] = useState<string | null>(item.image_url ?? null);
+  const [linkUrl, setLinkUrl] = useState<string>(item.link_url ?? "");
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  async function handleUpload(file: File | undefined) {
+    if (!file || !user) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image too large", { description: "Max 10MB" });
+      return;
+    }
+    if (!/^image\//.test(file.type)) {
+      toast.error("Please choose an image file");
+      return;
+    }
+    setUploading(true);
+    try {
+      const ext = file.name.includes(".") ? file.name.split(".").pop() : "bin";
+      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("social-assets")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("social-assets").getPublicUrl(path);
+      await supabase.from("assets").insert({
+        user_id: user.id,
+        url: pub.publicUrl,
+        filename: file.name,
+        file_type: file.type,
+        file_size_kb: Math.round(file.size / 1024),
+        uploaded_at: new Date().toISOString(),
+      });
+      setImageUrl(pub.publicUrl);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Upload failed", { description: err?.message });
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} />
+
+      <div className="space-y-1.5">
+        <div className="text-xs font-medium text-foreground">Add image</div>
+        {imageUrl ? (
+          <div className="relative inline-block">
+            <img src={imageUrl} alt="" className="h-16 w-16 rounded-md border border-border object-cover" />
+            <button
+              type="button"
+              onClick={() => setImageUrl(null)}
+              className="absolute -right-1.5 -top-1.5 rounded-full bg-foreground text-background p-0.5 hover:bg-foreground/80"
+              aria-label="Remove image"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleUpload(e.target.files?.[0])}
+            />
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Upload className="mr-2 h-3.5 w-3.5" />}
+              Upload
+            </Button>
+            <Button type="button" size="sm" variant="outline" onClick={() => setLibraryOpen(true)}>
+              From library
+            </Button>
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-foreground block">Add a link</label>
+        <Input
+          type="url"
+          value={linkUrl}
+          onChange={(e) => setLinkUrl(e.target.value)}
+          placeholder="Paste a URL to include in your post."
+          className="h-9 text-sm"
+        />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          onClick={() =>
+            onSave({
+              body,
+              image_url: imageUrl,
+              link_url: linkUrl.trim() ? linkUrl.trim() : null,
+            } as Partial<ContentItem>)
+          }
+        >
+          Save
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+
+      <LibraryAssetsDrawer
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        userId={user?.id ?? null}
+        onSelect={(url) => setImageUrl(url)}
+      />
+    </div>
+  );
+}
+
 function DraftEditor({
   item,
   onPatch,
