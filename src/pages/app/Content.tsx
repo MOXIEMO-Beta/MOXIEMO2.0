@@ -547,10 +547,19 @@ export default function Content() {
     }
 
     try {
-      const content = htmlToPlain(it.body ?? "").trim();
+      let content = htmlToPlain(it.body ?? "").trim();
+      if (it.link_url) {
+        content = `${content}\n\n${it.link_url}`.trim();
+      }
       if (!content) throw new Error("Post is empty");
       const { data, error } = await supabase.functions.invoke("publish-social-post", {
-        body: { user_id: user.id, post_id: it.id, platform: "linkedin", content },
+        body: {
+          user_id: user.id,
+          post_id: it.id,
+          platform: "linkedin",
+          content,
+          image_url: it.image_url ?? undefined,
+        },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
