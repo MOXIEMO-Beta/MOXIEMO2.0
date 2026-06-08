@@ -1209,34 +1209,17 @@ function QueueCardActions({
   onPublish: (item: ContentItem) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [body, setBody] = useState(item.body ?? "");
   return (
     <div className="space-y-3">
       {editing && (
-        <div className="space-y-2">
-          <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={8} />
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              onClick={() => {
-                onPatch(item.id, { body });
-                setEditing(false);
-              }}
-            >
-              Save
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                setBody(item.body ?? "");
-                setEditing(false);
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
+        <EditPanel
+          item={item}
+          onSave={(patch) => {
+            onPatch(item.id, patch);
+            setEditing(false);
+          }}
+          onCancel={() => setEditing(false)}
+        />
       )}
       <div className="flex items-center gap-3 flex-wrap">
         <Input
