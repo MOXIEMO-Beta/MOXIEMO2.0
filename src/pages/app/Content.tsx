@@ -237,6 +237,8 @@ export default function Content() {
 
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const outputRef = useRef<HTMLDivElement | null>(null);
+  const generateFormRef = useRef<HTMLDivElement | null>(null);
+  const [campaignBriefBanner, setCampaignBriefBanner] = useState(false);
 
   // Pre-fill from URL params (e.g. when navigating from a campaign slot)
   useEffect(() => {
@@ -244,16 +246,39 @@ export default function Content() {
     const qpCampaign = searchParams.get("campaign");
     const qpCampaignId = searchParams.get("campaignId");
     const qpDate = searchParams.get("date");
-    if (!qpPlatform && !qpCampaign && !qpCampaignId) return;
-    if (qpPlatform && PLATFORMS.some((p) => p.value === qpPlatform)) {
-      setPlatform(qpPlatform);
+    const qpPrompt = searchParams.get("prompt");
+    const qpPillar = searchParams.get("pillar");
+    const qpTheme = searchParams.get("theme");
+    if (!qpPlatform && !qpCampaign && !qpCampaignId && !qpPrompt && !qpPillar && !qpTheme) return;
+
+    // Map short platform slugs (linkedin/instagram/email/etc.) to dropdown values
+    const PLATFORM_ALIASES: Record<string, string> = {
+      linkedin: "LinkedIn Post",
+      instagram: "Instagram Caption",
+      email: "Newsletter Section",
+      newsletter: "Newsletter Section",
+      facebook: "Facebook Post",
+      twitter: "X / Twitter",
+      x: "X / Twitter",
+    };
+    if (qpPlatform) {
+      const mapped =
+        PLATFORM_ALIASES[qpPlatform.toLowerCase()] ??
+        (PLATFORMS.some((p) => p.value === qpPlatform) ? qpPlatform : null);
+      if (mapped) setPlatform(mapped);
+    }
+    if (qpPrompt) {
+      setTopic(qpPrompt);
+    }
+    if (qpPillar) {
+      setActivePillar(qpPillar);
     }
     if (qpCampaign) {
       const dateNote = qpDate ? ` running around ${qpDate}` : "";
       const note = `This content is for the ${qpCampaign} campaign${dateNote}. Generate accordingly.`;
       setTopic((prev) => (prev ? prev : note));
     }
-    setSlotContext({ scheduled_date: qpDate, pillar: null });
+    setSlotContext({ scheduled_date: qpDate, pillar: qpPillar ?? null });
     if (qpCampaignId) {
       (async () => {
         const { data } = await supabase
@@ -263,6 +288,14 @@ export default function Content() {
           .maybeSingle();
         if (data) setCampaignContext(data);
       })();
+    }
+    const hasCampaignContext = !!(qpPrompt || qpCampaign || qpCampaignId || qpPillar || qpTheme);
+    if (hasCampaignContext) {
+      setCampaignBriefBanner(true);
+      setTimeout(
+        () => generateFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }),
+        120,
+      );
     }
     // Clear params so they don't re-apply on refresh
     setSearchParams({}, { replace: true });
@@ -638,7 +671,16 @@ export default function Content() {
               </Link>
             </Card>
           )}
-          <Card className="p-6 border-border shadow-soft space-y-5">
+          <Card ref={generateFormRef} className="p-6 border-border shadow-soft space-y-5">
+            {campaignBriefBanner && (
+              <button
+                type="button"
+                onClick={() => setCampaignBriefBanner(false)}
+                className="w-full text-left rounded-md border border-accent/40 bg-accent-soft/50 px-3 py-2 text-xs text-foreground hover:bg-accent-soft/70 transition-colors"
+              >
+                Generating from your campaign brief. Edit anything before generating.
+              </button>
+            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">
                 What's the idea?
@@ -648,7 +690,10 @@ export default function Content() {
               </p>
               <Textarea
                 value={topic}
-                onChange={(e) => setTopic(e.target.value)}
+                onChange={(e) => {
+                  setTopic(e.target.value);
+                  if (campaignBriefBanner) setCampaignBriefBanner(false);
+                }}
                 placeholder="e.g. I just read that 80% of small businesses overpay in taxes because their expenses aren't categorized in real time — I want to write about this from my POV..."
                 rows={4}
                 className="resize-y min-h-[100px]"
