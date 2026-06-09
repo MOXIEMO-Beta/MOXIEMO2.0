@@ -36,12 +36,10 @@ function PlatformIcon({ channel, className }: { channel: string; className?: str
 function itemChannel(it: any): string {
   if (it._kind === "email") return "email";
   if (it._kind === "content") return "content";
-  if (it._kind === "slot") return it.platform ?? "linkedin";
   return it.platforms?.[0] ?? "linkedin";
 }
 
 function itemStatus(it: any): "draft" | "scheduled" | "published" | "needs" {
-  if (it._kind === "slot") return "needs";
   if (it.status === "published" || it.status === "sent") return "published";
   if (it.status === "scheduled") return "scheduled";
   return "draft";
@@ -118,30 +116,12 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   function itemsForCell(channel: ChannelKey, day: Date): any[] {
-    // Campaign placeholder slots first (so they appear when nothing is scheduled yet)
-    const slotItems: any[] = [];
-    (campaigns ?? []).forEach((c: any) => {
-      const slots: any[] = c?.content_plan?.slots ?? [];
-      slots.forEach((s: any) => {
-        if (s.platform !== channel) return;
-        if (s.date !== ymd(day)) return;
-        if (s.status === "filled") return;
-        slotItems.push({
-          ...s,
-          _kind: "slot",
-          _campaign: c,
-          _text: `${s.contentType} · ${c.name}`,
-          status: "needs_content",
-        });
-      });
-    });
-
     if (channel === "email") {
       const real = emailSends.filter((e: any) => {
         const iso = e.scheduled_for ?? e.sent_at;
         return iso && sameDay(new Date(iso), day);
       }).map((e: any) => ({ ...e, _kind: "email", _text: e.subject ?? e.body?.slice(0, 60) ?? "Email" }));
-      return [...real, ...slotItems];
+      return real;
     }
     if (channel === "content") {
       return contentItems.filter((c: any) => {
@@ -154,7 +134,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
       const iso = p.scheduled_for ?? p.published_at;
       return iso && sameDay(new Date(iso), day);
     }).map((p: any) => ({ ...p, _kind: "social", _text: (p.content_by_platform?.[channel] ?? p.topic ?? "Post").slice(0, 60) }));
-    return [...real, ...slotItems];
+    return real;
   }
 
   // Sidebar metrics — this week
@@ -164,14 +144,6 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
   const weekLI = socialPosts.filter((p: any) => (p.platforms ?? []).includes("linkedin") && inWeek(p.scheduled_for ?? p.published_at)).length;
   const weekIG = socialPosts.filter((p: any) => (p.platforms ?? []).includes("instagram") && inWeek(p.scheduled_for ?? p.published_at)).length;
   const weekEmail = emailSends.filter((e: any) => inWeek(e.scheduled_for ?? e.sent_at)).length;
-
-  // "X of Y slots filled this week" — count campaign slots in week
-  const weekSlotsAll = (campaigns ?? []).flatMap((c: any) => (c?.content_plan?.slots ?? []).map((s: any) => ({ ...s, _c: c })))
-    .filter((s: any) => {
-      const d = s.date ? new Date(s.date) : null;
-      return d && d >= weekStart && d < weekEnd;
-    });
-  const weekSlotsFilled = weekSlotsAll.filter((s: any) => s.status === "filled").length;
 
   // Month view cells
   const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
