@@ -307,7 +307,10 @@ export default function Discovery() {
         .update({ lane: next } as any)
         .eq("id", sessionId);
     }
-    if (sessionId && messages.length === 0) {
+    // Only auto-start the conversation if we're already past the upload
+    // gate (returning user mid-session). For new users, the upload gate
+    // renders next and starts the conversation when they skip or complete.
+    if (sessionId && messages.length === 0 && uploadStage === "chat") {
       await startConversation(sessionId);
     }
   }
