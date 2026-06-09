@@ -168,15 +168,34 @@ export function DiscoveryUploadGate({ onSkip, onComplete }: Props) {
             borderRadius: 999, padding: "4px 10px",
             fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
             textTransform: "uppercase",
-          }}>◈ SKIP THE TYPING</span>
+          }}>✦ FASTER DISCOVERY</span>
         </div>
 
         <h1 style={{ color: "#15171C", fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em" }}>
-          Already have brand materials?
+          Save time. Start with what you already have.
         </h1>
         <p className="mt-2" style={{ color: "rgba(21,23,28,0.50)", fontSize: 15 }}>
-          Upload a doc and MOXIEMO will pre-fill your answers.
+          Upload a brand doc, strategy file, or paste your website URL. MOXIEMO will scan it and pre-fill any Discovery questions it can answer. You review, edit, and continue from there.
         </p>
+
+        {/* How this works — three step row */}
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 rounded-2xl p-4"
+          style={{ backgroundColor: "rgba(255,107,92,0.04)", border: "1px solid rgba(255,107,92,0.12)" }}>
+          {[
+            { n: 1, t: "Upload or paste", d: "Drop a PDF, DOCX, or TXT file — or paste your website, LinkedIn, or Google Doc URL." },
+            { n: 2, t: "MOXIEMO scans it", d: "We look for brand details, offer descriptions, audience information, and voice cues." },
+            { n: 3, t: "Review and continue", d: "Pre-filled answers are saved. You confirm, edit anything, and move through Discovery." },
+          ].map((s) => (
+            <div key={s.n} className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <span className="flex items-center justify-center rounded-full text-white font-semibold"
+                  style={{ width: 24, height: 24, backgroundColor: "#FF6B5C", fontSize: 12 }}>{s.n}</span>
+                <span style={{ color: "#15171C", fontSize: 13, fontWeight: 600 }}>{s.t}</span>
+              </div>
+              <p className="mt-2" style={{ color: "rgba(21,23,28,0.60)", fontSize: 13, lineHeight: 1.4 }}>{s.d}</p>
+            </div>
+          ))}
+        </div>
 
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -219,7 +238,7 @@ export function DiscoveryUploadGate({ onSkip, onComplete }: Props) {
             <>
               <Upload className="mx-auto h-7 w-7" style={{ color: "#FF6B5C" }} />
               <p className="mt-3" style={{ color: "#15171C", fontSize: 15, fontWeight: 500 }}>
-                Drop your brand deck, strategy doc, or website copy here
+                Drop your brand deck, strategy doc, or any file about your business
               </p>
               <p className="mt-1" style={{ color: "rgba(21,23,28,0.50)", fontSize: 12 }}>
                 PDF, DOCX, or TXT · Max 10MB
@@ -234,7 +253,7 @@ export function DiscoveryUploadGate({ onSkip, onComplete }: Props) {
             type="url"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            placeholder="Or paste a URL (website, LinkedIn, Google Doc)"
+            placeholder="Or paste your website URL, LinkedIn profile, or Google Doc link"
             className="flex-1 bg-transparent px-3 py-2 text-sm outline-none"
             style={{ color: "#15171C" }}
           />
@@ -258,11 +277,18 @@ export function DiscoveryUploadGate({ onSkip, onComplete }: Props) {
           {processing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Upload and pre-fill my answers →"}
         </Button>
 
+        {/* OR separator */}
+        <div className="mt-6 flex items-center gap-3" aria-hidden="true">
+          <div className="flex-1 h-px" style={{ backgroundColor: "rgba(21,23,28,0.10)" }} />
+          <span style={{ color: "rgba(21,23,28,0.45)", fontSize: 12, fontWeight: 600, letterSpacing: "0.08em" }}>OR</span>
+          <div className="flex-1 h-px" style={{ backgroundColor: "rgba(21,23,28,0.10)" }} />
+        </div>
+
         <div className="mt-4 text-center">
           <button
             onClick={onSkip}
-            className="text-sm underline-offset-4 hover:underline"
-            style={{ color: "rgba(21,23,28,0.50)" }}
+            className="underline-offset-4 hover:underline"
+            style={{ color: "#1a1a1a", fontSize: 15, fontWeight: 500 }}
           >
             Start from scratch instead →
           </button>
@@ -283,7 +309,7 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
   const empty = result.questions.length - filled.length;
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-8" style={{ backgroundColor: "#FAFAF8" }}>
+    <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-8 pb-32 relative" style={{ backgroundColor: "#FAFAF8" }}>
       <div className="max-w-2xl mx-auto">
         <div className="mb-4">
           <span style={{
@@ -334,7 +360,7 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
         <p className="mt-6 text-sm" style={{ color: "rgba(21,23,28,0.50)" }}>
           Review and confirm your answers — you can edit anything.
         </p>
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
+        <div id="prefill-continue" className="mt-4 flex flex-col sm:flex-row gap-3">
           <Button
             onClick={onContinue}
             className="h-12 px-6 rounded-xl text-[15px] font-medium"
@@ -349,6 +375,59 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
           >
             Start from scratch instead →
           </button>
+        </div>
+      </div>
+
+      {/* Sticky bottom banner */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 shadow-lg"
+        style={{ backgroundColor: filled.length > 0 ? "#ff6b6b" : "#15171C" }}>
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
+          {filled.length > 0 ? (
+            <>
+              <div className="flex-1 min-w-0 text-white">
+                <p style={{ fontSize: 15, fontWeight: 700 }}>
+                  We found answers to {filled.length} question{filled.length === 1 ? "" : "s"}. Scroll down to review and keep going.
+                </p>
+                <p style={{ fontSize: 13, opacity: 0.9 }}>
+                  Edit anything before continuing. Your answers are yours.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  const el = document.getElementById("prefill-continue");
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}
+                className="h-10 px-4 rounded-lg font-semibold whitespace-nowrap"
+                style={{ backgroundColor: "white", color: "#ff6b6b", fontSize: 14 }}
+              >
+                Review and continue →
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex-1 min-w-0 text-white">
+                <p style={{ fontSize: 14, fontWeight: 600 }}>
+                  We couldn't find enough to pre-fill from that file. You can try another file or start Discovery from scratch.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="h-10 px-4 rounded-lg font-medium whitespace-nowrap"
+                  style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "white", border: "1px solid rgba(255,255,255,0.25)", fontSize: 14 }}
+                >
+                  Try another file
+                </button>
+                <button
+                  onClick={onSkip}
+                  className="h-10 px-4 rounded-lg font-semibold whitespace-nowrap"
+                  style={{ backgroundColor: "white", color: "#15171C", fontSize: 14 }}
+                >
+                  Start Discovery instead
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
