@@ -487,41 +487,6 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                 ))}
               </div>
             </>
-          ) : openItem && openItem._kind === "slot" ? (
-            <>
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <Target className="w-4 h-4 text-accent" /> {openItem.contentType}
-                </SheetTitle>
-              </SheetHeader>
-              <div className="mt-4 space-y-3 text-sm">
-                <Badge className="bg-accent-soft text-accent">Needs content</Badge>
-                <div className="text-muted-foreground">
-                  Part of <b className="text-foreground">{openItem._campaign?.name}</b><br />
-                  {openItem._campaign?.start_date && openItem._campaign?.end_date && (
-                    <span className="text-xs">
-                      {fmtShort(new Date(openItem._campaign.start_date))} – {fmtShort(new Date(openItem._campaign.end_date))}
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground">Scheduled for: {openItem.date}</div>
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    const params = new URLSearchParams({
-                      platform: openItem.contentType,
-                      campaign: openItem._campaign?.name ?? "",
-                      campaignId: openItem._campaign?.id ?? "",
-                      slotId: openItem.id ?? "",
-                      date: openItem.date ?? "",
-                    });
-                    navigate(`/app/content?${params.toString()}`);
-                  }}
-                >
-                  <Sparkles className="w-4 h-4" /> Generate content for this slot
-                </Button>
-              </div>
-            </>
           ) : openItem ? (
             <>
               <SheetHeader>
