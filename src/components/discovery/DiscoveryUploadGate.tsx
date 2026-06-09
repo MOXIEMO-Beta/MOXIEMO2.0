@@ -309,7 +309,7 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
   const empty = result.questions.length - filled.length;
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-8" style={{ backgroundColor: "#FAFAF8" }}>
+    <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-8 pb-32 relative" style={{ backgroundColor: "#FAFAF8" }}>
       <div className="max-w-2xl mx-auto">
         <div className="mb-4">
           <span style={{
@@ -360,7 +360,7 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
         <p className="mt-6 text-sm" style={{ color: "rgba(21,23,28,0.50)" }}>
           Review and confirm your answers — you can edit anything.
         </p>
-        <div className="mt-4 flex flex-col sm:flex-row gap-3">
+        <div id="prefill-continue" className="mt-4 flex flex-col sm:flex-row gap-3">
           <Button
             onClick={onContinue}
             className="h-12 px-6 rounded-xl text-[15px] font-medium"
@@ -375,6 +375,59 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
           >
             Start from scratch instead →
           </button>
+        </div>
+      </div>
+
+      {/* Sticky bottom banner */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 shadow-lg"
+        style={{ backgroundColor: filled.length > 0 ? "#ff6b6b" : "#15171C" }}>
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
+          {filled.length > 0 ? (
+            <>
+              <div className="flex-1 min-w-0 text-white">
+                <p style={{ fontSize: 15, fontWeight: 700 }}>
+                  We found answers to {filled.length} question{filled.length === 1 ? "" : "s"}. Scroll down to review and keep going.
+                </p>
+                <p style={{ fontSize: 13, opacity: 0.9 }}>
+                  Edit anything before continuing. Your answers are yours.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  const el = document.getElementById("prefill-continue");
+                  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}
+                className="h-10 px-4 rounded-lg font-semibold whitespace-nowrap"
+                style={{ backgroundColor: "white", color: "#ff6b6b", fontSize: 14 }}
+              >
+                Review and continue →
+              </button>
+            </>
+          ) : (
+            <>
+              <div className="flex-1 min-w-0 text-white">
+                <p style={{ fontSize: 14, fontWeight: 600 }}>
+                  We couldn't find enough to pre-fill from that file. You can try another file or start Discovery from scratch.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="h-10 px-4 rounded-lg font-medium whitespace-nowrap"
+                  style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "white", border: "1px solid rgba(255,255,255,0.25)", fontSize: 14 }}
+                >
+                  Try another file
+                </button>
+                <button
+                  onClick={onSkip}
+                  className="h-10 px-4 rounded-lg font-semibold whitespace-nowrap"
+                  style={{ backgroundColor: "white", color: "#15171C", fontSize: 14 }}
+                >
+                  Start Discovery instead
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
