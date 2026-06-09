@@ -454,11 +454,6 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
             Scheduled: <span className="font-medium">{weekScheduled} posts</span>
             {weekScheduled < cadenceTarget && <span className="text-amber-600 inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> behind</span>}
           </div>
-          {weekSlotsAll.length > 0 && (
-            <div className="text-sm mt-1 text-muted-foreground">
-              <span className="font-medium text-foreground">{weekSlotsFilled}</span> of <span className="font-medium text-foreground">{weekSlotsAll.length}</span> slots filled this week
-            </div>
-          )}
 
           <div className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">MOXIEMO suggests</div>
           <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
