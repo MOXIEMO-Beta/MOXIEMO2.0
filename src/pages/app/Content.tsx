@@ -671,7 +671,16 @@ export default function Content() {
               </Link>
             </Card>
           )}
-          <Card className="p-6 border-border shadow-soft space-y-5">
+          <Card ref={generateFormRef} className="p-6 border-border shadow-soft space-y-5">
+            {campaignBriefBanner && (
+              <button
+                type="button"
+                onClick={() => setCampaignBriefBanner(false)}
+                className="w-full text-left rounded-md border border-accent/40 bg-accent-soft/50 px-3 py-2 text-xs text-foreground hover:bg-accent-soft/70 transition-colors"
+              >
+                Generating from your campaign brief. Edit anything before generating.
+              </button>
+            )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">
                 What's the idea?
@@ -681,7 +690,10 @@ export default function Content() {
               </p>
               <Textarea
                 value={topic}
-                onChange={(e) => setTopic(e.target.value)}
+                onChange={(e) => {
+                  setTopic(e.target.value);
+                  if (campaignBriefBanner) setCampaignBriefBanner(false);
+                }}
                 placeholder="e.g. I just read that 80% of small businesses overpay in taxes because their expenses aren't categorized in real time — I want to write about this from my POV..."
                 rows={4}
                 className="resize-y min-h-[100px]"
