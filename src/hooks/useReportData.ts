@@ -33,7 +33,9 @@ export function useReportData() {
       if (!strategyRow) {
         setReportData(null);
       } else {
-        setReportData(buildReportData(strategyRow, profileRow));
+        const rd = buildReportData(strategyRow, profileRow);
+        setReportData(rd);
+        void enrichCalendarTitles(rd, strategyRow, setReportData);
       }
     } catch (e: any) {
       setError(e instanceof Error ? e : new Error(String(e)));
