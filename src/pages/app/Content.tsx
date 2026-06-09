@@ -239,6 +239,7 @@ export default function Content() {
   const outputRef = useRef<HTMLDivElement | null>(null);
   const generateFormRef = useRef<HTMLDivElement | null>(null);
   const [campaignBriefBanner, setCampaignBriefBanner] = useState(false);
+  const [pendingPillar, setPendingPillar] = useState<string | null>(null);
 
   // Pre-fill from URL params (e.g. when navigating from a campaign slot)
   useEffect(() => {
@@ -271,7 +272,8 @@ export default function Content() {
       setTopic(qpPrompt);
     }
     if (qpPillar) {
-      setActivePillar(qpPillar);
+      // Defer chip selection until pillars load; fuzzy match in a later effect.
+      setPendingPillar(qpPillar);
     }
     if (qpCampaign) {
       const dateNote = qpDate ? ` running around ${qpDate}` : "";
@@ -363,6 +365,18 @@ export default function Content() {
     }
     return [];
   }, [strategy]);
+
+  // Fuzzy-match a pillar passed via URL against the loaded chip labels.
+  useEffect(() => {
+    if (!pendingPillar || pillars.length === 0) return;
+    const needle = pendingPillar.trim().toLowerCase();
+    const match = pillars.find((p) => {
+      const hay = p.trim().toLowerCase();
+      return hay === needle || hay.includes(needle) || needle.includes(hay);
+    });
+    if (match) setActivePillar(match);
+    setPendingPillar(null);
+  }, [pendingPillar, pillars]);
 
   const fname = firstName(profile?.full_name);
   const greeting = fname
