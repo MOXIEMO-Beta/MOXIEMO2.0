@@ -307,7 +307,10 @@ export default function Discovery() {
         .update({ lane: next } as any)
         .eq("id", sessionId);
     }
-    if (sessionId && messages.length === 0) {
+    // Only auto-start the conversation if we're already past the upload
+    // gate (returning user mid-session). For new users, the upload gate
+    // renders next and starts the conversation when they skip or complete.
+    if (sessionId && messages.length === 0 && uploadStage === "chat") {
       await startConversation(sessionId);
     }
   }
@@ -653,28 +656,7 @@ export default function Discovery() {
         estimatedMs={45000}
         onFadedOut={() => navigate("/app/strategy")}
       />
-      {uploadStage === "gate" && sessionId && (
-        <DiscoveryUploadGate
-          onSkip={beginChat}
-          onComplete={startWithPrefill}
-        />
-      )}
-      {uploadStage === "summary" && prefillResult && (
-        <DiscoveryPrefillSummary
-          result={prefillResult}
-          onContinue={beginChat}
-          onSkip={beginChat}
-        />
-      )}
-      {uploadStage === "chat" && (
-        <>
-      <NeedHelpButton
-        currentQuestion={Math.min(answered + 1, total)}
-        totalQuestions={total}
-        firstName={userContext?.firstName}
-        lane={lane}
-      />
-      {lane === null && messages.length === 0 && (
+      {lane === null && !completed && (
         <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-10" style={{ backgroundColor: "#FAFAF8" }}>
           <div className="max-w-2xl mx-auto">
             <div className="rounded-2xl border border-border bg-background p-6 lg:p-8 shadow-sm">
@@ -740,7 +722,28 @@ export default function Discovery() {
           </div>
         </div>
       )}
-      {lane !== null && (
+      {lane !== null && uploadStage === "gate" && sessionId && (
+        <DiscoveryUploadGate
+          onSkip={beginChat}
+          onComplete={startWithPrefill}
+        />
+      )}
+      {lane !== null && uploadStage === "summary" && prefillResult && (
+        <DiscoveryPrefillSummary
+          result={prefillResult}
+          onContinue={beginChat}
+          onSkip={beginChat}
+        />
+      )}
+      {lane !== null && uploadStage === "chat" && (
+        <>
+      <NeedHelpButton
+        currentQuestion={Math.min(answered + 1, total)}
+        totalQuestions={total}
+        firstName={userContext?.firstName}
+        lane={lane}
+      />
+      {(
         <>
       {showWelcome && (
         <div className="border-b border-border bg-accent/5 px-6 lg:px-10 py-4">
