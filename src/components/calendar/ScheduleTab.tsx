@@ -274,11 +274,11 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                               <button
                                 key={ex.id}
                                 onClick={() => openDayDrawer(d)}
-                                className="w-full h-6 flex items-center gap-1.5 px-1.5 rounded-md border border-border bg-card text-[10px] font-medium hover:bg-muted/40 transition-colors"
+                                className="w-full h-6 flex items-center gap-1.5 pl-1.5 pr-1.5 rounded-md border border-border bg-card text-[10px] font-medium hover:bg-muted/40 transition-colors"
+                                style={{ borderLeft: `3px solid ${color}` }}
                                 title={`${camp?.name ?? "Campaign"} · ${ex.channel}`}
                               >
-                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                                <PlatformIcon channel={ex.channel} className="w-3 h-3 text-muted-foreground shrink-0" />
+                                <PlatformIcon channel={ex.channel} className="w-3.5 h-3.5 text-foreground shrink-0" />
                                 <span>{CHANNEL_ABBR[ex.channel] ?? ex.channel.slice(0, 2).toUpperCase()}</span>
                               </button>
                             );
@@ -380,10 +380,11 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                                   <button
                                     key={ex.id}
                                     onClick={(e) => { e.stopPropagation(); openDayDrawer(d); }}
-                                    className="w-full flex items-center gap-1 px-1 py-1 rounded border border-border bg-card text-[9px] font-medium leading-snug hover:bg-muted/40"
+                                    className="w-full flex items-center gap-1 pl-1 pr-1 py-1 rounded border border-border bg-card text-[9px] font-medium leading-snug hover:bg-muted/40"
+                                    style={{ borderLeft: `3px solid ${color}` }}
                                     title={`${camp?.name ?? "Campaign"} · ${ex.channel}`}
                                   >
-                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                    <PlatformIcon channel={ex.channel} className="w-3 h-3 text-foreground shrink-0" />
                                     <span>{CHANNEL_ABBR[ex.channel] ?? ex.channel.slice(0, 2).toUpperCase()}</span>
                                   </button>
                                 );
