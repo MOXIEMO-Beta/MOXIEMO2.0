@@ -212,9 +212,42 @@ Deno.serve(async (req) => {
       if (bc.pricing_signals) lines.push(`- Pricing signals on the site: ${bc.pricing_signals}`);
       if (bc.social_proof) lines.push(`- Social proof on the site: ${bc.social_proof}`);
       if (lines.length) {
-        userContent += `\n\nADDITIONAL BRAND CONTEXT FROM WEBSITE (weave in where relevant; the transcript is still source of truth):\n${lines.join("\n")}`;
+        // Cap scraped brand context at 3000 chars so a content-heavy site can't
+        // balloon the synthesis prompt and push us past token / time limits.
+        let scraped = lines.join("\n");
+        if (scraped.length > 3000) {
+          console.log(`[synthesize-strategy] truncating scraped brand context: ${scraped.length} -> 3000 chars`);
+          scraped = scraped.slice(0, 3000) + "… [truncated]";
+        }
+
+        // Mismatch guard: if the scraped content shares very little vocabulary
+        // with the discovery transcript, the website probably belongs to a
+        // different business (wrong URL pasted, personal site vs business
+        // site, etc.). Tell the model to prioritise the transcript instead of
+        // burning tokens trying to reconcile contradictions.
+        const tokenize = (s: string) =>
+          new Set(
+            s.toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).filter((w) => w.length > 4),
+          );
+        const tWords = tokenize(transcript.slice(0, 8000));
+        const sWords = tokenize(scraped);
+        let overlap = 0;
+        for (const w of sWords) if (tWords.has(w)) overlap++;
+        const ratio = sWords.size > 0 ? overlap / sWords.size : 1;
+        const mismatch = sWords.size >= 20 && ratio < 0.1;
+
+        userContent += `\n\nADDITIONAL BRAND CONTEXT FROM WEBSITE (weave in where relevant; the transcript is still source of truth):\n${scraped}`;
+        if (mismatch) {
+          console.log(`[synthesize-strategy] brand context mismatch detected (overlap=${ratio.toFixed(3)})`);
+          userContent += `\n\nNote: website content may not match this business — prioritise Discovery answers over any scraped context.`;
+        }
       }
     }
+
+    // Pre-synthesis prompt length logging so we can see when prompts balloon.
+    console.log(
+      `[synthesize-strategy] lane=${isLane2 ? "lane2" : "lane1"} prompt_chars=${userContent.length} transcript_chars=${transcript.length}`,
+    );
 
     const saveStrategyParams = {
               type: "object",
@@ -440,7 +473,9 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             model: "claude-sonnet-4-5",
-            max_tokens: 16384,
+            // Lane 2 outputs are longer (extra service-business sections),
+            // so give it more headroom. Lane 1 stays at 16384.
+            max_tokens: isLane2 ? 24000 : 16384,
             stream: true,
             system: isLane2 ? SYSTEM_LANE2 : SYSTEM,
             messages: [{ role: "user", content: userContent }],
