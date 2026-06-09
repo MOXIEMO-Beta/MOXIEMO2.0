@@ -661,6 +661,7 @@ export default function Discovery() {
         currentQuestion={Math.min(answered + 1, total)}
         totalQuestions={total}
         firstName={userContext?.firstName}
+        lane={lane}
       />
       {lane === null && messages.length === 0 && (
         <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-10" style={{ backgroundColor: "#FAFAF8" }}>

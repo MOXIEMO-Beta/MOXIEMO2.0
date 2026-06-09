@@ -64,7 +64,7 @@ Q2. "What problem are you solving for your customers, and what happens to them i
 Q3. "How does your business actually make money — what's your primary revenue model?" Options: One-time service fees / Recurring or subscription / Membership or retainer / Commission or marketplace fees / Mix of these.
 
 SECTION 2 — MARKET AND CUSTOMER
-Q4. "Who is your primary customer?" Options: Homeowners or consumers / Other businesses / Both.
+Q4. "Who is your primary customer?" Options: Individual consumers (B2C) / Other businesses (B2B) / Both.
 Q5. "Describe your ideal customer — who do you most love serving, and what do they have in common?"
 Q6. "What geographic area does your business serve?" Options: Local or single city / Regional or multi-city / National / Online with no geography.
 Q7. "When a customer is choosing between you and a competitor, what's actually going through their mind?"
@@ -72,12 +72,12 @@ Q7. "When a customer is choosing between you and a competitor, what's actually g
 SECTION 3 — DIFFERENTIATION AND BRAND
 Q8. "What makes your business genuinely different from others offering the same service?"
 Q9. "What do your best customers say about you — in their words?"
-Q10. "If your business had a personality, how would you want customers to describe it?" (Optional suggestions: dependable, premium, friendly, expert, local.)
+Q10. "If your business had a personality, how would you want customers to describe it?" (Optional suggestions: dependable, premium, friendly, expert, approachable.)
 Q11. "What's the one thing you never want a customer to feel when working with you?"
 
 SECTION 4 — GROWTH AND CURRENT STATE
 Q12. "What's your single biggest growth challenge right now?" Options: Getting found by new customers / Building trust before the first sale / Keeping customers coming back / Standing out from competitors / Scaling without losing quality.
-Q13. "How are you getting customers today, and what's working best?" Options (multi-select): Word of mouth or referrals / Google or local SEO / Social media / Paid ads / Partnerships / Email / Not sure or just starting. Then ask the user to add a short note about what's working best.
+Q13. "How are you getting customers today, and what's working best?" Options (multi-select): Word of mouth or referrals / Google or SEO / Social media / Paid ads / Partnerships / Email / Not sure or just starting. Then ask the user to add a short note about what's working best.
 Q14. "Who are your top one or two competitors, and what do they do better than you?"
 
 SECTION 5 — VISION

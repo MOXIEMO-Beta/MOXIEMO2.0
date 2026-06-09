@@ -2,7 +2,7 @@ import { useState } from "react";
 import { X, Lightbulb, MessageCircle, Headphones } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const HINTS: Record<number, string> = {
+const HINTS_LANE1: Record<number, string> = {
   1: "My clients go from feeling like the best-kept secret in their industry to being recognized as the go-to authority in their niche.",
   2: "I work with early-stage SaaS founders who are generating revenue but struggling to articulate their value proposition clearly.",
   3: "They're posting consistently but getting crickets — no DMs, no inbound leads, no sense that anyone is actually listening.",
@@ -21,18 +21,38 @@ const HINTS: Record<number, string> = {
   16: "I've tried agencies and freelancers before and ended up rewriting most of what they produced. I need something that sounds like me from day one.",
 };
 
+const HINTS_LANE2: Record<number, string> = {
+  1: "We offer done-for-you bookkeeping for small businesses — clients send us their statements each month and get clean books plus a short financial review back within five days.",
+  2: "We solve the 'I don't actually know where my money is going' problem. Without us, owners make pricing and hiring decisions on gut feel and end up undercharging or running out of cash.",
+  3: "Recurring or subscription — clients pay a flat monthly retainer for ongoing service.",
+  4: "Other businesses (B2B) — mostly small service firms and agencies.",
+  5: "Owner-operated service businesses doing $500K–$3M a year, past the scrappy phase but not big enough for a full finance team. They value clarity and hate spreadsheets.",
+  6: "National — we work with clients anywhere in the country and everything is delivered online.",
+  7: "'Will these people actually understand my business, or am I going to spend hours explaining it every month?'",
+  8: "We specialize in one industry instead of taking anyone with a credit card, so we already know the patterns and can spot issues most generalists miss.",
+  9: "'They actually care about our business — it doesn't feel like we're just another account in a queue.'",
+  10: "Warm and approachable but seriously competent. Like a trusted advisor, not a salesperson.",
+  11: "Confused, ignored, or like they're being talked down to for asking a basic question.",
+  12: "Getting found by new customers — referrals have carried us this far but they're not predictable.",
+  13: "Word of mouth and referrals, plus a little Google. Referrals convert best by a wide margin.",
+  14: "Our two main competitors are bigger and have more polished marketing, but their service feels transactional and clients churn after a year.",
+  15: "Add 30 net-new monthly retainer clients and hit $1.2M ARR by next December — with a sales process that doesn't depend on me personally.",
+};
+
 type Props = {
   currentQuestion: number;
   totalQuestions: number;
   firstName?: string;
+  lane?: "lane1" | "lane2" | null;
 };
 
-export function NeedHelpButton({ currentQuestion, totalQuestions, firstName }: Props) {
+export function NeedHelpButton({ currentQuestion, totalQuestions, firstName, lane }: Props) {
   const [showHint, setShowHint] = useState(false);
   const isMobile = useIsMobile();
 
   const safeQ = Math.min(Math.max(currentQuestion, 1), totalQuestions);
-  const hint = HINTS[safeQ];
+  const hintMap = lane === "lane2" ? HINTS_LANE2 : HINTS_LANE1;
+  const hint = hintMap[safeQ];
 
   const mailto = `mailto:hello@buildwithmoxiemo.com?subject=${encodeURIComponent(
     `Discovery Help — Question ${safeQ} of ${totalQuestions}`,
