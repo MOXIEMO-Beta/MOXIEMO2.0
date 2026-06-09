@@ -36,12 +36,10 @@ function PlatformIcon({ channel, className }: { channel: string; className?: str
 function itemChannel(it: any): string {
   if (it._kind === "email") return "email";
   if (it._kind === "content") return "content";
-  if (it._kind === "slot") return it.platform ?? "linkedin";
   return it.platforms?.[0] ?? "linkedin";
 }
 
 function itemStatus(it: any): "draft" | "scheduled" | "published" | "needs" {
-  if (it._kind === "slot") return "needs";
   if (it.status === "published" || it.status === "sent") return "published";
   if (it.status === "scheduled") return "scheduled";
   return "draft";
@@ -118,30 +116,12 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   function itemsForCell(channel: ChannelKey, day: Date): any[] {
-    // Campaign placeholder slots first (so they appear when nothing is scheduled yet)
-    const slotItems: any[] = [];
-    (campaigns ?? []).forEach((c: any) => {
-      const slots: any[] = c?.content_plan?.slots ?? [];
-      slots.forEach((s: any) => {
-        if (s.platform !== channel) return;
-        if (s.date !== ymd(day)) return;
-        if (s.status === "filled") return;
-        slotItems.push({
-          ...s,
-          _kind: "slot",
-          _campaign: c,
-          _text: `${s.contentType} · ${c.name}`,
-          status: "needs_content",
-        });
-      });
-    });
-
     if (channel === "email") {
       const real = emailSends.filter((e: any) => {
         const iso = e.scheduled_for ?? e.sent_at;
         return iso && sameDay(new Date(iso), day);
       }).map((e: any) => ({ ...e, _kind: "email", _text: e.subject ?? e.body?.slice(0, 60) ?? "Email" }));
-      return [...real, ...slotItems];
+      return real;
     }
     if (channel === "content") {
       return contentItems.filter((c: any) => {
@@ -154,7 +134,7 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
       const iso = p.scheduled_for ?? p.published_at;
       return iso && sameDay(new Date(iso), day);
     }).map((p: any) => ({ ...p, _kind: "social", _text: (p.content_by_platform?.[channel] ?? p.topic ?? "Post").slice(0, 60) }));
-    return [...real, ...slotItems];
+    return real;
   }
 
   // Sidebar metrics — this week
@@ -164,14 +144,6 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
   const weekLI = socialPosts.filter((p: any) => (p.platforms ?? []).includes("linkedin") && inWeek(p.scheduled_for ?? p.published_at)).length;
   const weekIG = socialPosts.filter((p: any) => (p.platforms ?? []).includes("instagram") && inWeek(p.scheduled_for ?? p.published_at)).length;
   const weekEmail = emailSends.filter((e: any) => inWeek(e.scheduled_for ?? e.sent_at)).length;
-
-  // "X of Y slots filled this week" — count campaign slots in week
-  const weekSlotsAll = (campaigns ?? []).flatMap((c: any) => (c?.content_plan?.slots ?? []).map((s: any) => ({ ...s, _c: c })))
-    .filter((s: any) => {
-      const d = s.date ? new Date(s.date) : null;
-      return d && d >= weekStart && d < weekEnd;
-    });
-  const weekSlotsFilled = weekSlotsAll.filter((s: any) => s.status === "filled").length;
 
   // Month view cells
   const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
@@ -302,11 +274,11 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                               <button
                                 key={ex.id}
                                 onClick={() => openDayDrawer(d)}
-                                className="w-full h-6 flex items-center gap-1.5 px-1.5 rounded-md border border-border bg-card text-[10px] font-medium hover:bg-muted/40 transition-colors"
+                                className="w-full h-6 flex items-center gap-1.5 pl-1.5 pr-1.5 rounded-md border border-border bg-card text-[10px] font-medium hover:bg-muted/40 transition-colors"
+                                style={{ borderLeft: `3px solid ${color}` }}
                                 title={`${camp?.name ?? "Campaign"} · ${ex.channel}`}
                               >
-                                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                                <PlatformIcon channel={ex.channel} className="w-3 h-3 text-muted-foreground shrink-0" />
+                                <PlatformIcon channel={ex.channel} className="w-3.5 h-3.5 text-foreground shrink-0" />
                                 <span>{CHANNEL_ABBR[ex.channel] ?? ex.channel.slice(0, 2).toUpperCase()}</span>
                               </button>
                             );
@@ -408,10 +380,11 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                                   <button
                                     key={ex.id}
                                     onClick={(e) => { e.stopPropagation(); openDayDrawer(d); }}
-                                    className="w-full flex items-center gap-1 px-1 py-1 rounded border border-border bg-card text-[9px] font-medium leading-snug hover:bg-muted/40"
+                                    className="w-full flex items-center gap-1 pl-1 pr-1 py-1 rounded border border-border bg-card text-[9px] font-medium leading-snug hover:bg-muted/40"
+                                    style={{ borderLeft: `3px solid ${color}` }}
                                     title={`${camp?.name ?? "Campaign"} · ${ex.channel}`}
                                   >
-                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                                    <PlatformIcon channel={ex.channel} className="w-3 h-3 text-foreground shrink-0" />
                                     <span>{CHANNEL_ABBR[ex.channel] ?? ex.channel.slice(0, 2).toUpperCase()}</span>
                                   </button>
                                 );
@@ -482,11 +455,6 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
             Scheduled: <span className="font-medium">{weekScheduled} posts</span>
             {weekScheduled < cadenceTarget && <span className="text-amber-600 inline-flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> behind</span>}
           </div>
-          {weekSlotsAll.length > 0 && (
-            <div className="text-sm mt-1 text-muted-foreground">
-              <span className="font-medium text-foreground">{weekSlotsFilled}</span> of <span className="font-medium text-foreground">{weekSlotsAll.length}</span> slots filled this week
-            </div>
-          )}
 
           <div className="mt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">MOXIEMO suggests</div>
           <div className="bg-accent-soft border border-accent/30 rounded-lg p-3 text-xs">
@@ -518,41 +486,6 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
                     <div className="text-sm">{it._text}</div>
                   </Card>
                 ))}
-              </div>
-            </>
-          ) : openItem && openItem._kind === "slot" ? (
-            <>
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <Target className="w-4 h-4 text-accent" /> {openItem.contentType}
-                </SheetTitle>
-              </SheetHeader>
-              <div className="mt-4 space-y-3 text-sm">
-                <Badge className="bg-accent-soft text-accent">Needs content</Badge>
-                <div className="text-muted-foreground">
-                  Part of <b className="text-foreground">{openItem._campaign?.name}</b><br />
-                  {openItem._campaign?.start_date && openItem._campaign?.end_date && (
-                    <span className="text-xs">
-                      {fmtShort(new Date(openItem._campaign.start_date))} – {fmtShort(new Date(openItem._campaign.end_date))}
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground">Scheduled for: {openItem.date}</div>
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    const params = new URLSearchParams({
-                      platform: openItem.contentType,
-                      campaign: openItem._campaign?.name ?? "",
-                      campaignId: openItem._campaign?.id ?? "",
-                      slotId: openItem.id ?? "",
-                      date: openItem.date ?? "",
-                    });
-                    navigate(`/app/content?${params.toString()}`);
-                  }}
-                >
-                  <Sparkles className="w-4 h-4" /> Generate content for this slot
-                </Button>
               </div>
             </>
           ) : openItem ? (
