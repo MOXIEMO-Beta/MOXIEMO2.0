@@ -154,18 +154,29 @@ export default function Discovery() {
     el.style.height = `${next}px`;
   }, [input]);
 
-  // progress: count assistant questions answered = number of user messages
-  const answered = messages.filter((m) => m.role === "user").length;
   const isLane2 = lane === "lane2";
   const total = isLane2 ? LANE2_TOTAL : TOTAL_QUESTIONS;
   const sections = isLane2 ? LANE2_SECTIONS : SECTIONS;
+  // Latest [Q:N] tag from the most recent assistant message — this is the
+  // source of truth for "which question is the user looking at right now".
+  let latestAssistantQ = 0;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role !== "assistant") continue;
+    const m = Q_TAG_RE.exec(messages[i].content);
+    if (m) { latestAssistantQ = parseInt(m[1], 10) || 0; break; }
+  }
+  // For Lane 2 the chat's Q tag is authoritative — drive the tracker from it
+  // so the "N/15" counter and section label match the chat bubble exactly.
+  // For Lane 1 we keep the historical user-message count.
+  const userMsgCount = messages.filter((m) => m.role === "user").length;
+  const answered = isLane2 ? latestAssistantQ : userMsgCount;
   const answeredDisplay = Math.min(answered, total);
   const progress = Math.min(100, Math.round((answered / total) * 100));
   // Lane 1: Sections 1-5 cover Q1-Q13 (~3 each); section 6 covers Q14-Q15 (optional).
-  // Lane 2: 5 sections covering Q1-Q15 grouped 3-4-4-3-1.
+  // Lane 2: 5 sections — Q1-3 §1, Q4-7 §2, Q8-11 §3, Q12-14 §4, Q15 §5.
   const currentSection = isLane2
-    ? (answered >= 14 ? 5 : answered >= 11 ? 4 : answered >= 7 ? 3 : answered >= 3 ? 2 : 1)
-    : (answered >= REQUIRED_QUESTIONS ? 6 : Math.min(5, Math.floor(answered / 3) + 1));
+    ? (latestAssistantQ >= 15 ? 5 : latestAssistantQ >= 12 ? 4 : latestAssistantQ >= 8 ? 3 : latestAssistantQ >= 4 ? 2 : 1)
+    : (userMsgCount >= REQUIRED_QUESTIONS ? 6 : Math.min(5, Math.floor(userMsgCount / 3) + 1));
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
