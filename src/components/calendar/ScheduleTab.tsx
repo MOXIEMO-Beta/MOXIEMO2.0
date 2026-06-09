@@ -611,10 +611,12 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
               items={dayDrawer.items}
               campaigns={campaigns ?? []}
               onClose={() => setDayDrawer(null)}
-              onCreate={(channel, brief) => {
+              onCreate={(channel, brief, pillar, theme) => {
                 const params = new URLSearchParams();
                 if (channel) params.set("platform", channel);
                 if (brief) params.set("prompt", brief);
+                if (pillar) params.set("pillar", pillar);
+                if (theme) params.set("theme", theme);
                 setDayDrawer(null);
                 navigate(`/app/content?${params.toString()}`);
               }}
@@ -633,7 +635,7 @@ function DayDrawerContent({
   items: any[];
   campaigns: any[];
   onClose: () => void;
-  onCreate: (channel: string, brief: string) => void;
+  onCreate: (channel: string, brief: string, pillar?: string, theme?: string) => void;
 }) {
   // Group by campaign
   const groups = new Map<string, { campaign: any; items: any[] }>();
@@ -702,7 +704,15 @@ function DayDrawerContent({
                       <Button
                         size="sm"
                         className="bg-accent text-accent-foreground hover:bg-accent/90"
-                        onClick={() => onCreate(it.channel, it.content_brief ?? "")}
+                        onClick={() => {
+                          const theme = it.week_theme
+                            ? `Week ${it.week_number} — ${it.week_theme}`
+                            : it.week_number
+                              ? `Week ${it.week_number}`
+                              : "";
+                          const pillar = it.pillar ?? campaign?.pillar ?? "";
+                          onCreate(it.channel, it.content_brief ?? "", pillar, theme);
+                        }}
                       >
                         <Sparkles className="w-3 h-3" /> Create content
                       </Button>
