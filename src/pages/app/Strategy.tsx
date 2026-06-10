@@ -929,6 +929,7 @@ export default function Strategy() {
   const { reportData, isLoading, error } = useReportData();
   const [recoverableSession, setRecoverableSession] = useState<{ id: string; messageCount: number } | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [synthesisError, setSynthesisError] = useState<"SYNTHESIS_TIMEOUT" | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -959,6 +960,15 @@ export default function Strategy() {
   const handleGenerateFromSession = async () => {
     if (!recoverableSession) return;
     setGenerating(true);
+    setSynthesisError(null);
+    let timedOut = false;
+    const abortController = new AbortController();
+    const synthesisTimeout = window.setTimeout(() => {
+      timedOut = true;
+      setGenerating(false);
+      setSynthesisError("SYNTHESIS_TIMEOUT");
+      abortController.abort();
+    }, 200000);
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -968,35 +978,21 @@ export default function Strategy() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
           "Authorization": `Bearer ${authToken}`,
           "apikey": supabaseKey,
         },
-        body: JSON.stringify({ sessionId: recoverableSession.id }),
+        signal: abortController.signal,
+        body: JSON.stringify({ sessionId: recoverableSession.id, responseMode: "json" }),
       });
-      if (!resp.ok || !resp.body) throw new Error(`Synthesis failed: ${resp.status}`);
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let data: any = null;
-      let streamError: string | null = null;
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6).trim();
-          if (!payload) continue;
-          try {
-            const evt = JSON.parse(payload);
-            if (evt.type === "complete") data = evt.strategy;
-            else if (evt.type === "error") streamError = evt.message || "Stream error";
-          } catch { /* heartbeat */ }
-        }
+      if (timedOut) return;
+      const payload = await resp.json().catch(() => null);
+      if (!resp.ok) {
+        if (resp.status === 408 || payload?.error === "SYNTHESIS_TIMEOUT") throw new Error("SYNTHESIS_TIMEOUT");
+        throw new Error(payload?.error || `Synthesis failed: ${resp.status}`);
       }
-      if (streamError) throw new Error(streamError);
+      if (payload?.error === "SYNTHESIS_TIMEOUT") throw new Error("SYNTHESIS_TIMEOUT");
+      const data = payload?.strategy;
       if (!data) throw new Error("Stream ended before strategy was generated");
       const { error: upsertErr } = await supabase
         .from("strategies")
@@ -1007,10 +1003,16 @@ export default function Strategy() {
       setStrategy(fresh);
       setRecoverableSession(null);
     } catch (e: any) {
+      if (timedOut) return;
       console.error(e);
-      toast.error(aiErrorMessage("discovery", e));
+      if (e?.message === "SYNTHESIS_TIMEOUT") {
+        setSynthesisError("SYNTHESIS_TIMEOUT");
+      } else {
+        toast.error(aiErrorMessage("discovery", e));
+      }
     } finally {
-      setGenerating(false);
+      window.clearTimeout(synthesisTimeout);
+      if (!timedOut) setGenerating(false);
     }
   };
 
