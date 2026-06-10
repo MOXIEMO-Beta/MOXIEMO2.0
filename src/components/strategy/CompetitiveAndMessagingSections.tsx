@@ -156,13 +156,33 @@ export function CompetitiveAndMessagingSections() {
     const hasAny = ef.antiClient || ef.alternatives || ef.whyYouWin;
     if (hasAny) { inferredOnceRef.current = true; return; }
 
-    const inferredAntiClient = strategy.ideal_client
-      ? `Founders who are NOT ${String(strategy.ideal_client).toLowerCase()}`
+    // Prefer competitivePositioning produced by synthesize-strategy.
+    const cp = ef.competitivePositioning || {};
+    const joinList = (arr: any): string =>
+      Array.isArray(arr) ? arr.filter((x) => typeof x === "string" && x.trim()).join("; ") : "";
+
+    const competitorsFromDiffs = Array.isArray(cp.differentiators)
+      ? cp.differentiators
+          .map((d: any) => (d && typeof d.competitors === "string" ? d.competitors.trim() : ""))
+          .filter(Boolean)
+          .join("; ")
       : "";
-    const inferredAlternatives = strategy.pain_point
-      ? "DIY approaches, doing nothing, or hiring generalist help"
-      : "";
-    const inferredWhyYouWin = strategy.positioning_statement || "";
+
+    const inferredAntiClient =
+      joinList(cp.doNotCompeteOn) ||
+      strategy.anti_positioning ||
+      (strategy.ideal_client
+        ? `Founders who are NOT ${String(strategy.ideal_client).toLowerCase()}`
+        : "");
+    const inferredAlternatives =
+      competitorsFromDiffs ||
+      cp.marketGap ||
+      (strategy.pain_point ? "DIY approaches, doing nothing, or hiring generalist help" : "");
+    const inferredWhyYouWin =
+      joinList(cp.competitiveAdvantages) ||
+      cp.yourPosition ||
+      strategy.positioning_statement ||
+      "";
 
     if (inferredAntiClient || inferredAlternatives || inferredWhyYouWin) {
       const next = {
