@@ -35,7 +35,7 @@ const PIECE_LIBRARY: Record<string, string> = {
     "Write a 6–10 tweet thread based on the most valuable insight or framework in the transcript. Number each tweet (1/, 2/, ...). Each tweet under 280 characters. Hook tweet must stop the scroll.",
 };
 
-function buildPrompt(opts: { transcript: string; sourceName: string; pieces: string[]; strategy: any }) {
+function buildPrompt(opts: { transcript: string; sourceName: string; pieces: string[]; strategy: any; pillar?: string | null }) {
   const s = opts.strategy ?? {};
   const voice = Array.isArray(s.voice_attributes) ? s.voice_attributes.join(", ") : (s.voice_attributes ?? "");
   const pillarsList: string[] = Array.isArray(s.content_pillars)
@@ -50,6 +50,10 @@ function buildPrompt(opts: { transcript: string; sourceName: string; pieces: str
     })
     .join("\n\n");
 
+  const pillarBlock = opts.pillar
+    ? `\n\nANCHOR PILLAR: ${opts.pillar}\nFrame all extracted insights and generated content through the lens of this pillar and the user's positioning. Every piece of content should connect back to this strategic theme. If the transcript contains material that fits this pillar, prioritise it. If the transcript contains material outside this pillar, still extract it but frame it through the pillar angle where possible.`
+    : "";
+
   return `ABOUT THIS FOUNDER:
 Positioning: ${s.positioning_statement ?? "(not set)"}
 Ideal client: ${s.ideal_client ?? "(not set)"}
@@ -59,7 +63,7 @@ Brand voice: ${voice || "(not set)"}
 They are NOT: ${s.anti_positioning ?? "(not set)"}
 
 CONTENT PILLARS:
-${pillarsBlock}
+${pillarsBlock}${pillarBlock}
 
 SOURCE TRANSCRIPT (name: "${opts.sourceName}"):
 """
@@ -108,7 +112,7 @@ function tryParseJsonArray(text: string): { type: string; body: string }[] | nul
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { transcript, sourceName, pieces, strategy } = await req.json();
+    const { transcript, sourceName, pieces, strategy, pillar } = await req.json();
     if (!transcript || typeof transcript !== "string" || transcript.trim().length < 100) {
       return new Response(JSON.stringify({ error: "Transcript text is required (min 100 chars)." }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -138,6 +142,7 @@ Deno.serve(async (req) => {
       sourceName: String(sourceName ?? "transcript").slice(0, 200),
       pieces: pieces.map((p: any) => String(p)).slice(0, 12),
       strategy: strategy ?? null,
+      pillar: typeof pillar === "string" && pillar.trim() ? pillar.trim().slice(0, 200) : null,
     });
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
