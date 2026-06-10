@@ -136,8 +136,9 @@ function computeStrength(transcript: string, parsed: any) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge, brandContext, lane } = await req.json();
-    const isLane2 = lane === "lane2";
+    const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge, brandContext, lane, responseMode } = await req.json();
+    let effectiveLane = lane;
+    const wantsJsonResponse = responseMode === "json" || (req.headers.get("accept") || "").includes("application/json");
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
@@ -158,8 +159,8 @@ Deno.serve(async (req) => {
           if (userId) {
             // Find the most recent session (or the one passed in)
             const query = sessionId
-              ? `id=eq.${sessionId}&select=messages,status`
-              : `user_id=eq.${userId}&order=updated_at.desc&limit=1&select=id,messages,status`;
+              ? `id=eq.${sessionId}&select=messages,status,lane`
+              : `user_id=eq.${userId}&order=updated_at.desc&limit=1&select=id,messages,status,lane`;
             const sessRes = await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?${query}`, {
               headers: {
                 apikey: serviceKey,
@@ -174,6 +175,9 @@ Deno.serve(async (req) => {
                 transcript = messages
                   .map((m) => `${m.role === "user" ? "USER" : "MOXIEMO"}: ${m.content}`)
                   .join("\n\n");
+              }
+              if (!effectiveLane && (session?.lane === "lane1" || session?.lane === "lane2")) {
+                effectiveLane = session.lane;
               }
               // Mark session completed if not already
               const sid = session?.id ?? sessionId;
@@ -198,6 +202,8 @@ Deno.serve(async (req) => {
     }
 
     if (!transcript) throw new Error("No discovery transcript available");
+
+    const isLane2 = effectiveLane === "lane2";
 
     let userContent = isLane2
       ? "Here is a complete Discovery conversation with the founder or operator of a SERVICE-BASED BUSINESS or MARKETPLACE. The strategy must be for the BUSINESS BRAND — no personal/expertise framing.\n\nDiscovery transcript:\n\n" + transcript
@@ -455,6 +461,20 @@ Deno.serve(async (req) => {
       "success_definition",
     ];
 
+    const finishStrategy = (parsed: any) => {
+      try {
+        const strength = computeStrength(transcript || "", parsed);
+        parsed.strength_score = strength.score;
+        parsed.strength_breakdown = strength.breakdown;
+        parsed.weak_areas = strength.weak_areas;
+        parsed.strong_areas = strength.strong_areas;
+      } catch (e) {
+        console.error("strength scoring failed", e);
+      }
+      parsed.strategy_lane = isLane2 ? "service" : "expertise";
+      return parsed;
+    };
+
     // Single attempt: open the Anthropic streaming call, drain it (forwarding
     // progress events to the client), and return the accumulated tool JSON.
     // Uses a 180s AbortController to give Lane 2 (longer outputs) enough headroom.
@@ -523,6 +543,10 @@ Deno.serve(async (req) => {
         try { reader.releaseLock(); } catch {}
         return { ok: true, toolJson };
       } catch (e) {
+        const err = e as Error;
+        if (err?.name === "AbortError") {
+          return { ok: false, status: 408, detail: "SYNTHESIS_TIMEOUT" };
+        }
         return { ok: false, status: 0, detail: String(e) };
       } finally {
         clearTimeout(timer);
@@ -550,11 +574,70 @@ Deno.serve(async (req) => {
       return { ok: true, parsed };
     }
 
+    async function synthesizeWithRetry(onProgress: (bytes: number) => void) {
+      let attempt = await callAnthropicOnce({ onProgress });
+      if (!attempt.ok && attempt.status === 408) {
+        return { ok: false, status: 408, code: "SYNTHESIS_TIMEOUT", message: "SYNTHESIS_TIMEOUT" } as const;
+      }
+
+      let validation = attempt.ok
+        ? validateStrategy(attempt.toolJson)
+        : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
+
+      if (!validation.ok) {
+        console.warn("synthesize-strategy: attempt 1 failed —", (validation as any).reason, "— retrying once");
+        onProgress(0);
+        if (attempt.ok === false && (attempt.status === 429 || attempt.status === 402)) {
+          notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status, detail: attempt.detail });
+        }
+        attempt = await callAnthropicOnce({ onProgress });
+        if (!attempt.ok && attempt.status === 408) {
+          return { ok: false, status: 408, code: "SYNTHESIS_TIMEOUT", message: "SYNTHESIS_TIMEOUT" } as const;
+        }
+        validation = attempt.ok
+          ? validateStrategy(attempt.toolJson)
+          : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
+      }
+
+      if (!validation.ok) {
+        console.error("synthesize-strategy: both attempts failed —", (validation as any).reason);
+        if (attempt.ok === false) {
+          notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status || 0, detail: attempt.detail });
+        }
+        return {
+          ok: false,
+          status: attempt.ok ? 500 : attempt.status || 500,
+          code: "SYNTHESIS_FAILED",
+          message: "Strategy output was longer than expected. Please retry — this usually resolves on the second attempt.",
+        } as const;
+      }
+
+      return { ok: true, strategy: finishStrategy(validation.parsed) } as const;
+    }
+
+    if (wantsJsonResponse) {
+      const result = await synthesizeWithRetry(() => {});
+      if (!result.ok) {
+        const status = result.code === "SYNTHESIS_TIMEOUT" ? 408 : result.status;
+        const error = result.code === "SYNTHESIS_TIMEOUT" ? "SYNTHESIS_TIMEOUT" : result.message;
+        return new Response(JSON.stringify({ error }), {
+          status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ strategy: result.strategy }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
       async start(controller) {
+        let streamClosed = false;
         const sendEvent = (obj: any) => {
+          if (streamClosed) return;
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
         };
 
@@ -569,59 +652,23 @@ Deno.serve(async (req) => {
 
         try {
           const onProgress = (bytes: number) => sendEvent({ type: "progress", bytes });
+          const result = await synthesizeWithRetry(onProgress);
 
-          // Attempt 1
-          let attempt = await callAnthropicOnce({ onProgress });
-          let validation = attempt.ok
-            ? validateStrategy(attempt.toolJson)
-            : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
-
-          // Auto-retry once if upstream failed OR output was incomplete/truncated.
-          if (!validation.ok) {
-            console.warn("synthesize-strategy: attempt 1 failed —", (validation as any).reason, "— retrying once");
-            sendEvent({ type: "progress", bytes: 0, retry: true });
-            if (attempt.ok === false && (attempt.status === 429 || attempt.status === 402)) {
-              notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status, detail: attempt.detail });
-            }
-            attempt = await callAnthropicOnce({ onProgress });
-            validation = attempt.ok
-              ? validateStrategy(attempt.toolJson)
-              : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
-          }
-
-          if (!validation.ok) {
-            console.error("synthesize-strategy: both attempts failed —", (validation as any).reason);
-            if (attempt.ok === false) {
-              notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status || 0, detail: attempt.detail });
-            }
-            sendEvent({ type: "error", message: "Strategy output was longer than expected. Please retry — this usually resolves on the second attempt." });
-            controller.close();
+          if (!result.ok) {
+            sendEvent({ type: "error", message: result.code === "SYNTHESIS_TIMEOUT" ? "SYNTHESIS_TIMEOUT" : result.message });
             return;
           }
 
-          const parsed = validation.parsed;
-
-          try {
-            const strength = computeStrength(transcript || "", parsed);
-            parsed.strength_score = strength.score;
-            parsed.strength_breakdown = strength.breakdown;
-            parsed.weak_areas = strength.weak_areas;
-            parsed.strong_areas = strength.strong_areas;
-          } catch (e) {
-            console.error("strength scoring failed", e);
-          }
-
-          // Tag the strategy with the originating discovery lane so the
-          // Strategy page can render the correct labels and sections.
-          parsed.strategy_lane = isLane2 ? "service" : "expertise";
-
-          sendEvent({ type: "complete", strategy: parsed });
+          sendEvent({ type: "complete", strategy: result.strategy });
         } catch (e) {
           console.error("stream error", e);
           try { sendEvent({ type: "error", message: String(e) }); } catch {}
         } finally {
           clearInterval(heartbeat);
-          controller.close();
+          if (!streamClosed) {
+            streamClosed = true;
+            try { controller.close(); } catch {}
+          }
         }
       },
     });
