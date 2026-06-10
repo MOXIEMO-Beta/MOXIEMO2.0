@@ -1611,9 +1611,19 @@ function RepurposeTab({
   const [copyIdx, setCopyIdx] = useState<number | null>(null);
   const [savedIdx, setSavedIdx] = useState<number | null>(null);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
+  const [activePillar, setActivePillar] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const allSelected = selected.size === REPURPOSE_PIECES.length;
+
+  const repurposePillars: string[] = useMemo(() => {
+    const raw = strategy?.content_pillars;
+    if (!raw || !Array.isArray(raw)) return [];
+    return raw
+      .map((p: any) => (typeof p === "string" ? p : p?.name ?? p?.title ?? ""))
+      .filter(Boolean)
+      .slice(0, 5);
+  }, [strategy]);
 
   function toggleSelect(label: string) {
     setSelected((prev) => {
@@ -1684,6 +1694,7 @@ function RepurposeTab({
           sourceName: file?.name ?? "transcript",
           pieces: Array.from(selected),
           strategy,
+          pillar: activePillar,
         },
       });
       if (handleGenerationResponse(data, error)) return;
