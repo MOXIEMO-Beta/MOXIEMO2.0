@@ -635,7 +635,9 @@ Deno.serve(async (req) => {
 
     const stream = new ReadableStream({
       async start(controller) {
+        let streamClosed = false;
         const sendEvent = (obj: any) => {
+          if (streamClosed) return;
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(obj)}\n\n`));
         };
 
@@ -654,7 +656,6 @@ Deno.serve(async (req) => {
 
           if (!result.ok) {
             sendEvent({ type: "error", message: result.code === "SYNTHESIS_TIMEOUT" ? "SYNTHESIS_TIMEOUT" : result.message });
-            controller.close();
             return;
           }
 
@@ -664,7 +665,10 @@ Deno.serve(async (req) => {
           try { sendEvent({ type: "error", message: String(e) }); } catch {}
         } finally {
           clearInterval(heartbeat);
-          controller.close();
+          if (!streamClosed) {
+            streamClosed = true;
+            try { controller.close(); } catch {}
+          }
         }
       },
     });
