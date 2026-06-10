@@ -1027,9 +1027,13 @@ export default function Strategy() {
         <div className="h-16 w-16 rounded-2xl bg-foreground mx-auto mb-6 flex items-center justify-center"><Compass className="h-7 w-7 text-accent" /></div>
         {recoverableSession ? (
           <>
-            <h1 className="font-display text-4xl mb-3">Your Discovery is ready</h1>
+            <h1 className="font-display text-4xl mb-3">
+              {synthesisError === "SYNTHESIS_TIMEOUT" ? "Strategy generation is taking longer than expected." : "Your Discovery is ready"}
+            </h1>
             <p className="text-muted-foreground mb-8">
-              We found your previous Discovery conversation ({recoverableSession.messageCount} messages). Generate your strategy now — no need to redo Discovery.
+              {synthesisError === "SYNTHESIS_TIMEOUT"
+                ? "Your Discovery answers are saved. Click below to try again — it sometimes takes a second attempt."
+                : `We found your previous Discovery conversation (${recoverableSession.messageCount} messages). Generate your strategy now — no need to redo Discovery.`}
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <Button
@@ -1038,11 +1042,17 @@ export default function Strategy() {
                 className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg"
               >
                 {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                {generating ? "Generating…" : "Generate My Strategy"}
+                {generating ? "Generating…" : synthesisError === "SYNTHESIS_TIMEOUT" ? "Try again" : "Generate My Strategy"}
               </Button>
-              <Button asChild variant="outline" className="h-11 rounded-lg">
-                <Link to="/app/discovery">Review Discovery</Link>
-              </Button>
+              {synthesisError === "SYNTHESIS_TIMEOUT" ? (
+                <Link to="/app/discovery" className="inline-flex h-11 items-center text-sm font-medium text-foreground underline-offset-4 hover:underline">
+                  Review my Discovery answers
+                </Link>
+              ) : (
+                <Button asChild variant="outline" className="h-11 rounded-lg">
+                  <Link to="/app/discovery">Review Discovery</Link>
+                </Button>
+              )}
             </div>
           </>
         ) : (
