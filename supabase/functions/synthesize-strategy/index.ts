@@ -136,8 +136,9 @@ function computeStrength(transcript: string, parsed: any) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge, brandContext, lane } = await req.json();
-    const isLane2 = lane === "lane2";
+    const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge, brandContext, lane, responseMode } = await req.json();
+    let effectiveLane = lane;
+    const wantsJsonResponse = responseMode === "json" || (req.headers.get("accept") || "").includes("application/json");
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
@@ -158,8 +159,8 @@ Deno.serve(async (req) => {
           if (userId) {
             // Find the most recent session (or the one passed in)
             const query = sessionId
-              ? `id=eq.${sessionId}&select=messages,status`
-              : `user_id=eq.${userId}&order=updated_at.desc&limit=1&select=id,messages,status`;
+              ? `id=eq.${sessionId}&select=messages,status,lane`
+              : `user_id=eq.${userId}&order=updated_at.desc&limit=1&select=id,messages,status,lane`;
             const sessRes = await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?${query}`, {
               headers: {
                 apikey: serviceKey,
@@ -174,6 +175,9 @@ Deno.serve(async (req) => {
                 transcript = messages
                   .map((m) => `${m.role === "user" ? "USER" : "MOXIEMO"}: ${m.content}`)
                   .join("\n\n");
+              }
+              if (!effectiveLane && (session?.lane === "lane1" || session?.lane === "lane2")) {
+                effectiveLane = session.lane;
               }
               // Mark session completed if not already
               const sid = session?.id ?? sessionId;
@@ -198,6 +202,8 @@ Deno.serve(async (req) => {
     }
 
     if (!transcript) throw new Error("No discovery transcript available");
+
+    const isLane2 = effectiveLane === "lane2";
 
     let userContent = isLane2
       ? "Here is a complete Discovery conversation with the founder or operator of a SERVICE-BASED BUSINESS or MARKETPLACE. The strategy must be for the BUSINESS BRAND — no personal/expertise framing.\n\nDiscovery transcript:\n\n" + transcript
