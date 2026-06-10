@@ -461,6 +461,20 @@ Deno.serve(async (req) => {
       "success_definition",
     ];
 
+    const finishStrategy = (parsed: any) => {
+      try {
+        const strength = computeStrength(transcript || "", parsed);
+        parsed.strength_score = strength.score;
+        parsed.strength_breakdown = strength.breakdown;
+        parsed.weak_areas = strength.weak_areas;
+        parsed.strong_areas = strength.strong_areas;
+      } catch (e) {
+        console.error("strength scoring failed", e);
+      }
+      parsed.strategy_lane = isLane2 ? "service" : "expertise";
+      return parsed;
+    };
+
     // Single attempt: open the Anthropic streaming call, drain it (forwarding
     // progress events to the client), and return the accumulated tool JSON.
     // Uses a 180s AbortController to give Lane 2 (longer outputs) enough headroom.
@@ -529,6 +543,10 @@ Deno.serve(async (req) => {
         try { reader.releaseLock(); } catch {}
         return { ok: true, toolJson };
       } catch (e) {
+        const err = e as Error;
+        if (err?.name === "AbortError") {
+          return { ok: false, status: 408, detail: "SYNTHESIS_TIMEOUT" };
+        }
         return { ok: false, status: 0, detail: String(e) };
       } finally {
         clearTimeout(timer);
