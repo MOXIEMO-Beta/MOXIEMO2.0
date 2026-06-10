@@ -1845,12 +1845,43 @@ function RepurposeTab({
         </div>
       </Card>
 
+      {/* Pillar selector (optional) */}
+      {repurposePillars.length > 0 && (
+        <Card className="p-6 border-border shadow-soft space-y-3">
+          <div className="text-xs font-medium uppercase tracking-wider text-accent">
+            Anchor to a content pillar (optional)
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+            {repurposePillars.map((p) => {
+              const active = activePillar === p;
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setActivePillar(active ? null : p)}
+                  className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
+                    active
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border text-foreground hover:border-foreground/30"
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            When selected, MOXIEMO frames extracted insights through this pillar and your brand positioning.
+          </p>
+        </Card>
+      )}
+
       {/* Step 2 — Select */}
       <Card className="p-6 border-border shadow-soft space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Step 2</div>
-            <label className="text-sm font-medium text-foreground block">Select what to generate</label>
+            <label className="text-sm font-medium text-foreground block">Select the type of content you want to generate</label>
           </div>
           <button
             type="button"
