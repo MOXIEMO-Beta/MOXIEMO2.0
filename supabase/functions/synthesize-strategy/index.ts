@@ -574,6 +574,63 @@ Deno.serve(async (req) => {
       return { ok: true, parsed };
     }
 
+    async function synthesizeWithRetry(onProgress: (bytes: number) => void) {
+      let attempt = await callAnthropicOnce({ onProgress });
+      if (!attempt.ok && attempt.status === 408) {
+        return { ok: false, status: 408, code: "SYNTHESIS_TIMEOUT", message: "SYNTHESIS_TIMEOUT" } as const;
+      }
+
+      let validation = attempt.ok
+        ? validateStrategy(attempt.toolJson)
+        : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
+
+      if (!validation.ok) {
+        console.warn("synthesize-strategy: attempt 1 failed —", (validation as any).reason, "— retrying once");
+        onProgress(0);
+        if (attempt.ok === false && (attempt.status === 429 || attempt.status === 402)) {
+          notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status, detail: attempt.detail });
+        }
+        attempt = await callAnthropicOnce({ onProgress });
+        if (!attempt.ok && attempt.status === 408) {
+          return { ok: false, status: 408, code: "SYNTHESIS_TIMEOUT", message: "SYNTHESIS_TIMEOUT" } as const;
+        }
+        validation = attempt.ok
+          ? validateStrategy(attempt.toolJson)
+          : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
+      }
+
+      if (!validation.ok) {
+        console.error("synthesize-strategy: both attempts failed —", (validation as any).reason);
+        if (attempt.ok === false) {
+          notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status || 0, detail: attempt.detail });
+        }
+        return {
+          ok: false,
+          status: attempt.ok ? 500 : attempt.status || 500,
+          code: "SYNTHESIS_FAILED",
+          message: "Strategy output was longer than expected. Please retry — this usually resolves on the second attempt.",
+        } as const;
+      }
+
+      return { ok: true, strategy: finishStrategy(validation.parsed) } as const;
+    }
+
+    if (wantsJsonResponse) {
+      const result = await synthesizeWithRetry(() => {});
+      if (!result.ok) {
+        const status = result.code === "SYNTHESIS_TIMEOUT" ? 408 : result.status;
+        const error = result.code === "SYNTHESIS_TIMEOUT" ? "SYNTHESIS_TIMEOUT" : result.message;
+        return new Response(JSON.stringify({ error }), {
+          status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ strategy: result.strategy }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
