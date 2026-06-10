@@ -650,53 +650,15 @@ Deno.serve(async (req) => {
 
         try {
           const onProgress = (bytes: number) => sendEvent({ type: "progress", bytes });
+          const result = await synthesizeWithRetry(onProgress);
 
-          // Attempt 1
-          let attempt = await callAnthropicOnce({ onProgress });
-          let validation = attempt.ok
-            ? validateStrategy(attempt.toolJson)
-            : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
-
-          // Auto-retry once if upstream failed OR output was incomplete/truncated.
-          if (!validation.ok) {
-            console.warn("synthesize-strategy: attempt 1 failed —", (validation as any).reason, "— retrying once");
-            sendEvent({ type: "progress", bytes: 0, retry: true });
-            if (attempt.ok === false && (attempt.status === 429 || attempt.status === 402)) {
-              notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status, detail: attempt.detail });
-            }
-            attempt = await callAnthropicOnce({ onProgress });
-            validation = attempt.ok
-              ? validateStrategy(attempt.toolJson)
-              : ({ ok: false, reason: `upstream ${attempt.status}: ${attempt.detail.slice(0, 200)}` } as const);
-          }
-
-          if (!validation.ok) {
-            console.error("synthesize-strategy: both attempts failed —", (validation as any).reason);
-            if (attempt.ok === false) {
-              notifyAdminCritical(req, { functionName: "synthesize-strategy", status: attempt.status || 0, detail: attempt.detail });
-            }
-            sendEvent({ type: "error", message: "Strategy output was longer than expected. Please retry — this usually resolves on the second attempt." });
+          if (!result.ok) {
+            sendEvent({ type: "error", message: result.code === "SYNTHESIS_TIMEOUT" ? "SYNTHESIS_TIMEOUT" : result.message });
             controller.close();
             return;
           }
 
-          const parsed = validation.parsed;
-
-          try {
-            const strength = computeStrength(transcript || "", parsed);
-            parsed.strength_score = strength.score;
-            parsed.strength_breakdown = strength.breakdown;
-            parsed.weak_areas = strength.weak_areas;
-            parsed.strong_areas = strength.strong_areas;
-          } catch (e) {
-            console.error("strength scoring failed", e);
-          }
-
-          // Tag the strategy with the originating discovery lane so the
-          // Strategy page can render the correct labels and sections.
-          parsed.strategy_lane = isLane2 ? "service" : "expertise";
-
-          sendEvent({ type: "complete", strategy: parsed });
+          sendEvent({ type: "complete", strategy: result.strategy });
         } catch (e) {
           console.error("stream error", e);
           try { sendEvent({ type: "error", message: String(e) }); } catch {}
