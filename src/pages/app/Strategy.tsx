@@ -1005,7 +1005,8 @@ export default function Strategy() {
     } catch (e: any) {
       if (timedOut) return;
       console.error(e);
-      if (e?.message === "SYNTHESIS_TIMEOUT") {
+      const droppedConnection = e?.name === "TypeError" || /failed to fetch|connection|network/i.test(e?.message || "");
+      if (e?.message === "SYNTHESIS_TIMEOUT" || droppedConnection) {
         setSynthesisError("SYNTHESIS_TIMEOUT");
       } else {
         toast.error(aiErrorMessage("discovery", e));
