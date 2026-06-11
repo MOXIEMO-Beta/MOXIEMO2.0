@@ -804,6 +804,10 @@ ${transcript}`,
     if (wantsJsonResponse) {
       const result = await synthesizeWithRetry(() => {});
       if (!result.ok) {
+        await patchSession({
+          synthesis_status: "failed",
+          synthesis_last_error: (result.code === "SYNTHESIS_TIMEOUT" ? "SYNTHESIS_TIMEOUT" : result.message).slice(0, 500),
+        });
         const status = result.code === "SYNTHESIS_TIMEOUT" ? 408 : result.status;
         const error = result.code === "SYNTHESIS_TIMEOUT" ? "SYNTHESIS_TIMEOUT" : result.message;
         return new Response(JSON.stringify({ error }), {
@@ -811,6 +815,12 @@ ${transcript}`,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      await saveStrategyForUser(result.strategy, { revenueRange, biggestChallenge });
+      await patchSession({
+        synthesis_status: "completed",
+        synthesis_completed_at: new Date().toISOString(),
+        synthesis_last_error: null,
+      });
       return new Response(JSON.stringify({ strategy: result.strategy }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -841,13 +851,27 @@ ${transcript}`,
           const result = await synthesizeWithRetry(onProgress);
 
           if (!result.ok) {
+            await patchSession({
+              synthesis_status: "failed",
+              synthesis_last_error: (result.code === "SYNTHESIS_TIMEOUT" ? "SYNTHESIS_TIMEOUT" : result.message).slice(0, 500),
+            });
             sendEvent({ type: "error", message: result.code === "SYNTHESIS_TIMEOUT" ? "SYNTHESIS_TIMEOUT" : result.message });
             return;
           }
 
+          await saveStrategyForUser(result.strategy, { revenueRange, biggestChallenge });
+          await patchSession({
+            synthesis_status: "completed",
+            synthesis_completed_at: new Date().toISOString(),
+            synthesis_last_error: null,
+          });
           sendEvent({ type: "complete", strategy: result.strategy });
         } catch (e) {
           console.error("stream error", e);
+          await patchSession({
+            synthesis_status: "failed",
+            synthesis_last_error: String(e).slice(0, 500),
+          });
           try { sendEvent({ type: "error", message: String(e) }); } catch {}
         } finally {
           clearInterval(heartbeat);
