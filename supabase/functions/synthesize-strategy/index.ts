@@ -527,9 +527,9 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             model: "claude-sonnet-4-5",
-            // Lane 2 outputs are longer (extra service-business sections),
-            // so give it more headroom. Lane 1 stays at 16384.
-            max_tokens: isLane2 ? 24000 : 16384,
+            // Lane 2 outputs are longer (extra service-business sections);
+            // Lane 1 scales dynamically with transcript length (computed above).
+            max_tokens: maxTokensForCall,
             stream: true,
             system: isLane2 ? SYSTEM_LANE2 : SYSTEM,
             messages: [{ role: "user", content: userContent }],
