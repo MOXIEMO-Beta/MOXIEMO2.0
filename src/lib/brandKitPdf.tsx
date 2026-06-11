@@ -255,22 +255,18 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
 
         <View style={{ flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 48 }}>
           {(() => {
+            // 2-col x 3-row even grid. Every block is the same size.
             const cols = data.colors.slice(0, 6);
-            // Layout: row 1 = hero (100%, 120h), rows 2/3 = 2-col grid (50%, 110h each).
-            // Fits up to 6 swatches on a single page with the header above.
             return cols.map((c, i) => {
               const ink = contrastOn(c.hex);
-              const isHero = i === 0;
-              const width = isHero ? "100%" : "50%";
-              const height = isHero ? 120 : 110;
               return (
                 <View
                   key={c.hex + i}
                   style={{
-                    width,
-                    height,
+                    width: "50%",
+                    height: 165,
                     backgroundColor: c.hex,
-                    padding: 16,
+                    padding: 18,
                     justifyContent: "space-between",
                   }}
                   wrap={false}
@@ -279,7 +275,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
                     {(c.role || `TONE ${String.fromCharCode(64 + i + 1)}`).toUpperCase()}
                   </Text>
                   <View>
-                    <Text style={{ fontSize: isHero ? 24 : 16, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
+                    <Text style={{ fontSize: 20, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
                       {c.hex.toUpperCase()}
                     </Text>
                     <Text style={{ fontSize: 9, color: ink, opacity: 0.85, marginTop: 2, fontFamily: bodyFam }}>
