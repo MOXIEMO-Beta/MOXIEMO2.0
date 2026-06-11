@@ -755,11 +755,11 @@ export default function BrandKit() {
           )}
 
           {step === "capture" && (
-            <section className="max-w-xl mx-auto">
+            <section className="max-w-2xl mx-auto">
               <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] mb-6 text-center" style={{ color: "#FF6B5C" }}>
                 ONE LAST STEP
               </p>
-              <h1 className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.03em] mb-4 text-center">
+              <h1 className="text-3xl md:text-4xl font-bold leading-[1.1] tracking-[-0.03em] mb-5 text-center md:whitespace-nowrap">
                 Where should we send your kit?
               </h1>
               <p className="text-lg text-[#3c3f50] leading-relaxed mb-10 text-center">
