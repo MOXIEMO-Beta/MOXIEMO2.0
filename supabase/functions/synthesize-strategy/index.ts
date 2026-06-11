@@ -145,6 +145,7 @@ Deno.serve(async (req) => {
     // Source of truth = discovery_sessions.messages. Fall back to client transcript if DB read fails.
     let transcript: string = incomingTranscript || "";
     let resolvedSessionId: string | null = sessionId ?? null;
+    let resolvedUserId: string | null = null;
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -177,10 +178,11 @@ Deno.serve(async (req) => {
           const u = await userRes.json();
           const userId = u?.id;
           if (userId) {
+            resolvedUserId = userId;
             // Find the most recent session (or the one passed in)
             const query = sessionId
-              ? `id=eq.${sessionId}&select=messages,status,lane`
-              : `user_id=eq.${userId}&order=updated_at.desc&limit=1&select=id,messages,status,lane`;
+              ? `id=eq.${sessionId}&select=id,messages,status,lane,user_id`
+              : `user_id=eq.${userId}&order=updated_at.desc&limit=1&select=id,messages,status,lane,user_id`;
             const sessRes = await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?${query}`, {
               headers: {
                 apikey: serviceKey,
@@ -199,6 +201,7 @@ Deno.serve(async (req) => {
               if (!effectiveLane && (session?.lane === "lane1" || session?.lane === "lane2")) {
                 effectiveLane = session.lane;
               }
+              if (session?.user_id) resolvedUserId = session.user_id;
               // Mark session completed if not already
               const sid = session?.id ?? sessionId;
               if (sid) resolvedSessionId = sid;
@@ -223,6 +226,30 @@ Deno.serve(async (req) => {
     }
 
     if (!transcript) throw new Error("No discovery transcript available");
+
+    async function saveStrategyForUser(strategy: any, opts: { revenueRange?: string; biggestChallenge?: string }) {
+      if (!supabaseUrl || !serviceKey || !resolvedUserId) return;
+      const rawFoundation = {
+        ...strategy,
+        revenueRange: opts.revenueRange,
+        biggestChallenge: opts.biggestChallenge,
+      };
+      try {
+        const res = await fetch(`${supabaseUrl}/rest/v1/strategies?on_conflict=user_id`, {
+          method: "POST",
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates,return=minimal",
+          },
+          body: JSON.stringify({ user_id: resolvedUserId, ...strategy, raw_foundation: rawFoundation }),
+        });
+        if (!res.ok) console.warn("strategy upsert failed:", res.status, await res.text().catch(() => ""));
+      } catch (e) {
+        console.warn("strategy upsert threw:", e);
+      }
+    }
 
     // Mark synthesis as in_progress + bump attempts up front.
     await patchSession({
