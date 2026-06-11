@@ -438,7 +438,8 @@ Deno.serve(async (req) => {
     const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot });
 
     const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)", "Long-Form Video Script", "Podcast Script"].includes(platform);
-    const res = await callClaude(SYSTEM, prompt, longForm ? 4000 : 1500);
+    const isBioAbout = platform === "Profile Bio" && contentType === "LinkedIn About Section";
+    const res = await callClaude(SYSTEM, prompt, longForm ? 4000 : isBioAbout ? 2500 : 1500);
 
     if (!res.ok) {
       if (res.status === 429) {
