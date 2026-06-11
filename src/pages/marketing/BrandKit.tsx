@@ -84,6 +84,59 @@ async function urlToDataUrl(url: string): Promise<string | null> {
   }
 }
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// Generate grayscale + reversed (white) variants from a color logo data URL.
+// Alpha is preserved so the silhouette stays intact.
+async function generateLogoVariants(
+  src: string
+): Promise<{ grayscale?: string; reversed?: string }> {
+  try {
+    const img = await loadImage(src);
+    const w = img.naturalWidth || 512;
+    const h = img.naturalHeight || 512;
+    const make = (mode: "gray" | "white") => {
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return undefined;
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      const id = ctx.getImageData(0, 0, w, h);
+      const d = id.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const a = d[i + 3];
+        if (a === 0) continue;
+        if (mode === "white") {
+          d[i] = 255;
+          d[i + 1] = 255;
+          d[i + 2] = 255;
+        } else {
+          const lum = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+          const v = Math.round(lum * 0.18); // push to dark ink
+          d[i] = v;
+          d[i + 1] = v;
+          d[i + 2] = v;
+        }
+      }
+      ctx.putImageData(id, 0, 0);
+      return canvas.toDataURL("image/png");
+    };
+    return { grayscale: make("gray"), reversed: make("white") };
+  } catch {
+    return {};
+  }
+}
+
 export default function BrandKit() {
   const [step, setStep] = useState<Step>("input");
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
@@ -94,6 +147,10 @@ export default function BrandKit() {
   const [logoDataUrl, setLogoDataUrl] = useState<string>("");
   const [extra, setExtra] = useState("");
   const [brandImages, setBrandImages] = useState<string[]>([]); // data URLs, up to 6
+  // Optional user-provided logo variations. Overrides auto-generated versions.
+  const [logoGrayscaleUrl, setLogoGrayscaleUrl] = useState<string>("");
+  const [logoReversedUrl, setLogoReversedUrl] = useState<string>("");
+  const [logoVariationNames, setLogoVariationNames] = useState<string[]>([]);
 
   // review
   const [siteName, setSiteName] = useState("");
@@ -170,13 +227,20 @@ export default function BrandKit() {
       setSiteName(data?.siteName || "");
 
       // Logo: user upload wins, else attempt to fetch detected logo into data url
+      let resolvedColorLogo = "";
       if (uploadedLogo) {
-        setLogoUrl(uploadedLogo);
+        resolvedColorLogo = uploadedLogo;
       } else if (data?.logo) {
         const dataUrl = await urlToDataUrl(data.logo);
-        setLogoUrl(dataUrl || data.logo);
-      } else {
-        setLogoUrl("");
+        resolvedColorLogo = dataUrl || data.logo;
+      }
+      setLogoUrl(resolvedColorLogo);
+
+      // Auto-generate grayscale + reversed variants only when user did not provide.
+      if (resolvedColorLogo && resolvedColorLogo.startsWith("data:")) {
+        const variants = await generateLogoVariants(resolvedColorLogo);
+        if (!logoGrayscaleUrl && variants.grayscale) setLogoGrayscaleUrl(variants.grayscale);
+        if (!logoReversedUrl && variants.reversed) setLogoReversedUrl(variants.reversed);
       }
 
       setStep("review");
@@ -219,6 +283,34 @@ export default function BrandKit() {
     const data = await fileToDataUrl(file);
     setLogoUrl(data);
     setLogoDataUrl(data);
+    // refresh auto-generated variants from the new color logo
+    const variants = await generateLogoVariants(data);
+    if (variants.grayscale) setLogoGrayscaleUrl(variants.grayscale);
+    if (variants.reversed) setLogoReversedUrl(variants.reversed);
+  }
+
+  async function handleLogoVariations(files: File[]) {
+    // Classify by filename hint, falling back to slot order: grayscale then reversed.
+    let gs = logoGrayscaleUrl;
+    let rv = logoReversedUrl;
+    const names: string[] = [];
+    for (const f of files.slice(0, 2)) {
+      const url = await fileToDataUrl(f);
+      const n = f.name.toLowerCase();
+      names.push(f.name);
+      if (/(white|reverse|reversed|invert|knockout)/.test(n)) {
+        rv = url;
+      } else if (/(black|gray|grey|grayscale|greyscale|mono|dark)/.test(n)) {
+        gs = url;
+      } else if (!gs) {
+        gs = url;
+      } else if (!rv) {
+        rv = url;
+      }
+    }
+    setLogoGrayscaleUrl(gs);
+    setLogoReversedUrl(rv);
+    setLogoVariationNames(names);
   }
 
   const canSend = useMemo(() => {
@@ -238,6 +330,8 @@ export default function BrandKit() {
         siteName: siteName || website,
         websiteUrl: website,
         logo: logoUrl || logoDataUrl || undefined,
+        logoGrayscale: logoGrayscaleUrl || undefined,
+        logoReversed: logoReversedUrl || undefined,
         colors,
         fonts: { heading: headingFont, body: bodyFont },
         imagery,
