@@ -461,6 +461,37 @@ export default function BrandKit() {
                 </div>
 
                 <div>
+                  <Label htmlFor="logo-variations" className="text-sm font-semibold">Logo variations (optional)</Label>
+                  <p className="text-xs text-[#7a7e8c] mt-1">
+                    Have white or black versions of your logo? Add them and we will include all three. If not, we will create what we can.
+                  </p>
+                  <label
+                    htmlFor="logo-variations"
+                    className="mt-2 flex items-center gap-3 h-12 px-3 rounded-md border border-input bg-white cursor-pointer hover:bg-[#fafaf7]"
+                  >
+                    <Upload className="h-4 w-4 text-[#7a7e8c]" />
+                    <span className="text-sm text-[#3c3f50] truncate">
+                      {logoVariationNames.length > 0
+                        ? logoVariationNames.join(", ")
+                        : "Upload white and/or black versions (PNG, SVG)"}
+                    </span>
+                    <input
+                      id="logo-variations"
+                      type="file"
+                      multiple
+                      accept="image/png,image/svg+xml,image/jpeg"
+                      className="sr-only"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files ?? []);
+                        if (files.length === 0) return;
+                        await handleLogoVariations(files);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div>
                   <Label htmlFor="extra" className="text-sm font-semibold">Anything else (optional)</Label>
                   <p className="text-xs text-[#7a7e8c] mt-1">
                     Know your exact brand colors or fonts? Add them and we will use yours over what we detect.
