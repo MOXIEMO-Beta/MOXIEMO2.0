@@ -1038,37 +1038,56 @@ export default function Strategy() {
   if (loading) return <div className="p-10 text-muted-foreground">Loading…</div>;
 
   if (!strategy) {
+    const hasSession = session && session.messageCount > 0;
+    const status = session?.synthesis_status;
+    const isBuilding = hasSession && (status === "pending" || status === "in_progress");
+    const isFailed = hasSession && status === "failed";
+    // After auto-retry has been attempted, surface the manual retry control.
+    const showManualRetry = isFailed && (autoRetryDoneRef.current || (session?.synthesis_attempts ?? 0) >= 2);
+
     return (
       <div className="px-6 lg:px-10 py-16 max-w-3xl mx-auto text-center">
         <div className="h-16 w-16 rounded-2xl bg-foreground mx-auto mb-6 flex items-center justify-center"><Compass className="h-7 w-7 text-accent" /></div>
-        {recoverableSession ? (
+        {isBuilding ? (
           <>
-            <h1 className="font-display text-4xl mb-3">
-              {synthesisError === "SYNTHESIS_TIMEOUT" ? "Strategy generation is taking longer than expected." : "Your Discovery is ready"}
-            </h1>
+            <h1 className="font-display text-4xl mb-3">Your strategy is being built</h1>
             <p className="text-muted-foreground mb-8">
-              {synthesisError === "SYNTHESIS_TIMEOUT"
-                ? "Your Discovery answers are saved. Click below to try again — it sometimes takes a second attempt."
-                : `We found your previous Discovery conversation (${recoverableSession.messageCount} messages). Generate your strategy now — no need to redo Discovery.`}
+              {status === "pending"
+                ? "Starting your strategy generation..."
+                : "This takes about 60–90 seconds. We're synthesizing your Discovery answers into your full marketing foundation."}
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin text-accent" />
+              <span>Working…</span>
+            </div>
+          </>
+        ) : isFailed && !showManualRetry ? (
+          <>
+            <h1 className="font-display text-4xl mb-3">Strategy generation hit a snag</h1>
+            <p className="text-muted-foreground mb-8">
+              We're automatically retrying in a moment — your Discovery answers are safe.
+            </p>
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin text-accent" />
+              <span>Retrying soon…</span>
+            </div>
+          </>
+        ) : isFailed ? (
+          <>
+            <h1 className="font-display text-4xl mb-3">Strategy generation didn't complete</h1>
+            <p className="text-muted-foreground mb-8">
+              Your Discovery answers are saved. Click below to try again.
             </p>
             <div className="flex gap-3 justify-center flex-wrap">
               <Button
-                onClick={handleGenerateFromSession}
-                disabled={generating}
+                onClick={() => { autoRetryDoneRef.current = false; triggeredRef.current = false; triggerSynthesis(); }}
                 className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg"
               >
-                {generating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                {generating ? "Generating…" : synthesisError === "SYNTHESIS_TIMEOUT" ? "Try again" : "Generate My Strategy"}
+                <Zap className="mr-2 h-4 w-4" /> Try again
               </Button>
-              {synthesisError === "SYNTHESIS_TIMEOUT" ? (
-                <Link to="/app/discovery" className="inline-flex h-11 items-center text-sm font-medium text-foreground underline-offset-4 hover:underline">
-                  Review my Discovery answers
-                </Link>
-              ) : (
-                <Button asChild variant="outline" className="h-11 rounded-lg">
-                  <Link to="/app/discovery">Review Discovery</Link>
-                </Button>
-              )}
+              <Button asChild variant="outline" className="h-11 rounded-lg">
+                <Link to="/app/discovery">Review Discovery</Link>
+              </Button>
             </div>
           </>
         ) : (
