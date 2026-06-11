@@ -106,6 +106,42 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_kit_leads: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          ip_address: string | null
+          last_name: string
+          source: string
+          user_agent: string | null
+          website_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          ip_address?: string | null
+          last_name: string
+          source?: string
+          user_agent?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          ip_address?: string | null
+          last_name?: string
+          source?: string
+          user_agent?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       calendar_ideas: {
         Row: {
           channel: string | null
