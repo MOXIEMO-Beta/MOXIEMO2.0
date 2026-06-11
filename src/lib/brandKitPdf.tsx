@@ -197,7 +197,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         <Footer />
       </Page>
 
-      {/* Colors — full-bleed color fields */}
+      {/* Colors — all swatches on a single composed page */}
       <Page size="A4" style={{ padding: 0, backgroundColor: C.paper, color: C.ink }}>
         <View style={{ padding: 48, paddingBottom: 18 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
@@ -205,7 +205,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
             <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>{data.colors.length} TONES</Text>
           </View>
           <View style={s.divider} />
-          <Text style={{ fontSize: 36, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>
+          <Text style={{ fontSize: 32, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>
             Your colors.
           </Text>
           <Text style={s.sub}>Lead with primary. Build with secondary. Accent for moments that need attention.</Text>
@@ -214,13 +214,13 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         <View style={{ flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 48 }}>
           {(() => {
             const cols = data.colors.slice(0, 6);
-            const n = cols.length || 1;
-            // First color = hero (full width). Rest in a grid of 2 columns.
+            // Layout: row 1 = hero (100%, 120h), rows 2/3 = 2-col grid (50%, 110h each).
+            // Fits up to 6 swatches on a single page with the header above.
             return cols.map((c, i) => {
               const ink = contrastOn(c.hex);
               const isHero = i === 0;
               const width = isHero ? "100%" : "50%";
-              const height = isHero ? 200 : 150;
+              const height = isHero ? 120 : 110;
               return (
                 <View
                   key={c.hex + i}
@@ -228,7 +228,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
                     width,
                     height,
                     backgroundColor: c.hex,
-                    padding: 18,
+                    padding: 16,
                     justifyContent: "space-between",
                   }}
                   wrap={false}
@@ -237,10 +237,10 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
                     {(c.role || `TONE ${String.fromCharCode(64 + i + 1)}`).toUpperCase()}
                   </Text>
                   <View>
-                    <Text style={{ fontSize: isHero ? 28 : 18, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
+                    <Text style={{ fontSize: isHero ? 24 : 16, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
                       {c.hex.toUpperCase()}
                     </Text>
-                    <Text style={{ fontSize: 9, color: ink, opacity: 0.85, marginTop: 4, fontFamily: bodyFam }}>
+                    <Text style={{ fontSize: 9, color: ink, opacity: 0.85, marginTop: 2, fontFamily: bodyFam }}>
                       {c.rgb}
                     </Text>
                   </View>
@@ -252,102 +252,151 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         <Footer />
       </Page>
 
-      {/* Typography — display specimen */}
+      {/* Typography + Imagery direction — combined editorial page */}
       <Page size="A4" style={s.page}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
-          <Text style={s.eyebrow}>03  ·  TYPOGRAPHY</Text>
-          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>TWO FAMILIES</Text>
+          <Text style={s.eyebrow}>03  ·  TYPE & IMAGERY</Text>
+          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>HOW IT FEELS</Text>
         </View>
         <View style={s.divider} />
 
         {/* Heading hero */}
-        <View style={{ marginBottom: 28 }}>
+        <View style={{ marginBottom: 14 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 2, fontFamily: "Helvetica-Bold" }}>
               HEADING  ·  {data.fonts.heading.toUpperCase()}
             </Text>
             <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1 }}>Aa  Bb  Cc  123</Text>
           </View>
-          <View style={{ backgroundColor: primary, padding: 28, borderRadius: 4 }}>
-            <Text style={{ fontSize: 56, color: coverInk, fontFamily: headingFam, lineHeight: 1.0, letterSpacing: -1.5 }}>
-              Make it
-            </Text>
-            <Text style={{ fontSize: 56, color: coverInk, fontFamily: headingFam, lineHeight: 1.0, letterSpacing: -1.5 }}>
-              unmistakable.
+          <View style={{ backgroundColor: primary, padding: 22, borderRadius: 4 }}>
+            <Text style={{ fontSize: 42, color: coverInk, fontFamily: headingFam, lineHeight: 1.0, letterSpacing: -1.2 }}>
+              Make it unmistakable.
             </Text>
           </View>
         </View>
 
         {/* Body specimen */}
-        <View>
+        <View style={{ marginBottom: 18 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 2, fontFamily: "Helvetica-Bold" }}>
               BODY  ·  {data.fonts.body.toUpperCase()}
             </Text>
             <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1 }}>Aa  Bb  Cc  123</Text>
           </View>
-          <View style={{ borderTopWidth: 1, borderTopColor: C.ink, paddingTop: 16 }}>
-            <Text style={{ fontSize: 14, color: C.ink, fontFamily: bodyFam, lineHeight: 1.55 }}>
-              Good body type is invisible. It carries the reader without asking for attention. Use it for paragraphs, captions, and anything that needs to be read rather than admired. Keep line length comfortable. Keep weight consistent. Let the heading do the shouting.
-            </Text>
-            <Text style={{ fontSize: 10, color: C.muted, fontFamily: bodyFam, marginTop: 14, lineHeight: 1.55 }}>
-              Find it at fonts.google.com or your foundry. Pair it only with the heading above.
+          <View style={{ borderTopWidth: 1, borderTopColor: C.ink, paddingTop: 10 }}>
+            <Text style={{ fontSize: 11, color: C.ink, fontFamily: bodyFam, lineHeight: 1.55 }}>
+              Good body type is invisible. It carries the reader without asking for attention. Use it for paragraphs, captions, and anything that needs to be read rather than admired.
             </Text>
           </View>
         </View>
 
-        <Footer />
-      </Page>
+        {/* Imagery direction */}
+        <View style={{ borderTopWidth: 1, borderTopColor: C.ink, paddingTop: 14 }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
+            <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 2, fontFamily: "Helvetica-Bold" }}>
+              IMAGERY DIRECTION  ·  YOUR VISUAL FEEL
+            </Text>
+            <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1 }}>BRIEF WITH THIS</Text>
+          </View>
 
-      {/* Imagery — editorial fields */}
-      <Page size="A4" style={s.page}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
-          <Text style={s.eyebrow}>04  ·  IMAGERY</Text>
-          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>VISUAL DIRECTION</Text>
-        </View>
-        <View style={s.divider} />
-        <Text style={{ fontSize: 36, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>
-          Your visual feel.
-        </Text>
-        <Text style={s.sub}>Use this when you brief a photographer, choose stock, or pick a template.</Text>
-
-        {data.imagery.length === 0 ? (
-          <Text style={{ color: C.muted, fontFamily: bodyFam }}>No imagery direction selected.</Text>
-        ) : (
-          <View>
-            {data.imagery.map((w, i) => {
-              const fields = [primary, secondary, accent];
-              const bg = fields[i % fields.length];
-              const ink = contrastOn(bg);
-              return (
-                <View
-                  key={w + i}
-                  style={{
-                    backgroundColor: bg,
-                    padding: 20,
-                    marginBottom: 10,
-                    borderRadius: 4,
-                    flexDirection: "row",
-                    alignItems: "center",
-                  }}
-                  wrap={false}
-                >
-                  <Text style={{ fontSize: 10, color: ink, opacity: 0.7, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, width: 32 }}>
-                    0{i + 1}
-                  </Text>
-                  <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 18 }}>
-                    <Text style={{ fontSize: 28, color: ink, fontFamily: headingFam, letterSpacing: -0.6, width: 150 }}>
+          {data.imagery.length === 0 ? (
+            <Text style={{ color: C.muted, fontFamily: bodyFam, fontSize: 10 }}>No imagery direction selected.</Text>
+          ) : (
+            <View>
+              {data.imagery.map((w, i) => {
+                const fields = [primary, secondary, accent];
+                const bg = fields[i % fields.length];
+                const ink = contrastOn(bg);
+                return (
+                  <View
+                    key={w + i}
+                    style={{
+                      backgroundColor: bg,
+                      padding: 14,
+                      marginBottom: 8,
+                      borderRadius: 4,
+                      flexDirection: "row",
+                      alignItems: "center",
+                    }}
+                    wrap={false}
+                  >
+                    <Text style={{ fontSize: 9, color: ink, opacity: 0.7, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, width: 28 }}>
+                      0{i + 1}
+                    </Text>
+                    <Text style={{ fontSize: 22, color: ink, fontFamily: headingFam, letterSpacing: -0.5, width: 130 }}>
                       {w[0].toUpperCase() + w.slice(1)}.
                     </Text>
-                    <Text style={{ flex: 1, fontSize: 11, color: ink, fontFamily: bodyFam, lineHeight: 1.5, opacity: 0.92 }}>
+                    <Text style={{ flex: 1, fontSize: 10, color: ink, fontFamily: bodyFam, lineHeight: 1.5, opacity: 0.92 }}>
                       {imageryDescriptions[w] || "Use as a guide for tone and styling."}
                     </Text>
                   </View>
-                </View>
-              );
-            })}
+                );
+              })}
+            </View>
+          )}
+        </View>
+        <Footer />
+      </Page>
+
+      {/* Imagery showcase — optional, only when user uploaded images */}
+      {data.images && data.images.length > 0 && (
+        <Page size="A4" style={s.page}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+            <Text style={s.eyebrow}>04  ·  YOUR IMAGERY</Text>
+            <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>{data.images.length} REFERENCE{data.images.length === 1 ? "" : "S"}</Text>
           </View>
-        )}
+          <View style={s.divider} />
+          <Text style={{ fontSize: 30, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>
+            Your imagery.
+          </Text>
+          <Text style={s.sub}>The images that carry your brand's feel. Use these as your reference when you create.</Text>
+
+          <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4, marginTop: 8 }}>
+            {data.images.slice(0, 6).map((src, i) => (
+              <View
+                key={i}
+                style={{
+                  width: "50%",
+                  padding: 4,
+                }}
+                wrap={false}
+              >
+                <View style={{ backgroundColor: secondary, height: 200, borderRadius: 4, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
+                  <Image src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </View>
+              </View>
+            ))}
+          </View>
+          <Footer />
+        </Page>
+      )}
+
+      {/* Quote — editorial pull-quote page (intentional breathing room) */}
+      <Page size="A4" style={s.page}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+          <Text style={s.eyebrow}>·  A MOMENT  ·</Text>
+          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>PAUSE</Text>
+        </View>
+        <View style={s.divider} />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24 }}>
+          <Text
+            style={{
+              fontSize: 38,
+              color: C.ink,
+              fontFamily: headingFam,
+              textAlign: "center",
+              lineHeight: 1.18,
+              letterSpacing: -0.8,
+              marginBottom: 36,
+            }}
+          >
+            "Take a deep breath and trust the process."
+          </Text>
+          <View style={{ height: 1, width: 60, backgroundColor: C.ink, opacity: 0.6, marginBottom: 18 }} />
+          <Text style={{ fontSize: 9, color: C.muted, letterSpacing: 3, fontFamily: "Helvetica-Bold" }}>
+            KAREE  LAING
+          </Text>
+        </View>
         <Footer />
       </Page>
 
