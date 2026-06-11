@@ -15,3 +15,7 @@ project_id = "mqhipuvkdsvapbhrrzjd"
     verify_jwt = true
   [functions.validate-beta-code]
     verify_jwt = false
+  [functions.extract-brand-kit]
+    verify_jwt = false
+  [functions.send-brand-kit]
+    verify_jwt = false
