@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { aiErrorMessage } from "@/lib/aiErrors";
@@ -927,54 +927,61 @@ export default function Strategy() {
   const [strategy, setStrategy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { reportData, isLoading, error } = useReportData();
-  const [recoverableSession, setRecoverableSession] = useState<{ id: string; messageCount: number } | null>(null);
-  const [generating, setGenerating] = useState(false);
-  const [synthesisError, setSynthesisError] = useState<"SYNTHESIS_TIMEOUT" | null>(null);
+  const [session, setSession] = useState<{ id: string; messageCount: number; synthesis_status: string; synthesis_attempts: number; synthesis_last_error: string | null; lane: "lane1" | "lane2" | null } | null>(null);
+  const autoRetryDoneRef = useRef(false);
+  const triggeredRef = useRef(false);
 
+  // Initial load
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const { data: strat } = await supabase
-        .from("strategies")
-        .select("*")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setStrategy(strat);
-      if (!strat) {
-        const { data: sess } = await supabase
-          .from("discovery_sessions")
-          .select("id, messages, updated_at")
-          .eq("user_id", user.id)
-          .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        const msgs = Array.isArray((sess as any)?.messages) ? (sess as any).messages : [];
-        if (sess && msgs.length > 0) {
-          setRecoverableSession({ id: (sess as any).id, messageCount: msgs.length });
-        }
-      }
+      await refresh();
       setLoading(false);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const handleGenerateFromSession = async () => {
-    if (!recoverableSession) return;
-    setGenerating(true);
-    setSynthesisError(null);
-    let timedOut = false;
-    const abortController = new AbortController();
-    const synthesisTimeout = window.setTimeout(() => {
-      timedOut = true;
-      setGenerating(false);
-      setSynthesisError("SYNTHESIS_TIMEOUT");
-      abortController.abort();
-    }, 200000);
+  async function refresh() {
+    if (!user) return;
+    const [{ data: strat }, { data: sess }] = await Promise.all([
+      supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
+      supabase
+        .from("discovery_sessions")
+        .select("id, messages, updated_at, lane, synthesis_status, synthesis_attempts, synthesis_last_error")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    setStrategy(strat);
+    if (sess) {
+      const msgs = Array.isArray((sess as any).messages) ? (sess as any).messages : [];
+      setSession({
+        id: (sess as any).id,
+        messageCount: msgs.length,
+        synthesis_status: (sess as any).synthesis_status || "pending",
+        synthesis_attempts: (sess as any).synthesis_attempts ?? 0,
+        synthesis_last_error: (sess as any).synthesis_last_error ?? null,
+        lane: ((sess as any).lane as "lane1" | "lane2" | null) ?? null,
+      });
+    }
+  }
+
+  async function triggerSynthesis() {
+    if (!user || !session) return;
+    triggeredRef.current = true;
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token ?? supabaseKey;
-      const resp = await fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
+      const { data: { session: authSess } } = await supabase.auth.getSession();
+      const authToken = authSess?.access_token ?? supabaseKey;
+      // Optimistically mark in_progress so polling reflects the new state.
+      await supabase
+        .from("discovery_sessions")
+        .update({ synthesis_status: "in_progress", synthesis_last_error: null } as any)
+        .eq("id", session.id);
+      setSession((s) => s ? { ...s, synthesis_status: "in_progress" } : s);
+      fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -982,40 +989,48 @@ export default function Strategy() {
           "Authorization": `Bearer ${authToken}`,
           "apikey": supabaseKey,
         },
-        signal: abortController.signal,
-        body: JSON.stringify({ sessionId: recoverableSession.id, responseMode: "json" }),
-      });
-      if (timedOut) return;
-      const payload = await resp.json().catch(() => null);
-      if (!resp.ok) {
-        if (resp.status === 408 || payload?.error === "SYNTHESIS_TIMEOUT") throw new Error("SYNTHESIS_TIMEOUT");
-        throw new Error(payload?.error || `Synthesis failed: ${resp.status}`);
-      }
-      if (payload?.error === "SYNTHESIS_TIMEOUT") throw new Error("SYNTHESIS_TIMEOUT");
-      const data = payload?.strategy;
-      if (!data) throw new Error("Stream ended before strategy was generated");
-      const { error: upsertErr } = await supabase
-        .from("strategies")
-        .upsert({ ...data, user_id: user!.id }, { onConflict: "user_id" });
-      if (upsertErr) throw upsertErr;
-      toast.success("Strategy generated");
-      const { data: fresh } = await supabase.from("strategies").select("*").eq("user_id", user!.id).maybeSingle();
-      setStrategy(fresh);
-      setRecoverableSession(null);
-    } catch (e: any) {
-      if (timedOut) return;
-      console.error(e);
-      const droppedConnection = e?.name === "TypeError" || /failed to fetch|connection|network/i.test(e?.message || "");
-      if (e?.message === "SYNTHESIS_TIMEOUT" || droppedConnection) {
-        setSynthesisError("SYNTHESIS_TIMEOUT");
-      } else {
-        toast.error(aiErrorMessage("discovery", e));
-      }
-    } finally {
-      window.clearTimeout(synthesisTimeout);
-      if (!timedOut) setGenerating(false);
+        body: JSON.stringify({
+          sessionId: session.id,
+          lane: session.lane ?? "lane1",
+          responseMode: "json",
+        }),
+        keepalive: true,
+      }).catch((err) => console.warn("trigger dispatch failed:", err));
+    } catch (e) {
+      console.error("triggerSynthesis", e);
     }
-  };
+  }
+
+  // Auto-trigger when status is pending
+  useEffect(() => {
+    if (!session || strategy) return;
+    if (session.synthesis_status === "pending" && !triggeredRef.current) {
+      triggerSynthesis();
+    }
+  }, [session, strategy]);
+
+  // Poll every 5s while in_progress/pending
+  useEffect(() => {
+    if (!session || strategy) return;
+    if (session.synthesis_status !== "in_progress" && session.synthesis_status !== "pending") return;
+    const t = window.setInterval(() => { refresh(); }, 5000);
+    return () => window.clearInterval(t);
+  }, [session, strategy]);
+
+  // Auto-retry once on failure, after 30 seconds.
+  useEffect(() => {
+    if (!session || strategy) return;
+    if (session.synthesis_status !== "failed") return;
+    if (autoRetryDoneRef.current) return;
+    if (session.synthesis_attempts >= 2) return; // already tried automatic + initial
+    autoRetryDoneRef.current = true;
+    const t = window.setTimeout(() => {
+      console.log("Auto-retrying synthesis after failure");
+      triggeredRef.current = false;
+      triggerSynthesis();
+    }, 30_000);
+    return () => window.clearTimeout(t);
+  }, [session, strategy]);
 
   if (isLoading) return <p className="p-10 text-muted-foreground">Loading strategy...</p>;
   if (error) return <p className="p-10 text-destructive">Error: {error.message}</p>;
