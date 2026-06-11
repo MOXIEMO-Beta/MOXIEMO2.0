@@ -636,6 +636,7 @@ export default function Content() {
   const isScript = !!lockedMeta && SCRIPT_PLATFORMS.has(lockedMeta.platform);
   const isPodcast = !!lockedMeta && PODCAST_PLATFORMS.has(lockedMeta.platform);
   const isAd = !!lockedMeta && AD_PLATFORMS.has(lockedMeta.platform);
+  const isProfileBio = !!lockedMeta && PROFILE_BIO_PLATFORMS.has(lockedMeta.platform);
   const charCount = useMemo(() => htmlToPlain(generated).length, [generated]);
   const wordCount = useMemo(() => {
     const t = htmlToPlain(generated).trim();
