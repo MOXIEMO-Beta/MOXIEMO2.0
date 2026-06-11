@@ -162,7 +162,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         </View>
       </Page>
 
-      {/* Logo — editorial frame */}
+      {/* Logo — three versions, each on a matched background */}
       <Page size="A4" style={s.page}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
           <Text style={s.eyebrow}>01  ·  LOGO</Text>
@@ -172,40 +172,53 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         <Text style={{ fontSize: 36, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>
           Your mark.
         </Text>
-        <Text style={s.sub}>The signature you sign every piece of work with.</Text>
+        <Text style={s.sub}>Three versions so it always reads. Match the version to the background.</Text>
 
-        <View
-          style={{
-            backgroundColor: secondary,
-            height: 340,
-            borderRadius: 4,
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-            marginTop: 8,
-            overflow: "hidden",
-          }}
-        >
-          {/* clear-space ticks */}
-          <View style={{ position: "absolute", top: 24, left: 24, width: 22, height: 1, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", top: 24, left: 24, width: 1, height: 22, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", top: 24, right: 24, width: 22, height: 1, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", top: 24, right: 24, width: 1, height: 22, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", bottom: 24, left: 24, width: 22, height: 1, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", bottom: 24, left: 24, width: 1, height: 22, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", bottom: 24, right: 24, width: 22, height: 1, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", bottom: 24, right: 24, width: 1, height: 22, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
+        {(() => {
+          // Three slots. Always match version to background so nothing disappears.
+          const variants: { label: string; caption: string; bg: string; ink: string; src?: string; isReversed?: boolean }[] = [
+            { label: "FULL COLOR", caption: "Use on light, neutral surfaces.", bg: C.white, ink: C.ink, src: data.logo },
+            { label: "GRAYSCALE", caption: "Use when color is not available.", bg: C.paper, ink: C.ink, src: data.logoGrayscale || data.logo },
+            { label: "REVERSED", caption: "Use on dark or brand-colored fields.", bg: primary, ink: coverInk, src: data.logoReversed, isReversed: true },
+          ];
+          return (
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+              {variants.map((v, i) => (
+                <View key={i} style={{ flex: 1 }}>
+                  <View
+                    style={{
+                      backgroundColor: v.bg,
+                      height: 220,
+                      borderRadius: 4,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: v.bg === C.white ? 1 : 0,
+                      borderColor: C.border,
+                      padding: 16,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {v.src ? (
+                      <Image src={v.src} style={{ maxWidth: 140, maxHeight: 140, objectFit: "contain" }} />
+                    ) : (
+                      <Text style={{ color: v.ink, opacity: 0.55, fontFamily: bodyFam, fontSize: 9, textAlign: "center" }}>
+                        {v.isReversed ? "Add a white version to fill this slot." : "Not provided."}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginTop: 10 }}>
+                    {v.label}
+                  </Text>
+                  <Text style={{ fontSize: 9, color: C.muted, marginTop: 3, fontFamily: bodyFam, lineHeight: 1.45 }}>
+                    {v.caption}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          );
+        })()}
 
-          {data.logo ? (
-            <Image src={data.logo} style={{ maxWidth: 320, maxHeight: 200, objectFit: "contain" }} />
-          ) : (
-            <Text style={{ color: contrastOn(secondary), opacity: 0.6, fontFamily: bodyFam, fontSize: 12 }}>
-              No logo provided.
-            </Text>
-          )}
-        </View>
-
-        <View style={{ flexDirection: "row", marginTop: 22, gap: 24 }}>
+        <View style={{ flexDirection: "row", marginTop: 26, gap: 24, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 18 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.5, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
               CLEAR SPACE
@@ -216,10 +229,10 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.5, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
-              USE WELL
+              MATCH THE BACKGROUND
             </Text>
             <Text style={{ fontSize: 10, color: C.ink, lineHeight: 1.55, fontFamily: bodyFam }}>
-              Place on solid backgrounds with enough contrast. Do not stretch, recolor, or crop the mark.
+              Use the color or grayscale mark on light. Use the reversed mark on dark or saturated brand color. Never place the color mark on a field where it disappears.
             </Text>
           </View>
         </View>
