@@ -42,21 +42,31 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-    const month = currentMonthKey();
     const [{ data: prof }, { data: usageRow }] = await Promise.all([
       supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
       supabase
         .from("usage_tracking")
         .select("generations_used, month, last_reset, reset_date")
         .eq("user_id", user.id)
-        .eq("month", month)
+        .order("last_reset", { ascending: false })
+        .limit(1)
         .maybeSingle(),
     ]);
     const p = ((prof as { plan?: string } | null)?.plan as PlanId) || "founding_member";
     setPlan(p);
-    setUsage(usageRow
-      ? { generations_used: usageRow.generations_used ?? 0, month: usageRow.month, reset_date: (usageRow as any).reset_date ?? null }
-      : { generations_used: 0, month, reset_date: null });
+    if (usageRow) {
+      // If the stored period has already elapsed, the next server-side
+      // generation will reset to 0. Reflect that optimistically in the UI.
+      const resetAt = (usageRow as any).reset_date ? new Date((usageRow as any).reset_date) : null;
+      const elapsed = resetAt && !isNaN(resetAt.getTime()) && resetAt.getTime() <= Date.now();
+      setUsage({
+        generations_used: elapsed ? 0 : (usageRow.generations_used ?? 0),
+        month: usageRow.month,
+        reset_date: (usageRow as any).reset_date ?? null,
+      });
+    } else {
+      setUsage({ generations_used: 0, month: currentMonthKey(), reset_date: null });
+    }
     setLoading(false);
   }, [user]);
 
