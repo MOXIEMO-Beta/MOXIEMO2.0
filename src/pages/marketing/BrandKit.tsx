@@ -409,6 +409,117 @@ export default function BrandKit() {
       <SiteHeader />
 
       <main className="flex-1">
+        {step === "input" && (
+          <section
+            aria-labelledby="brandkit-hero-heading"
+            className="w-full border-b"
+            style={{ backgroundColor: "#F7F5F1", borderColor: "rgba(21,23,28,0.08)" }}
+          >
+            <div className="max-w-6xl mx-auto px-6 py-12 md:py-20 grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
+              {/* Text block */}
+              <div>
+                <p
+                  className="text-xs font-semibold tracking-[0.22em] mb-5"
+                  style={{ color: "#FF6B5C", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}
+                >
+                  YOUR BRAND, ON PAPER
+                </p>
+                <h1
+                  id="brandkit-hero-heading"
+                  className="text-4xl sm:text-5xl md:text-6xl leading-[1.05] tracking-[-0.02em] mb-5"
+                  style={{ fontFamily: "'Fraunces', 'Playfair Display', Georgia, serif", fontWeight: 600, color: "#15171C" }}
+                >
+                  The{" "}
+                  <span className="relative inline-block italic" style={{ color: "#FF6B5C" }}>
+                    <span
+                      aria-hidden
+                      className="absolute left-[-2px] right-[-2px] bottom-[8%] h-[42%] -z-0 rounded-sm"
+                      style={{ backgroundColor: "rgba(255,107,92,0.18)" }}
+                    />
+                    <span className="relative z-10">Free</span>
+                  </span>{" "}
+                  Brand Kit.
+                </h1>
+                <p className="text-base md:text-lg leading-relaxed max-w-md" style={{ color: "#3c3f50" }}>
+                  Enter your website. Get your colors, fonts, and logo in one designed kit.
+                </p>
+
+                {/* Mock input — focuses real form */}
+                <div
+                  className="mt-7 flex items-center gap-2 p-2 rounded-full bg-white max-w-md shadow-sm"
+                  style={{ border: "1px solid rgba(21,23,28,0.08)" }}
+                >
+                  <span
+                    className="flex-1 px-4 text-sm truncate"
+                    style={{ color: "#9a9ea8" }}
+                  >
+                    yourwebsite.com
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const el = document.getElementById("website") as HTMLInputElement | null;
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "center" });
+                        setTimeout(() => el.focus(), 350);
+                      }
+                    }}
+                    className="rounded-full px-4 py-2 text-sm font-semibold text-white transition-transform hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
+                    style={{ backgroundColor: "#FF6B5C" }}
+                  >
+                    Build my kit
+                  </button>
+                </div>
+              </div>
+
+              {/* Visual cluster */}
+              <div className="relative h-[280px] sm:h-[320px] md:h-[360px] w-full overflow-hidden" aria-hidden>
+                {/* Swatches */}
+                <div
+                  className="absolute rounded-2xl shadow-md motion-safe:transition-transform"
+                  style={{ backgroundColor: "#FF6B5C", width: 140, height: 140, top: "8%", left: "10%", transform: "rotate(-6deg)" }}
+                />
+                <div
+                  className="absolute rounded-2xl shadow-md"
+                  style={{ backgroundColor: "#15171C", width: 120, height: 120, top: "30%", left: "44%", transform: "rotate(4deg)" }}
+                />
+                <div
+                  className="absolute rounded-2xl shadow-md"
+                  style={{ backgroundColor: "#FCA167", width: 110, height: 110, top: "5%", right: "8%", transform: "rotate(8deg)" }}
+                />
+                <div
+                  className="absolute rounded-2xl shadow-md"
+                  style={{ backgroundColor: "#F2B705", width: 90, height: 90, bottom: "16%", left: "26%", transform: "rotate(-10deg)" }}
+                />
+                {/* Palette strip */}
+                <div
+                  className="absolute bottom-2 right-2 sm:right-4 flex rounded-xl overflow-hidden shadow-lg"
+                  style={{ border: "1px solid rgba(21,23,28,0.08)" }}
+                >
+                  {[
+                    { c: "#15171C" },
+                    { c: "#FF6B5C" },
+                    { c: "#FCA167" },
+                    { c: "#F2B705" },
+                    { c: "#FFFFFF", border: true },
+                  ].map((chip, i) => (
+                    <span
+                      key={i}
+                      className="block"
+                      style={{
+                        width: 36,
+                        height: 48,
+                        backgroundColor: chip.c,
+                        borderLeft: chip.border ? "1px solid rgba(21,23,28,0.1)" : undefined,
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         <div className="max-w-4xl mx-auto px-6 py-16 md:py-24 w-full">
           {step === "input" && (
             <section>
