@@ -5,6 +5,8 @@ export type BrandKitData = {
   siteName: string;
   websiteUrl: string;
   logo?: string; // url or data url
+  logoGrayscale?: string; // optional dark/mono version
+  logoReversed?: string; // optional white/reversed version
   colors: { hex: string; rgb: string; role: string }[];
   fonts: { heading: string; body: string };
   imagery: string[];
@@ -70,6 +72,33 @@ const imageryDescriptions: Record<string, string> = {
   editorial: "Magazine-quality, considered and intentional.",
   playful: "Energetic, expressive, a little unexpected.",
   refined: "Quiet luxury. Polished without being loud.",
+};
+
+const imageryGuide: Record<string, { conveys: string; use: string }> = {
+  clean: {
+    conveys: "Conveys clarity, confidence, and room to think. Nothing competes for attention.",
+    use: "Lead with white space. Let one thing be the focus. Cut anything that does not earn its place.",
+  },
+  warm: {
+    conveys: "Conveys approachability and humanity. It feels lived in, not staged.",
+    use: "Choose soft, natural light and real moments over polished perfection. Favor tones that feel inviting.",
+  },
+  bold: {
+    conveys: "Conveys confidence and energy. It does not whisper.",
+    use: "Lead with strong color and scale. Make a statement and commit to it.",
+  },
+  editorial: {
+    conveys: "Conveys authority and intention. It looks considered, like a magazine spread.",
+    use: "Compose with purpose. Use strong type, generous margins, and imagery that feels curated rather than stock.",
+  },
+  playful: {
+    conveys: "Conveys warmth, humor, and ease. It does not take itself too seriously.",
+    use: "Use unexpected color, movement, and a lighter tone. Let personality show.",
+  },
+  refined: {
+    conveys: "Conveys quality and restraint. Every detail looks intentional.",
+    use: "Keep it minimal and precise. Let craft and spacing do the work.",
+  },
 };
 
 function BrandKitDoc({ data }: { data: BrandKitData }) {
