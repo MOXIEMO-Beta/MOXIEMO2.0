@@ -93,6 +93,7 @@ export default function BrandKit() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoDataUrl, setLogoDataUrl] = useState<string>("");
   const [extra, setExtra] = useState("");
+  const [brandImages, setBrandImages] = useState<string[]>([]); // data URLs, up to 6
 
   // review
   const [siteName, setSiteName] = useState("");
@@ -240,6 +241,7 @@ export default function BrandKit() {
         colors,
         fonts: { heading: headingFont, body: bodyFont },
         imagery,
+        images: brandImages,
       };
       const blob = await generateBrandKitPdf(data);
       generatedPdfRef.current = blob;
@@ -377,6 +379,57 @@ export default function BrandKit() {
                     className="mt-2 bg-white"
                     rows={3}
                   />
+                </div>
+
+                <div>
+                  <Label htmlFor="brand-images" className="text-sm font-semibold">Your brand images (optional)</Label>
+                  <p className="text-xs text-[#7a7e8c] mt-1">
+                    Upload a few images you use in your brand, or ones that capture the feel you want. We will build them into your kit.
+                  </p>
+                  <label
+                    htmlFor="brand-images"
+                    className="mt-2 flex items-center gap-3 h-12 px-3 rounded-md border border-input bg-white cursor-pointer hover:bg-[#fafaf7]"
+                  >
+                    <Upload className="h-4 w-4 text-[#7a7e8c]" />
+                    <span className="text-sm text-[#3c3f50] truncate">
+                      {brandImages.length > 0
+                        ? `${brandImages.length} image${brandImages.length === 1 ? "" : "s"} added`
+                        : "Add up to 6 images (JPG, PNG)"}
+                    </span>
+                    <input
+                      id="brand-images"
+                      type="file"
+                      multiple
+                      accept="image/png,image/jpeg"
+                      className="sr-only"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files ?? []);
+                        if (files.length === 0) return;
+                        const remaining = Math.max(0, 6 - brandImages.length);
+                        const accepted = files.slice(0, remaining);
+                        const dataUrls = await Promise.all(accepted.map(fileToDataUrl));
+                        setBrandImages((prev) => [...prev, ...dataUrls].slice(0, 6));
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {brandImages.length > 0 && (
+                    <div className="mt-3 grid grid-cols-3 sm:grid-cols-6 gap-2">
+                      {brandImages.map((src, i) => (
+                        <div key={i} className="relative aspect-square rounded-md overflow-hidden border border-[#e4e5ea] bg-white group">
+                          <img src={src} alt={`Brand image ${i + 1}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setBrandImages((prev) => prev.filter((_, idx) => idx !== i))}
+                            className="absolute top-1 right-1 h-6 w-6 rounded-full bg-white/90 flex items-center justify-center text-[#15171C] hover:bg-white shadow"
+                            aria-label="Remove image"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <Button
