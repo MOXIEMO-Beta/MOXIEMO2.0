@@ -709,18 +709,26 @@ export default function Content() {
             )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">
-                What's the idea?
+                {platform === "Profile Bio"
+                  ? "Anything specific to include or emphasise? (optional)"
+                  : "What's the idea?"}
               </label>
-              <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                A take from an article you read, something a client said, a hot opinion, a story — bring anything. MOXIEMO will shape it into content that sounds like you.
-              </p>
+              {platform !== "Profile Bio" && (
+                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                  A take from an article you read, something a client said, a hot opinion, a story — bring anything. MOXIEMO will shape it into content that sounds like you.
+                </p>
+              )}
               <Textarea
                 value={topic}
                 onChange={(e) => {
                   setTopic(e.target.value);
                   if (campaignBriefBanner) setCampaignBriefBanner(false);
                 }}
-                placeholder="e.g. I just read that 80% of small businesses overpay in taxes because their expenses aren't categorized in real time — I want to write about this from my POV..."
+                placeholder={
+                  platform === "Profile Bio"
+                    ? "e.g. I just launched a new offer, I want to highlight my podcast, I'm pivoting my focus to X"
+                    : "e.g. I just read that 80% of small businesses overpay in taxes because their expenses aren't categorized in real time — I want to write about this from my POV..."
+                }
                 rows={4}
                 className="resize-y min-h-[100px]"
               />
