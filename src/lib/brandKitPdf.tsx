@@ -431,22 +431,42 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
           </Text>
           <Text style={s.sub}>The images that carry your brand's feel. Use these as your reference when you create.</Text>
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4, marginTop: 8 }}>
-            {data.images.slice(0, 6).map((src, i) => (
-              <View
-                key={i}
-                style={{
-                  width: "50%",
-                  padding: 4,
-                }}
-                wrap={false}
-              >
-                <View style={{ backgroundColor: secondary, height: 200, borderRadius: 4, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
-                  <Image src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                </View>
+          {(() => {
+            const imgs = data.images!.slice(0, 6);
+            const n = imgs.length;
+            // Choose a grid that always fits one A4 page (~620pt available after header/footer).
+            const cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
+            const rows = Math.ceil(n / cols);
+            // Reserve ~210pt for eyebrow, divider, heading, sub, and footer breathing room.
+            const available = 600;
+            const gap = 8;
+            const cellHeight = Math.floor((available - gap * (rows - 1)) / rows);
+            const widthPct = `${100 / cols}%`;
+            return (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4, marginTop: 8 }}>
+                {imgs.map((src, i) => (
+                  <View
+                    key={i}
+                    style={{ width: widthPct, padding: 4 }}
+                    wrap={false}
+                  >
+                    <View
+                      style={{
+                        backgroundColor: secondary,
+                        height: cellHeight,
+                        borderRadius: 4,
+                        overflow: "hidden",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Image src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </View>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            );
+          })()}
           <Footer />
         </Page>
       )}
