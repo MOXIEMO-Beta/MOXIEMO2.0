@@ -438,7 +438,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
             const cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
             const rows = Math.ceil(n / cols);
             // Reserve ~210pt for eyebrow, divider, heading, sub, and footer breathing room.
-            const available = 600;
+            const available = 560;
             const gap = 8;
             const cellHeight = Math.floor((available - gap * (rows - 1)) / rows);
             const widthPct = `${100 / cols}%`;
