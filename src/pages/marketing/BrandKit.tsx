@@ -93,6 +93,7 @@ export default function BrandKit() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoDataUrl, setLogoDataUrl] = useState<string>("");
   const [extra, setExtra] = useState("");
+  const [brandImages, setBrandImages] = useState<string[]>([]); // data URLs, up to 6
 
   // review
   const [siteName, setSiteName] = useState("");
@@ -240,6 +241,7 @@ export default function BrandKit() {
         colors,
         fonts: { heading: headingFont, body: bodyFont },
         imagery,
+        images: brandImages,
       };
       const blob = await generateBrandKitPdf(data);
       generatedPdfRef.current = blob;
