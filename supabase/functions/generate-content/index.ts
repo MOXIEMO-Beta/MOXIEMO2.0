@@ -46,6 +46,7 @@ function buildPrompt(opts: {
   const isMetaAds = opts.platform === "Meta Ads";
   const isGoogleAds = opts.platform === "Google Ads";
   const isAd = isMetaAds || isGoogleAds;
+  const isProfileBio = opts.platform === "Profile Bio";
   const isScript = isShortScript || isLongScript || isPodcast;
   const platformRules = `PLATFORM-SPECIFIC RULES:
 - LinkedIn: 1,200–1,800 characters, sentence case, no em dashes, punchy hook under 60 characters, end with a question, no links in the body
@@ -58,7 +59,7 @@ function buildPrompt(opts: {
 - X / Twitter: under 280 characters total, punchy, no fluff`;
   const formatHint = isScript
     ? "Return only the spoken script as plain text. No markdown, no HTML, no code fences, no preamble, no title."
-    : isAd
+    : (isAd || isProfileBio)
       ? "Return only the structured ad copy as plain text using the exact LABEL format described. Each labeled field on its own line as `LABEL (N chars max): value`. Section headers (like variation names) on their own line ending with a colon. No markdown, no HTML, no code fences, no preamble."
       : isRich
       ? "Return formatted HTML using <h1>, <h2>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <hr>. No <html> or <body> wrappers. No code fences."
@@ -234,6 +235,61 @@ CTA: ...
 
 No em-dashes. Character limits are hard.`;
     }
+  } else if (isProfileBio) {
+    const ct = opts.contentType;
+    if (ct === "LinkedIn Headline") {
+      scriptInstructions = `LINKEDIN HEADLINE INSTRUCTIONS:
+Generate a LinkedIn profile headline for this founder. Hard limit: 220 characters — do not exceed this under any circumstances.
+
+Structure: [What you do] + [Who you serve] + [Credibility signal or differentiator]. Use the pipe character | to separate segments. No em-dashes. Sound like a real person, not a job listing.
+
+Generate 3 variations. Output exactly:
+
+OPTION A (220 chars max): ...
+OPTION B (220 chars max): ...
+OPTION C (220 chars max): ...`;
+    } else if (ct === "LinkedIn About Section") {
+      scriptInstructions = `LINKEDIN ABOUT SECTION INSTRUCTIONS:
+Generate a full LinkedIn About section for this founder. Hard limit: 2600 characters.
+
+Structure (no bullet points, first person, sound like the founder — not a press release; no em-dashes):
+- Opening hook (1-2 sentences leading with the problem they solve or transformation they create — not their job title)
+- What they do and who they serve (2-3 sentences, specific and concrete)
+- Why they do it / their story or credential (2-3 sentences, grounded in real experience)
+- What working with them looks like or what they are building (2-3 sentences)
+- Closing CTA (1 sentence — what should the reader do next: connect, reach out, visit the website)
+
+Output exactly:
+
+ABOUT (2600 chars max): ...`;
+    } else if (ct === "Instagram Bio") {
+      scriptInstructions = `INSTAGRAM BIO INSTRUCTIONS:
+Generate an Instagram bio for this founder. Hard limit: 150 characters including line breaks.
+
+Structure across 3-4 short lines (each line works as a standalone statement):
+Line 1: What they do (10-15 words max)
+Line 2: Who they serve or their differentiator
+Line 3: Credibility signal or mission statement
+Line 4 (optional): CTA with link placeholder e.g. "⬇️ link below"
+
+Emoji use is optional — only include if it fits the founder's brand voice. No em-dashes.
+
+Generate 2 variations. Output exactly:
+
+OPTION A (150 chars max): ...
+OPTION B (150 chars max): ...`;
+    } else if (ct === "Twitter / X Bio") {
+      scriptInstructions = `TWITTER / X BIO INSTRUCTIONS:
+Generate a Twitter/X bio for this founder. Hard limit: 160 characters.
+
+One punchy statement that communicates who they are, what they build or do, and who it is for. No lists. No slashes. No performative phrases like "helping founders do X." Sound like a real person in one sentence. No em-dashes.
+
+Generate 3 variations. Output exactly:
+
+OPTION A (160 chars max): ...
+OPTION B (160 chars max): ...
+OPTION C (160 chars max): ...`;
+    }
   }
 
   const campaignBlock = c && (c.name || c.goals || c.theme)
@@ -382,7 +438,8 @@ Deno.serve(async (req) => {
     const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot });
 
     const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)", "Long-Form Video Script", "Podcast Script"].includes(platform);
-    const res = await callClaude(SYSTEM, prompt, longForm ? 4000 : 1500);
+    const isBioAbout = platform === "Profile Bio" && contentType === "LinkedIn About Section";
+    const res = await callClaude(SYSTEM, prompt, longForm ? 4000 : isBioAbout ? 2500 : 1500);
 
     if (!res.ok) {
       if (res.status === 429) {

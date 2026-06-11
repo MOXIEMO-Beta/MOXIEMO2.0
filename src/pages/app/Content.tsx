@@ -51,6 +51,7 @@ import {
   Wand2,
   Megaphone,
   CalendarClock,
+  UserCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
@@ -87,6 +88,7 @@ const PLATFORMS = [
   { value: "Podcast Script", icon: Mic, limit: null },
   { value: "Meta Ads", icon: Megaphone, limit: null },
   { value: "Google Ads", icon: Megaphone, limit: null },
+  { value: "Profile Bio", icon: UserCircle2, limit: null },
 ];
 
 const CONTENT_TYPES = [
@@ -136,9 +138,17 @@ const GOOGLE_ADS_TYPES = [
   "Ad Variations",
 ];
 
+const PROFILE_BIO_TYPES = [
+  "LinkedIn Headline",
+  "LinkedIn About Section",
+  "Instagram Bio",
+  "Twitter / X Bio",
+];
+
 const SCRIPT_PLATFORMS = new Set(["Short-Form Video Script", "Long-Form Video Script", "Podcast Script"]);
 const PODCAST_PLATFORMS = new Set(["Podcast Script"]);
 const AD_PLATFORMS = new Set(["Meta Ads", "Google Ads"]);
+const PROFILE_BIO_PLATFORMS = new Set(["Profile Bio"]);
 
 function contentTypeOptionsFor(platform: string): string[] {
   if (platform === "Short-Form Video Script") return SHORT_VIDEO_TYPES;
@@ -146,6 +156,7 @@ function contentTypeOptionsFor(platform: string): string[] {
   if (platform === "Podcast Script") return PODCAST_TYPES;
   if (platform === "Meta Ads") return META_ADS_TYPES;
   if (platform === "Google Ads") return GOOGLE_ADS_TYPES;
+  if (platform === "Profile Bio") return PROFILE_BIO_TYPES;
   return CONTENT_TYPES;
 }
 
@@ -625,6 +636,7 @@ export default function Content() {
   const isScript = !!lockedMeta && SCRIPT_PLATFORMS.has(lockedMeta.platform);
   const isPodcast = !!lockedMeta && PODCAST_PLATFORMS.has(lockedMeta.platform);
   const isAd = !!lockedMeta && AD_PLATFORMS.has(lockedMeta.platform);
+  const isProfileBio = !!lockedMeta && PROFILE_BIO_PLATFORMS.has(lockedMeta.platform);
   const charCount = useMemo(() => htmlToPlain(generated).length, [generated]);
   const wordCount = useMemo(() => {
     const t = htmlToPlain(generated).trim();
@@ -839,6 +851,13 @@ export default function Content() {
                       Ad Copy
                     </div>
                     <AdCopyEditor value={generated} onChange={setGenerated} />
+                  </div>
+                ) : isProfileBio ? (
+                  <div className="p-4">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-accent font-medium mb-3">
+                      Profile Bio · {lockedMeta.contentType}
+                    </div>
+                    <AdCopyEditor value={generated} onChange={setGenerated} greenWithinLimit />
                   </div>
                 ) : (
                   <div className="p-4">
@@ -1136,9 +1155,11 @@ function serializeAdCopy(blocks: AdBlock[]): string {
 function AdCopyEditor({
   value,
   onChange,
+  greenWithinLimit = false,
 }: {
   value: string;
   onChange: (next: string) => void;
+  greenWithinLimit?: boolean;
 }) {
   const blocks = useMemo(() => parseAdCopy(value), [value]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -1227,7 +1248,11 @@ function AdCopyEditor({
             {b.limit != null && (
               <div
                 className={`text-[11px] tabular-nums ${
-                  over ? "text-accent font-medium" : "text-muted-foreground"
+                  over
+                    ? "text-accent font-medium"
+                    : greenWithinLimit
+                      ? "text-emerald-600 font-medium"
+                      : "text-muted-foreground"
                 }`}
               >
                 {len} / {b.limit} characters{over ? " — over limit" : ""}
