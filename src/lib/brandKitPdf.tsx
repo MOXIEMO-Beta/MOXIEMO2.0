@@ -314,7 +314,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         </View>
 
         {/* Body specimen */}
-        <View style={{ marginBottom: 18 }}>
+        <View style={{ marginBottom: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 2, fontFamily: "Helvetica-Bold" }}>
               BODY  ·  {data.fonts.body.toUpperCase()}
@@ -328,9 +328,16 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
           </View>
         </View>
 
+        {/* Section break */}
+        <View style={{ marginTop: 28, marginBottom: 22, flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.ink, opacity: 0.9 }} />
+          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 3, fontFamily: "Helvetica-Bold" }}>·  ·  ·</Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.ink, opacity: 0.9 }} />
+        </View>
+
         {/* Imagery direction */}
-        <View style={{ borderTopWidth: 1, borderTopColor: C.ink, paddingTop: 14 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
+        <View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 2, fontFamily: "Helvetica-Bold" }}>
               IMAGERY DIRECTION  ·  YOUR VISUAL FEEL
             </Text>
@@ -345,6 +352,10 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
                 const fields = [primary, secondary, accent];
                 const bg = fields[i % fields.length];
                 const ink = contrastOn(bg);
+                const guide = imageryGuide[w] || {
+                  conveys: imageryDescriptions[w] || "Use as a guide for tone and styling.",
+                  use: "Apply with intention so it carries your feel.",
+                };
                 return (
                   <View
                     key={w + i}
@@ -354,19 +365,27 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
                       marginBottom: 8,
                       borderRadius: 4,
                       flexDirection: "row",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                     }}
                     wrap={false}
                   >
-                    <Text style={{ fontSize: 9, color: ink, opacity: 0.7, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, width: 28 }}>
+                    <Text style={{ fontSize: 9, color: ink, opacity: 0.7, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, width: 24, marginTop: 4 }}>
                       0{i + 1}
                     </Text>
-                    <Text style={{ fontSize: 22, color: ink, fontFamily: headingFam, letterSpacing: -0.5, width: 130 }}>
-                      {w[0].toUpperCase() + w.slice(1)}.
-                    </Text>
-                    <Text style={{ flex: 1, fontSize: 10, color: ink, fontFamily: bodyFam, lineHeight: 1.5, opacity: 0.92 }}>
-                      {imageryDescriptions[w] || "Use as a guide for tone and styling."}
-                    </Text>
+                    <View style={{ width: 110 }}>
+                      <Text style={{ fontSize: 22, color: ink, fontFamily: headingFam, letterSpacing: -0.5 }}>
+                        {w[0].toUpperCase() + w.slice(1)}.
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 10, color: ink, fontFamily: bodyFam, lineHeight: 1.5, opacity: 0.95, marginBottom: 4 }}>
+                        {guide.conveys}
+                      </Text>
+                      <Text style={{ fontSize: 9, color: ink, fontFamily: bodyFam, lineHeight: 1.5, opacity: 0.85 }}>
+                        <Text style={{ fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>HOW TO USE.  </Text>
+                        {guide.use}
+                      </Text>
+                    </View>
                   </View>
                 );
               })}
