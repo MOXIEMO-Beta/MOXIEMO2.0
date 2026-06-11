@@ -582,10 +582,10 @@ export default function BrandKit() {
                 ONE LAST STEP
               </p>
               <h1 className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.03em] mb-4 text-center">
-                Your kit is ready.
+                Where should we send your kit?
               </h1>
               <p className="text-lg text-[#3c3f50] leading-relaxed mb-10 text-center">
-                Tell us where to send it. You will get the download right away, plus a copy in your inbox.
+                Enter your best email to ensure your download arrives. Double-check it. This is to ensure you get your kit right away.
               </p>
 
               <form
