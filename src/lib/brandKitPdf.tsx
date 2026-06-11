@@ -8,6 +8,7 @@ export type BrandKitData = {
   colors: { hex: string; rgb: string; role: string }[];
   fonts: { heading: string; body: string };
   imagery: string[];
+  images?: string[]; // optional user-uploaded image data URLs
 };
 
 const C = {
