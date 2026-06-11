@@ -443,33 +443,6 @@ export default function BrandKit() {
                 <p className="text-base md:text-lg leading-relaxed max-w-md" style={{ color: "#3c3f50" }}>
                   Enter your website. Get your colors, fonts, and logo in one designed kit.
                 </p>
-
-                {/* Mock input — focuses real form */}
-                <div
-                  className="mt-7 flex items-center gap-2 p-2 rounded-full bg-white max-w-md shadow-sm"
-                  style={{ border: "1px solid rgba(21,23,28,0.08)" }}
-                >
-                  <span
-                    className="flex-1 px-4 text-sm truncate"
-                    style={{ color: "#9a9ea8" }}
-                  >
-                    yourwebsite.com
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const el = document.getElementById("website") as HTMLInputElement | null;
-                      if (el) {
-                        el.scrollIntoView({ behavior: "smooth", block: "center" });
-                        setTimeout(() => el.focus(), 350);
-                      }
-                    }}
-                    className="rounded-full px-4 py-2 text-sm font-semibold text-white transition-transform hover:scale-[1.02] motion-reduce:transform-none motion-reduce:transition-none"
-                    style={{ backgroundColor: "#FF6B5C" }}
-                  >
-                    Build my kit
-                  </button>
-                </div>
               </div>
 
               {/* Visual cluster */}
@@ -520,7 +493,7 @@ export default function BrandKit() {
           </section>
         )}
 
-        <div className="max-w-4xl mx-auto px-6 py-16 md:py-24 w-full">
+        <div className="max-w-4xl mx-auto px-6 pt-8 md:pt-10 pb-16 md:pb-24 w-full">
           {step === "input" && (
             <section>
               <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] mb-6" style={{ color: "#FF6B5C" }}>
