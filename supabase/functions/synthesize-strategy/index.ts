@@ -144,9 +144,29 @@ Deno.serve(async (req) => {
 
     // Source of truth = discovery_sessions.messages. Fall back to client transcript if DB read fails.
     let transcript: string = incomingTranscript || "";
+    let resolvedSessionId: string | null = sessionId ?? null;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    async function patchSession(patch: Record<string, unknown>) {
+      if (!supabaseUrl || !serviceKey || !resolvedSessionId) return;
+      try {
+        await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?id=eq.${resolvedSessionId}`, {
+          method: "PATCH",
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify(patch),
+        });
+      } catch (e) {
+        console.warn("patchSession failed", e);
+      }
+    }
+
     try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL");
-      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
       const authHeader = req.headers.get("Authorization") || "";
       if (supabaseUrl && serviceKey && authHeader) {
         // Identify user from JWT
@@ -181,6 +201,7 @@ Deno.serve(async (req) => {
               }
               // Mark session completed if not already
               const sid = session?.id ?? sessionId;
+              if (sid) resolvedSessionId = sid;
               if (sid && session?.status !== "completed") {
                 await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?id=eq.${sid}`, {
                   method: "PATCH",
@@ -203,14 +224,108 @@ Deno.serve(async (req) => {
 
     if (!transcript) throw new Error("No discovery transcript available");
 
+    // Mark synthesis as in_progress + bump attempts up front.
+    await patchSession({
+      synthesis_status: "in_progress",
+      synthesis_last_error: null,
+    });
+    // Bump attempt counter using a separate RPC-like patch (best-effort).
+    if (supabaseUrl && serviceKey && resolvedSessionId) {
+      try {
+        const r = await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?id=eq.${resolvedSessionId}&select=synthesis_attempts`, {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+        });
+        const j = await r.json().catch(() => []);
+        const cur = Array.isArray(j) ? (j[0]?.synthesis_attempts ?? 0) : 0;
+        await patchSession({ synthesis_attempts: cur + 1 });
+      } catch {}
+    }
+
     const isLane2 = effectiveLane === "lane2";
 
-    // Transcript truncation for unusually long Discovery sessions (both lanes).
+    // Optional compression pass: if the transcript is large, summarise it to a
+    // structured JSON first so synthesis runs against a much smaller prompt.
+    let compressedJson: string | null = null;
+    let compressionRan = false;
+    if (transcript.length > 15_000) {
+      compressionRan = true;
+      const originalChars = transcript.length;
+      try {
+        const compressController = new AbortController();
+        const compressTimer = setTimeout(() => compressController.abort(), 90_000);
+        const cRes = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4000,
+            messages: [{
+              role: "user",
+              content: `Extract the key strategic information from this Discovery interview into a structured JSON.
+Preserve all specific details, numbers, examples, and the founder's exact language where it matters most.
+Remove conversational filler, coaching dialogue, and repeated context.
+
+Respond with ONLY a JSON object in this shape (omit fields if not present):
+{
+  "transformation": string,
+  "ideal_client": string,
+  "primary_problem": string,
+  "differentiator": string,
+  "desired_feeling": string,
+  "brand_voice_summary": string,
+  "anti_voice": string,
+  "content_pillars": string[],
+  "channels": string,
+  "content_format": string,
+  "goals_90_day": string,
+  "business_goal": string,
+  "time_available": string,
+  "revenue_context": string,
+  "biggest_challenge": string
+}
+
+TRANSCRIPT:
+${transcript}`,
+            }],
+          }),
+          signal: compressController.signal,
+        }).finally(() => clearTimeout(compressTimer));
+        if (cRes.ok) {
+          const cj = await cRes.json();
+          const text = cj?.content?.[0]?.text ?? "";
+          // Pull a JSON object out of the response (model may add prose).
+          const match = text.match(/\{[\s\S]*\}/);
+          if (match) {
+            // Validate it parses and has at least a handful of fields.
+            const parsed = JSON.parse(match[0]);
+            if (parsed && typeof parsed === "object" && Object.keys(parsed).length >= 4) {
+              compressedJson = JSON.stringify(parsed, null, 2);
+              console.log(JSON.stringify({
+                event: "transcript_compression",
+                original_chars: originalChars,
+                compressed_chars: compressedJson.length,
+                compression_ratio: +(compressedJson.length / originalChars).toFixed(3),
+              }));
+            }
+          }
+        } else {
+          console.warn("compression call failed:", cRes.status, await cRes.text().catch(() => ""));
+        }
+      } catch (e) {
+        console.warn("compression threw:", String(e));
+      }
+    }
+
+    // Transcript truncation safety net for unusually long Discovery sessions.
     // If the transcript exceeds 25,000 chars, keep the most recent (and most
     // complete) USER answers and trim repeated MOXIEMO question context that
     // would otherwise inflate the prompt. We always preserve the final tail
     // of the conversation so the most refined answers stay intact.
-    if (transcript.length > 25_000) {
+    if (!compressedJson && transcript.length > 25_000) {
       const originalLen = transcript.length;
       const blocks = transcript.split(/\n\n/);
       const tail: string[] = [];
@@ -230,9 +345,12 @@ Deno.serve(async (req) => {
       );
     }
 
+    const synthesisSource = compressedJson
+      ? `Here is a COMPRESSED structured summary of the Discovery interview (the full transcript was too long to include directly). Treat this as the source of truth — it preserves the founder's specifics, numbers, and exact language where it mattered.\n\nCompressed Discovery JSON:\n\n${compressedJson}`
+      : `Discovery transcript:\n\n${transcript}`;
     let userContent = isLane2
-      ? "Here is a complete Discovery conversation with the founder or operator of a SERVICE-BASED BUSINESS or MARKETPLACE. The strategy must be for the BUSINESS BRAND — no personal/expertise framing.\n\nDiscovery transcript:\n\n" + transcript
-      : "Here is a founder's complete Discovery conversation with MOXIEMO.\nExtract and synthesize their full marketing strategy from their answers below.\n\nDiscovery transcript:\n\n" + transcript;
+      ? "Here is a complete Discovery conversation with the founder or operator of a SERVICE-BASED BUSINESS or MARKETPLACE. The strategy must be for the BUSINESS BRAND — no personal/expertise framing.\n\n" + synthesisSource
+      : "Here is a founder's complete Discovery conversation with MOXIEMO.\nExtract and synthesize their full marketing strategy from their answers below.\n\n" + synthesisSource;
     if (revenueRange) userContent += `\n\nFounder's revenue stage: ${revenueRange}`;
     if (biggestChallenge) userContent += `\nBiggest marketing challenge: ${biggestChallenge}`;
     if (brandContext && typeof brandContext === "object") {
@@ -243,12 +361,12 @@ Deno.serve(async (req) => {
       if (bc.pricing_signals) lines.push(`- Pricing signals on the site: ${bc.pricing_signals}`);
       if (bc.social_proof) lines.push(`- Social proof on the site: ${bc.social_proof}`);
       if (lines.length) {
-        // Cap scraped brand context at 3000 chars so a content-heavy site can't
+        // Cap scraped brand context at 2000 chars so a content-heavy site can't
         // balloon the synthesis prompt and push us past token / time limits.
         let scraped = lines.join("\n");
-        if (scraped.length > 3000) {
-          console.log(`[synthesize-strategy] truncating scraped brand context: ${scraped.length} -> 3000 chars`);
-          scraped = scraped.slice(0, 3000) + "… [truncated]";
+        if (scraped.length > 2000) {
+          console.log(`[synthesize-strategy] truncating scraped brand context: ${scraped.length} -> 2000 chars`);
+          scraped = scraped.slice(0, 2000) + "… [truncated]";
         }
 
         // Mismatch guard: if the scraped content shares very little vocabulary
@@ -265,7 +383,7 @@ Deno.serve(async (req) => {
         let overlap = 0;
         for (const w of sWords) if (tWords.has(w)) overlap++;
         const ratio = sWords.size > 0 ? overlap / sWords.size : 1;
-        const mismatch = sWords.size >= 20 && ratio < 0.1;
+        const mismatch = sWords.size >= 20 && ratio < 0.15;
 
         userContent += `\n\nADDITIONAL BRAND CONTEXT FROM WEBSITE (weave in where relevant; the transcript is still source of truth):\n${scraped}`;
         if (mismatch) {
@@ -275,14 +393,23 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Dynamic max_tokens for BOTH lanes based on transcript size.
-    let maxTokensForCall = 16384;
-    if (transcript.length >= 25_000) maxTokensForCall = 32000;
-    else if (transcript.length >= 15_000) maxTokensForCall = 24000;
+    // Dynamic max_tokens for BOTH lanes:
+    // - compressed input → 24000 (output is the same shape, smaller input)
+    // - uncompressed under 15k → 16384
+    // - compression failed but transcript was huge → 32000 safety net
+    let maxTokensForCall: number;
+    if (compressedJson) {
+      maxTokensForCall = 24000;
+    } else if (transcript.length < 15_000) {
+      maxTokensForCall = 16384;
+    } else {
+      // We wanted to compress but couldn't — fall back to raw with extra headroom.
+      maxTokensForCall = 32000;
+    }
 
     // Pre-synthesis prompt length logging so we can see when prompts balloon.
     console.log(
-      `[synthesize-strategy] lane=${isLane2 ? "lane2" : "lane1"} prompt_chars=${userContent.length} transcript_chars=${transcript.length} max_tokens=${maxTokensForCall}`,
+      `[synthesize-strategy] lane=${isLane2 ? "lane2" : "lane1"} prompt_chars=${userContent.length} transcript_chars=${transcript.length} compressed=${!!compressedJson} max_tokens=${maxTokensForCall}`,
     );
 
     const saveStrategyParams = {
