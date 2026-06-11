@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePlan } from "@/hooks/usePlan";
 import { aiErrorMessage } from "@/lib/aiErrors";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -709,18 +710,26 @@ export default function Content() {
             )}
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">
-                What's the idea?
+                {platform === "Profile Bio"
+                  ? "Anything specific to include or emphasise? (optional)"
+                  : "What's the idea?"}
               </label>
-              <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                A take from an article you read, something a client said, a hot opinion, a story — bring anything. MOXIEMO will shape it into content that sounds like you.
-              </p>
+              {platform !== "Profile Bio" && (
+                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+                  A take from an article you read, something a client said, a hot opinion, a story — bring anything. MOXIEMO will shape it into content that sounds like you.
+                </p>
+              )}
               <Textarea
                 value={topic}
                 onChange={(e) => {
                   setTopic(e.target.value);
                   if (campaignBriefBanner) setCampaignBriefBanner(false);
                 }}
-                placeholder="e.g. I just read that 80% of small businesses overpay in taxes because their expenses aren't categorized in real time — I want to write about this from my POV..."
+                placeholder={
+                  platform === "Profile Bio"
+                    ? "e.g. I just launched a new offer, I want to highlight my podcast, I'm pivoting my focus to X"
+                    : "e.g. I just read that 80% of small businesses overpay in taxes because their expenses aren't categorized in real time — I want to write about this from my POV..."
+                }
                 rows={4}
                 className="resize-y min-h-[100px]"
               />
@@ -822,9 +831,11 @@ export default function Content() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs tabular-nums ${nearLimit ? "text-accent font-medium" : "text-muted-foreground"}`}>
-                      {charCount.toLocaleString()}{limit ? ` / ${limit.toLocaleString()}` : ""}
-                    </span>
+                    {!isProfileBio && (
+                      <span className={`text-xs tabular-nums ${nearLimit ? "text-accent font-medium" : "text-muted-foreground"}`}>
+                        {charCount.toLocaleString()}{limit ? ` / ${limit.toLocaleString()}` : ""}
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={handleRegenerate}
@@ -857,7 +868,7 @@ export default function Content() {
                     <div className="text-[11px] uppercase tracking-[0.18em] text-accent font-medium mb-3">
                       Profile Bio · {lockedMeta.contentType}
                     </div>
-                    <AdCopyEditor value={generated} onChange={setGenerated} greenWithinLimit />
+                    <ProfileBioEditor value={generated} onChange={setGenerated} />
                   </div>
                 ) : (
                   <div className="p-4">
@@ -1256,6 +1267,164 @@ function AdCopyEditor({
                 }`}
               >
                 {len} / {b.limit} characters{over ? " — over limit" : ""}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const BIO_HEADER_RE = /^(OPTION\s+[A-Z]|ABOUT)\s*(?:\((\d+)\s*chars?\s*max\))?\s*:\s?/i;
+
+type BioField = { label: string; limit: number | null; value: string };
+
+function parseProfileBio(src: string): BioField[] {
+  const lines = (src ?? "").split(/\r?\n/);
+  const out: BioField[] = [];
+  let cur: { label: string; limit: number | null; valueLines: string[] } | null = null;
+  for (const raw of lines) {
+    const m = raw.match(BIO_HEADER_RE);
+    if (m) {
+      if (cur) {
+        out.push({
+          label: cur.label,
+          limit: cur.limit,
+          value: cur.valueLines.join("\n").replace(/^\n+|\s+$/g, ""),
+        });
+      }
+      const rest = raw.slice(m[0].length);
+      cur = {
+        label: m[1].toUpperCase().replace(/\s+/g, " "),
+        limit: m[2] ? parseInt(m[2], 10) : null,
+        valueLines: rest ? [rest] : [],
+      };
+    } else if (cur) {
+      cur.valueLines.push(raw);
+    }
+  }
+  if (cur) {
+    out.push({
+      label: cur.label,
+      limit: cur.limit,
+      value: cur.valueLines.join("\n").replace(/^\n+|\s+$/g, ""),
+    });
+  }
+  return out;
+}
+
+function serializeProfileBio(fields: BioField[]): string {
+  return fields
+    .map((f) => `${f.label}${f.limit ? ` (${f.limit} chars max)` : ""}: ${f.value}`)
+    .join("\n\n");
+}
+
+function AutoResizeTextarea({
+  value,
+  onChange,
+  className,
+  ariaLabel,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  className?: string;
+  ariaLabel?: string;
+}) {
+  const ref = useRef<HTMLTextAreaElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = Math.max(80, el.scrollHeight) + "px";
+  }, [value]);
+  return (
+    <textarea
+      ref={ref}
+      aria-label={ariaLabel}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      rows={1}
+      className={cn(
+        "w-full resize-none text-sm leading-relaxed rounded-md border border-input bg-background px-3 py-2 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 whitespace-pre-wrap",
+        className,
+      )}
+      style={{ minHeight: 80, overflow: "hidden" }}
+    />
+  );
+}
+
+function ProfileBioEditor({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const fields = useMemo(() => parseProfileBio(value), [value]);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
+
+  if (!fields.length) {
+    return (
+      <AutoResizeTextarea value={value} onChange={onChange} ariaLabel="Generated bio" />
+    );
+  }
+
+  function updateField(idx: number, newVal: string) {
+    const next = fields.map((f, i) => (i === idx ? { ...f, value: newVal } : f));
+    onChange(serializeProfileBio(next));
+  }
+
+  async function copyField(idx: number, text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx((c) => (c === idx ? null : c)), 1500);
+    } catch {
+      toast.error("Couldn't copy");
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      {fields.map((f, idx) => {
+        const len = f.value.length;
+        const over = f.limit != null && len > f.limit;
+        return (
+          <div key={idx} className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[11px] font-semibold uppercase tracking-wider text-foreground">
+                {f.label}
+              </label>
+              <button
+                type="button"
+                onClick={() => copyField(idx, f.value)}
+                className="text-[11px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                aria-label={`Copy ${f.label}`}
+              >
+                {copiedIdx === idx ? (
+                  <>
+                    <Check className="h-3 w-3" /> Copied
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon className="h-3 w-3" /> Copy
+                  </>
+                )}
+              </button>
+            </div>
+            <AutoResizeTextarea
+              value={f.value}
+              onChange={(v) => updateField(idx, v)}
+              ariaLabel={f.label}
+            />
+            {f.limit != null && (
+              <div
+                className={`text-[11px] tabular-nums font-medium ${
+                  over ? "text-accent" : "text-emerald-600"
+                }`}
+              >
+                {len} / {f.limit} characters{over ? " — over limit" : ""}
               </div>
             )}
           </div>
