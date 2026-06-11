@@ -1155,9 +1155,11 @@ function serializeAdCopy(blocks: AdBlock[]): string {
 function AdCopyEditor({
   value,
   onChange,
+  greenWithinLimit = false,
 }: {
   value: string;
   onChange: (next: string) => void;
+  greenWithinLimit?: boolean;
 }) {
   const blocks = useMemo(() => parseAdCopy(value), [value]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -1246,7 +1248,11 @@ function AdCopyEditor({
             {b.limit != null && (
               <div
                 className={`text-[11px] tabular-nums ${
-                  over ? "text-accent font-medium" : "text-muted-foreground"
+                  over
+                    ? "text-accent font-medium"
+                    : greenWithinLimit
+                      ? "text-emerald-600 font-medium"
+                      : "text-muted-foreground"
                 }`}
               >
                 {len} / {b.limit} characters{over ? " — over limit" : ""}
