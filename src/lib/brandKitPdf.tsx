@@ -174,56 +174,79 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         </Text>
         <Text style={s.sub}>Three versions so it always reads. Match the version to the background.</Text>
 
-        {(() => {
-          // Three slots. Always match version to background so nothing disappears.
-          const variants: { label: string; caption: string; bg: string; ink: string; src?: string; isReversed?: boolean }[] = [
-            { label: "FULL COLOR", caption: "Use on light, neutral surfaces.", bg: C.white, ink: C.ink, src: data.logo },
-            { label: "GRAYSCALE", caption: "Use when color is not available.", bg: C.paper, ink: C.ink, src: data.logoGrayscale || data.logo },
-            { label: "REVERSED", caption: "Use on dark or brand-colored fields.", bg: primary, ink: coverInk, src: data.logoReversed, isReversed: true },
-          ];
-          return (
-            <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
-              {variants.map((v, i) => (
-                <View key={i} style={{ flex: 1 }}>
-                  <View
-                    style={{
-                      backgroundColor: v.bg,
-                      height: 220,
-                      borderRadius: 4,
-                      alignItems: "center",
-                      justifyContent: "center",
-                      borderWidth: v.bg === C.white ? 1 : 0,
-                      borderColor: C.border,
-                      padding: 16,
-                      overflow: "hidden",
-                    }}
-                  >
-                    {v.src ? (
-                      <Image src={v.src} style={{ maxWidth: 140, maxHeight: 140, objectFit: "contain" }} />
-                    ) : (
-                      <Text style={{ color: v.ink, opacity: 0.55, fontFamily: bodyFam, fontSize: 9, textAlign: "center" }}>
-                        {v.isReversed ? "Add a white version to fill this slot." : "Not provided."}
-                      </Text>
-                    )}
-                  </View>
-                  <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginTop: 10 }}>
-                    {v.label}
-                  </Text>
-                  <Text style={{ fontSize: 9, color: C.muted, marginTop: 3, fontFamily: bodyFam, lineHeight: 1.45 }}>
-                    {v.caption}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          );
-        })()}
+        {/* Hero — oversized full-color mark */}
+        <View style={{ marginTop: 4 }}>
+          <View
+            style={{
+              backgroundColor: C.paper,
+              height: 280,
+              borderRadius: 4,
+              alignItems: "center",
+              justifyContent: "center",
+              borderWidth: 1,
+              borderColor: C.border,
+              padding: 24,
+              overflow: "hidden",
+            }}
+          >
+            {data.logo ? (
+              <Image src={data.logo} style={{ maxWidth: 360, maxHeight: 230, objectFit: "contain" }} />
+            ) : (
+              <Text style={{ color: C.muted, fontFamily: bodyFam, fontSize: 10 }}>Logo not provided.</Text>
+            )}
+          </View>
+          <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginTop: 10 }}>
+            FULL COLOR  ·  PRIMARY MARK
+          </Text>
+          <Text style={{ fontSize: 9, color: C.muted, marginTop: 3, fontFamily: bodyFam, lineHeight: 1.45 }}>
+            Lead with this version. Use on light, neutral surfaces where the color reads clearly.
+          </Text>
+        </View>
 
-        <View style={{ flexDirection: "row", marginTop: 26, gap: 24, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 18 }}>
+        {/* Two supporting versions side by side */}
+        <View style={{ flexDirection: "row", gap: 12, marginTop: 18 }}>
+          {[
+            { label: "GRAYSCALE", caption: "Use when color is not available.", bg: C.white, ink: C.ink, src: data.logoGrayscale || data.logo, isReversed: false },
+            { label: "REVERSED", caption: "Use on dark or brand-colored fields.", bg: primary, ink: coverInk, src: data.logoReversed, isReversed: true },
+          ].map((v, i) => (
+            <View key={i} style={{ flex: 1 }}>
+              <View
+                style={{
+                  backgroundColor: v.bg,
+                  height: 130,
+                  borderRadius: 4,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderWidth: v.bg === C.white ? 1 : 0,
+                  borderColor: C.border,
+                  padding: 14,
+                  overflow: "hidden",
+                }}
+              >
+                {v.src ? (
+                  <Image src={v.src} style={{ maxWidth: 120, maxHeight: 90, objectFit: "contain" }} />
+                ) : (
+                  <Text style={{ color: v.ink, opacity: 0.6, fontFamily: bodyFam, fontSize: 9, textAlign: "center" }}>
+                    {v.isReversed ? "Add a white version to fill this slot." : "Not provided."}
+                  </Text>
+                )}
+              </View>
+              <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginTop: 8 }}>
+                {v.label}
+              </Text>
+              <Text style={{ fontSize: 9, color: C.muted, marginTop: 2, fontFamily: bodyFam, lineHeight: 1.45 }}>
+                {v.caption}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: "row", marginTop: 18, gap: 24, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 12 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.5, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
               CLEAR SPACE
             </Text>
-            <Text style={{ fontSize: 10, color: C.ink, lineHeight: 1.55, fontFamily: bodyFam }}>
+            <Text style={{ fontSize: 9, color: C.ink, lineHeight: 1.5, fontFamily: bodyFam }}>
               Keep clear space around the mark equal to its own height. Let it breathe so it reads as a signature, not a sticker.
             </Text>
           </View>
@@ -231,7 +254,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.5, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
               MATCH THE BACKGROUND
             </Text>
-            <Text style={{ fontSize: 10, color: C.ink, lineHeight: 1.55, fontFamily: bodyFam }}>
+            <Text style={{ fontSize: 9, color: C.ink, lineHeight: 1.5, fontFamily: bodyFam }}>
               Use the color or grayscale mark on light. Use the reversed mark on dark or saturated brand color. Never place the color mark on a field where it disappears.
             </Text>
           </View>
@@ -408,22 +431,42 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
           </Text>
           <Text style={s.sub}>The images that carry your brand's feel. Use these as your reference when you create.</Text>
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4, marginTop: 8 }}>
-            {data.images.slice(0, 6).map((src, i) => (
-              <View
-                key={i}
-                style={{
-                  width: "50%",
-                  padding: 4,
-                }}
-                wrap={false}
-              >
-                <View style={{ backgroundColor: secondary, height: 200, borderRadius: 4, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
-                  <Image src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                </View>
+          {(() => {
+            const imgs = data.images!.slice(0, 6);
+            const n = imgs.length;
+            // Choose a grid that always fits one A4 page (~620pt available after header/footer).
+            const cols = n <= 1 ? 1 : n <= 4 ? 2 : 3;
+            const rows = Math.ceil(n / cols);
+            // Reserve ~210pt for eyebrow, divider, heading, sub, and footer breathing room.
+            const available = 560;
+            const gap = 8;
+            const cellHeight = Math.floor((available - gap * (rows - 1)) / rows);
+            const widthPct = `${100 / cols}%`;
+            return (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4, marginTop: 8 }}>
+                {imgs.map((src, i) => (
+                  <View
+                    key={i}
+                    style={{ width: widthPct, padding: 4 }}
+                    wrap={false}
+                  >
+                    <View
+                      style={{
+                        backgroundColor: secondary,
+                        height: cellHeight,
+                        borderRadius: 4,
+                        overflow: "hidden",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Image src={src} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    </View>
+                  </View>
+                ))}
               </View>
-            ))}
-          </View>
+            );
+          })()}
           <Footer />
         </Page>
       )}
