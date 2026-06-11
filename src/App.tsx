@@ -27,6 +27,7 @@ import CaseForOptimism from "./pages/blog/CaseForOptimism.tsx";
 import Resources from "./pages/marketing/Resources.tsx";
 import Changelog from "./pages/marketing/Changelog.tsx";
 import Founding from "./pages/marketing/Founding.tsx";
+import BrandKit from "./pages/marketing/BrandKit.tsx";
 import AppLayout from "./layouts/AppLayout.tsx";
 import Dashboard from "./pages/app/Dashboard.tsx";
 import Discovery from "./pages/app/Discovery.tsx";
@@ -87,6 +88,7 @@ const App = () => (
             <Route path="/resources" element={<Resources />} />
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/founding" element={<Founding />} />
+            <Route path="/brand-kit" element={<BrandKit />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
