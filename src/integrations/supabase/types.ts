@@ -324,6 +324,10 @@ export type Database = {
           messages: Json
           started_at: string
           status: string
+          synthesis_attempts: number
+          synthesis_completed_at: string | null
+          synthesis_last_error: string | null
+          synthesis_status: string | null
           updated_at: string
           user_id: string
         }
@@ -338,6 +342,10 @@ export type Database = {
           messages?: Json
           started_at?: string
           status?: string
+          synthesis_attempts?: number
+          synthesis_completed_at?: string | null
+          synthesis_last_error?: string | null
+          synthesis_status?: string | null
           updated_at?: string
           user_id: string
         }
@@ -352,6 +360,10 @@ export type Database = {
           messages?: Json
           started_at?: string
           status?: string
+          synthesis_attempts?: number
+          synthesis_completed_at?: string | null
+          synthesis_last_error?: string | null
+          synthesis_status?: string | null
           updated_at?: string
           user_id?: string
         }

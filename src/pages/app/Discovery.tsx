@@ -500,14 +500,24 @@ export default function Discovery() {
   }
 
   async function synthesize(history: Msg[]) {
+    // Background synthesis: persist answers + mark session pending, fire the
+    // edge function fire-and-forget, then send the user to the Strategy page
+    // which will poll and show the build progress / retry UI.
     setSynthesizing(true);
     setSynthFailed(false);
     lastSynthHistoryRef.current = history;
-    // Save discovery answers BEFORE calling Anthropic so they're never lost on failure.
     try {
       await persist(history, sessionId!, true);
     } catch (saveErr) {
       console.error("pre-synth persist failed:", saveErr);
+    }
+    try {
+      await supabase
+        .from("discovery_sessions")
+        .update({ synthesis_status: "pending", synthesis_last_error: null } as any)
+        .eq("id", sessionId!);
+    } catch (e) {
+      console.warn("could not mark synthesis pending", e);
     }
     try {
       const transcript = history.map((m) => `${m.role === "user" ? "USER" : "MOXIEMO"}: ${m.content}`).join("\n\n");
@@ -521,19 +531,20 @@ export default function Discovery() {
       const { data: { session } } = await supabase.auth.getSession();
       const authToken = session?.access_token ?? supabaseKey;
 
-      const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), 120000);
-      let timedOut = false;
-      const resp = await fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
+      // Fire-and-forget. The Strategy page polls discovery_sessions.synthesis_status
+      // and renders progress / retry without the user having to stay on this page.
+      fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Accept": "application/json",
           "Authorization": `Bearer ${authToken}`,
           "apikey": supabaseKey,
         },
-        signal: abortController.signal,
         body: JSON.stringify({
           transcript,
+          sessionId: sessionId ?? undefined,
+          responseMode: "json",
           revenueRange: optional.revenueRange,
           biggestChallenge: optional.biggestChallenge,
           lane: laneRef.current ?? "lane1",
@@ -546,83 +557,16 @@ export default function Discovery() {
               }
             : undefined,
         }),
-      }).catch((err) => {
-        if (err?.name === "AbortError") {
-          timedOut = true;
-          throw new Error("__TIMEOUT__");
-        }
-        throw err;
-      });
+        keepalive: true,
+      }).catch((err) => console.warn("background synth dispatch failed:", err));
 
-      if (!resp.ok || !resp.body) {
-        const errText = !resp.ok ? await resp.text().catch(() => "") : "no body";
-        throw new Error(`Synthesis request failed: ${resp.status} ${errText}`);
-      }
-
-      const reader = resp.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let data: any = null;
-      let streamError: string | null = null;
-
-      try {
-        while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const payload = line.slice(6).trim();
-          if (!payload) continue;
-          try {
-            const evt = JSON.parse(payload);
-            if (evt.type === "complete") {
-              data = evt.strategy;
-            } else if (evt.type === "error") {
-              streamError = evt.message || "Stream error";
-            }
-            // 'progress' events keep the UI alive; nothing else to do.
-          } catch {
-            // ignore non-JSON heartbeat lines
-          }
-        }
-        }
-      } catch (readErr: any) {
-        if (readErr?.name === "AbortError") {
-          timedOut = true;
-          throw new Error("__TIMEOUT__");
-        }
-        throw readErr;
-      } finally {
-        clearTimeout(timeoutId);
-      }
-      clearTimeout(timeoutId);
-
-      if (streamError) throw new Error(streamError);
-      if (!data) throw new Error("Stream ended before strategy was generated");
-      if (!user) return;
-      // upsert strategy — preserve optional context inside raw_foundation
-      const rawFoundation = {
-        ...data,
-        revenueRange: optional.revenueRange,
-        biggestChallenge: optional.biggestChallenge,
-      };
-      await supabase
-        .from("strategies")
-        .upsert({ user_id: user.id, ...data, raw_foundation: rawFoundation }, { onConflict: "user_id" });
-      setSynthFailed(false);
-      toast.success("Your strategy is ready.");
+      // Briefly show the interstitial then route to Strategy where polling continues.
       setStrategyReady(true);
     } catch (e: any) {
-      console.error("synthesize error:", e);
-      setSynthFailed(true);
-      if (e?.message === "__TIMEOUT__") {
-        toast.error("Strategy generation timed out — please retry");
-      } else {
-        toast.error(aiErrorMessage("discovery", e));
-      }
+      console.error("synthesize dispatch error:", e);
+      // Even if dispatch failed, send the user to Strategy page — it will
+      // detect the pending state and trigger synth on its own.
+      setStrategyReady(true);
     } finally {
       setSynthesizing(false);
     }
