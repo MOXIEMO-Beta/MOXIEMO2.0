@@ -205,12 +205,12 @@ Deno.serve(async (req) => {
 
     const isLane2 = effectiveLane === "lane2";
 
-    // Lane 1 transcript truncation for unusually long Discovery sessions.
+    // Transcript truncation for unusually long Discovery sessions (both lanes).
     // If the transcript exceeds 25,000 chars, keep the most recent (and most
     // complete) USER answers and trim repeated MOXIEMO question context that
     // would otherwise inflate the prompt. We always preserve the final tail
     // of the conversation so the most refined answers stay intact.
-    if (!isLane2 && transcript.length > 25_000) {
+    if (transcript.length > 25_000) {
       const originalLen = transcript.length;
       const blocks = transcript.split(/\n\n/);
       const tail: string[] = [];
@@ -226,7 +226,7 @@ Deno.serve(async (req) => {
       const head = blocks.slice(0, 4).join("\n\n");
       transcript = `${head}\n\n… [earlier MOXIEMO prompts trimmed for length] …\n\n${tail.join("\n\n")}`;
       console.log(
-        `[synthesize-strategy] lane1 transcript truncated: ${originalLen} -> ${transcript.length} chars`,
+        `[synthesize-strategy] ${isLane2 ? "lane2" : "lane1"} transcript truncated: ${originalLen} -> ${transcript.length} chars`,
       );
     }
 
@@ -275,14 +275,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Dynamic max_tokens for Lane 1 based on transcript size. Lane 2 keeps
-    // its existing 24000 ceiling (its prompt template is bounded already).
-    let lane1MaxTokens = 16384;
-    if (!isLane2) {
-      if (transcript.length >= 25_000) lane1MaxTokens = 32000;
-      else if (transcript.length >= 15_000) lane1MaxTokens = 24000;
-    }
-    const maxTokensForCall = isLane2 ? 24000 : lane1MaxTokens;
+    // Dynamic max_tokens for BOTH lanes based on transcript size.
+    let maxTokensForCall = 16384;
+    if (transcript.length >= 25_000) maxTokensForCall = 32000;
+    else if (transcript.length >= 15_000) maxTokensForCall = 24000;
 
     // Pre-synthesis prompt length logging so we can see when prompts balloon.
     console.log(
