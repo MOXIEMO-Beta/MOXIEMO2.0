@@ -830,9 +830,11 @@ export default function Content() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
-                    <span className={`text-xs tabular-nums ${nearLimit ? "text-accent font-medium" : "text-muted-foreground"}`}>
-                      {charCount.toLocaleString()}{limit ? ` / ${limit.toLocaleString()}` : ""}
-                    </span>
+                    {!isProfileBio && (
+                      <span className={`text-xs tabular-nums ${nearLimit ? "text-accent font-medium" : "text-muted-foreground"}`}>
+                        {charCount.toLocaleString()}{limit ? ` / ${limit.toLocaleString()}` : ""}
+                      </span>
+                    )}
                     <button
                       type="button"
                       onClick={handleRegenerate}
@@ -865,7 +867,7 @@ export default function Content() {
                     <div className="text-[11px] uppercase tracking-[0.18em] text-accent font-medium mb-3">
                       Profile Bio · {lockedMeta.contentType}
                     </div>
-                    <AdCopyEditor value={generated} onChange={setGenerated} greenWithinLimit />
+                    <ProfileBioEditor value={generated} onChange={setGenerated} />
                   </div>
                 ) : (
                   <div className="p-4">
