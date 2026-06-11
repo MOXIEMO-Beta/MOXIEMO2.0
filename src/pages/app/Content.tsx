@@ -852,6 +852,13 @@ export default function Content() {
                     </div>
                     <AdCopyEditor value={generated} onChange={setGenerated} />
                   </div>
+                ) : isProfileBio ? (
+                  <div className="p-4">
+                    <div className="text-[11px] uppercase tracking-[0.18em] text-accent font-medium mb-3">
+                      Profile Bio · {lockedMeta.contentType}
+                    </div>
+                    <AdCopyEditor value={generated} onChange={setGenerated} greenWithinLimit />
+                  </div>
                 ) : (
                   <div className="p-4">
                     {isScript && (
