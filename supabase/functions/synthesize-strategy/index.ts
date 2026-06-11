@@ -205,6 +205,31 @@ Deno.serve(async (req) => {
 
     const isLane2 = effectiveLane === "lane2";
 
+    // Lane 1 transcript truncation for unusually long Discovery sessions.
+    // If the transcript exceeds 25,000 chars, keep the most recent (and most
+    // complete) USER answers and trim repeated MOXIEMO question context that
+    // would otherwise inflate the prompt. We always preserve the final tail
+    // of the conversation so the most refined answers stay intact.
+    if (!isLane2 && transcript.length > 25_000) {
+      const originalLen = transcript.length;
+      const blocks = transcript.split(/\n\n/);
+      const tail: string[] = [];
+      let acc = 0;
+      const TAIL_BUDGET = 18_000;
+      for (let i = blocks.length - 1; i >= 0; i--) {
+        const b = blocks[i];
+        if (acc + b.length + 2 > TAIL_BUDGET) break;
+        tail.unshift(b);
+        acc += b.length + 2;
+      }
+      // Keep the very first few blocks as opening context.
+      const head = blocks.slice(0, 4).join("\n\n");
+      transcript = `${head}\n\n… [earlier MOXIEMO prompts trimmed for length] …\n\n${tail.join("\n\n")}`;
+      console.log(
+        `[synthesize-strategy] lane1 transcript truncated: ${originalLen} -> ${transcript.length} chars`,
+      );
+    }
+
     let userContent = isLane2
       ? "Here is a complete Discovery conversation with the founder or operator of a SERVICE-BASED BUSINESS or MARKETPLACE. The strategy must be for the BUSINESS BRAND — no personal/expertise framing.\n\nDiscovery transcript:\n\n" + transcript
       : "Here is a founder's complete Discovery conversation with MOXIEMO.\nExtract and synthesize their full marketing strategy from their answers below.\n\nDiscovery transcript:\n\n" + transcript;
@@ -250,9 +275,18 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Dynamic max_tokens for Lane 1 based on transcript size. Lane 2 keeps
+    // its existing 24000 ceiling (its prompt template is bounded already).
+    let lane1MaxTokens = 16384;
+    if (!isLane2) {
+      if (transcript.length >= 25_000) lane1MaxTokens = 32000;
+      else if (transcript.length >= 15_000) lane1MaxTokens = 24000;
+    }
+    const maxTokensForCall = isLane2 ? 24000 : lane1MaxTokens;
+
     // Pre-synthesis prompt length logging so we can see when prompts balloon.
     console.log(
-      `[synthesize-strategy] lane=${isLane2 ? "lane2" : "lane1"} prompt_chars=${userContent.length} transcript_chars=${transcript.length}`,
+      `[synthesize-strategy] lane=${isLane2 ? "lane2" : "lane1"} prompt_chars=${userContent.length} transcript_chars=${transcript.length} max_tokens=${maxTokensForCall}`,
     );
 
     const saveStrategyParams = {
