@@ -5,6 +5,8 @@ export type BrandKitData = {
   siteName: string;
   websiteUrl: string;
   logo?: string; // url or data url
+  logoGrayscale?: string; // optional dark/mono version
+  logoReversed?: string; // optional white/reversed version
   colors: { hex: string; rgb: string; role: string }[];
   fonts: { heading: string; body: string };
   imagery: string[];
@@ -72,6 +74,33 @@ const imageryDescriptions: Record<string, string> = {
   refined: "Quiet luxury. Polished without being loud.",
 };
 
+const imageryGuide: Record<string, { conveys: string; use: string }> = {
+  clean: {
+    conveys: "Conveys clarity, confidence, and room to think. Nothing competes for attention.",
+    use: "Lead with white space. Let one thing be the focus. Cut anything that does not earn its place.",
+  },
+  warm: {
+    conveys: "Conveys approachability and humanity. It feels lived in, not staged.",
+    use: "Choose soft, natural light and real moments over polished perfection. Favor tones that feel inviting.",
+  },
+  bold: {
+    conveys: "Conveys confidence and energy. It does not whisper.",
+    use: "Lead with strong color and scale. Make a statement and commit to it.",
+  },
+  editorial: {
+    conveys: "Conveys authority and intention. It looks considered, like a magazine spread.",
+    use: "Compose with purpose. Use strong type, generous margins, and imagery that feels curated rather than stock.",
+  },
+  playful: {
+    conveys: "Conveys warmth, humor, and ease. It does not take itself too seriously.",
+    use: "Use unexpected color, movement, and a lighter tone. Let personality show.",
+  },
+  refined: {
+    conveys: "Conveys quality and restraint. Every detail looks intentional.",
+    use: "Keep it minimal and precise. Let craft and spacing do the work.",
+  },
+};
+
 function BrandKitDoc({ data }: { data: BrandKitData }) {
   const safeHost = (() => {
     try {
@@ -133,7 +162,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         </View>
       </Page>
 
-      {/* Logo — editorial frame */}
+      {/* Logo — three versions, each on a matched background */}
       <Page size="A4" style={s.page}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
           <Text style={s.eyebrow}>01  ·  LOGO</Text>
@@ -143,40 +172,53 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         <Text style={{ fontSize: 36, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>
           Your mark.
         </Text>
-        <Text style={s.sub}>The signature you sign every piece of work with.</Text>
+        <Text style={s.sub}>Three versions so it always reads. Match the version to the background.</Text>
 
-        <View
-          style={{
-            backgroundColor: secondary,
-            height: 340,
-            borderRadius: 4,
-            alignItems: "center",
-            justifyContent: "center",
-            position: "relative",
-            marginTop: 8,
-            overflow: "hidden",
-          }}
-        >
-          {/* clear-space ticks */}
-          <View style={{ position: "absolute", top: 24, left: 24, width: 22, height: 1, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", top: 24, left: 24, width: 1, height: 22, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", top: 24, right: 24, width: 22, height: 1, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", top: 24, right: 24, width: 1, height: 22, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", bottom: 24, left: 24, width: 22, height: 1, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", bottom: 24, left: 24, width: 1, height: 22, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", bottom: 24, right: 24, width: 22, height: 1, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
-          <View style={{ position: "absolute", bottom: 24, right: 24, width: 1, height: 22, backgroundColor: contrastOn(secondary), opacity: 0.35 }} />
+        {(() => {
+          // Three slots. Always match version to background so nothing disappears.
+          const variants: { label: string; caption: string; bg: string; ink: string; src?: string; isReversed?: boolean }[] = [
+            { label: "FULL COLOR", caption: "Use on light, neutral surfaces.", bg: C.white, ink: C.ink, src: data.logo },
+            { label: "GRAYSCALE", caption: "Use when color is not available.", bg: C.paper, ink: C.ink, src: data.logoGrayscale || data.logo },
+            { label: "REVERSED", caption: "Use on dark or brand-colored fields.", bg: primary, ink: coverInk, src: data.logoReversed, isReversed: true },
+          ];
+          return (
+            <View style={{ flexDirection: "row", gap: 12, marginTop: 8 }}>
+              {variants.map((v, i) => (
+                <View key={i} style={{ flex: 1 }}>
+                  <View
+                    style={{
+                      backgroundColor: v.bg,
+                      height: 220,
+                      borderRadius: 4,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      borderWidth: v.bg === C.white ? 1 : 0,
+                      borderColor: C.border,
+                      padding: 16,
+                      overflow: "hidden",
+                    }}
+                  >
+                    {v.src ? (
+                      <Image src={v.src} style={{ maxWidth: 140, maxHeight: 140, objectFit: "contain" }} />
+                    ) : (
+                      <Text style={{ color: v.ink, opacity: 0.55, fontFamily: bodyFam, fontSize: 9, textAlign: "center" }}>
+                        {v.isReversed ? "Add a white version to fill this slot." : "Not provided."}
+                      </Text>
+                    )}
+                  </View>
+                  <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginTop: 10 }}>
+                    {v.label}
+                  </Text>
+                  <Text style={{ fontSize: 9, color: C.muted, marginTop: 3, fontFamily: bodyFam, lineHeight: 1.45 }}>
+                    {v.caption}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          );
+        })()}
 
-          {data.logo ? (
-            <Image src={data.logo} style={{ maxWidth: 320, maxHeight: 200, objectFit: "contain" }} />
-          ) : (
-            <Text style={{ color: contrastOn(secondary), opacity: 0.6, fontFamily: bodyFam, fontSize: 12 }}>
-              No logo provided.
-            </Text>
-          )}
-        </View>
-
-        <View style={{ flexDirection: "row", marginTop: 22, gap: 24 }}>
+        <View style={{ flexDirection: "row", marginTop: 26, gap: 24, borderTopWidth: 1, borderTopColor: C.border, paddingTop: 18 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.5, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
               CLEAR SPACE
@@ -187,10 +229,10 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
           </View>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.5, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
-              USE WELL
+              MATCH THE BACKGROUND
             </Text>
             <Text style={{ fontSize: 10, color: C.ink, lineHeight: 1.55, fontFamily: bodyFam }}>
-              Place on solid backgrounds with enough contrast. Do not stretch, recolor, or crop the mark.
+              Use the color or grayscale mark on light. Use the reversed mark on dark or saturated brand color. Never place the color mark on a field where it disappears.
             </Text>
           </View>
         </View>
@@ -213,22 +255,18 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
 
         <View style={{ flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 48 }}>
           {(() => {
+            // 2-col x 3-row even grid. Every block is the same size.
             const cols = data.colors.slice(0, 6);
-            // Layout: row 1 = hero (100%, 120h), rows 2/3 = 2-col grid (50%, 110h each).
-            // Fits up to 6 swatches on a single page with the header above.
             return cols.map((c, i) => {
               const ink = contrastOn(c.hex);
-              const isHero = i === 0;
-              const width = isHero ? "100%" : "50%";
-              const height = isHero ? 120 : 110;
               return (
                 <View
                   key={c.hex + i}
                   style={{
-                    width,
-                    height,
+                    width: "50%",
+                    height: 165,
                     backgroundColor: c.hex,
-                    padding: 16,
+                    padding: 18,
                     justifyContent: "space-between",
                   }}
                   wrap={false}
@@ -237,7 +275,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
                     {(c.role || `TONE ${String.fromCharCode(64 + i + 1)}`).toUpperCase()}
                   </Text>
                   <View>
-                    <Text style={{ fontSize: isHero ? 24 : 16, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
+                    <Text style={{ fontSize: 20, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
                       {c.hex.toUpperCase()}
                     </Text>
                     <Text style={{ fontSize: 9, color: ink, opacity: 0.85, marginTop: 2, fontFamily: bodyFam }}>
@@ -276,7 +314,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         </View>
 
         {/* Body specimen */}
-        <View style={{ marginBottom: 18 }}>
+        <View style={{ marginBottom: 10 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 2, fontFamily: "Helvetica-Bold" }}>
               BODY  ·  {data.fonts.body.toUpperCase()}
@@ -290,9 +328,16 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
           </View>
         </View>
 
+        {/* Section break */}
+        <View style={{ marginTop: 28, marginBottom: 22, flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.ink, opacity: 0.9 }} />
+          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 3, fontFamily: "Helvetica-Bold" }}>·  ·  ·</Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.ink, opacity: 0.9 }} />
+        </View>
+
         {/* Imagery direction */}
-        <View style={{ borderTopWidth: 1, borderTopColor: C.ink, paddingTop: 14 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 10 }}>
+        <View>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 12 }}>
             <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 2, fontFamily: "Helvetica-Bold" }}>
               IMAGERY DIRECTION  ·  YOUR VISUAL FEEL
             </Text>
@@ -307,6 +352,10 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
                 const fields = [primary, secondary, accent];
                 const bg = fields[i % fields.length];
                 const ink = contrastOn(bg);
+                const guide = imageryGuide[w] || {
+                  conveys: imageryDescriptions[w] || "Use as a guide for tone and styling.",
+                  use: "Apply with intention so it carries your feel.",
+                };
                 return (
                   <View
                     key={w + i}
@@ -316,19 +365,27 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
                       marginBottom: 8,
                       borderRadius: 4,
                       flexDirection: "row",
-                      alignItems: "center",
+                      alignItems: "flex-start",
                     }}
                     wrap={false}
                   >
-                    <Text style={{ fontSize: 9, color: ink, opacity: 0.7, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, width: 28 }}>
+                    <Text style={{ fontSize: 9, color: ink, opacity: 0.7, fontFamily: "Helvetica-Bold", letterSpacing: 1.5, width: 24, marginTop: 4 }}>
                       0{i + 1}
                     </Text>
-                    <Text style={{ fontSize: 22, color: ink, fontFamily: headingFam, letterSpacing: -0.5, width: 130 }}>
-                      {w[0].toUpperCase() + w.slice(1)}.
-                    </Text>
-                    <Text style={{ flex: 1, fontSize: 10, color: ink, fontFamily: bodyFam, lineHeight: 1.5, opacity: 0.92 }}>
-                      {imageryDescriptions[w] || "Use as a guide for tone and styling."}
-                    </Text>
+                    <View style={{ width: 110 }}>
+                      <Text style={{ fontSize: 22, color: ink, fontFamily: headingFam, letterSpacing: -0.5 }}>
+                        {w[0].toUpperCase() + w.slice(1)}.
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 10, color: ink, fontFamily: bodyFam, lineHeight: 1.5, opacity: 0.95, marginBottom: 4 }}>
+                        {guide.conveys}
+                      </Text>
+                      <Text style={{ fontSize: 9, color: ink, fontFamily: bodyFam, lineHeight: 1.5, opacity: 0.85 }}>
+                        <Text style={{ fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>HOW TO USE.  </Text>
+                        {guide.use}
+                      </Text>
+                    </View>
                   </View>
                 );
               })}
