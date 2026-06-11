@@ -658,18 +658,18 @@ export default function BrandKit() {
                 <Check className="h-7 w-7 text-white" />
               </div>
               <h1 className="text-4xl md:text-5xl font-bold leading-[1.05] tracking-[-0.03em] mb-4">
-                Sent. Check your inbox.
+                Done. Your kit is downloading.
               </h1>
               <p className="text-lg text-[#3c3f50] leading-relaxed mb-8">
-                Your brand kit is downloading now and on its way to {email}.
+                Check your downloads folder. Need it again? Grab it below.
               </p>
               <Button
                 type="button"
                 variant="outline"
                 onClick={downloadAgain}
-                className="rounded-full h-11 px-6"
+                className="rounded-full h-11 px-6 uppercase tracking-wider"
               >
-                Download again
+                DOWNLOAD AGAIN
               </Button>
 
               <div
