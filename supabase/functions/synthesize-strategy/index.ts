@@ -634,12 +634,14 @@ ${transcript}`,
 
     // Single attempt: open the Anthropic streaming call, drain it (forwarding
     // progress events to the client), and return the accumulated tool JSON.
-    // Uses a 180s AbortController to give Lane 2 (longer outputs) enough headroom.
+    // Uses a dynamic AbortController: 180s normally, 300s when compression ran
+    // (since that adds another sequential Anthropic call upstream).
     async function callAnthropicOnce(opts: {
       onProgress: (bytes: number) => void;
     }): Promise<{ ok: true; toolJson: string } | { ok: false; status: number; detail: string }> {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 180_000);
+      const abortMs = compressionRan ? 300_000 : 180_000;
+      const timer = setTimeout(() => controller.abort(), abortMs);
       try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
