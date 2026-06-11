@@ -1171,6 +1171,7 @@ function AdCopyEditor({
   onChange: (next: string) => void;
   greenWithinLimit?: boolean;
 }) {
+  void greenWithinLimit;
   const blocks = useMemo(() => parseAdCopy(value), [value]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
 
