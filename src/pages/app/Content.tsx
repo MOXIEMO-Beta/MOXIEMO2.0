@@ -51,6 +51,7 @@ import {
   Wand2,
   Megaphone,
   CalendarClock,
+  UserCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
@@ -87,6 +88,7 @@ const PLATFORMS = [
   { value: "Podcast Script", icon: Mic, limit: null },
   { value: "Meta Ads", icon: Megaphone, limit: null },
   { value: "Google Ads", icon: Megaphone, limit: null },
+  { value: "Profile Bio", icon: UserCircle2, limit: null },
 ];
 
 const CONTENT_TYPES = [
@@ -136,9 +138,17 @@ const GOOGLE_ADS_TYPES = [
   "Ad Variations",
 ];
 
+const PROFILE_BIO_TYPES = [
+  "LinkedIn Headline",
+  "LinkedIn About Section",
+  "Instagram Bio",
+  "Twitter / X Bio",
+];
+
 const SCRIPT_PLATFORMS = new Set(["Short-Form Video Script", "Long-Form Video Script", "Podcast Script"]);
 const PODCAST_PLATFORMS = new Set(["Podcast Script"]);
 const AD_PLATFORMS = new Set(["Meta Ads", "Google Ads"]);
+const PROFILE_BIO_PLATFORMS = new Set(["Profile Bio"]);
 
 function contentTypeOptionsFor(platform: string): string[] {
   if (platform === "Short-Form Video Script") return SHORT_VIDEO_TYPES;
@@ -146,6 +156,7 @@ function contentTypeOptionsFor(platform: string): string[] {
   if (platform === "Podcast Script") return PODCAST_TYPES;
   if (platform === "Meta Ads") return META_ADS_TYPES;
   if (platform === "Google Ads") return GOOGLE_ADS_TYPES;
+  if (platform === "Profile Bio") return PROFILE_BIO_TYPES;
   return CONTENT_TYPES;
 }
 
