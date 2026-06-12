@@ -111,6 +111,12 @@ export default function Index() {
           <p className="text-lg md:text-xl text-muted-foreground max-w-[640px] mb-10 leading-relaxed">
             MOXIEMO is your AI CMO. One platform that learns your brand, builds your complete marketing strategy, and publishes your content. No more tool chaos. No more starting from scratch.
           </p>
+          <p
+            className="font-display text-2xl md:text-3xl lg:text-[34px] font-bold tracking-[-0.02em] leading-[1.15] text-foreground mb-10 max-w-[720px]"
+          >
+            One platform.{" "}
+            <span style={{ color: "#ff6b6b" }}>Confident marketing.</span>
+          </p>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center mb-4">
             <Button
               asChild
