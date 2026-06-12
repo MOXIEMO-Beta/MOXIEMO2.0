@@ -95,11 +95,10 @@ export default function Index() {
       {/* SECTION 1 - HERO */}
       <section className="bg-background pt-10 pb-16">
         <div className="max-w-[1100px] mx-auto px-6">
-          <div className="text-[11px] md:text-xs font-bold uppercase tracking-[0.22em] mb-6" style={{ color: "#ff6b6b" }}>
-            For founders doing $250K+
-            <br className="md:hidden" />
-            {" "}who are tired of playing small
-          </div>
+          <p className="font-display text-xl md:text-2xl lg:text-[26px] font-bold tracking-[-0.02em] leading-[1.15] mb-6 text-foreground">
+            One platform.{" "}
+            <span style={{ color: "#ff6b6b" }}>Confident marketing.</span>
+          </p>
           <h1 className="max-w-[1100px] text-5xl md:text-7xl lg:text-[88px] font-normal leading-[1.05] tracking-[-0.035em] mb-8 text-foreground">
             You built a real business.
             <br />
@@ -110,12 +109,6 @@ export default function Index() {
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground max-w-[640px] mb-10 leading-relaxed">
             MOXIEMO is your AI CMO. One platform that learns your brand, builds your complete marketing strategy, and publishes your content. No more tool chaos. No more starting from scratch.
-          </p>
-          <p
-            className="font-display text-2xl md:text-3xl lg:text-[34px] font-bold tracking-[-0.02em] leading-[1.15] text-foreground mb-10 max-w-[720px]"
-          >
-            One platform.{" "}
-            <span style={{ color: "#ff6b6b" }}>Confident marketing.</span>
           </p>
           <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center mb-4">
             <Button
