@@ -953,7 +953,7 @@ export default function Strategy() {
         .limit(1)
         .maybeSingle(),
     ]);
-    setStrategy(strat);
+    setStrategy(normalizeStrategy(strat));
     if (sess) {
       const msgs = Array.isArray((sess as any).messages) ? (sess as any).messages : [];
       setSession({
