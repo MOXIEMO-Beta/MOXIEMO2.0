@@ -24,6 +24,29 @@ import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
 import { ActionPlanTab } from "@/components/strategy/tabs/ActionPlanTab";
 import { CompetitiveAndMessagingSections } from "@/components/strategy/CompetitiveAndMessagingSections";
 
+// Defensive parse: a synthesis bug sometimes persists enhanced_foundation /
+// raw_foundation as a JSON-encoded string instead of an object. Parse so the
+// UI's nested lookups (e.g. enhanced_foundation.voiceGuidelines.toneByPlatform)
+// resolve to populated values on initial mount.
+function parseIfJsonString(v: unknown) {
+  if (typeof v !== "string") return v;
+  const trimmed = v.trim();
+  if (!trimmed || (trimmed[0] !== "{" && trimmed[0] !== "[")) return v;
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return v;
+  }
+}
+function normalizeStrategy(s: any) {
+  if (!s) return s;
+  return {
+    ...s,
+    enhanced_foundation: parseIfJsonString(s.enhanced_foundation),
+    raw_foundation: parseIfJsonString(s.raw_foundation),
+  };
+}
+
 const TAB_PLACEHOLDER = (label: string) => (
   <Card className="p-10 border-dashed border-border bg-background text-center">
     <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Coming next sprint</div>
