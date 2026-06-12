@@ -747,6 +747,16 @@ ${transcript}`,
       } catch (e) {
         return { ok: false, reason: `parse error: ${String(e)}` };
       }
+      // Defensive: some tool-call streams return enhanced_foundation as a
+      // JSON-encoded string instead of an object. Re-parse so downstream
+      // consumers (validation, persistence, UI) see a proper object.
+      if (typeof parsed?.enhanced_foundation === "string") {
+        try {
+          parsed.enhanced_foundation = JSON.parse(parsed.enhanced_foundation);
+        } catch {
+          // leave as-is; validation will flag if required keys are missing
+        }
+      }
       const missing = REQUIRED_TOP_FIELDS.filter((k) => {
         const v = parsed?.[k];
         if (v === undefined || v === null) return true;
