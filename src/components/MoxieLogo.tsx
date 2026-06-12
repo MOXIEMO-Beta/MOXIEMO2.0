@@ -13,16 +13,17 @@ export function MoxieLogo({
   showWord?: boolean;
   variant?: "default" | "light";
 }) {
+  const fullAlt = "MOXIEMO. One platform. Confident marketing.";
   if (!showWord) {
     return (
       <div className={cn("flex items-center", className)}>
-        <img src={mark} alt="MOXIEMO" className="h-11 w-auto" />
+        <img src={mark} alt={fullAlt} className="h-11 w-auto" />
       </div>
     );
   }
   if (variant === "light") {
     return (
-      <div className={cn("flex items-center", className)} aria-label="MOXIEMO">
+      <div className={cn("flex items-center", className)} aria-label={fullAlt}>
         <img src={markOnly} alt="" className="h-11 w-auto" />
         <img
           src={wordmark}
@@ -34,8 +35,12 @@ export function MoxieLogo({
     );
   }
   return (
-    <div className={cn("flex items-center", className)}>
-      <img src={logo} alt="MOXIEMO" className="h-11 w-auto" />
+    <div className={cn("flex items-center", className)} aria-label={fullAlt}>
+      {/* Mobile: mark + wordmark only — tagline baked into full lockup is too small to read at header scale */}
+      <img src={markOnly} alt="" className="h-9 w-auto sm:hidden" />
+      <img src={wordmark} alt="" className="h-9 w-auto sm:hidden" />
+      {/* Desktop: full lockup with tagline, scaled up for legibility */}
+      <img src={logo} alt={fullAlt} className="hidden sm:block h-14 md:h-16 w-auto" />
     </div>
   );
 }
