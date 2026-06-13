@@ -95,9 +95,9 @@ export default function Index() {
       {/* SECTION 1 - HERO */}
       <section className="bg-background pt-10 pb-16">
         <div className="max-w-[1100px] mx-auto px-6">
-          <p className="font-display text-xl md:text-2xl lg:text-[26px] font-bold tracking-[-0.02em] leading-[1.15] mb-6 text-foreground">
-            One platform.{" "}
-            <span style={{ color: "#ff6b6b" }}>Confident marketing.</span>
+          <p className="text-xs font-bold uppercase tracking-[0.22em] mb-6 text-foreground">
+            ONE PLATFORM.{" "}
+            <span style={{ color: "#ff6b6b" }}>CONFIDENT MARKETING.</span>
           </p>
           <h1 className="max-w-[1100px] text-5xl md:text-7xl lg:text-[88px] font-normal leading-[1.05] tracking-[-0.035em] mb-8 text-foreground">
             You built a real business.
