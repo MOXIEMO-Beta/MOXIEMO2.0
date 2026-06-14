@@ -199,34 +199,49 @@ function extractDomains(text: string): string[] {
   return Array.from(text.matchAll(re)).map((m) => m[1].toLowerCase());
 }
 
-function validate(report: any, payload: any): string[] {
-  const issues: string[] = [];
+function addFailure(issues: ValidationFailure[], section: string, field: string, reason: string) {
+  issues.push({ section, field, reason });
+}
+
+function hasSpecificToken(text: string, inputCompetitors: string[]) {
+  const lower = text.toLowerCase();
+  return SPECIFIC_TOKENS.some((t) => lower.includes(t))
+    || inputCompetitors.some((c) => lower.includes(c))
+    || NAMED_ABSENCE_PATTERNS.some((re) => re.test(text));
+}
+
+function formatFailures(issues: ValidationFailure[]) {
+  return issues.map((issue) => `${issue.section}.${issue.field}: ${issue.reason}`);
+}
+
+function validate(report: any, payload: any): ValidationFailure[] {
+  const issues: ValidationFailure[] = [];
 
   if (!report || typeof report !== "object") {
-    return ["report is not an object"];
+    return [{ section: "report", field: "root", reason: "report is not an object" }];
   }
 
   const sections = Array.isArray(report.sections) ? report.sections : [];
   if (sections.length !== 8) {
-    issues.push(`expected 8 sections, got ${sections.length}`);
+    addFailure(issues, "report", "sections", `expected 8 sections, got ${sections.length}`);
   }
 
   const labels = sections.map((s: any) => s?.label);
   for (const req of REQUIRED_LABELS) {
-    if (!labels.includes(req)) issues.push(`missing section label: ${req}`);
+    if (!labels.includes(req)) addFailure(issues, req, "label", "missing section label");
   }
   for (const l of labels) {
-    if (!REQUIRED_LABELS.includes(l)) issues.push(`unexpected section label: ${l}`);
+    if (!REQUIRED_LABELS.includes(l)) addFailure(issues, String(l ?? "(unknown)"), "label", "unexpected section label");
   }
 
   if (!report.verdict || typeof report.verdict !== "string" || !report.verdict.trim()) {
-    issues.push("verdict missing or empty");
+    addFailure(issues, "report", "verdict", "missing or empty");
   }
   if (!report.competitive_read || typeof report.competitive_read !== "string" || !report.competitive_read.trim()) {
-    issues.push("competitive_read missing or empty");
+    addFailure(issues, "report", "competitive_read", "missing or empty");
   }
   const fixes = Array.isArray(report.priority_fixes) ? report.priority_fixes : [];
-  if (fixes.length < 3) issues.push("priority_fixes must have at least 3 items");
+  if (fixes.length < 3) addFailure(issues, "report", "priority_fixes", "must have at least 3 items");
 
   const inputCompetitors: string[] = Array.isArray(payload?.inputs?.competitors)
     ? payload.inputs.competitors.filter((c: any) => typeof c === "string").map((c: string) => c.toLowerCase())
@@ -236,53 +251,53 @@ function validate(report: any, payload: any): string[] {
     const label = s?.label ?? "(unknown)";
     for (const field of ["whats_working", "whats_holding_back", "fix_first", "agent"]) {
       if (!s?.[field] || typeof s[field] !== "string" || !s[field].trim()) {
-        issues.push(`section "${label}" missing ${field}`);
+        addFailure(issues, label, field, "missing or empty");
       }
     }
     if (!Array.isArray(s?.evidence) || s.evidence.length === 0) {
-      issues.push(`section "${label}" evidence must be non-empty array`);
+      addFailure(issues, label, "evidence", "must be non-empty array");
     }
 
     // competitor domain check on competitor_framing
     const cf: string = typeof s?.competitor_framing === "string" ? s.competitor_framing : "";
     for (const d of extractDomains(cf)) {
       if (!inputCompetitors.includes(d)) {
-        issues.push(`hallucinated competitor "${d}" in section "${label}"`);
+        addFailure(issues, label, "competitor_framing", `hallucinated competitor "${d}"`);
       }
     }
 
     // specificity lint
+    const ww: string = typeof s?.whats_working === "string" ? s.whats_working : "";
     const whb: string = typeof s?.whats_holding_back === "string" ? s.whats_holding_back : "";
-    const whbLower = whb.toLowerCase();
-    for (const phrase of BANNED_GENERIC) {
-      if (whbLower.includes(phrase)) {
-        issues.push(`banned generic phrase "${phrase}" in section "${label}" whats_holding_back`);
+    for (const field of ["whats_working", "whats_holding_back"] as const) {
+      const value = field === "whats_working" ? ww : whb;
+      const lower = value.toLowerCase();
+      for (const phrase of BANNED_GENERIC) {
+        if (lower.includes(phrase)) {
+          addFailure(issues, label, field, `banned generic phrase "${phrase}"`);
+        }
       }
-    }
-    if (whb) {
-      const hasSpecific = SPECIFIC_TOKENS.some((t) => whbLower.includes(t))
-        || inputCompetitors.some((c) => whbLower.includes(c));
-      if (!hasSpecific) {
-        issues.push(`section "${label}" whats_holding_back lacks a specific token`);
+      if (value && !hasSpecificToken(value, inputCompetitors)) {
+        addFailure(issues, label, field, "lacks a specific token or named absence");
       }
     }
 
     // score and tier match
     if (typeof s?.score === "number") {
       const expected = tierForScore(s.score);
-      if (!expected) issues.push(`section "${label}" score out of range`);
+      if (!expected) addFailure(issues, label, "score", "out of range");
       else if (s?.tier !== expected) {
-        issues.push(`section "${label}" tier "${s?.tier}" does not match score ${s.score} (expected ${expected})`);
+        addFailure(issues, label, "tier", `"${s?.tier}" does not match score ${s.score} (expected ${expected})`);
       }
     } else {
-      issues.push(`section "${label}" score missing or not a number`);
+      addFailure(issues, label, "score", "missing or not a number");
     }
   }
 
   // competitive_read domain check
   for (const d of extractDomains(report.competitive_read ?? "")) {
     if (!inputCompetitors.includes(d)) {
-      issues.push(`hallucinated competitor "${d}" in competitive_read`);
+      addFailure(issues, "report", "competitive_read", `hallucinated competitor "${d}"`);
     }
   }
 
@@ -294,18 +309,18 @@ function validate(report: any, payload: any): string[] {
       .filter((x) => typeof x === "string").join(" ").toLowerCase();
     if (s?.label === "Content & Consistency") {
       if (blogPresent === true && allText.includes("no blog")) {
-        issues.push("contradicts signal: blog_present true but text claims no blog");
+        addFailure(issues, s.label, "copy", "contradicts signal: blog_present true but text claims no blog");
       }
       if (blogPresent === false && /active blog/.test(allText)) {
-        issues.push("contradicts signal: blog_present false but text praises active blog");
+        addFailure(issues, s.label, "copy", "contradicts signal: blog_present false but text praises active blog");
       }
     }
     if (s?.label === "The Face of the Brand") {
       if (namedFounder === true && allText.includes("no founder")) {
-        issues.push("contradicts signal: named_founder_on_site true but text claims no founder");
+        addFailure(issues, s.label, "copy", "contradicts signal: named_founder_on_site true but text claims no founder");
       }
       if (namedFounder === false && payload?.model_type === "founder_led" && /founder is visible/.test(allText)) {
-        issues.push("contradicts signal: named_founder_on_site false but text claims founder is visible");
+        addFailure(issues, s.label, "copy", "contradicts signal: named_founder_on_site false but text claims founder is visible");
       }
     }
   }
@@ -313,12 +328,12 @@ function validate(report: any, payload: any): string[] {
   // voice lint across all copy
   const allReportText = JSON.stringify(report);
   if (allReportText.includes("\u2014") || allReportText.includes("\u2013")) {
-    issues.push("contains em dash or en dash");
+    addFailure(issues, "report", "copy", "contains em dash or en dash");
   }
   const lowerAll = allReportText.toLowerCase();
   for (const c of CONTRACTIONS) {
     if (lowerAll.includes(c)) {
-      issues.push(`contains contraction "${c}"`);
+      addFailure(issues, "report", "copy", `contains contraction "${c}"`);
     }
   }
 
