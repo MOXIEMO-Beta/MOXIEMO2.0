@@ -159,11 +159,30 @@ const BANNED_GENERIC = [
 
 const SPECIFIC_TOKENS = [
   "homepage", "about", "services", "headline", "tagline",
-  "blog", "logo", "founder", "linkedin",
+  "blog", "logo", "founder", "linkedin", "mission", "values",
+  "story", "offer", "testimonial", "case study", "portfolio", "pricing",
+  "proof", "navigation", "search", "cta", "value proposition",
 ];
 
 const CONTRACTIONS = [
   "don't", "you're", "it's", "we're", "can't", "isn't", "doesn't", "won't", "they're",
+];
+
+type ValidationFailure = {
+  section: string;
+  field: string;
+  reason: string;
+};
+
+type FieldRepair = {
+  section: string;
+  field: string;
+  new_value: unknown;
+};
+
+const NAMED_ABSENCE_PATTERNS = [
+  /\b(no|missing|absent|without|lacks?|lack of|could not find|we could not find|does not show|does not include|not found|nowhere)\b.{0,90}\b(homepage|about|services|page|site|headline|tagline|mission|values|statement|founder|bio|story|blog|logo|offer|testimonial|case stud(?:y|ies)|proof|pricing|contact|portfolio|claim|cta|positioning|value proposition|social proof|navigation|content|linkedin|search)\b/i,
+  /\b(no|missing|absent|without|lacks?)\s+["“][^"”]{3,}["”]/i,
 ];
 
 function tierForScore(score: number): string | null {
