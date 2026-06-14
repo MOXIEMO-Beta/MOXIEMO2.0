@@ -10,6 +10,8 @@ const corsHeaders = {
 // @ts-ignore - EdgeRuntime is provided by Supabase Edge runtime
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
+const OUTER_TIMEOUT_MS = 150_000;
+
 async function runGeneration(audit_id: string) {
   const t0 = Date.now();
   const supabase = createClient(
@@ -17,60 +19,82 @@ async function runGeneration(audit_id: string) {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Load stored payload from the audit row
-  const { data: row, error: loadErr } = await supabase
-    .from("audits")
-    .select("inputs, model_type, low_data, signals")
-    .eq("id", audit_id)
-    .maybeSingle();
+  let step = "init";
+  let terminalWritten = false;
 
-  if (loadErr || !row) {
-    console.error("[run-audit-generation] load failed", audit_id, loadErr);
-    await supabase.from("audits").update({
-      status: "review",
-      review_reason: "Could not load audit payload.",
-    }).eq("id", audit_id);
-    return;
+  async function writeTerminal(update: Record<string, unknown>) {
+    terminalWritten = true;
+    await supabase.from("audits").update(update).eq("id", audit_id);
   }
 
-  const payload = {
-    inputs: row.inputs ?? {},
-    model_type: row.model_type ?? null,
-    low_data: row.low_data ?? false,
-    signals: row.signals ?? {},
-  };
-
-  // Mark generation start (re-stamp in case of regenerate)
-  await supabase.from("audits").update({
-    status: "generating",
-    generation_started_at: new Date().toISOString(),
-    review_reason: null,
-  }).eq("id", audit_id);
-
-  const tLoad = Date.now();
-  console.log(`[run-audit-generation] ${audit_id} payload loaded in ${tLoad - t0}ms`);
-
   try {
-    const genUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-audit`;
-    const genRes = await fetch(genUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
-      },
-      body: JSON.stringify({ payload }),
-    });
-    const tGen = Date.now();
-    const genData = await genRes.json().catch(() => ({} as any));
-    console.log(`[run-audit-generation] ${audit_id} generate-audit returned in ${tGen - tLoad}ms status=${genData?.status}`);
+    step = "load_payload";
+    const { data: row, error: loadErr } = await supabase
+      .from("audits")
+      .select("inputs, model_type, low_data, signals")
+      .eq("id", audit_id)
+      .maybeSingle();
+    if (loadErr || !row) throw new Error(loadErr?.message || "audit row not found");
 
+    const payload = {
+      inputs: row.inputs ?? {},
+      model_type: row.model_type ?? null,
+      low_data: row.low_data ?? false,
+      signals: row.signals ?? {},
+    };
+
+    step = "mark_generating";
+    await supabase.from("audits").update({
+      status: "generating",
+      generation_started_at: new Date().toISOString(),
+      review_reason: null,
+    }).eq("id", audit_id);
+    const tLoad = Date.now();
+    console.log(`[run-audit-generation] ${audit_id} payload loaded in ${tLoad - t0}ms`);
+
+    step = "call_generate_audit";
+    const genUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-audit`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), OUTER_TIMEOUT_MS);
+    let genRes: Response;
+    try {
+      genRes = await fetch(genUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ payload }),
+        signal: controller.signal,
+      });
+    } catch (e: any) {
+      if (e?.name === "AbortError") throw new Error(`generate-audit timed out after ${OUTER_TIMEOUT_MS}ms`);
+      throw e;
+    } finally {
+      clearTimeout(timer);
+    }
+    const tGen = Date.now();
+
+    step = "parse_generate_audit";
+    const bodyText = await genRes.text();
+    let genData: any = {};
+    try { genData = bodyText ? JSON.parse(bodyText) : {}; } catch {
+      throw new Error(`generate-audit returned non-JSON (status ${genRes.status}): ${bodyText.slice(0, 200)}`);
+    }
+    console.log(`[run-audit-generation] ${audit_id} generate-audit returned in ${tGen - tLoad}ms http=${genRes.status} status=${genData?.status}`);
+
+    if (!genRes.ok && !genData?.status) {
+      throw new Error(`generate-audit http ${genRes.status}: ${genData?.error ?? bodyText.slice(0, 200)}`);
+    }
+
+    step = "persist_result";
     if (genData?.status === "ready") {
-      await supabase.from("audits").update({
+      await writeTerminal({
         status: "ready",
         report: genData.report,
         brand_audit_score: genData.brand_audit_score,
         review_reason: null,
-      }).eq("id", audit_id);
+      });
       console.log(`[run-audit-generation] ${audit_id} ready in ${Date.now() - t0}ms total`);
       return;
     }
@@ -78,25 +102,39 @@ async function runGeneration(audit_id: string) {
     if (genData?.status === "review") {
       const issues: string[] = Array.isArray(genData.issues) ? genData.issues : [];
       const reason = issues[0] || "Report did not pass validation.";
-      await supabase.from("audits").update({
+      await writeTerminal({
         status: "review",
         report: { issues },
         review_reason: reason,
-      }).eq("id", audit_id);
+      });
       console.log(`[run-audit-generation] ${audit_id} review reason=${reason}`);
       return;
     }
 
-    await supabase.from("audits").update({
-      status: "review",
-      review_reason: genData?.error ?? "Generation failed.",
-    }).eq("id", audit_id);
+    throw new Error(genData?.error ?? `generate-audit returned unexpected status: ${genData?.status ?? "none"}`);
   } catch (e: any) {
-    console.error("[run-audit-generation] exception", audit_id, e);
-    await supabase.from("audits").update({
-      status: "review",
-      review_reason: String(e?.message ?? e),
-    }).eq("id", audit_id);
+    const reason = `[${step}] ${String(e?.message ?? e)}`;
+    console.error(`[run-audit-generation] ${audit_id} failed`, reason);
+    try {
+      await writeTerminal({ status: "failed", review_reason: reason });
+    } catch (writeErr) {
+      console.error(`[run-audit-generation] ${audit_id} failed to write terminal status`, writeErr);
+    }
+  } finally {
+    if (!terminalWritten) {
+      try {
+        const { data: cur } = await supabase
+          .from("audits").select("status").eq("id", audit_id).maybeSingle();
+        if (cur?.status === "generating") {
+          await supabase.from("audits").update({
+            status: "failed",
+            review_reason: `[${step}] generation exited without writing a terminal status`,
+          }).eq("id", audit_id);
+        }
+      } catch (e) {
+        console.error(`[run-audit-generation] ${audit_id} finally guard error`, e);
+      }
+    }
   }
 }
 
