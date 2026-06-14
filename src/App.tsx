@@ -30,6 +30,8 @@ import Founding from "./pages/marketing/Founding.tsx";
 import BrandKit from "./pages/marketing/BrandKit.tsx";
 import AuditTest from "./pages/AuditTest.tsx";
 import AuditReportPreview from "./pages/AuditReportPreview.tsx";
+import BrandAudit from "./pages/BrandAudit.tsx";
+import BrandAuditReportPage from "./pages/BrandAuditReportPage.tsx";
 import AppLayout from "./layouts/AppLayout.tsx";
 import Dashboard from "./pages/app/Dashboard.tsx";
 import Discovery from "./pages/app/Discovery.tsx";
@@ -93,6 +95,8 @@ const App = () => (
             <Route path="/brand-kit" element={<BrandKit />} />
             <Route path="/audit-test" element={<AuditTest />} />
             <Route path="/audit-report-preview" element={<AuditReportPreview />} />
+            <Route path="/brand-audit" element={<BrandAudit />} />
+            <Route path="/brand-audit/r/:id" element={<BrandAuditReportPage />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
