@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const GOALS = [
   { value: "more_leads", label: "More qualified leads" },
@@ -176,47 +178,74 @@ export default function BrandAudit() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F5F1]">
-      <div className="max-w-2xl mx-auto px-4 py-12 md:py-16">
-        <a href="/" className="text-sm text-[#7a7e8c] hover:text-[#15171C]">← Back to home</a>
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#15171C] mt-4 mb-2">
-          Your free Brand Audit
-        </h1>
-        <p className="text-[#7a7e8c] mb-8">
-          Six quick steps. We read your site first, so you are mostly confirming.
-        </p>
+    <div className="min-h-screen bg-[#F7F5F1] flex flex-col" style={{ fontFamily: "Inter, sans-serif" }}>
+      <SiteHeader />
 
-        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a7e8c] mb-4">
-          {step <= 6 ? `Step ${step} of 6` : step === 7 ? "Where to send it" : "Building your report"}
-        </div>
+      {step === 1 ? (
+        <section className="flex-1 px-4 py-16 md:py-24">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-[#FF6B5C] mb-5">
+              Your free brand audit
+            </div>
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-[#15171C] leading-[1.05] mb-5">
+              The brand audit a CMO would charge for. Yours free.
+            </h1>
+            <p className="text-lg md:text-xl text-[#4a4d57] leading-relaxed max-w-2xl mx-auto mb-10">
+              Enter your website and get an honest read on your positioning, your message, and your visibility. See what is working, what is holding you back, and what to fix first. In minutes.
+            </p>
 
-        {error && (
-          <div className="mb-4 text-sm text-[#FF6B5C] bg-[#FFE9E6] border border-[#FFCFC8] rounded-md px-3 py-2">
-            {error}
-          </div>
-        )}
+            {error && (
+              <div className="mb-4 text-sm text-[#FF6B5C] bg-[#FFE9E6] border border-[#FFCFC8] rounded-md px-3 py-2 max-w-xl mx-auto">
+                {error}
+              </div>
+            )}
 
-        <div className="bg-white border-2 rounded-2xl p-6 md:p-8 shadow-sm">
-          {step === 1 && (
-            <div className="space-y-4">
-              <Label htmlFor="url">Your website URL</Label>
+            <form
+              onSubmit={(e) => { e.preventDefault(); submitStep1(); }}
+              className="max-w-xl mx-auto flex flex-col sm:flex-row gap-2 bg-white border-2 border-[#15171C]/10 rounded-full p-2 shadow-sm focus-within:border-[#FF6B5C] transition-colors"
+            >
               <Input
                 id="url"
                 placeholder="https://yourbrand.com"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 disabled={scrapingInitial}
+                className="flex-1 border-0 bg-transparent h-11 text-base focus-visible:ring-0 focus-visible:ring-offset-0 px-4"
               />
               <Button
-                onClick={submitStep1}
+                type="submit"
                 disabled={scrapingInitial || !url.trim()}
                 className="bg-[#FF6B5C] hover:bg-[#FF6B5C]/90 text-white rounded-full px-6 h-11 font-semibold"
               >
-                {scrapingInitial ? "Reading your site..." : "Continue"}
+                {scrapingInitial ? "Reading your site..." : "Run my audit"}
               </Button>
-            </div>
-          )}
+            </form>
+            <p className="text-sm text-[#7a7e8c] mt-4">
+              Free. No credit card required. No login.
+            </p>
+          </div>
+        </section>
+      ) : (
+        <section className="flex-1 px-4 py-12 md:py-16">
+          <div className="max-w-2xl mx-auto">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#15171C] mb-2">
+              Your free brand audit
+            </h1>
+            <p className="text-[#7a7e8c] mb-8">
+              Six quick steps. We read your site first, so you are mostly confirming.
+            </p>
 
+            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7a7e8c] mb-4">
+              {step <= 6 ? `Step ${step} of 6` : step === 7 ? "Where to send it" : "Building your report"}
+            </div>
+
+            {error && (
+              <div className="mb-4 text-sm text-[#FF6B5C] bg-[#FFE9E6] border border-[#FFCFC8] rounded-md px-3 py-2">
+                {error}
+              </div>
+            )}
+
+            <div className="bg-white border-2 rounded-2xl p-6 md:p-8 shadow-sm">
           {step === 2 && (
             <div className="space-y-5">
               <p className="text-sm text-[#15171C]">Here is what we found. Edit anything that is off.</p>
@@ -419,14 +448,18 @@ export default function BrandAudit() {
           {step === 8 && (
             <div className="text-center py-10 space-y-3">
               <div className="inline-block w-10 h-10 border-4 border-[#FF6B5C] border-t-transparent rounded-full animate-spin mb-2" />
-              <h2 className="text-xl font-bold text-[#15171C]">Building your Brand Audit</h2>
+              <h2 className="text-xl font-bold text-[#15171C]">Building your brand audit</h2>
               <p className="text-[#7a7e8c] text-sm">
                 Vera is reading your signals and writing the report. This usually takes 30 to 60 seconds.
               </p>
             </div>
           )}
-        </div>
-      </div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      <SiteFooter />
     </div>
   );
 }
