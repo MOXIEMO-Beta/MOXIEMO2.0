@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { BrandAuditReport, type AuditResponse } from "@/components/audit/BrandAuditReport";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export default function BrandAuditReportPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,12 +33,20 @@ export default function BrandAuditReportPage() {
   useEffect(() => { load(); }, [load]);
 
   if (status === "ready" && data) {
-    return <BrandAuditReport data={data} />;
+    return (
+      <>
+        <SiteHeader />
+        <BrandAuditReport data={data} />
+        <SiteFooter />
+      </>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F5F1] flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white border-2 rounded-2xl p-8 text-center">
+    <>
+      <SiteHeader />
+      <div className="min-h-[70vh] bg-[#F7F5F1] flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full bg-white border-2 rounded-2xl p-8 text-center">
         {status === "loading" && (
           <>
             <div className="inline-block w-8 h-8 border-4 border-[#FF6B5C] border-t-transparent rounded-full animate-spin mb-3" />
@@ -53,14 +63,16 @@ export default function BrandAuditReportPage() {
             <Button onClick={load} variant="outline" className="border-2 rounded-full">Check again</Button>
           </>
         )}
-        {status === "error" && (
+          {status === "error" && (
           <>
             <h2 className="text-xl font-bold text-[#15171C] mb-2">We could not load this report</h2>
             <p className="text-sm text-[#7a7e8c] mb-5">{error || "Please try again."}</p>
             <Button onClick={load} variant="outline" className="border-2 rounded-full">Retry</Button>
           </>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+      <SiteFooter />
+    </>
   );
 }
