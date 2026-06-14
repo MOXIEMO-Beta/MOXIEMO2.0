@@ -541,10 +541,13 @@ serve(async (req) => {
       : "";
 
     let report: any;
-    let issues: string[] = [];
+    let issues: ValidationFailure[] = [];
 
     if (debugForce !== undefined) {
       report = debugForce;
+      issues = validate(report, payload);
+    } else if (body?.existing_report && typeof body.existing_report === "object" && !Array.isArray(body.existing_report)) {
+      report = body.existing_report;
       issues = validate(report, payload);
     } else {
       const text1 = await callAnthropic(
@@ -554,36 +557,22 @@ serve(async (req) => {
       );
       report = parseModel(text1);
       if (!report) {
-        issues = ["model output was not valid JSON"];
+        issues = [{ section: "report", field: "root", reason: "model output was not valid JSON" }];
       } else {
         issues = validate(report, payload);
       }
+    }
 
-      if (issues.length > 0) {
-        const retryNote = buildValidationRepairNote(issues);
-        const text2 = await callAnthropic(req, payload, retryNote);
-        const report2 = parseModel(text2);
-        if (!report2) {
-          return new Response(
-            JSON.stringify({ status: "review", issues: ["model output was not valid JSON on retry"] }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-          );
-        }
-        const issues2 = validate(report2, payload);
-        if (issues2.length > 0) {
-          return new Response(
-            JSON.stringify({ status: "review", issues: issues2 }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-          );
-        }
-        report = report2;
-        issues = [];
+    if (report && issues.length > 0) {
+      for (let attempt = 1; attempt <= 3 && issues.length > 0; attempt += 1) {
+        report = await repairReport(req, report, issues, payload);
+        issues = validate(report, payload);
       }
     }
 
     if (issues.length > 0) {
       return new Response(
-        JSON.stringify({ status: "review", issues }),
+        JSON.stringify({ status: "review", issues, issue_messages: formatFailures(issues), report }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
