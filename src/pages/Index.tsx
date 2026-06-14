@@ -121,9 +121,6 @@ export default function Index() {
             <Button asChild size="lg" variant="outline" className="h-12 px-6 rounded-full text-base font-semibold border-2">
               <Link to="/founding">Join as a Founding Member</Link>
             </Button>
-            <Button asChild size="lg" variant="ghost" className="h-12 px-6 rounded-full text-base font-semibold">
-              <Link to="/auth">Sign in <ArrowRight className="ml-2 h-4 w-4" /></Link>
-            </Button>
           </div>
           <p className="text-xs text-muted-foreground/80">Founding members get free access, forever. No credit card required.</p>
         </div>
