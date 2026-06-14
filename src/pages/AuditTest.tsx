@@ -86,7 +86,7 @@ export default function AuditTest() {
     setPipeLoading(true); setPipeMsg("");
     try {
       const { data, error } = await supabase.functions.invoke("suggest-competitors", {
-        body: { what_you_do: whatYouDo, who_you_serve: whoYouServe, location },
+        body: { url, brand_name: brandName, what_you_do: whatYouDo, who_you_serve: whoYouServe, location },
       });
       if (error) { setPipeMsg(`suggest-competitors error: ${error.message}`); return; }
       const arr: string[] = data?.suggested ?? [];
