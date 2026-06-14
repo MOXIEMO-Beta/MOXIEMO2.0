@@ -746,6 +746,24 @@ export type Database = {
         }
         Relationships: []
       }
+      scrape_cache: {
+        Row: {
+          data: Json
+          domain: string
+          scraped_at: string
+        }
+        Insert: {
+          data: Json
+          domain: string
+          scraped_at?: string
+        }
+        Update: {
+          data?: Json
+          domain?: string
+          scraped_at?: string
+        }
+        Relationships: []
+      }
       social_analytics: {
         Row: {
           comments: number
