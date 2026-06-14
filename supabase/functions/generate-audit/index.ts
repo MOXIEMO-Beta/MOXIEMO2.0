@@ -28,7 +28,11 @@ ABSOLUTE RULES
    what is genuinely working and name what is genuinely missing.
 4. Specific over generic. Banned: "improve your branding," "be more consistent," "post
    more," and any advice that does not name the actual thing on their site or the actual
-   gap. Every finding cites a specific.
+   gap. Every finding cites a specific token.
+5. A specific token is a concrete reference: a quoted phrase from the site, a named page,
+   claim, element, or a named missing element. For abstract or empty sections, the token
+   can be the named absence. "No mission or values statement appears anywhere on the
+   site" counts because it names what is missing.
 
 VOICE
 - Sentence case everywhere, including findings.
@@ -112,8 +116,8 @@ repeat the exact same keys for all eight section labels:
   "label": "Positioning & Differentiation",
   "score": 0,
   "tier": "Critical gap",
-  "whats_working": "A non-empty evidence-bound sentence naming the nearest true strength or raw material to build on.",
-  "whats_holding_back": "A non-empty evidence-bound sentence naming the specific gap.",
+  "whats_working": "A non-empty evidence-bound sentence naming the nearest true strength or raw material to build on, with a specific token.",
+  "whats_holding_back": "A non-empty evidence-bound sentence naming the specific gap, with a specific token.",
   "evidence": ["A non-empty evidence note from the payload."],
   "competitor_framing": "A competitor comparison grounded only in payload competitors, or a sentence saying the competitor signal is not strong enough for this section.",
   "fix_first": "A non-empty first fix.",
@@ -124,7 +128,9 @@ null, undefined, or omitted for any reason. If little is working, whats_working 
 name the nearest true strength or the raw material that exists to build on, for example:
 "You have a clear offer to anchor positioning on, but no point of difference is stated yet."
 Positioning & Differentiation is often the weakest section, but it must still include
-whats_working.
+whats_working. Every whats_working and whats_holding_back must include a specific token.
+If the finding is about an absence, name the concrete missing element, page, proof point,
+or statement.
 
 OUTPUT
 Return only valid JSON matching the schema. No preamble, no markdown, no commentary.`;
