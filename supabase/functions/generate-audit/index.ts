@@ -451,6 +451,73 @@ async function callAnthropic(req: Request, payload: any, extraSystem?: string) {
   return text;
 }
 
+function buildSurgicalRepairNote() {
+  return `SURGICAL REPAIR MODE
+Ignore the main OUTPUT instruction for this repair call. You are not regenerating the report.
+You receive the current report, validation failures, and evidence signals.
+Return only a JSON array of corrections using this exact shape:
+[
+  { "section": "Positioning & Differentiation", "field": "whats_working", "new_value": "Corrected value" }
+]
+
+Rules:
+- Only return corrected fields for the named failures.
+- Do not return passing sections or passing fields.
+- Do not rewrite the whole report.
+- Keep every correction evidence-bound to the provided signals and current report.
+- Every whats_working and whats_holding_back correction must include a specific token.
+- A specific token can be a quoted phrase from the site, a named page, claim, element, or a named missing element.
+- For absences, name the concrete missing element, for example "No mission or values statement appears anywhere on the site."
+- If a failure uses field "copy", return corrections for the exact report fields that contain the copy problem.
+- Return valid JSON only. No markdown.`;
+}
+
+function parseRepairs(text: string): FieldRepair[] {
+  const parsed = parseModel(text);
+  const repairs = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.repairs) ? parsed.repairs : [];
+  return repairs.filter((r: any) =>
+    r && typeof r.section === "string" && typeof r.field === "string" && "new_value" in r
+  );
+}
+
+function mergeRepairs(report: any, repairs: FieldRepair[]) {
+  const next = structuredClone(report);
+  const allowedSectionFields = new Set([
+    "score", "tier", "whats_working", "whats_holding_back", "evidence", "competitor_framing", "fix_first", "agent",
+  ]);
+  const allowedReportFields = new Set(["verdict", "model_type", "what_we_found", "competitive_read", "priority_fixes", "handoff_cta"]);
+
+  for (const repair of repairs) {
+    if (repair.section === "report") {
+      if (allowedReportFields.has(repair.field)) next[repair.field] = repair.new_value;
+      continue;
+    }
+
+    const section = Array.isArray(next.sections)
+      ? next.sections.find((s: any) => s?.label === repair.section)
+      : null;
+    if (section && allowedSectionFields.has(repair.field)) {
+      section[repair.field] = repair.new_value;
+    }
+  }
+  return next;
+}
+
+async function repairReport(req: Request, report: any, failures: ValidationFailure[], payload: any) {
+  const repairPayload = {
+    current_report: report,
+    validation_failures: failures,
+    signals: payload?.signals ?? {},
+    inputs: payload?.inputs ?? {},
+    model_type: payload?.model_type ?? null,
+    low_data: payload?.low_data ?? false,
+  };
+  const text = await callAnthropic(req, repairPayload, buildSurgicalRepairNote());
+  const repairs = parseRepairs(text);
+  if (repairs.length === 0) return report;
+  return mergeRepairs(report, repairs);
+}
+
 function computeScore(report: any): number {
   let total = 0;
   for (const s of report.sections ?? []) {
