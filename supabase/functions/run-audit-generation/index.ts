@@ -31,7 +31,7 @@ async function runGeneration(audit_id: string) {
     step = "load_payload";
     const { data: row, error: loadErr } = await supabase
       .from("audits")
-      .select("inputs, model_type, low_data, signals, review_reason")
+      .select("inputs, model_type, low_data, signals, review_reason, report")
       .eq("id", audit_id)
       .maybeSingle();
     if (loadErr || !row) throw new Error(loadErr?.message || "audit row not found");
@@ -43,6 +43,9 @@ async function runGeneration(audit_id: string) {
       signals: row.signals ?? {},
     };
     const previousValidationError = typeof row.review_reason === "string" ? row.review_reason.trim() : "";
+    const existingReport = row.report && typeof row.report === "object" && !Array.isArray(row.report) && Array.isArray((row.report as any).sections)
+      ? row.report
+      : null;
 
     step = "mark_generating";
     await supabase.from("audits").update({
@@ -65,7 +68,11 @@ async function runGeneration(audit_id: string) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
         },
-        body: JSON.stringify({ payload, previous_validation_error: previousValidationError }),
+        body: JSON.stringify({
+          payload,
+          previous_validation_error: previousValidationError,
+          existing_report: existingReport,
+        }),
         signal: controller.signal,
       });
     } catch (e: any) {
@@ -101,11 +108,17 @@ async function runGeneration(audit_id: string) {
     }
 
     if (genData?.status === "review") {
-      const issues: string[] = Array.isArray(genData.issues) ? genData.issues : [];
-      const reason = issues[0] || "Report did not pass validation.";
+      const issueMessages: string[] = Array.isArray(genData.issue_messages)
+        ? genData.issue_messages.filter((issue: unknown) => typeof issue === "string")
+        : Array.isArray(genData.issues)
+        ? genData.issues.map((issue: unknown) => typeof issue === "string" ? issue : JSON.stringify(issue))
+        : [];
+      const reason = issueMessages.length > 0
+        ? issueMessages.join("; ")
+        : "Report did not pass validation.";
       await writeTerminal({
         status: "review",
-        report: { issues },
+        report: genData.report ?? { issues: genData.issues ?? issueMessages },
         review_reason: reason,
       });
       console.log(`[run-audit-generation] ${audit_id} review reason=${reason}`);

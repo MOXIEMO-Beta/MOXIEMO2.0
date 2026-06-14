@@ -120,11 +120,10 @@ export default function BrandAuditReportPage() {
             {reviewReason && (
               <p className="text-xs text-[#7a7e8c] mb-5 italic">Reason: {reviewReason}</p>
             )}
-            <div className="flex justify-center gap-2 mt-3">
+            <div className="flex justify-center mt-3">
               <Button onClick={regenerate} disabled={regenerating} className="bg-[#FF6B5C] hover:bg-[#FF6B5C]/90 text-white rounded-full px-5">
                 {regenerating ? "Regenerating..." : "Regenerate"}
               </Button>
-              <Button onClick={load} variant="outline" className="border-2 rounded-full">Check again</Button>
             </div>
           </>
         )}

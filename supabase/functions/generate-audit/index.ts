@@ -28,7 +28,11 @@ ABSOLUTE RULES
    what is genuinely working and name what is genuinely missing.
 4. Specific over generic. Banned: "improve your branding," "be more consistent," "post
    more," and any advice that does not name the actual thing on their site or the actual
-   gap. Every finding cites a specific.
+   gap. Every finding cites a specific token.
+5. A specific token is a concrete reference: a quoted phrase from the site, a named page,
+   claim, element, or a named missing element. For abstract or empty sections, the token
+   can be the named absence. "No mission or values statement appears anywhere on the
+   site" counts because it names what is missing.
 
 VOICE
 - Sentence case everywhere, including findings.
@@ -112,8 +116,8 @@ repeat the exact same keys for all eight section labels:
   "label": "Positioning & Differentiation",
   "score": 0,
   "tier": "Critical gap",
-  "whats_working": "A non-empty evidence-bound sentence naming the nearest true strength or raw material to build on.",
-  "whats_holding_back": "A non-empty evidence-bound sentence naming the specific gap.",
+  "whats_working": "A non-empty evidence-bound sentence naming the nearest true strength or raw material to build on, with a specific token.",
+  "whats_holding_back": "A non-empty evidence-bound sentence naming the specific gap, with a specific token.",
   "evidence": ["A non-empty evidence note from the payload."],
   "competitor_framing": "A competitor comparison grounded only in payload competitors, or a sentence saying the competitor signal is not strong enough for this section.",
   "fix_first": "A non-empty first fix.",
@@ -124,7 +128,9 @@ null, undefined, or omitted for any reason. If little is working, whats_working 
 name the nearest true strength or the raw material that exists to build on, for example:
 "You have a clear offer to anchor positioning on, but no point of difference is stated yet."
 Positioning & Differentiation is often the weakest section, but it must still include
-whats_working.
+whats_working. Every whats_working and whats_holding_back must include a specific token.
+If the finding is about an absence, name the concrete missing element, page, proof point,
+or statement.
 
 OUTPUT
 Return only valid JSON matching the schema. No preamble, no markdown, no commentary.`;
@@ -153,11 +159,30 @@ const BANNED_GENERIC = [
 
 const SPECIFIC_TOKENS = [
   "homepage", "about", "services", "headline", "tagline",
-  "blog", "logo", "founder", "linkedin",
+  "blog", "logo", "founder", "linkedin", "mission", "values",
+  "story", "offer", "testimonial", "case study", "portfolio", "pricing",
+  "proof", "navigation", "search", "cta", "value proposition",
 ];
 
 const CONTRACTIONS = [
   "don't", "you're", "it's", "we're", "can't", "isn't", "doesn't", "won't", "they're",
+];
+
+type ValidationFailure = {
+  section: string;
+  field: string;
+  reason: string;
+};
+
+type FieldRepair = {
+  section: string;
+  field: string;
+  new_value: unknown;
+};
+
+const NAMED_ABSENCE_PATTERNS = [
+  /\b(no|missing|absent|without|lacks?|lack of|could not find|we could not find|does not show|does not include|not found|nowhere)\b.{0,90}\b(homepage|about|services|page|site|headline|tagline|mission|values|statement|founder|bio|story|blog|logo|offer|testimonial|case stud(?:y|ies)|proof|pricing|contact|portfolio|claim|cta|positioning|value proposition|social proof|navigation|content|linkedin|search)\b/i,
+  /\b(no|missing|absent|without|lacks?)\s+["“][^"”]{3,}["”]/i,
 ];
 
 function tierForScore(score: number): string | null {
@@ -174,34 +199,60 @@ function extractDomains(text: string): string[] {
   return Array.from(text.matchAll(re)).map((m) => m[1].toLowerCase());
 }
 
-function validate(report: any, payload: any): string[] {
-  const issues: string[] = [];
+function addFailure(issues: ValidationFailure[], section: string, field: string, reason: string) {
+  issues.push({ section, field, reason });
+}
+
+function hasSpecificToken(text: string, inputCompetitors: string[]) {
+  const lower = text.toLowerCase();
+  return SPECIFIC_TOKENS.some((t) => lower.includes(t))
+    || inputCompetitors.some((c) => lower.includes(c))
+    || NAMED_ABSENCE_PATTERNS.some((re) => re.test(text));
+}
+
+function checkVoiceLint(issues: ValidationFailure[], section: string, field: string, value: unknown) {
+  const text = typeof value === "string" ? value : JSON.stringify(value ?? "");
+  if (text.includes("\u2014") || text.includes("\u2013")) {
+    addFailure(issues, section, field, "contains em dash or en dash");
+  }
+  const lower = text.toLowerCase();
+  for (const c of CONTRACTIONS) {
+    if (lower.includes(c)) addFailure(issues, section, field, `contains contraction "${c}"`);
+  }
+}
+
+function formatFailures(issues: ValidationFailure[]) {
+  return issues.map((issue) => `${issue.section}.${issue.field}: ${issue.reason}`);
+}
+
+function validate(report: any, payload: any): ValidationFailure[] {
+  const issues: ValidationFailure[] = [];
 
   if (!report || typeof report !== "object") {
-    return ["report is not an object"];
+    return [{ section: "report", field: "root", reason: "report is not an object" }];
   }
 
   const sections = Array.isArray(report.sections) ? report.sections : [];
   if (sections.length !== 8) {
-    issues.push(`expected 8 sections, got ${sections.length}`);
+    addFailure(issues, "report", "sections", `expected 8 sections, got ${sections.length}`);
   }
 
   const labels = sections.map((s: any) => s?.label);
   for (const req of REQUIRED_LABELS) {
-    if (!labels.includes(req)) issues.push(`missing section label: ${req}`);
+    if (!labels.includes(req)) addFailure(issues, req, "label", "missing section label");
   }
   for (const l of labels) {
-    if (!REQUIRED_LABELS.includes(l)) issues.push(`unexpected section label: ${l}`);
+    if (!REQUIRED_LABELS.includes(l)) addFailure(issues, String(l ?? "(unknown)"), "label", "unexpected section label");
   }
 
   if (!report.verdict || typeof report.verdict !== "string" || !report.verdict.trim()) {
-    issues.push("verdict missing or empty");
+    addFailure(issues, "report", "verdict", "missing or empty");
   }
   if (!report.competitive_read || typeof report.competitive_read !== "string" || !report.competitive_read.trim()) {
-    issues.push("competitive_read missing or empty");
+    addFailure(issues, "report", "competitive_read", "missing or empty");
   }
   const fixes = Array.isArray(report.priority_fixes) ? report.priority_fixes : [];
-  if (fixes.length < 3) issues.push("priority_fixes must have at least 3 items");
+  if (fixes.length < 3) addFailure(issues, "report", "priority_fixes", "must have at least 3 items");
 
   const inputCompetitors: string[] = Array.isArray(payload?.inputs?.competitors)
     ? payload.inputs.competitors.filter((c: any) => typeof c === "string").map((c: string) => c.toLowerCase())
@@ -211,53 +262,57 @@ function validate(report: any, payload: any): string[] {
     const label = s?.label ?? "(unknown)";
     for (const field of ["whats_working", "whats_holding_back", "fix_first", "agent"]) {
       if (!s?.[field] || typeof s[field] !== "string" || !s[field].trim()) {
-        issues.push(`section "${label}" missing ${field}`);
+        addFailure(issues, label, field, "missing or empty");
       }
     }
     if (!Array.isArray(s?.evidence) || s.evidence.length === 0) {
-      issues.push(`section "${label}" evidence must be non-empty array`);
+      addFailure(issues, label, "evidence", "must be non-empty array");
     }
 
     // competitor domain check on competitor_framing
     const cf: string = typeof s?.competitor_framing === "string" ? s.competitor_framing : "";
     for (const d of extractDomains(cf)) {
       if (!inputCompetitors.includes(d)) {
-        issues.push(`hallucinated competitor "${d}" in section "${label}"`);
+        addFailure(issues, label, "competitor_framing", `hallucinated competitor "${d}"`);
       }
     }
 
     // specificity lint
+    const ww: string = typeof s?.whats_working === "string" ? s.whats_working : "";
     const whb: string = typeof s?.whats_holding_back === "string" ? s.whats_holding_back : "";
-    const whbLower = whb.toLowerCase();
-    for (const phrase of BANNED_GENERIC) {
-      if (whbLower.includes(phrase)) {
-        issues.push(`banned generic phrase "${phrase}" in section "${label}" whats_holding_back`);
+    for (const field of ["whats_working", "whats_holding_back"] as const) {
+      const value = field === "whats_working" ? ww : whb;
+      const lower = value.toLowerCase();
+      for (const phrase of BANNED_GENERIC) {
+        if (lower.includes(phrase)) {
+          addFailure(issues, label, field, `banned generic phrase "${phrase}"`);
+        }
       }
-    }
-    if (whb) {
-      const hasSpecific = SPECIFIC_TOKENS.some((t) => whbLower.includes(t))
-        || inputCompetitors.some((c) => whbLower.includes(c));
-      if (!hasSpecific) {
-        issues.push(`section "${label}" whats_holding_back lacks a specific token`);
+      if (value && !hasSpecificToken(value, inputCompetitors)) {
+        addFailure(issues, label, field, "lacks a specific token or named absence");
       }
     }
 
     // score and tier match
     if (typeof s?.score === "number") {
       const expected = tierForScore(s.score);
-      if (!expected) issues.push(`section "${label}" score out of range`);
+      if (!expected) addFailure(issues, label, "score", "out of range");
       else if (s?.tier !== expected) {
-        issues.push(`section "${label}" tier "${s?.tier}" does not match score ${s.score} (expected ${expected})`);
+        addFailure(issues, label, "tier", `"${s?.tier}" does not match score ${s.score} (expected ${expected})`);
       }
     } else {
-      issues.push(`section "${label}" score missing or not a number`);
+      addFailure(issues, label, "score", "missing or not a number");
+    }
+
+    for (const field of ["whats_working", "whats_holding_back", "evidence", "competitor_framing", "fix_first"] as const) {
+      checkVoiceLint(issues, label, field, s?.[field]);
     }
   }
 
   // competitive_read domain check
   for (const d of extractDomains(report.competitive_read ?? "")) {
     if (!inputCompetitors.includes(d)) {
-      issues.push(`hallucinated competitor "${d}" in competitive_read`);
+      addFailure(issues, "report", "competitive_read", `hallucinated competitor "${d}"`);
     }
   }
 
@@ -269,32 +324,25 @@ function validate(report: any, payload: any): string[] {
       .filter((x) => typeof x === "string").join(" ").toLowerCase();
     if (s?.label === "Content & Consistency") {
       if (blogPresent === true && allText.includes("no blog")) {
-        issues.push("contradicts signal: blog_present true but text claims no blog");
+        addFailure(issues, s.label, "copy", "contradicts signal: blog_present true but text claims no blog");
       }
       if (blogPresent === false && /active blog/.test(allText)) {
-        issues.push("contradicts signal: blog_present false but text praises active blog");
+        addFailure(issues, s.label, "copy", "contradicts signal: blog_present false but text praises active blog");
       }
     }
     if (s?.label === "The Face of the Brand") {
       if (namedFounder === true && allText.includes("no founder")) {
-        issues.push("contradicts signal: named_founder_on_site true but text claims no founder");
+        addFailure(issues, s.label, "copy", "contradicts signal: named_founder_on_site true but text claims no founder");
       }
       if (namedFounder === false && payload?.model_type === "founder_led" && /founder is visible/.test(allText)) {
-        issues.push("contradicts signal: named_founder_on_site false but text claims founder is visible");
+        addFailure(issues, s.label, "copy", "contradicts signal: named_founder_on_site false but text claims founder is visible");
       }
     }
   }
 
-  // voice lint across all copy
-  const allReportText = JSON.stringify(report);
-  if (allReportText.includes("\u2014") || allReportText.includes("\u2013")) {
-    issues.push("contains em dash or en dash");
-  }
-  const lowerAll = allReportText.toLowerCase();
-  for (const c of CONTRACTIONS) {
-    if (lowerAll.includes(c)) {
-      issues.push(`contains contraction "${c}"`);
-    }
+  // voice lint with repairable field names
+  for (const field of ["verdict", "what_we_found", "competitive_read", "priority_fixes", "handoff_cta"] as const) {
+    checkVoiceLint(issues, "report", field, report?.[field]);
   }
 
   return issues;
@@ -411,6 +459,73 @@ async function callAnthropic(req: Request, payload: any, extraSystem?: string) {
   return text;
 }
 
+function buildSurgicalRepairNote() {
+  return `SURGICAL REPAIR MODE
+Ignore the main OUTPUT instruction for this repair call. You are not regenerating the report.
+You receive the current report, validation failures, and evidence signals.
+Return only a JSON array of corrections using this exact shape:
+[
+  { "section": "Positioning & Differentiation", "field": "whats_working", "new_value": "Corrected value" }
+]
+
+Rules:
+- Only return corrected fields for the named failures.
+- Do not return passing sections or passing fields.
+- Do not rewrite the whole report.
+- Keep every correction evidence-bound to the provided signals and current report.
+- Every whats_working and whats_holding_back correction must include a specific token.
+- A specific token can be a quoted phrase from the site, a named page, claim, element, or a named missing element.
+- For absences, name the concrete missing element, for example "No mission or values statement appears anywhere on the site."
+- If a failure uses field "copy", return corrections for the exact report fields that contain the copy problem.
+- Return valid JSON only. No markdown.`;
+}
+
+function parseRepairs(text: string): FieldRepair[] {
+  const parsed = parseModel(text);
+  const repairs = Array.isArray(parsed) ? parsed : Array.isArray(parsed?.repairs) ? parsed.repairs : [];
+  return repairs.filter((r: any) =>
+    r && typeof r.section === "string" && typeof r.field === "string" && "new_value" in r
+  );
+}
+
+function mergeRepairs(report: any, repairs: FieldRepair[]) {
+  const next = structuredClone(report);
+  const allowedSectionFields = new Set([
+    "score", "tier", "whats_working", "whats_holding_back", "evidence", "competitor_framing", "fix_first", "agent",
+  ]);
+  const allowedReportFields = new Set(["verdict", "model_type", "what_we_found", "competitive_read", "priority_fixes", "handoff_cta"]);
+
+  for (const repair of repairs) {
+    if (repair.section === "report") {
+      if (allowedReportFields.has(repair.field)) next[repair.field] = repair.new_value;
+      continue;
+    }
+
+    const section = Array.isArray(next.sections)
+      ? next.sections.find((s: any) => s?.label === repair.section)
+      : null;
+    if (section && allowedSectionFields.has(repair.field)) {
+      section[repair.field] = repair.new_value;
+    }
+  }
+  return next;
+}
+
+async function repairReport(req: Request, report: any, failures: ValidationFailure[], payload: any) {
+  const repairPayload = {
+    current_report: report,
+    validation_failures: failures,
+    signals: payload?.signals ?? {},
+    inputs: payload?.inputs ?? {},
+    model_type: payload?.model_type ?? null,
+    low_data: payload?.low_data ?? false,
+  };
+  const text = await callAnthropic(req, repairPayload, buildSurgicalRepairNote());
+  const repairs = parseRepairs(text);
+  if (repairs.length === 0) return report;
+  return mergeRepairs(report, repairs);
+}
+
 function computeScore(report: any): number {
   let total = 0;
   for (const s of report.sections ?? []) {
@@ -434,10 +549,13 @@ serve(async (req) => {
       : "";
 
     let report: any;
-    let issues: string[] = [];
+    let issues: ValidationFailure[] = [];
 
     if (debugForce !== undefined) {
       report = debugForce;
+      issues = validate(report, payload);
+    } else if (body?.existing_report && typeof body.existing_report === "object" && !Array.isArray(body.existing_report)) {
+      report = body.existing_report;
       issues = validate(report, payload);
     } else {
       const text1 = await callAnthropic(
@@ -447,36 +565,22 @@ serve(async (req) => {
       );
       report = parseModel(text1);
       if (!report) {
-        issues = ["model output was not valid JSON"];
+        issues = [{ section: "report", field: "root", reason: "model output was not valid JSON" }];
       } else {
         issues = validate(report, payload);
       }
+    }
 
-      if (issues.length > 0) {
-        const retryNote = buildValidationRepairNote(issues);
-        const text2 = await callAnthropic(req, payload, retryNote);
-        const report2 = parseModel(text2);
-        if (!report2) {
-          return new Response(
-            JSON.stringify({ status: "review", issues: ["model output was not valid JSON on retry"] }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-          );
-        }
-        const issues2 = validate(report2, payload);
-        if (issues2.length > 0) {
-          return new Response(
-            JSON.stringify({ status: "review", issues: issues2 }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-          );
-        }
-        report = report2;
-        issues = [];
+    if (report && issues.length > 0) {
+      for (let attempt = 1; attempt <= 3 && issues.length > 0; attempt += 1) {
+        report = await repairReport(req, report, issues, payload);
+        issues = validate(report, payload);
       }
     }
 
     if (issues.length > 0) {
       return new Response(
-        JSON.stringify({ status: "review", issues }),
+        JSON.stringify({ status: "review", issues, issue_messages: formatFailures(issues), report }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
