@@ -210,6 +210,17 @@ function hasSpecificToken(text: string, inputCompetitors: string[]) {
     || NAMED_ABSENCE_PATTERNS.some((re) => re.test(text));
 }
 
+function checkVoiceLint(issues: ValidationFailure[], section: string, field: string, value: unknown) {
+  const text = typeof value === "string" ? value : JSON.stringify(value ?? "");
+  if (text.includes("\u2014") || text.includes("\u2013")) {
+    addFailure(issues, section, field, "contains em dash or en dash");
+  }
+  const lower = text.toLowerCase();
+  for (const c of CONTRACTIONS) {
+    if (lower.includes(c)) addFailure(issues, section, field, `contains contraction "${c}"`);
+  }
+}
+
 function formatFailures(issues: ValidationFailure[]) {
   return issues.map((issue) => `${issue.section}.${issue.field}: ${issue.reason}`);
 }
@@ -292,6 +303,10 @@ function validate(report: any, payload: any): ValidationFailure[] {
     } else {
       addFailure(issues, label, "score", "missing or not a number");
     }
+
+    for (const field of ["whats_working", "whats_holding_back", "evidence", "competitor_framing", "fix_first"] as const) {
+      checkVoiceLint(issues, label, field, s?.[field]);
+    }
   }
 
   // competitive_read domain check
@@ -325,16 +340,9 @@ function validate(report: any, payload: any): ValidationFailure[] {
     }
   }
 
-  // voice lint across all copy
-  const allReportText = JSON.stringify(report);
-  if (allReportText.includes("\u2014") || allReportText.includes("\u2013")) {
-    addFailure(issues, "report", "copy", "contains em dash or en dash");
-  }
-  const lowerAll = allReportText.toLowerCase();
-  for (const c of CONTRACTIONS) {
-    if (lowerAll.includes(c)) {
-      addFailure(issues, "report", "copy", `contains contraction "${c}"`);
-    }
+  // voice lint with repairable field names
+  for (const field of ["verdict", "what_we_found", "competitive_read", "priority_fixes", "handoff_cta"] as const) {
+    checkVoiceLint(issues, "report", field, report?.[field]);
   }
 
   return issues;
