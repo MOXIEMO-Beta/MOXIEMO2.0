@@ -80,7 +80,7 @@ export default function BrandAuditReportPage() {
     );
   }
 
-  const showFinalizing = status === "review" || stuck;
+  const showFinalizing = status === "review" || status === "failed" || stuck;
 
   return (
     <>
@@ -107,7 +107,9 @@ export default function BrandAuditReportPage() {
           <>
             <h2 className="text-xl font-bold text-[#15171C] mb-2">Your report is being finalized</h2>
             <p className="text-sm text-[#7a7e8c] mb-2">
-              {stuck
+              {status === "failed"
+                ? "Something went wrong while generating. You can try again."
+                : stuck
                 ? "This is taking longer than expected. You can try again."
                 : "We need to tighten a few things so it reads cleanly. Run it again to finish."}
             </p>
