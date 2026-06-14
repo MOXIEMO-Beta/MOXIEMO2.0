@@ -26,11 +26,14 @@ export default function BrandAuditReportPage() {
       const { data: res, error: err } = await supabase.functions.invoke("get-audit-report", { body: { id } });
       if (err) { setError(err.message); setStatus("error"); return; }
       if (!res) { setError("Not found."); setStatus("error"); return; }
-      setStatus(res.status);
+      const nextStatus = typeof res.status === "string" ? res.status.toLowerCase() : "error";
+      setStatus(nextStatus);
       setReviewReason(res.review_reason ?? "");
       setStartedAt(res.generation_started_at ?? null);
-      if (res.status === "ready") {
+      if (nextStatus === "ready") {
         setData({ status: "ready", brand_audit_score: res.brand_audit_score, report: res.report });
+      } else {
+        setData(null);
       }
     } catch (e: any) {
       setError(String(e?.message ?? e));
@@ -61,6 +64,7 @@ export default function BrandAuditReportPage() {
       if (err) { setError(err.message); return; }
       setStuck(false);
       setReviewReason("");
+      setData(null);
       setStatus("generating");
       setStartedAt(new Date().toISOString());
     } catch (e: any) {
