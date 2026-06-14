@@ -291,37 +291,91 @@ function parseModel(text: string): any | null {
   }
 }
 
+const VERA_TIMEOUT_MS = 120_000;
+
 async function callAnthropic(req: Request, payload: any, extraSystem?: string) {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
   const system = extraSystem ? `${SYSTEM_PROMPT}\n\n${extraSystem}` : SYSTEM_PROMPT;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-5",
-      max_tokens: 4096,
-      temperature: 0.3,
-      system,
-      messages: [{ role: "user", content: JSON.stringify(payload) }],
-    }),
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), VERA_TIMEOUT_MS);
 
-  if (!res.ok) {
-    const errText = await res.text();
+  let res: Response;
+  try {
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-5",
+        max_tokens: 24000,
+        temperature: 0.3,
+        stream: true,
+        system,
+        messages: [{ role: "user", content: JSON.stringify(payload) }],
+      }),
+      signal: controller.signal,
+    });
+  } catch (e: any) {
+    clearTimeout(timer);
+    if (e?.name === "AbortError") {
+      const err: any = new Error(`Anthropic call timed out after ${VERA_TIMEOUT_MS}ms`);
+      err.status = 504;
+      throw err;
+    }
+    throw e;
+  }
+
+  if (!res.ok || !res.body) {
+    clearTimeout(timer);
+    const errText = await res.text().catch(() => "");
     notifyAdminCritical(req, { functionName: "generate-audit", status: res.status, detail: errText });
     const err: any = new Error(`Anthropic error ${res.status}: ${errText}`);
     err.status = res.status;
     throw err;
   }
-  const data = await res.json();
-  return data.content?.[0]?.text ?? "";
+
+  // Parse SSE stream and accumulate text deltas.
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let text = "";
+  try {
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      let idx;
+      while ((idx = buf.indexOf("\n")) !== -1) {
+        const line = buf.slice(0, idx).trim();
+        buf = buf.slice(idx + 1);
+        if (!line.startsWith("data:")) continue;
+        const payload = line.slice(5).trim();
+        if (!payload || payload === "[DONE]") continue;
+        try {
+          const evt = JSON.parse(payload);
+          if (evt.type === "content_block_delta" && evt.delta?.type === "text_delta") {
+            text += evt.delta.text ?? "";
+          }
+        } catch { /* ignore partial */ }
+      }
+    }
+  } catch (e: any) {
+    if (e?.name === "AbortError") {
+      const err: any = new Error(`Anthropic stream timed out after ${VERA_TIMEOUT_MS}ms`);
+      err.status = 504;
+      throw err;
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+  return text;
 }
 
 function computeScore(report: any): number {
