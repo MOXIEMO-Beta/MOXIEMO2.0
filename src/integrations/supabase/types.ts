@@ -55,6 +55,45 @@ export type Database = {
           },
         ]
       }
+      audits: {
+        Row: {
+          brand_audit_score: number | null
+          created_at: string
+          domain: string | null
+          id: string
+          inputs: Json | null
+          low_data: boolean | null
+          model_type: string | null
+          report: Json | null
+          signals: Json | null
+          status: string
+        }
+        Insert: {
+          brand_audit_score?: number | null
+          created_at?: string
+          domain?: string | null
+          id?: string
+          inputs?: Json | null
+          low_data?: boolean | null
+          model_type?: string | null
+          report?: Json | null
+          signals?: Json | null
+          status?: string
+        }
+        Update: {
+          brand_audit_score?: number | null
+          created_at?: string
+          domain?: string | null
+          id?: string
+          inputs?: Json | null
+          low_data?: boolean | null
+          model_type?: string | null
+          report?: Json | null
+          signals?: Json | null
+          status?: string
+        }
+        Relationships: []
+      }
       beta_codes: {
         Row: {
           active: boolean | null
@@ -640,6 +679,44 @@ export type Database = {
           week_of?: string
         }
         Relationships: []
+      }
+      leads: {
+        Row: {
+          audit_id: string | null
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          source: string | null
+        }
+        Insert: {
+          audit_id?: string | null
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          source?: string | null
+        }
+        Update: {
+          audit_id?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          source?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       onboarding_responses: {
         Row: {
