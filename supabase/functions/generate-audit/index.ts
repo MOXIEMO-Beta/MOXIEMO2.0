@@ -105,6 +105,27 @@ If low_data is true, you could not access enough of the site. Do not invent. Sco
 can, mark the rest honestly as "we could not access enough of your site to assess this,"
 and keep the report useful and honest.
 
+SECTION JSON STRUCTURE
+Every section object must use the exact same keys. Use this skeleton for one section, then
+repeat the exact same keys for all eight section labels:
+{
+  "label": "Positioning & Differentiation",
+  "score": 0,
+  "tier": "Critical gap",
+  "whats_working": "A non-empty evidence-bound sentence naming the nearest true strength or raw material to build on.",
+  "whats_holding_back": "A non-empty evidence-bound sentence naming the specific gap.",
+  "evidence": ["A non-empty evidence note from the payload."],
+  "competitor_framing": "A competitor comparison grounded only in payload competitors, or a sentence saying the competitor signal is not strong enough for this section.",
+  "fix_first": "A non-empty first fix.",
+  "agent": "Sol"
+}
+All eight sections must include a non-empty whats_working string. No field may be blank,
+null, undefined, or omitted for any reason. If little is working, whats_working must still
+name the nearest true strength or the raw material that exists to build on, for example:
+"You have a clear offer to anchor positioning on, but no point of difference is stated yet."
+Positioning & Differentiation is often the weakest section, but it must still include
+whats_working.
+
 OUTPUT
 Return only valid JSON matching the schema. No preamble, no markdown, no commentary.`;
 
@@ -291,6 +312,18 @@ function parseModel(text: string): any | null {
   }
 }
 
+function buildValidationRepairNote(issues: string[], source = "previous output") {
+  const complaint = issues.length > 0
+    ? issues.map((issue) => `- ${issue}`).join("\n")
+    : "- Unknown validation issue";
+
+  return `VALIDATION REPAIR
+The ${source} failed validation for this exact complaint:
+${complaint}
+
+Correct those exact issues. Do not blindly rewrite around them. Every section must use the exact section skeleton and must include a non-empty whats_working string. If the complaint names a missing whats_working field, fill that specific section with the nearest true strength or raw material from the evidence, even when the section is weak. Never omit, blank, null, or rename whats_working. Stay evidence-bound and specific. Return corrected JSON only.`;
+}
+
 const VERA_TIMEOUT_MS = 120_000;
 
 async function callAnthropic(req: Request, payload: any, extraSystem?: string) {
@@ -396,6 +429,9 @@ serve(async (req) => {
     const body = await req.json();
     const payload = body?.payload ?? {};
     const debugForce = body?.debug_force_output;
+    const previousValidationError = typeof body?.previous_validation_error === "string"
+      ? body.previous_validation_error.trim()
+      : "";
 
     let report: any;
     let issues: string[] = [];
@@ -404,7 +440,11 @@ serve(async (req) => {
       report = debugForce;
       issues = validate(report, payload);
     } else {
-      const text1 = await callAnthropic(req, payload);
+      const text1 = await callAnthropic(
+        req,
+        payload,
+        previousValidationError ? buildValidationRepairNote([previousValidationError], "previous generation") : undefined,
+      );
       report = parseModel(text1);
       if (!report) {
         issues = ["model output was not valid JSON"];
@@ -413,7 +453,7 @@ serve(async (req) => {
       }
 
       if (issues.length > 0) {
-        const retryNote = `Your previous output failed validation for: ${JSON.stringify(issues)}. Fix only those issues. Stay evidence-bound and specific. Return corrected JSON only.`;
+        const retryNote = buildValidationRepairNote(issues);
         const text2 = await callAnthropic(req, payload, retryNote);
         const report2 = parseModel(text2);
         if (!report2) {

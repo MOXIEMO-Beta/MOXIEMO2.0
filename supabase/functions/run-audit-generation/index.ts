@@ -31,7 +31,7 @@ async function runGeneration(audit_id: string) {
     step = "load_payload";
     const { data: row, error: loadErr } = await supabase
       .from("audits")
-      .select("inputs, model_type, low_data, signals")
+      .select("inputs, model_type, low_data, signals, review_reason")
       .eq("id", audit_id)
       .maybeSingle();
     if (loadErr || !row) throw new Error(loadErr?.message || "audit row not found");
@@ -42,6 +42,7 @@ async function runGeneration(audit_id: string) {
       low_data: row.low_data ?? false,
       signals: row.signals ?? {},
     };
+    const previousValidationError = typeof row.review_reason === "string" ? row.review_reason.trim() : "";
 
     step = "mark_generating";
     await supabase.from("audits").update({
@@ -64,7 +65,7 @@ async function runGeneration(audit_id: string) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
         },
-        body: JSON.stringify({ payload }),
+        body: JSON.stringify({ payload, previous_validation_error: previousValidationError }),
         signal: controller.signal,
       });
     } catch (e: any) {
