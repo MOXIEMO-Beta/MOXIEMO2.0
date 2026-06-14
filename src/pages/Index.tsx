@@ -116,7 +116,10 @@ export default function Index() {
               size="lg"
               className="bg-accent hover:bg-accent/90 text-accent-foreground h-12 px-7 rounded-full text-base font-semibold"
             >
-              <Link to="/founding">Join as a Founding Member <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              <Link to="/brand-audit">Run my free Brand Audit Report <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="h-12 px-6 rounded-full text-base font-semibold border-2">
+              <Link to="/founding">Join as a Founding Member</Link>
             </Button>
             <Button asChild size="lg" variant="ghost" className="h-12 px-6 rounded-full text-base font-semibold">
               <Link to="/auth">Sign in <ArrowRight className="ml-2 h-4 w-4" /></Link>
