@@ -112,7 +112,7 @@ export default function BrandAudit() {
     setSuggestLoading(true);
     try {
       const { data } = await supabase.functions.invoke("suggest-competitors", {
-        body: { what_you_do: whatYouDo, who_you_serve: whoYouServe, location },
+        body: { url, brand_name: brandName, what_you_do: whatYouDo, who_you_serve: whoYouServe, location },
       });
       const arr: string[] = (data?.suggested ?? []).slice(0, 8);
       setSuggested(arr);
