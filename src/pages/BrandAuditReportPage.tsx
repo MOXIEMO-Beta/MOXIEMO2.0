@@ -35,8 +35,8 @@ export default function BrandAuditReportPage() {
       } else {
         setData(null);
       }
-    } catch (e: any) {
-      setError(String(e?.message ?? e));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
       setStatus("error");
     }
   }, [id]);
@@ -67,8 +67,8 @@ export default function BrandAuditReportPage() {
       setData(null);
       setStatus("generating");
       setStartedAt(new Date().toISOString());
-    } catch (e: any) {
-      setError(String(e?.message ?? e));
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : String(e));
     } finally {
       setRegenerating(false);
     }
