@@ -41,6 +41,7 @@ export function SiteFooter() {
               <li><Link to="/blog" className="moxie-footer-link">Building with MOXIEMO</Link></li>
               <li><Link to="/changelog" className="moxie-footer-link">Changelog</Link></li>
               <li><Link to="/resources" className="moxie-footer-link">Resources</Link></li>
+              <li><Link to="/brand-audit" className="moxie-footer-link">Free Brand Audit</Link></li>
               <li><a href="mailto:hello@buildwithmoxiemo.com" className="moxie-footer-link">Contact</a></li>
               <li>
                 <Link to="/brand-kit" className="moxie-footer-link" style={{ color: "#ff6b6b" }}>
