@@ -60,11 +60,13 @@ export type Database = {
           brand_audit_score: number | null
           created_at: string
           domain: string | null
+          generation_started_at: string | null
           id: string
           inputs: Json | null
           low_data: boolean | null
           model_type: string | null
           report: Json | null
+          review_reason: string | null
           signals: Json | null
           status: string
         }
@@ -72,11 +74,13 @@ export type Database = {
           brand_audit_score?: number | null
           created_at?: string
           domain?: string | null
+          generation_started_at?: string | null
           id?: string
           inputs?: Json | null
           low_data?: boolean | null
           model_type?: string | null
           report?: Json | null
+          review_reason?: string | null
           signals?: Json | null
           status?: string
         }
@@ -84,11 +88,13 @@ export type Database = {
           brand_audit_score?: number | null
           created_at?: string
           domain?: string | null
+          generation_started_at?: string | null
           id?: string
           inputs?: Json | null
           low_data?: boolean | null
           model_type?: string | null
           report?: Json | null
+          review_reason?: string | null
           signals?: Json | null
           status?: string
         }

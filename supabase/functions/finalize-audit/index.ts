@@ -8,6 +8,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// @ts-ignore - EdgeRuntime is provided by Supabase Edge runtime
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -24,7 +27,7 @@ serve(async (req) => {
 
     const domain = normalizeDomain(url);
 
-    // 1. Create audit row first
+    // 1. Create audit row first (status = generating, with start timestamp)
     const { data: auditRow, error: auditErr } = await supabase
       .from("audits")
       .insert({
@@ -34,6 +37,7 @@ serve(async (req) => {
         low_data: payload?.low_data ?? null,
         signals: payload?.signals ?? null,
         status: "generating",
+        generation_started_at: new Date().toISOString(),
       })
       .select("id")
       .single();
@@ -56,45 +60,26 @@ serve(async (req) => {
       });
     }
 
-    // 3. Call generate-audit
-    const genUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/generate-audit`;
-    const genRes = await fetch(genUrl, {
+    // 3. Fire-and-forget background generation via run-audit-generation.
+    //    We return audit_id immediately and let the client poll get-audit-report.
+    const runUrl = `${Deno.env.get("SUPABASE_URL")}/functions/v1/run-audit-generation`;
+    const kickoff = fetch(runUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
       },
-      body: JSON.stringify({ payload }),
+      body: JSON.stringify({ audit_id }),
+    }).catch((e) => {
+      console.error("[finalize-audit] kickoff failed", e);
     });
-    const genData = await genRes.json().catch(() => ({}));
 
-    if (genData?.status === "ready") {
-      await supabase.from("audits").update({
-        status: "ready",
-        report: genData.report,
-        brand_audit_score: genData.brand_audit_score,
-      }).eq("id", audit_id);
-      return new Response(JSON.stringify({
-        audit_id,
-        status: "ready",
-        brand_audit_score: genData.brand_audit_score,
-        report: genData.report,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (typeof EdgeRuntime !== "undefined" && EdgeRuntime?.waitUntil) {
+      EdgeRuntime.waitUntil(kickoff);
     }
 
-    if (genData?.status === "review") {
-      await supabase.from("audits").update({
-        status: "review",
-        report: { issues: genData.issues ?? [] },
-      }).eq("id", audit_id);
-      return new Response(JSON.stringify({ audit_id, status: "review" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    await supabase.from("audits").update({ status: "error" }).eq("id", audit_id);
-    return new Response(JSON.stringify({ audit_id, status: "error", error: genData?.error ?? "generation_failed" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ audit_id, status: "generating" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
