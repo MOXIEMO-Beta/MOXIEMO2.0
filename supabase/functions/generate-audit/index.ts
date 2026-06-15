@@ -299,6 +299,14 @@ function extractDomains(text: string): string[] {
   return Array.from(text.matchAll(re)).map((m) => m[1].toLowerCase());
 }
 
+function cleanCompetitorDomain(input: string): string {
+  let s = (input || "").trim().toLowerCase();
+  if (!s) return "";
+  s = s.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  s = s.split("/")[0].split("?")[0].split("#")[0];
+  return s;
+}
+
 function addFailure(issues: ValidationFailure[], section: string, field: string, reason: string) {
   issues.push({ section, field, reason });
 }
@@ -406,7 +414,10 @@ function validate(report: any, payload: any): ValidationFailure[] {
   if (fixes.length < 3) addFailure(issues, "report", "priority_fixes", "must have at least 3 items");
 
   const inputCompetitors: string[] = Array.isArray(payload?.inputs?.competitors)
-    ? payload.inputs.competitors.filter((c: any) => typeof c === "string").map((c: string) => c.toLowerCase())
+    ? payload.inputs.competitors
+        .filter((c: any) => typeof c === "string")
+        .map((c: string) => cleanCompetitorDomain(c))
+        .filter(Boolean)
     : [];
 
   for (const s of sections) {
