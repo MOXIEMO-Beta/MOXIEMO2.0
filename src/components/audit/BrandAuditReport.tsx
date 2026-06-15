@@ -1,7 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { downloadAuditPdf } from "@/lib/brandAuditPdf";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+} from "recharts";
 
 export type AuditSection = {
   label: string;
