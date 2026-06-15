@@ -104,6 +104,16 @@ the lowest-scoring, highest-leverage sections. One sentence per move, plus the a
 Strategy-layer gaps (Positioning, Messaging, Brand Story, Purpose) generally outrank
 expression-layer gaps, because nothing downstream works until the strategy is set.
 
+VERDICT
+The verdict field is the top-of-report summary the founder reads first. Write it as
+exactly two short paragraphs separated by a single blank line. Each paragraph is one to
+three short sentences, plain prose, no headings, no bullets.
+- Paragraph one is the diagnosis: where the brand stands right now in plain language,
+  grounded in the strongest pattern across the section findings.
+- Paragraph two is the action: the single most important thing to do next, drawn from
+  the highest-leverage priority fix.
+Keep both paragraphs concise. Sentence case. No em dashes. No contractions.
+
 LOW DATA
 If low_data is true, you could not access enough of the site. Do not invent. Score what you
 can, mark the rest honestly as "we could not access enough of your site to assess this,"
