@@ -901,7 +901,9 @@ serve(async (req) => {
       );
     }
 
-    const brand_audit_score = computeScore(report);
+    // Apply scoring calibration: absent-asset ceilings + data-confidence cap.
+    calibrateReport(report, payload);
+    const brand_audit_score = computeCalibratedScore(report);
     return new Response(
       JSON.stringify({
         status: "ready",
