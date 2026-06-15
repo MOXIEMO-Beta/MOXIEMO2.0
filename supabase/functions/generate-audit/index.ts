@@ -319,6 +319,9 @@ function formatFailures(issues: ValidationFailure[]) {
 //       banned generic phrases, tier-score mismatch.
 function classifyFailure(f: ValidationFailure): "hard" | "soft" {
   const reason = f.reason.toLowerCase();
+  // Advisor overview is always soft, never blocks the report.
+  if (f.section === "advisor_overview") return "soft";
+  if (reason.includes("(soft)")) return "soft";
   if (
     reason.includes("contradicts signal") ||
     reason.includes("hallucinated competitor") ||
