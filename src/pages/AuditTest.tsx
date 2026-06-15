@@ -22,6 +22,10 @@ export default function AuditTest() {
   const [auditData, setAuditData] = useState<AuditResponse | null>(null);
   const [pipeMsg, setPipeMsg] = useState("");
   const [pipeLoading, setPipeLoading] = useState(false);
+  const [diagSignals, setDiagSignals] = useState<any>(null);
+  const [diagRaw, setDiagRaw] = useState<any>(null);
+  const [diagValidation, setDiagValidation] = useState<any>(null);
+  const [diagStatus, setDiagStatus] = useState<string>("");
 
   async function run(body: any) {
     setLoading(true);
@@ -110,19 +114,27 @@ export default function AuditTest() {
 
   async function runFullAudit() {
     setPipeLoading(true); setPipeMsg(""); setAuditData(null);
+    setDiagSignals(null); setDiagRaw(null); setDiagValidation(null); setDiagStatus("");
     try {
       let parsed: any;
       try { parsed = JSON.parse(deepResult); }
       catch { setPipeMsg("Run scrape-deep first or paste a valid payload."); return; }
+      setDiagSignals(parsed?.signals ?? parsed);
       const { data, error } = await supabase.functions.invoke("generate-audit", {
         body: { payload: parsed },
       });
       if (error) { setPipeMsg(`generate-audit error: ${error.message}`); return; }
+      setDiagStatus(data?.status ?? "");
+      setDiagRaw(data?.raw_report ?? null);
+      setDiagValidation(data?.validation ?? null);
       if (data?.status === "ready") {
         setAuditData(data as AuditResponse);
-        setPipeMsg("Audit ready.");
+        const soft = data?.validation?.summary?.soft_count ?? 0;
+        setPipeMsg(`Audit ready. ${soft} soft warnings.`);
       } else {
-        setPipeMsg(`Audit not ready: ${JSON.stringify(data)}`);
+        const hard = data?.validation?.summary?.hard_count ?? 0;
+        const soft = data?.validation?.summary?.soft_count ?? 0;
+        setPipeMsg(`Audit ${data?.status}. ${hard} hard, ${soft} soft.`);
       }
     } finally { setPipeLoading(false); }
   }
@@ -171,6 +183,53 @@ export default function AuditTest() {
         <div style={{ marginBottom: 24 }}>
           <BrandAuditReport data={auditData} />
         </div>
+      )}
+
+      {(diagSignals || diagRaw || diagValidation) && (
+        <section style={{ border: "1px solid #ccc", padding: 12, marginBottom: 24 }}>
+          <h2>Diagnosis surface</h2>
+          {diagStatus && <div>status: <strong>{diagStatus}</strong></div>}
+          {diagSignals && (
+            <details>
+              <summary>Signals given to Vera</summary>
+              <pre style={{ background: "#111", color: "#0f0", padding: 12, maxHeight: 400, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{JSON.stringify(diagSignals, null, 2)}</pre>
+            </details>
+          )}
+          {diagRaw && (
+            <details>
+              <summary>Raw Vera JSON</summary>
+              <pre style={{ background: "#111", color: "#0f0", padding: 12, maxHeight: 400, overflow: "auto", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{JSON.stringify(diagRaw, null, 2)}</pre>
+            </details>
+          )}
+          {diagValidation && (
+            <details open>
+              <summary>Validation result (every check)</summary>
+              <div style={{ marginTop: 8 }}>
+                <div>pass: <strong>{String(diagValidation.pass)}</strong> — hard: {diagValidation.summary?.hard_count ?? 0}, soft: {diagValidation.summary?.soft_count ?? 0}</div>
+                <h4 style={{ marginTop: 8 }}>Hard failures (block)</h4>
+                {(diagValidation.hard_failures ?? []).length === 0 ? (
+                  <div style={{ color: "#0a0" }}>none</div>
+                ) : (
+                  <ul>
+                    {diagValidation.hard_failures.map((f: any, i: number) => (
+                      <li key={i}><strong>{f.section}.{f.field}</strong>: {f.reason}</li>
+                    ))}
+                  </ul>
+                )}
+                <h4 style={{ marginTop: 8 }}>Soft warnings (do not block)</h4>
+                {(diagValidation.soft_warnings ?? []).length === 0 ? (
+                  <div style={{ color: "#0a0" }}>none</div>
+                ) : (
+                  <ul>
+                    {diagValidation.soft_warnings.map((f: any, i: number) => (
+                      <li key={i}><strong>{f.section}.{f.field}</strong>: {f.reason}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </details>
+          )}
+        </section>
       )}
 
       <h2>Payload</h2>
