@@ -1,6 +1,7 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet, Svg, Circle, Polygon, Line, pdf } from "@react-pdf/renderer";
 import type { AuditResponse, AuditSection } from "@/components/audit/BrandAuditReport";
+import { composeSituationRead } from "@/components/audit/BrandAuditReport";
 
 const C = {
   coral: "#FF6B5C",
@@ -85,10 +86,20 @@ function AdvisorOverviewPdf({
   overview,
   stage,
   posture,
+  brand,
+  whatYouDo,
+  whoYouServe,
+  competitors,
+  sections,
 }: {
   overview?: AuditResponse["report"]["advisor_overview"];
   stage?: string | null;
   posture?: string | null;
+  brand?: string;
+  whatYouDo?: string;
+  whoYouServe?: string;
+  competitors?: string[];
+  sections?: AuditSection[];
 }) {
   const ao = overview ?? {};
   const stageLabel = (ao.stage_label && ao.stage_label.trim()) || prettyStage(stage);
@@ -98,7 +109,17 @@ function AdvisorOverviewPdf({
     : [];
   const focus = (ao.focus ?? "").trim();
   const futureLevers = (ao.future_levers ?? "").trim();
-  const read = (ao.read ?? "").trim();
+  const read = composeSituationRead({
+    read: ao.read,
+    brand,
+    whatYouDo,
+    whoYouServe,
+    competitors,
+    strengths,
+    stageLabel,
+    postureLabel,
+    sections,
+  });
   if (!read && strengths.length === 0 && !focus && !futureLevers) return null;
   return (
     <View style={s.card}>
