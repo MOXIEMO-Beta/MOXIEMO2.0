@@ -309,10 +309,10 @@ function SectionBlock({ sec }: { sec: AuditSection }) {
 
       {sec.evidence?.length > 0 && (
         <>
-          <Text style={s.eyebrow}>WHAT WE LOOKED AT</Text>
+          <Text style={s.evidenceLabel}>WHAT WE LOOKED AT</Text>
           <View style={{ marginBottom: 8 }}>
             {sec.evidence.map((e, i) => (
-              <Text key={i} style={{ fontSize: 9, color: C.muted, marginBottom: 2 }}>{`\u2022  ${e}`}</Text>
+              <Text key={i} style={s.evidence}>{`\u2022  ${e}`}</Text>
             ))}
           </View>
         </>
