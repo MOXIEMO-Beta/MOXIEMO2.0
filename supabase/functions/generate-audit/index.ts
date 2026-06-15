@@ -172,6 +172,7 @@ type ValidationFailure = {
   section: string;
   field: string;
   reason: string;
+  severity?: "hard" | "soft";
 };
 
 type FieldRepair = {
