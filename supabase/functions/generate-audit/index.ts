@@ -658,6 +658,15 @@ function mergeRepairs(report: any, repairs: FieldRepair[]) {
       if (allowedReportFields.has(repair.field)) next[repair.field] = repair.new_value;
       continue;
     }
+    if (repair.section === "advisor_overview") {
+      if (!next.advisor_overview || typeof next.advisor_overview !== "object") next.advisor_overview = {};
+      if (repair.field === "root" && repair.new_value && typeof repair.new_value === "object") {
+        next.advisor_overview = repair.new_value as any;
+      } else if (typeof repair.field === "string") {
+        (next.advisor_overview as any)[repair.field] = repair.new_value;
+      }
+      continue;
+    }
 
     const section = Array.isArray(next.sections)
       ? next.sections.find((s: any) => s?.label === repair.section)
