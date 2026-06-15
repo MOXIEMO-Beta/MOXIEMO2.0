@@ -455,10 +455,20 @@ function AdvisorOverview({
   overview,
   stage,
   posture,
+  brand,
+  whatYouDo,
+  whoYouServe,
+  competitors,
+  sections,
 }: {
   overview?: AuditReport["advisor_overview"];
   stage?: string | null;
   posture?: string | null;
+  brand?: string;
+  whatYouDo?: string;
+  whoYouServe?: string;
+  competitors?: string[];
+  sections?: AuditSection[];
 }) {
   const ao = overview ?? {};
   const stageLabel = (ao.stage_label && ao.stage_label.trim()) || prettyStage(stage);
@@ -468,10 +478,17 @@ function AdvisorOverview({
     : [];
   const focus = (ao.focus ?? "").trim();
   const futureLevers = (ao.future_levers ?? "").trim();
-  const read = (ao.read ?? "").trim();
-
-  // If the model returned absolutely nothing usable, skip rendering.
-  if (!read && strengths.length === 0 && !focus && !futureLevers) return null;
+  const read = composeSituationRead({
+    read: ao.read,
+    brand,
+    whatYouDo,
+    whoYouServe,
+    competitors,
+    strengths,
+    stageLabel,
+    postureLabel,
+    sections,
+  });
 
   return (
     <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8" id="advisor-overview">
