@@ -65,10 +65,12 @@ export type Database = {
           inputs: Json | null
           low_data: boolean | null
           model_type: string | null
+          posture: string | null
           raw_report: Json | null
           report: Json | null
           review_reason: string | null
           signals: Json | null
+          stage: string | null
           status: string
           validation: Json | null
         }
@@ -81,10 +83,12 @@ export type Database = {
           inputs?: Json | null
           low_data?: boolean | null
           model_type?: string | null
+          posture?: string | null
           raw_report?: Json | null
           report?: Json | null
           review_reason?: string | null
           signals?: Json | null
+          stage?: string | null
           status?: string
           validation?: Json | null
         }
@@ -97,10 +101,12 @@ export type Database = {
           inputs?: Json | null
           low_data?: boolean | null
           model_type?: string | null
+          posture?: string | null
           raw_report?: Json | null
           report?: Json | null
           review_reason?: string | null
           signals?: Json | null
+          stage?: string | null
           status?: string
           validation?: Json | null
         }

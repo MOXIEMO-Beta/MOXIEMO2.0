@@ -1,0 +1,1 @@
+ALTER TABLE public.audits ADD COLUMN IF NOT EXISTS stage text; ALTER TABLE public.audits ADD COLUMN IF NOT EXISTS posture text;
