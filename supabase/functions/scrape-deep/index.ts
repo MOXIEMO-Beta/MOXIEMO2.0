@@ -164,12 +164,15 @@ serve(async (req) => {
       visual_identity: {
         ...(baseSignals.visual_identity ?? {}),
         logo_present: facts.logo_present,
+        logo_kind: facts.logo_kind,
       },
       content_consistency: {
         ...(baseSignals.content_consistency ?? {}),
         blog_present: facts.blog_present,
+        blog_post_links: facts.blog_post_links,
         blog_recency: facts.blog_latest_date ?? baseSignals.content_consistency?.blog_recency ?? null,
         newsletter_capture: facts.newsletter_capture,
+        waitlist_present: facts.waitlist_present,
       },
       face_of_the_brand: {
         ...(baseSignals.face_of_the_brand ?? {}),

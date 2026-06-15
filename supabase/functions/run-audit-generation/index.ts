@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { deriveFraming } from "../_shared/audit-framing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -31,16 +32,27 @@ async function runGeneration(audit_id: string) {
     step = "load_payload";
     const { data: row, error: loadErr } = await supabase
       .from("audits")
-      .select("inputs, model_type, low_data, signals, review_reason, report")
+      .select("inputs, model_type, low_data, signals, review_reason, report, stage, posture")
       .eq("id", audit_id)
       .maybeSingle();
     if (loadErr || !row) throw new Error(loadErr?.message || "audit row not found");
+
+    // Re-derive framing if missing (covers older rows or repair retries).
+    const framing = (row.stage && row.posture)
+      ? { stage: row.stage as any, posture: row.posture as any }
+      : deriveFraming({
+          inputs: row.inputs ?? null,
+          signals: row.signals ?? null,
+          model_type: row.model_type ?? null,
+          low_data: row.low_data ?? null,
+        });
 
     const payload = {
       inputs: row.inputs ?? {},
       model_type: row.model_type ?? null,
       low_data: row.low_data ?? false,
       signals: row.signals ?? {},
+      framing,
     };
     const previousValidationError = typeof row.review_reason === "string" ? row.review_reason.trim() : "";
     const existingReport = row.report && typeof row.report === "object" && !Array.isArray(row.report) && Array.isArray((row.report as any).sections)

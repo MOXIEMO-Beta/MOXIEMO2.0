@@ -114,6 +114,46 @@ three short sentences, plain prose, no headings, no bullets.
   the highest-leverage priority fix.
 Keep both paragraphs concise. Sentence case. No em dashes. No contractions.
 
+ADVISOR OVERVIEW (NEW, REQUIRED FIELD)
+You receive a framing object on the payload with stage and posture. Stage is one of
+pre_launch, early, growing, established. Posture is one of category_creator,
+founder_led_expertise, service_business, product_saas, other. Use these to write a short
+advisor read at the top of the report. It is separate from the numeric verdict and lives
+in advisor_overview.
+
+Return advisor_overview as an object with this exact shape:
+{
+  "stage_label": "Pre-launch | Early | Growing | Established",
+  "posture_label": "Category creator | Founder-led expertise | Service business | Product SaaS | Other",
+  "read": "One short sentence in plain language describing stage and posture together, for example: a pre-launch product creating a new category.",
+  "strengths": ["Strength 1", "Strength 2"],
+  "focus": "One short paragraph naming the single thing that matters most right now, framed by the brand's stage.",
+  "future_levers": "One short sentence naming stage-appropriate absences as future levers, not failures."
+}
+
+Rules for advisor_overview:
+- strengths: two or three GENUINE trust factors taken from the evidence. Each is one short phrase, sentence case.
+- focus: one short paragraph (one to three sentences). Lead with what matters most now given the stage.
+- future_levers: name absences that are stage-appropriate to defer (for example, no content cadence or no blog
+  at pre-launch). Frame as levers, never as failures. If nothing applies, write a single sentence saying so.
+- Sentence case. No em dashes. No contractions. Plain prose, no bullets in the strings themselves.
+- Soft field: if you cannot produce one with the evidence, still return the object with safe defaults so the
+  report remains usable. Missing advisor_overview is a warning, never a hard blocker.
+
+STAGE-AWARE SECTION JUDGMENT
+Judge each of the eight sections RELATIVE TO STAGE. A stage-appropriate absence is not a
+failure. Examples: a pre-launch product with no content cadence, no blog, no logo system, or no
+search presence should have those gaps named as future levers appropriate to defer in the
+"whats_holding_back" wording, and the section score must not be tanked for an absence that is
+normal at the brand's stage. Distinguish a true gap from a not-yet item.
+
+ADAPTIVE COMPETITOR FRAMING
+If the payload competitor list is empty or thin, or the posture is category_creator, acknowledge
+the category-creation or no-rival situation ONCE in either the advisor_overview or the
+competitive_read. Then DROP the per-section competitor framing block: write competitor_framing as
+an empty string "" for those sections instead of repeating "the competitor signal does not
+include X" in section after section.
+
 LOW DATA
 If low_data is true, you could not access enough of the site. Do not invent. Score what you
 can, mark the rest honestly as "we could not access enough of your site to assess this,"
@@ -155,21 +195,29 @@ function buildFactsBlock(payload: any): string {
   const vis = s.visual_identity ?? {};
   const find = s.findability ?? {};
   if (typeof cc.blog_present === "boolean") facts.push(`blog_present = ${cc.blog_present}`);
+  if (typeof cc.waitlist_present === "boolean") facts.push(`waitlist_present = ${cc.waitlist_present}`);
+  if (typeof cc.newsletter_capture === "boolean") facts.push(`newsletter_capture = ${cc.newsletter_capture}`);
   if (typeof face.named_founder_on_site === "boolean") facts.push(`named_founder_on_site = ${face.named_founder_on_site}`);
   if (typeof vis.logo_present === "boolean") facts.push(`logo_present = ${vis.logo_present}`);
+  if (typeof vis.logo_kind === "string") facts.push(`logo_kind = "${vis.logo_kind}"`);
   if (typeof find.found_for_name === "boolean") facts.push(`found_for_name = ${find.found_for_name}`);
   if (typeof find.found_for_category === "boolean") facts.push(`found_for_category = ${find.found_for_category}`);
   if (typeof payload?.low_data === "boolean") facts.push(`low_data = ${payload.low_data}`);
   if (typeof payload?.model_type === "string") facts.push(`model_type = "${payload.model_type}"`);
+  if (typeof payload?.framing?.stage === "string") facts.push(`stage = "${payload.framing.stage}"`);
+  if (typeof payload?.framing?.posture === "string") facts.push(`posture = "${payload.framing.posture}"`);
   const inputCompetitors: string[] = Array.isArray(payload?.inputs?.competitors) ? payload.inputs.competitors : [];
   if (inputCompetitors.length > 0) facts.push(`competitors = [${inputCompetitors.map((c) => `"${c}"`).join(", ")}]`);
   const body = facts.length > 0 ? facts.join("\n") : "(no deterministic signals provided)";
   return `FACTS (authoritative, must not be contradicted)
 These are deterministic signals extracted from the actual site and inputs.
 Every finding must be consistent with them. If a fact says blog_present is false,
-never refer to a blog as existing. If named_founder_on_site is false, never claim
-the founder is visible. Only reference competitor domains that appear in the
-competitors list above.
+never refer to a blog as existing. If waitlist_present is true and newsletter_capture
+is false, do not call the waitlist a newsletter. If logo_kind is "wordmark", treat the
+logo as present in styled text form, not as missing. If named_founder_on_site is false,
+never claim the founder is visible. Only reference competitor domains that appear in
+the competitors list above. Read the stage and posture facts and use them to judge each
+section in a stage-aware way.
 ${body}`;
 }
 
@@ -271,6 +319,9 @@ function formatFailures(issues: ValidationFailure[]) {
 //       banned generic phrases, tier-score mismatch.
 function classifyFailure(f: ValidationFailure): "hard" | "soft" {
   const reason = f.reason.toLowerCase();
+  // Advisor overview is always soft, never blocks the report.
+  if (f.section === "advisor_overview") return "soft";
+  if (reason.includes("(soft)")) return "soft";
   if (
     reason.includes("contradicts signal") ||
     reason.includes("hallucinated competitor") ||
@@ -432,6 +483,26 @@ function validate(report: any, payload: any): ValidationFailure[] {
     checkVoiceLint(issues, "report", field, report?.[field]);
   }
 
+  // Advisor overview is a SOFT field. Missing or partial is a warning, never
+  // a hard blocker. Voice lint still applies to its strings.
+  const ao = report?.advisor_overview;
+  if (ao && typeof ao === "object" && !Array.isArray(ao)) {
+    for (const field of ["read", "focus", "future_levers", "stage_label", "posture_label"] as const) {
+      if (ao[field] !== undefined) checkVoiceLint(issues, "advisor_overview", field, ao[field]);
+    }
+    if (!ao.read || typeof ao.read !== "string" || !ao.read.trim()) {
+      addFailure(issues, "advisor_overview", "read", "advisor read is empty (soft)");
+    }
+    if (!Array.isArray(ao.strengths) || ao.strengths.length === 0) {
+      addFailure(issues, "advisor_overview", "strengths", "advisor strengths missing (soft)");
+    }
+    if (!ao.focus || typeof ao.focus !== "string" || !ao.focus.trim()) {
+      addFailure(issues, "advisor_overview", "focus", "advisor focus is empty (soft)");
+    }
+  } else {
+    addFailure(issues, "advisor_overview", "root", "advisor_overview missing (soft)");
+  }
+
   return issues;
 }
 
@@ -585,6 +656,15 @@ function mergeRepairs(report: any, repairs: FieldRepair[]) {
   for (const repair of repairs) {
     if (repair.section === "report") {
       if (allowedReportFields.has(repair.field)) next[repair.field] = repair.new_value;
+      continue;
+    }
+    if (repair.section === "advisor_overview") {
+      if (!next.advisor_overview || typeof next.advisor_overview !== "object") next.advisor_overview = {};
+      if (repair.field === "root" && repair.new_value && typeof repair.new_value === "object") {
+        next.advisor_overview = repair.new_value as any;
+      } else if (typeof repair.field === "string") {
+        (next.advisor_overview as any)[repair.field] = repair.new_value;
+      }
       continue;
     }
 

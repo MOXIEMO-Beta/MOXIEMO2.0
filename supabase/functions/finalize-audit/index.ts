@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { normalizeDomain } from "../_shared/audit-scrape.ts";
+import { deriveFraming } from "../_shared/audit-framing.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,6 +28,14 @@ serve(async (req) => {
 
     const domain = normalizeDomain(url);
 
+    // Derive stage and posture once, store on the row, and pass into Vera.
+    const framing = deriveFraming({
+      inputs: payload?.inputs ?? null,
+      signals: payload?.signals ?? null,
+      model_type: payload?.model_type ?? null,
+      low_data: payload?.low_data ?? null,
+    });
+
     // 1. Create audit row first (status = generating, with start timestamp)
     const { data: auditRow, error: auditErr } = await supabase
       .from("audits")
@@ -36,6 +45,8 @@ serve(async (req) => {
         model_type: payload?.model_type ?? null,
         low_data: payload?.low_data ?? null,
         signals: payload?.signals ?? null,
+        stage: framing.stage,
+        posture: framing.posture,
         status: "generating",
         generation_started_at: new Date().toISOString(),
       })
