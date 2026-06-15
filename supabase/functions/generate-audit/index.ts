@@ -728,6 +728,111 @@ function computeScore(report: any): number {
   return Math.round(total / 100);
 }
 
+// ============================================================
+// SCORING CALIBRATION
+// Post-process Vera's section scores so missing or unverifiable
+// signals never raise a score and no single field swings a
+// section into a higher band. Runs after generation, before the
+// composite is computed.
+// ============================================================
+
+type DataConfidence = "low" | "medium" | "high";
+
+function deriveDataConfidence(payload: any): DataConfidence {
+  if (payload?.low_data === true) return "low";
+  const s = payload?.signals ?? {};
+  const vis = s.visual_identity ?? {};
+  const cc = s.content_consistency ?? {};
+  const face = s.face_of_the_brand ?? {};
+  const story = s.brand_story ?? {};
+  const find = s.findability ?? {};
+  const present = [
+    vis.logo_present !== undefined && vis.logo_present !== null,
+    cc.blog_present !== undefined && cc.blog_present !== null,
+    cc.case_studies_present !== undefined && cc.case_studies_present !== null,
+    face.named_founder_on_site !== undefined && face.named_founder_on_site !== null,
+    face.about_person_section !== undefined && face.about_person_section !== null,
+    story.about_present !== undefined && story.about_present !== null,
+    find.ranks_for_name !== undefined && find.ranks_for_name !== null && find.ranks_for_name !== "not assessed",
+  ].filter(Boolean).length;
+  if (present >= 6) return "high";
+  if (present >= 4) return "medium";
+  return "low";
+}
+
+// Apply absent-asset section ceilings and data-confidence caps.
+// Returns the adjusted report (in place) and the chosen data_confidence.
+function calibrateReport(report: any, payload: any): { report: any; data_confidence: DataConfidence } {
+  const conf = deriveDataConfidence(payload);
+  const confCap = conf === "low" ? 70 : conf === "medium" ? 85 : 100;
+
+  const s = payload?.signals ?? {};
+  const vis = s.visual_identity ?? {};
+  const cc = s.content_consistency ?? {};
+  const face = s.face_of_the_brand ?? {};
+  const story = s.brand_story ?? {};
+
+  // Detection rules. Treat unverifiable (undefined/null) as absent so an
+  // absent or unverifiable signal can never raise a score.
+  const logoPresent = vis.logo_present === true;
+  const aboutPresent = story.about_present === true || face.about_person_section === true;
+  // "Named and pictured face" requires an explicit about-person section or bylines.
+  const namedAndPicturedFace =
+    (face.about_person_section === true) || (face.bylines === true);
+  const caseStudiesPresent = cc.case_studies_present === true;
+  // Developed story = real About page OR a multi-paragraph founding narrative.
+  // story_detail is a free-text field from the extractor; treat short/empty as cue-only.
+  const storyDetailText: string = typeof story.story_detail === "string" ? story.story_detail : "";
+  const developedStory =
+    aboutPresent ||
+    (storyDetailText && storyDetailText.split(/\n\s*\n|(?<=[.!?])\s{2,}/).filter((p) => p.trim().length > 40).length >= 2);
+
+  const sectionCaps: Record<string, number> = {};
+  const reason = (sec: string, cap: number, why: string) => {
+    if ((sectionCaps[sec] ?? 100) > cap) sectionCaps[sec] = cap;
+    return why;
+  };
+
+  if (!logoPresent) reason("Visual Identity", 50, "logo_present false");
+  if (!aboutPresent) {
+    reason("Brand Story", 45, "about_present false");
+    reason("Purpose & Values", 70, "about_present false");
+  }
+  if (!namedAndPicturedFace) reason("The Face of the Brand", 45, "no named-and-pictured face");
+  if (!caseStudiesPresent) reason("Content & Consistency", 45, "case_studies_present false");
+  if (!developedStory) reason("Brand Story", 45, "no developed story");
+
+  const adjustments: Array<{ section: string; from: number; to: number; cap: number }> = [];
+  for (const sec of report.sections ?? []) {
+    const sectionCap = sectionCaps[sec.label] ?? 100;
+    const cap = Math.min(sectionCap, confCap);
+    if (typeof sec.score === "number" && sec.score > cap) {
+      adjustments.push({ section: sec.label, from: sec.score, to: cap, cap });
+      sec.score = cap;
+      const newTier = tierForScore(sec.score);
+      if (newTier) sec.tier = newTier;
+    }
+  }
+
+  report.data_confidence = conf;
+  report._calibration = {
+    data_confidence: conf,
+    confidence_cap: confCap,
+    section_caps: sectionCaps,
+    adjustments,
+  };
+  return { report, data_confidence: conf };
+}
+
+function computeCalibratedScore(report: any): number {
+  const raw = computeScore(report);
+  const conf: DataConfidence = report?.data_confidence === "low"
+    ? "low"
+    : report?.data_confidence === "medium" ? "medium" : "high";
+  const confCap = conf === "low" ? 70 : conf === "medium" ? 85 : 100;
+  return Math.min(raw, confCap);
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -796,7 +901,9 @@ serve(async (req) => {
       );
     }
 
-    const brand_audit_score = computeScore(report);
+    // Apply scoring calibration: absent-asset ceilings + data-confidence cap.
+    calibrateReport(report, payload);
+    const brand_audit_score = computeCalibratedScore(report);
     return new Response(
       JSON.stringify({
         status: "ready",

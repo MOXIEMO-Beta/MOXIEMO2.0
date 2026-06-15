@@ -366,10 +366,10 @@ function SectionCard({ s }: { s: AuditSection }) {
 
         {s.evidence?.length > 0 && (
           <div>
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#9aa0ad] mb-2">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#5A5F6B] mb-2">
               What we looked at
             </div>
-            <ul className="text-[13px] text-[#9aa0ad] space-y-1 list-disc pl-5">
+            <ul className="text-[13px] text-[#5A5F6B] space-y-1 list-disc pl-5">
               {s.evidence.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
           </div>
@@ -451,14 +451,84 @@ function prettyPosture(p?: string | null): string {
   }
 }
 
+// Always produce a composed situation paragraph of at least three sentences.
+// If Vera's read is empty or thin, build deterministically from structured fields:
+// who they are and market, who they compete with, what is working, what is missing.
+export function composeSituationRead(opts: {
+  read?: string | null;
+  brand?: string;
+  whatYouDo?: string;
+  whoYouServe?: string;
+  competitors?: string[];
+  strengths?: string[];
+  stageLabel?: string;
+  postureLabel?: string;
+  sections?: AuditSection[];
+}): string {
+  const orig = (opts.read ?? "").trim();
+  const sentenceCount = orig ? orig.split(/(?<=[.!?])\s+/).filter(Boolean).length : 0;
+  if (orig && sentenceCount >= 3) return orig;
+
+  const sentences: string[] = [];
+  const brand = (opts.brand || "").trim() || "This brand";
+  const whatYouDo = (opts.whatYouDo || "").trim();
+  const audience = (opts.whoYouServe || "").trim();
+  const stage = (opts.stageLabel || "").trim().toLowerCase();
+
+  let s1 = brand;
+  if (whatYouDo) s1 += ` is ${whatYouDo.replace(/\.$/, "")}`;
+  if (audience) s1 += `, serving ${audience.replace(/\.$/, "")}`;
+  if (stage) s1 += `, at the ${stage} stage`;
+  s1 = s1.replace(/\s+/g, " ").trim();
+  if (s1 && !/[.!?]$/.test(s1)) s1 += ".";
+  if (s1) sentences.push(s1);
+
+  const competitors = (opts.competitors || []).filter((c) => !!c && c.trim().length > 0);
+  if (competitors.length > 0) {
+    sentences.push(`They sit alongside ${competitors.slice(0, 4).join(", ")}.`);
+  } else {
+    sentences.push("No direct competitors are named, so the comparison set is open.");
+  }
+
+  const strengths = (opts.strengths || []).filter((s) => !!s && s.trim().length > 0);
+  const sections = (opts.sections || []).filter((s) => typeof s?.score === "number");
+  if (strengths.length > 0) {
+    sentences.push(`What is working: ${strengths.slice(0, 2).join("; ")}.`);
+  } else if (sections.length > 0) {
+    const top = [...sections].sort((a, b) => b.score - a.score).slice(0, 2).map((s) => s.label.toLowerCase());
+    sentences.push(`What is working: ${top.join(" and ")}.`);
+  }
+
+  if (sections.length > 0) {
+    const gaps = [...sections].sort((a, b) => a.score - b.score).slice(0, 2).map((s) => s.label.toLowerCase());
+    sentences.push(`What is missing: ${gaps.join(" and ")}.`);
+  }
+
+  // If Vera wrote a single sentence, lead with it then append the composed context.
+  if (orig && sentenceCount > 0 && sentenceCount < 3) {
+    return [orig.replace(/\s+$/, ""), ...sentences.slice(1)].join(" ").trim();
+  }
+  return sentences.join(" ").trim();
+}
+
 function AdvisorOverview({
   overview,
   stage,
   posture,
+  brand,
+  whatYouDo,
+  whoYouServe,
+  competitors,
+  sections,
 }: {
   overview?: AuditReport["advisor_overview"];
   stage?: string | null;
   posture?: string | null;
+  brand?: string;
+  whatYouDo?: string;
+  whoYouServe?: string;
+  competitors?: string[];
+  sections?: AuditSection[];
 }) {
   const ao = overview ?? {};
   const stageLabel = (ao.stage_label && ao.stage_label.trim()) || prettyStage(stage);
@@ -468,9 +538,20 @@ function AdvisorOverview({
     : [];
   const focus = (ao.focus ?? "").trim();
   const futureLevers = (ao.future_levers ?? "").trim();
-  const read = (ao.read ?? "").trim();
+  const read = composeSituationRead({
+    read: ao.read,
+    brand,
+    whatYouDo,
+    whoYouServe,
+    competitors,
+    strengths,
+    stageLabel,
+    postureLabel,
+    sections,
+  });
 
-  // If the model returned absolutely nothing usable, skip rendering.
+  // The composed read is always non-empty as long as we have any structured
+  // fields. Only skip the card when literally nothing usable exists.
   if (!read && strengths.length === 0 && !focus && !futureLevers) return null;
 
   return (
@@ -679,6 +760,11 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
               overview={report.advisor_overview}
               stage={data.stage}
               posture={data.posture}
+              brand={brand}
+              whatYouDo={whatYouDo}
+              whoYouServe={whoYouServe}
+              competitors={competitorList}
+              sections={allSections}
             />
 
             {/* At a glance */}

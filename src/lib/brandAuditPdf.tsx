@@ -1,6 +1,7 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet, Svg, Circle, Polygon, Line, pdf } from "@react-pdf/renderer";
 import type { AuditResponse, AuditSection } from "@/components/audit/BrandAuditReport";
+import { composeSituationRead } from "@/components/audit/BrandAuditReport";
 
 const C = {
   coral: "#FF6B5C",
@@ -85,10 +86,20 @@ function AdvisorOverviewPdf({
   overview,
   stage,
   posture,
+  brand,
+  whatYouDo,
+  whoYouServe,
+  competitors,
+  sections,
 }: {
   overview?: AuditResponse["report"]["advisor_overview"];
   stage?: string | null;
   posture?: string | null;
+  brand?: string;
+  whatYouDo?: string;
+  whoYouServe?: string;
+  competitors?: string[];
+  sections?: AuditSection[];
 }) {
   const ao = overview ?? {};
   const stageLabel = (ao.stage_label && ao.stage_label.trim()) || prettyStage(stage);
@@ -98,7 +109,17 @@ function AdvisorOverviewPdf({
     : [];
   const focus = (ao.focus ?? "").trim();
   const futureLevers = (ao.future_levers ?? "").trim();
-  const read = (ao.read ?? "").trim();
+  const read = composeSituationRead({
+    read: ao.read,
+    brand,
+    whatYouDo,
+    whoYouServe,
+    competitors,
+    strengths,
+    stageLabel,
+    postureLabel,
+    sections,
+  });
   if (!read && strengths.length === 0 && !focus && !futureLevers) return null;
   return (
     <View style={s.card}>
@@ -136,19 +157,21 @@ function AdvisorOverviewPdf({
 }
 
 const s = StyleSheet.create({
-  page: { padding: 48, backgroundColor: C.paper, color: C.ink, fontFamily: "Helvetica", fontSize: 11, lineHeight: 1.5 },
-  card: { backgroundColor: C.white, borderWidth: 2, borderColor: C.border, borderRadius: 10, padding: 20, marginBottom: 16 },
+  page: { padding: 36, paddingBottom: 48, backgroundColor: C.paper, color: C.ink, fontFamily: "Helvetica", fontSize: 11, lineHeight: 1.5 },
+  card: { backgroundColor: C.white, borderWidth: 2, borderColor: C.border, borderRadius: 10, padding: 16, marginBottom: 12 },
   eyebrow: { fontSize: 8, color: C.muted, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginBottom: 6 },
   h1: { fontSize: 26, color: C.ink, fontFamily: "Helvetica-Bold", letterSpacing: -0.6, marginBottom: 4 },
   h2: { fontSize: 16, color: C.ink, fontFamily: "Helvetica-Bold", marginBottom: 10 },
   small: { fontSize: 9, color: C.muted },
+  evidence: { fontSize: 9, color: "#5A5F6B", marginBottom: 2 },
+  evidenceLabel: { fontSize: 8, color: "#5A5F6B", letterSpacing: 2, fontFamily: "Helvetica-Bold", marginBottom: 6 },
   body: { fontSize: 11, color: C.ink, lineHeight: 1.5 },
   notProvided: { fontSize: 11, color: C.muted, fontStyle: "italic" },
-  groupLabel: { fontSize: 9, color: C.muted, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginTop: 8, marginBottom: 10 },
+  groupLabel: { fontSize: 9, color: C.muted, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginTop: 4, marginBottom: 8 },
   chip: { fontSize: 8, fontFamily: "Helvetica-Bold", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999, borderWidth: 1 },
   pillMuted: { fontSize: 8, color: C.muted, backgroundColor: C.paper, borderColor: C.border, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999 },
   pillCoral: { fontSize: 8, color: C.coral, backgroundColor: "#FFE9E6", borderColor: "#FFCFC8", borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999 },
-  footer: { position: "absolute", left: 48, right: 48, bottom: 22, fontSize: 8, color: C.muted, textAlign: "center", letterSpacing: 1 },
+  footer: { position: "absolute", left: 36, right: 36, bottom: 18, fontSize: 8, color: C.muted, textAlign: "center", letterSpacing: 1 },
 });
 
 function Footer() {
@@ -286,10 +309,10 @@ function SectionBlock({ sec }: { sec: AuditSection }) {
 
       {sec.evidence?.length > 0 && (
         <>
-          <Text style={s.eyebrow}>WHAT WE LOOKED AT</Text>
+          <Text style={s.evidenceLabel}>WHAT WE LOOKED AT</Text>
           <View style={{ marginBottom: 8 }}>
             {sec.evidence.map((e, i) => (
-              <Text key={i} style={{ fontSize: 9, color: C.muted, marginBottom: 2 }}>{`\u2022  ${e}`}</Text>
+              <Text key={i} style={s.evidence}>{`\u2022  ${e}`}</Text>
             ))}
           </View>
         </>
@@ -369,7 +392,16 @@ function AuditDoc({ data }: { data: AuditResponse }) {
           </View>
         </View>
 
-        <AdvisorOverviewPdf overview={r.advisor_overview} stage={data.stage} posture={data.posture} />
+        <AdvisorOverviewPdf
+          overview={r.advisor_overview}
+          stage={data.stage}
+          posture={data.posture}
+          brand={brand}
+          whatYouDo={whatYouDo}
+          whoYouServe={whoYouServe}
+          competitors={competitorDisplay}
+          sections={allSections}
+        />
 
         {allSections.length > 0 && (
           <View style={s.card}>
@@ -411,25 +443,30 @@ function AuditDoc({ data }: { data: AuditResponse }) {
         </Page>
       )}
 
-      {foundation.length > 0 && (
-        <Page size="A4" style={s.page}>
-          <Text style={s.groupLabel}>YOUR BRAND FOUNDATION</Text>
-          {foundation.map((sec) => <SectionBlock key={sec.label} sec={sec} />)}
-          <Footer />
-        </Page>
-      )}
-
-      {showup.length > 0 && (
-        <Page size="A4" style={s.page}>
-          <Text style={s.groupLabel}>HOW YOUR BRAND SHOWS UP</Text>
-          {showup.map((sec) => <SectionBlock key={sec.label} sec={sec} />)}
-          <Footer />
-        </Page>
-      )}
+      {/* Section detail flows continuously; cards never split (wrap=false). */}
+      <Page size="A4" style={s.page}>
+        {foundation.length > 0 && (
+          <>
+            <View wrap={false} minPresenceAhead={120}>
+              <Text style={s.groupLabel}>YOUR BRAND FOUNDATION</Text>
+            </View>
+            {foundation.map((sec) => <SectionBlock key={sec.label} sec={sec} />)}
+          </>
+        )}
+        {showup.length > 0 && (
+          <>
+            <View wrap={false} minPresenceAhead={120}>
+              <Text style={s.groupLabel}>HOW YOUR BRAND SHOWS UP</Text>
+            </View>
+            {showup.map((sec) => <SectionBlock key={sec.label} sec={sec} />)}
+          </>
+        )}
+        <Footer />
+      </Page>
 
       <Page size="A4" style={s.page}>
         {r.competitive_read && r.competitive_read.trim() && (
-          <View style={s.card}>
+          <View style={s.card} wrap={false}>
             <Text style={s.h2}>How you stack up</Text>
             {paragraphs(r.competitive_read).map((p, i) => (
               <Text key={i} style={{ ...s.body, marginBottom: 8 }}>{p}</Text>
@@ -438,7 +475,7 @@ function AuditDoc({ data }: { data: AuditResponse }) {
         )}
 
         {derivedPriorities.length > 0 && (
-          <View style={s.card}>
+          <View style={s.card} wrap={false}>
             <Text style={s.h2}>What I would fix first</Text>
             <Text style={{ ...s.small, marginBottom: 10 }}>Your founder to-do list, ranked.</Text>
             {derivedPriorities.map((p) => (
@@ -455,7 +492,7 @@ function AuditDoc({ data }: { data: AuditResponse }) {
           </View>
         )}
 
-        <View style={{ ...s.card, alignItems: "center", padding: 28 }}>
+        <View style={{ ...s.card, alignItems: "center", padding: 24 }} wrap={false}>
           {r.handoff_cta && (
             <Text style={{ fontSize: 14, color: C.ink, textAlign: "center", marginBottom: 16, fontFamily: "Helvetica-Bold", lineHeight: 1.4 }}>
               {r.handoff_cta}
