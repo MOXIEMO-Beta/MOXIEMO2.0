@@ -30,6 +30,41 @@ const BAD_DOMAINS = new Set([
 
 type SerperItem = { link: string; title?: string; snippet?: string };
 
+// Detect referral/tracking/affiliate URLs that must never count as competitors.
+const REF_PATH_RE = /\/(?:ref|refer|referral|aff|affiliate|invite|partners?|share)(?:\/|$|\?)/i;
+const REF_SUBDOMAIN_RE = /^(?:ref|refer|referral|go|track|click|aff|affiliate|share|link|partners?|invite)\./i;
+const TRACKING_PARAMS = ["ref", "ref_src", "referral", "aff", "affiliate", "fpr", "via", "partner"];
+
+function isReferralLink(rawLink: string): boolean {
+  try {
+    const u = new URL(rawLink);
+    if (REF_SUBDOMAIN_RE.test(u.hostname)) return true;
+    if (REF_PATH_RE.test(u.pathname)) return true;
+    for (const k of u.searchParams.keys()) {
+      const lk = k.toLowerCase();
+      if (lk.startsWith("utm_")) return true;
+      if (TRACKING_PARAMS.includes(lk)) return true;
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+async function resolveRedirect(rawLink: string): Promise<string> {
+  try {
+    const r = await fetch(rawLink, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: AbortSignal.timeout(4000),
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; MoxiemoAudit/1.0)" },
+    });
+    return r.url || rawLink;
+  } catch {
+    return rawLink;
+  }
+}
+
 async function searchSerper(query: string): Promise<SerperItem[]> {
   const key = Deno.env.get("SERPER_API_KEY");
   if (!key) return [];
@@ -117,11 +152,22 @@ async function rankCandidates(
   candidates: { domain: string; title?: string; snippet?: string }[],
 ): Promise<string[]> {
   if (candidates.length === 0) return [];
-  const system = `You filter a list of candidate domains down to genuine direct competitors of a given business.
-A direct competitor is a similar kind of business serving a similar kind of customer.
+  const system = `You filter a list of candidate domains down to GENUINE DIRECT competitors of a given business.
+A direct competitor is a similar kind of business serving a similar kind of customer with a similar offer.
 You may ONLY choose domains from the provided list. Do not invent or modify domains.
-If a candidate is a platform, tool, marketplace, directory, news outlet, social network, or not a competing business, exclude it.
-Return strictly JSON: {"domains": ["a.com", "b.com"]} ranked best first, maximum 5. If none qualify, return {"domains": []}.`;
+
+EXCLUDE aggressively:
+- Platforms, tools, marketplaces, directories, news outlets, social networks, blogs.
+- Adjacent-category businesses that happen to share a keyword but solve a different job. For example,
+  an email-to-calendar tool is NOT competing with an event ticketing platform; a calendar app is NOT
+  competing with a project management suite; a brand strategy consultancy is NOT competing with a
+  logo-design freelancer marketplace.
+- Referral, affiliate, or tracking domains.
+
+Prefer truthful scarcity. If only one or two domains are genuine peers, return only those. If none qualify,
+return {"domains": []}. Do not pad the list to reach 5.
+
+Return strictly JSON: {"domains": ["a.com", "b.com"]} ranked best first, maximum 5.`;
   const user = JSON.stringify({ brand: ctx, candidates });
   const txt = await callClaude(system, user, 500);
   if (!txt) return [];
@@ -174,14 +220,33 @@ serve(async (req) => {
       results.push(...items);
     }
 
+    // Resolve referral / redirect links to their real destinations.
+    const resolved = await Promise.all(
+      results.map(async (it) => {
+        if (!it.link) return it;
+        if (isReferralLink(it.link)) {
+          const real = await resolveRedirect(it.link);
+          if (isReferralLink(real)) return null; // still a ref/affiliate after follow
+          return { ...it, link: real };
+        }
+        return it;
+      }),
+    );
+
     // Deterministic filter
     const seen = new Set<string>();
     const candidates: { domain: string; title?: string; snippet?: string }[] = [];
-    for (const it of results) {
+    for (const it of resolved) {
+      if (!it) continue;
       const d = normalizeDomain(it.link);
       if (!d || seen.has(d)) continue;
       if (BAD_DOMAINS.has(d)) continue;
       if (isSelfDomain(d, ownDomain)) continue;
+      // Skip anything still ref-shaped after resolution.
+      try {
+        const u = new URL(it.link);
+        if (REF_SUBDOMAIN_RE.test(u.hostname) || REF_PATH_RE.test(u.pathname)) continue;
+      } catch { /* ignore */ }
       seen.add(d);
       candidates.push({ domain: d, title: it.title, snippet: it.snippet });
     }
