@@ -135,6 +135,34 @@ or statement.
 OUTPUT
 Return only valid JSON matching the schema. No preamble, no markdown, no commentary.`;
 
+// Distilled, deterministic facts pulled from the payload signals.
+// Vera must treat these as authoritative and never contradict them.
+function buildFactsBlock(payload: any): string {
+  const s = payload?.signals ?? {};
+  const facts: string[] = [];
+  const cc = s.content_consistency ?? {};
+  const face = s.face_of_the_brand ?? {};
+  const vis = s.visual_identity ?? {};
+  const find = s.findability ?? {};
+  if (typeof cc.blog_present === "boolean") facts.push(`blog_present = ${cc.blog_present}`);
+  if (typeof face.named_founder_on_site === "boolean") facts.push(`named_founder_on_site = ${face.named_founder_on_site}`);
+  if (typeof vis.logo_present === "boolean") facts.push(`logo_present = ${vis.logo_present}`);
+  if (typeof find.found_for_name === "boolean") facts.push(`found_for_name = ${find.found_for_name}`);
+  if (typeof find.found_for_category === "boolean") facts.push(`found_for_category = ${find.found_for_category}`);
+  if (typeof payload?.low_data === "boolean") facts.push(`low_data = ${payload.low_data}`);
+  if (typeof payload?.model_type === "string") facts.push(`model_type = "${payload.model_type}"`);
+  const inputCompetitors: string[] = Array.isArray(payload?.inputs?.competitors) ? payload.inputs.competitors : [];
+  if (inputCompetitors.length > 0) facts.push(`competitors = [${inputCompetitors.map((c) => `"${c}"`).join(", ")}]`);
+  const body = facts.length > 0 ? facts.join("\n") : "(no deterministic signals provided)";
+  return `FACTS (authoritative, must not be contradicted)
+These are deterministic signals extracted from the actual site and inputs.
+Every finding must be consistent with them. If a fact says blog_present is false,
+never refer to a blog as existing. If named_founder_on_site is false, never claim
+the founder is visible. Only reference competitor domains that appear in the
+competitors list above.
+${body}`;
+}
+
 const SECTION_WEIGHTS: Record<string, number> = {
   "Positioning & Differentiation": 22,
   "Messaging & Voice": 16,
