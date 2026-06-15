@@ -136,13 +136,16 @@ export async function scrapePrimary(inputUrl: string): Promise<RawScrape> {
 
 export type DeterministicFacts = {
   logo_present: boolean;
+  logo_kind: "image" | "wordmark" | null;
   colors: string[];
   fonts: string[];
   imagery: "stock_likely" | "custom_likely" | "unknown";
   social_links: string[];
   blog_present: boolean;
+  blog_post_links: string[];
   blog_latest_date: string | null;
   newsletter_capture: boolean;
+  waitlist_present: boolean;
   named_person: {
     detected: boolean;
     name_guess: string | null;
@@ -191,9 +194,19 @@ export async function deterministicFacts(raw: RawScrape): Promise<DeterministicF
   const allText = raw.pages.map((p) => p.text).join("\n");
   const allHtml = html; // homepage only is fine for visual facts
 
-  const logo_present =
+  // Logo detection: image first, then styled text wordmark fallback.
+  const hasImageLogo =
     /<img[^>]*(?:class|id|alt)=["'][^"']*logo[^"']*["']/i.test(html) ||
-    /<link[^>]*rel=["'][^"']*icon[^"']*["']/i.test(html);
+    /<svg[^>]*(?:class|id|aria-label)=["'][^"']*logo[^"']*["']/i.test(html);
+  // Heuristic wordmark: an anchor/header element near the top that contains
+  // only short text (likely the brand name) wrapped with class names like
+  // logo/wordmark/brand.
+  const wordmarkRe = /<(?:a|div|span)[^>]*class=["'][^"']*(?:wordmark|brand|site-?title|logo)[^"']*["'][^>]*>([\s\S]{0,120}?)<\/(?:a|div|span)>/i;
+  const wordmarkMatch = !hasImageLogo ? html.match(wordmarkRe) : null;
+  const wordmarkText = wordmarkMatch ? htmlToText(wordmarkMatch[1]) : "";
+  const hasWordmark = !hasImageLogo && wordmarkText.length > 0 && wordmarkText.length <= 40 && !/<img/i.test(wordmarkMatch?.[0] ?? "");
+  const logo_present = hasImageLogo || hasWordmark;
+  const logo_kind: "image" | "wordmark" | null = hasImageLogo ? "image" : hasWordmark ? "wordmark" : null;
 
   const colors = extractColors(allHtml);
   const fonts = extractFonts(allHtml);
@@ -206,16 +219,43 @@ export async function deterministicFacts(raw: RawScrape): Promise<DeterministicF
       : stockHits / Math.max(1, imgSrcs.length) > 0.3 ? "stock_likely"
       : "custom_likely";
 
+  // Blog detection requires REAL evidence (post links/titles/dates), not just
+  // a /blog route returning 200. SPA catch-all 200s and empty "coming soon"
+  // blog pages must resolve to blog_present = false.
   const blogPage = raw.pages.find((p) => /\/blog/i.test(p.url));
-  const blog_present = !!blogPage || /\/blog\b/i.test(html) || raw.links.some((l) => /\/blog(\/|$)/i.test(l));
-  const blog_latest_date: string | null = (() => {
-    if (!blogPage) return null;
-    const re = /(\b\d{4}-\d{2}-\d{2}\b)|(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},\s*\d{4}\b)/i;
-    return blogPage.text.match(re)?.[0] ?? null;
-  })();
+  const blogPostLinkSet = new Set<string>();
+  for (const l of raw.links) {
+    // post-shaped: /blog/<slug> where slug has more than just a section root
+    const m = l.match(/\/blog\/([a-z0-9][a-z0-9-_/]{3,})/i);
+    if (m && !/\/(page|category|tag|author)\//i.test(l)) {
+      blogPostLinkSet.add(l);
+    }
+  }
+  const blog_post_links = Array.from(blogPostLinkSet).slice(0, 20);
+  const dateRe = /(\b\d{4}-\d{2}-\d{2}\b)|(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},\s*\d{4}\b)/gi;
+  const blogDates = blogPage ? Array.from(blogPage.text.matchAll(dateRe)).map((m) => m[0]) : [];
+  const blog_latest_date: string | null = blogDates[0] ?? null;
+  // Real blog = at least 2 post links OR (blog page + at least one date).
+  const blog_present =
+    blog_post_links.length >= 2 ||
+    (!!blogPage && blogDates.length >= 1);
 
-  const newsletter_capture =
-    /(<input[^>]*type=["']email["'])|subscribe|newsletter|join.*list/i.test(html);
+  // Distinguish waitlist signup from a true newsletter capture.
+  const allTextLower = (allText + " " + html).toLowerCase();
+  const waitlist_present =
+    /\bwait[- ]?list\b/.test(allTextLower) ||
+    /join the waitlist/.test(allTextLower) ||
+    /request (?:early )?access/.test(allTextLower) ||
+    /get early access/.test(allTextLower);
+  const newsletterHint =
+    /\bnewsletter\b/.test(allTextLower) ||
+    /subscribe (?:to|for) (?:our|the|my) (?:newsletter|updates|posts)/.test(allTextLower) ||
+    /join (?:our|the|my) (?:newsletter|list|community)/.test(allTextLower);
+  const hasEmailInput = /<input[^>]*type=["']email["']/i.test(html);
+  // Newsletter is true only if there's a newsletter-shaped cue and it is NOT
+  // the waitlist signup. A bare email input + waitlist copy must NOT trip
+  // newsletter_capture.
+  const newsletter_capture = newsletterHint && !waitlist_present && hasEmailInput;
 
   const personalLinks = raw.social_links.filter((l) => /(linkedin\.com\/in\/|twitter\.com\/|x\.com\/|instagram\.com\/)/i.test(l));
   const aboutPage = raw.pages.find((p) => /\/about/i.test(p.url));
@@ -245,9 +285,10 @@ export async function deterministicFacts(raw: RawScrape): Promise<DeterministicF
   const total_word_count = allText.split(/\s+/).filter(Boolean).length;
 
   return {
-    logo_present, colors, fonts, imagery,
+    logo_present, logo_kind, colors, fonts, imagery,
     social_links: raw.social_links.slice(0, 10),
-    blog_present, blog_latest_date, newsletter_capture,
+    blog_present, blog_post_links, blog_latest_date,
+    newsletter_capture, waitlist_present,
     named_person, seo, total_word_count,
   };
 }
