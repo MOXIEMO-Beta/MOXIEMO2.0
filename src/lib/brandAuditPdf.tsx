@@ -161,6 +161,14 @@ function pickSections(all: AuditSection[], order: string[]) {
     .filter(Boolean) as AuditSection[];
 }
 
+function cleanDomain(input: string): string {
+  let s = (input || "").trim().toLowerCase();
+  if (!s) return "";
+  s = s.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  s = s.split("/")[0].split("?")[0].split("#")[0];
+  return s;
+}
+
 function fieldOrNotProvided(value: string | null | undefined) {
   const v = (value ?? "").trim();
   if (!v || v === "—") return <Text style={s.notProvided}>Not provided</Text>;
@@ -318,6 +326,7 @@ function AuditDoc({ data }: { data: AuditResponse }) {
       ? inputs.competitors
       : found?.competitors) || []
   ).filter((c): c is string => typeof c === "string" && c.trim().length > 0);
+  const competitorDisplay = Array.from(new Set(competitorList.map(cleanDomain).filter(Boolean)));
 
   // Same derivation as the web report
   const realPriorities = (r.priority_fixes ?? [])
@@ -350,13 +359,9 @@ function AuditDoc({ data }: { data: AuditResponse }) {
               <Text style={{ ...s.chip, color: tc.fg, backgroundColor: tc.bg, borderColor: tc.br, marginTop: 8 }}>{band}</Text>
             </View>
             <View style={{ flex: 1 }}>
-              {verdictParas.length > 0 ? (
-                verdictParas.map((p, i) => (
-                  <Text key={i} style={{ ...s.body, fontSize: 12, marginBottom: 8 }}>{p}</Text>
-                ))
-              ) : (
-                <Text style={{ ...s.body, fontSize: 12 }}>{r.verdict}</Text>
-              )}
+              <Text style={{ ...s.body, fontSize: 12, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
+                {verdictParas.length > 0 ? verdictParas.join(" ") : r.verdict}
+              </Text>
               <Text style={{ fontSize: 8, color: C.muted, marginTop: 8 }}>
                 Powered by MOXIEMO, the growth system that builds your brand and your go-to-market.
               </Text>
@@ -374,15 +379,6 @@ function AuditDoc({ data }: { data: AuditResponse }) {
           </View>
         )}
 
-        {allSections.length >= 3 && (
-          <View style={s.card} wrap={false}>
-            <Text style={s.h2}>Brand health radar</Text>
-            <Text style={{ ...s.small, marginBottom: 6 }}>The shape of your strengths and gaps.</Text>
-            <View style={{ alignItems: "center" }}>
-              <Radar sections={allSections} size={260} />
-            </View>
-          </View>
-        )}
 
         <View style={s.card}>
           <Text style={s.eyebrow}>WHAT WE FOUND</Text>
@@ -394,13 +390,26 @@ function AuditDoc({ data }: { data: AuditResponse }) {
             <Text style={{ ...s.small, fontFamily: "Helvetica-Bold", marginTop: 6 }}>WHO YOU SERVE</Text>
             {fieldOrNotProvided(whoYouServe)}
             <Text style={{ ...s.small, fontFamily: "Helvetica-Bold", marginTop: 6 }}>COMPETITORS</Text>
-            {competitorList.length > 0
-              ? <Text style={s.body}>{competitorList.join(", ")}</Text>
+            {competitorDisplay.length > 0
+              ? <Text style={s.body}>{competitorDisplay.join(", ")}</Text>
               : <Text style={s.notProvided}>Not provided</Text>}
           </View>
         </View>
         <Footer />
       </Page>
+
+      {allSections.length >= 3 && (
+        <Page size="A4" style={s.page}>
+          <View style={s.card}>
+            <Text style={s.h2}>Brand health radar</Text>
+            <Text style={{ ...s.small, marginBottom: 12 }}>The shape of your strengths and gaps.</Text>
+            <View style={{ alignItems: "center", marginVertical: 8 }}>
+              <Radar sections={allSections} size={360} />
+            </View>
+          </View>
+          <Footer />
+        </Page>
+      )}
 
       {foundation.length > 0 && (
         <Page size="A4" style={s.page}>

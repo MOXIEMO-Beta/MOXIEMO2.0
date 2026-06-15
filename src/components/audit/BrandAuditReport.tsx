@@ -124,6 +124,14 @@ function pickSections(all: AuditSection[], order: string[]) {
     .filter(Boolean) as AuditSection[];
 }
 
+function cleanDomain(input: string): string {
+  let s = (input || "").trim().toLowerCase();
+  if (!s) return "";
+  s = s.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  s = s.split("/")[0].split("?")[0].split("#")[0];
+  return s;
+}
+
 function tierHex(tier: string): string {
   const k = tierKey(tier);
   if (k === "dialed") return "#10b981";
@@ -357,15 +365,14 @@ function SectionCard({ s }: { s: AuditSection }) {
         )}
 
         {s.evidence?.length > 0 && (
-          <details className="group">
-            <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.18em] text-[#9aa0ad] hover:text-[#7a7e8c] list-none flex items-center gap-1.5">
-              <span className="transition-transform group-open:rotate-90">›</span>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#9aa0ad] mb-2">
               What we looked at
-            </summary>
-            <ul className="mt-2 text-[13px] text-[#9aa0ad] space-y-1 list-disc pl-7">
+            </div>
+            <ul className="text-[13px] text-[#9aa0ad] space-y-1 list-disc pl-5">
               {s.evidence.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
-          </details>
+          </div>
         )}
 
         <div className="pt-1">
@@ -549,11 +556,14 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
   const brand = (inputs?.brand_name ?? found.brand_name ?? "").trim();
   const whatYouDo = (inputs?.what_you_do ?? found.what_you_do ?? "").trim();
   const whoYouServe = (inputs?.who_you_serve ?? found.who_you_serve ?? "").trim();
-  const competitorList = (
+  const competitorListRaw = (
     (inputs?.competitors && inputs.competitors.length > 0
       ? inputs.competitors
       : found.competitors) || []
   ).filter((c): c is string => typeof c === "string" && c.trim().length > 0);
+  const competitorList = Array.from(
+    new Set(competitorListRaw.map(cleanDomain).filter(Boolean))
+  );
 
   async function handleDownload() {
     setDownloading(true);
@@ -643,11 +653,9 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <div className="space-y-4 text-[17px] leading-relaxed text-[#15171C] mb-6">
-                    {paragraphs(report.verdict).map((p, i) => (
-                      <p key={i}>{p}</p>
-                    ))}
-                  </div>
+                  <p className="text-[15px] md:text-[16px] leading-snug text-[#15171C] font-medium mb-5">
+                    {paragraphs(report.verdict).join(" ")}
+                  </p>
                   <p className="text-[13px] text-[#7a7e8c]">
                     Powered by MOXIEMO, the growth system that builds your brand and your go-to-market.
                   </p>
