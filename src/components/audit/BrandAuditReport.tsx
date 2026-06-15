@@ -666,6 +666,13 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
               </Card>
             )}
 
+            {/* Advisor overview */}
+            <AdvisorOverview
+              overview={report.advisor_overview}
+              stage={data.stage}
+              posture={data.posture}
+            />
+
             {/* At a glance */}
             {allSections.length > 0 && (
               <AtAGlance all={allSections} score={data.brand_audit_score} />
