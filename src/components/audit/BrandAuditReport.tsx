@@ -424,6 +424,104 @@ function AtAGlance({ all, score }: { all: AuditSection[]; score: number }) {
   );
 }
 
+function prettyStage(stage?: string | null): string {
+  switch ((stage ?? "").toLowerCase()) {
+    case "pre_launch": return "Pre-launch";
+    case "early": return "Early";
+    case "growing": return "Growing";
+    case "established": return "Established";
+    default: return "";
+  }
+}
+function prettyPosture(p?: string | null): string {
+  switch ((p ?? "").toLowerCase()) {
+    case "category_creator": return "Category creator";
+    case "founder_led_expertise": return "Founder-led expertise";
+    case "service_business": return "Service business";
+    case "product_saas": return "Product SaaS";
+    case "other": return "Other";
+    default: return "";
+  }
+}
+
+function AdvisorOverview({
+  overview,
+  stage,
+  posture,
+}: {
+  overview?: AuditReport["advisor_overview"];
+  stage?: string | null;
+  posture?: string | null;
+}) {
+  const ao = overview ?? {};
+  const stageLabel = (ao.stage_label && ao.stage_label.trim()) || prettyStage(stage);
+  const postureLabel = (ao.posture_label && ao.posture_label.trim()) || prettyPosture(posture);
+  const strengths = Array.isArray(ao.strengths)
+    ? ao.strengths.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    : [];
+  const focus = (ao.focus ?? "").trim();
+  const futureLevers = (ao.future_levers ?? "").trim();
+  const read = (ao.read ?? "").trim();
+
+  // If the model returned absolutely nothing usable, skip rendering.
+  if (!read && strengths.length === 0 && !focus && !futureLevers) return null;
+
+  return (
+    <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8" id="advisor-overview">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        {stageLabel && (
+          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#15171C] bg-[#F0EDE6] border border-[#e4e5ea] rounded-full px-2.5 py-1">
+            {stageLabel}
+          </span>
+        )}
+        {stageLabel && postureLabel && <span className="text-[#9aa0ad]">·</span>}
+        {postureLabel && (
+          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#15171C] bg-[#F0EDE6] border border-[#e4e5ea] rounded-full px-2.5 py-1">
+            {postureLabel}
+          </span>
+        )}
+      </div>
+      {read && <p className="text-[17px] leading-snug text-[#15171C] font-medium mb-6">{read}</p>}
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#7a7e8c] mb-3">
+            Working in your favor
+          </div>
+          {strengths.length > 0 ? (
+            <ul className="space-y-2.5">
+              {strengths.map((s, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-[15px] text-[#15171C] leading-snug">
+                  <span
+                    className="mt-1.5 h-2 w-2 rounded-full bg-emerald-500 shrink-0"
+                    aria-hidden
+                  />
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[14px] text-[#9aa0ad]">Not provided</p>
+          )}
+        </div>
+        <div>
+          <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#FF6B5C] mb-3">
+            What matters most now
+          </div>
+          {focus ? (
+            <p className="text-[15px] text-[#15171C] leading-relaxed mb-3">{focus}</p>
+          ) : (
+            <p className="text-[14px] text-[#9aa0ad] mb-3">Not provided</p>
+          )}
+          {futureLevers && (
+            <p className="text-[13px] text-[#7a7e8c] leading-relaxed">{futureLevers}</p>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function BrandAuditReport({ data }: { data: AuditResponse }) {
   const [downloading, setDownloading] = useState(false);
 
