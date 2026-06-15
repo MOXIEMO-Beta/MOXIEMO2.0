@@ -61,6 +61,80 @@ function paragraphs(text: string): string[] {
     .filter(Boolean);
 }
 
+function prettyStage(stage?: string | null): string {
+  switch ((stage ?? "").toLowerCase()) {
+    case "pre_launch": return "Pre-launch";
+    case "early": return "Early";
+    case "growing": return "Growing";
+    case "established": return "Established";
+    default: return "";
+  }
+}
+function prettyPosture(p?: string | null): string {
+  switch ((p ?? "").toLowerCase()) {
+    case "category_creator": return "Category creator";
+    case "founder_led_expertise": return "Founder-led expertise";
+    case "service_business": return "Service business";
+    case "product_saas": return "Product SaaS";
+    case "other": return "Other";
+    default: return "";
+  }
+}
+
+function AdvisorOverviewPdf({
+  overview,
+  stage,
+  posture,
+}: {
+  overview?: AuditResponse["report"]["advisor_overview"];
+  stage?: string | null;
+  posture?: string | null;
+}) {
+  const ao = overview ?? {};
+  const stageLabel = (ao.stage_label && ao.stage_label.trim()) || prettyStage(stage);
+  const postureLabel = (ao.posture_label && ao.posture_label.trim()) || prettyPosture(posture);
+  const strengths = Array.isArray(ao.strengths)
+    ? ao.strengths.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    : [];
+  const focus = (ao.focus ?? "").trim();
+  const futureLevers = (ao.future_levers ?? "").trim();
+  const read = (ao.read ?? "").trim();
+  if (!read && strengths.length === 0 && !focus && !futureLevers) return null;
+  return (
+    <View style={s.card}>
+      <View style={{ flexDirection: "row", gap: 6, marginBottom: 6 }}>
+        {stageLabel ? (
+          <Text style={{ ...s.chip, color: C.ink, backgroundColor: C.paper, borderColor: C.border }}>{stageLabel.toUpperCase()}</Text>
+        ) : null}
+        {postureLabel ? (
+          <Text style={{ ...s.chip, color: C.ink, backgroundColor: C.paper, borderColor: C.border }}>{postureLabel.toUpperCase()}</Text>
+        ) : null}
+      </View>
+      {read ? <Text style={{ ...s.body, fontSize: 12, fontFamily: "Helvetica-Bold", marginBottom: 10 }}>{read}</Text> : null}
+      <View style={{ flexDirection: "row", gap: 16 }}>
+        <View style={{ flex: 1 }}>
+          <Text style={s.eyebrow}>WORKING IN YOUR FAVOR</Text>
+          {strengths.length > 0 ? (
+            strengths.map((str, i) => (
+              <View key={i} style={{ flexDirection: "row", marginBottom: 4 }}>
+                <Text style={{ color: "#10b981", fontSize: 11, marginRight: 6 }}>{"\u2022"}</Text>
+                <Text style={{ ...s.body, flex: 1 }}>{str}</Text>
+              </View>
+            ))
+          ) : (
+            <Text style={s.notProvided}>Not provided</Text>
+          )}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={{ ...s.eyebrow, color: C.coral }}>WHAT MATTERS MOST NOW</Text>
+          {focus ? <Text style={{ ...s.body, marginBottom: 6 }}>{focus}</Text> : <Text style={s.notProvided}>Not provided</Text>}
+          {futureLevers ? <Text style={{ ...s.small }}>{futureLevers}</Text> : null}
+        </View>
+      </View>
+    </View>
+  );
+}
+
 const s = StyleSheet.create({
   page: { padding: 48, backgroundColor: C.paper, color: C.ink, fontFamily: "Helvetica", fontSize: 11, lineHeight: 1.5 },
   card: { backgroundColor: C.white, borderWidth: 2, borderColor: C.border, borderRadius: 10, padding: 20, marginBottom: 16 },
@@ -289,6 +363,8 @@ function AuditDoc({ data }: { data: AuditResponse }) {
             </View>
           </View>
         </View>
+
+        <AdvisorOverviewPdf overview={r.advisor_overview} stage={data.stage} posture={data.posture} />
 
         {allSections.length > 0 && (
           <View style={s.card}>
