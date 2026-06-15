@@ -760,6 +760,11 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
               overview={report.advisor_overview}
               stage={data.stage}
               posture={data.posture}
+              brand={brand}
+              whatYouDo={whatYouDo}
+              whoYouServe={whoYouServe}
+              competitors={competitorList}
+              sections={allSections}
             />
 
             {/* At a glance */}
