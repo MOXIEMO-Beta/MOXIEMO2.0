@@ -36,6 +36,13 @@ serve(async (req) => {
       low_data: payload?.low_data ?? null,
     });
 
+    // Merge competitor_signals (light-scraped per-competitor data) into the stored
+    // signals so Vera can reason from real signal on every entered competitor.
+    const mergedSignals = {
+      ...(payload?.signals ?? {}),
+      competitor_signals: Array.isArray(payload?.competitor_signals) ? payload.competitor_signals : [],
+    };
+
     // 1. Create audit row first (status = generating, with start timestamp)
     const { data: auditRow, error: auditErr } = await supabase
       .from("audits")
@@ -44,7 +51,7 @@ serve(async (req) => {
         inputs: payload?.inputs ?? null,
         model_type: payload?.model_type ?? null,
         low_data: payload?.low_data ?? null,
-        signals: payload?.signals ?? null,
+        signals: mergedSignals,
         stage: framing.stage,
         posture: framing.posture,
         status: "generating",
