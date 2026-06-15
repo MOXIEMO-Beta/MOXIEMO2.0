@@ -556,11 +556,14 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
   const brand = (inputs?.brand_name ?? found.brand_name ?? "").trim();
   const whatYouDo = (inputs?.what_you_do ?? found.what_you_do ?? "").trim();
   const whoYouServe = (inputs?.who_you_serve ?? found.who_you_serve ?? "").trim();
-  const competitorList = (
+  const competitorListRaw = (
     (inputs?.competitors && inputs.competitors.length > 0
       ? inputs.competitors
       : found.competitors) || []
   ).filter((c): c is string => typeof c === "string" && c.trim().length > 0);
+  const competitorList = Array.from(
+    new Set(competitorListRaw.map(cleanDomain).filter(Boolean))
+  );
 
   async function handleDownload() {
     setDownloading(true);
@@ -650,11 +653,9 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <div className="space-y-4 text-[17px] leading-relaxed text-[#15171C] mb-6">
-                    {paragraphs(report.verdict).map((p, i) => (
-                      <p key={i}>{p}</p>
-                    ))}
-                  </div>
+                  <p className="text-[15px] md:text-[16px] leading-snug text-[#15171C] font-medium mb-5">
+                    {paragraphs(report.verdict).join(" ")}
+                  </p>
                   <p className="text-[13px] text-[#7a7e8c]">
                     Powered by MOXIEMO, the growth system that builds your brand and your go-to-market.
                   </p>
