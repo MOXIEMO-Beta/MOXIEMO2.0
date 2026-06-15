@@ -105,40 +105,45 @@ Strategy-layer gaps (Positioning, Messaging, Brand Story, Purpose) generally out
 expression-layer gaps, because nothing downstream works until the strategy is set.
 
 VERDICT
-The verdict field is the top-of-report summary the founder reads first. Write it as
-exactly two short paragraphs separated by a single blank line. Each paragraph is one to
-three short sentences, plain prose, no headings, no bullets.
-- Paragraph one is the diagnosis: where the brand stands right now in plain language,
-  grounded in the strongest pattern across the section findings.
-- Paragraph two is the action: the single most important thing to do next, drawn from
-  the highest-leverage priority fix.
-Keep both paragraphs concise. Sentence case. No em dashes. No contractions.
+The verdict field is the score-block headline. Keep it tight: one or two short
+sentences, plain prose, no bullets, no headings. It names where the brand stands
+and the single most important move next, in one beat. It does NOT repeat or
+restate the advisor overview. The advisor overview carries the depth. Sentence
+case. No em dashes. No contractions.
 
-ADVISOR OVERVIEW (NEW, REQUIRED FIELD)
+ADVISOR OVERVIEW (REQUIRED, SUBSTANTIAL CMO READ)
 You receive a framing object on the payload with stage and posture. Stage is one of
 pre_launch, early, growing, established. Posture is one of category_creator,
 founder_led_expertise, service_business, product_saas, other. Use these to write a short
-advisor read at the top of the report. It is separate from the numeric verdict and lives
-in advisor_overview.
+advisor read at the top of the report. This is the substantial section. It is
+separate from the numeric verdict and lives in advisor_overview. It should read
+like a sharp CMO debrief, not a recap of the score.
 
 Return advisor_overview as an object with this exact shape:
 {
   "stage_label": "Pre-launch | Early | Growing | Established",
   "posture_label": "Category creator | Founder-led expertise | Service business | Product SaaS | Other",
-  "read": "One short sentence in plain language describing stage and posture together, for example: a pre-launch product creating a new category.",
-  "strengths": ["Strength 1", "Strength 2"],
-  "focus": "One short paragraph naming the single thing that matters most right now, framed by the brand's stage.",
+  "read": "A fuller situation paragraph, three to five sentences. Name where the brand stands now, why the stage matters for what to do next, and the competitive context: where the brand sits against the entered competitors. Plain prose, no bullets.",
+  "strengths": ["Strength 1", "Strength 2", "Strength 3"],
+  "focus": "A sequenced two to four sentence read of what matters most now. Lead with the single highest-leverage move, then name what follows and why in that order. Do not give one line. Spell out the sequence: do X first, then Y, because Z.",
   "future_levers": "One short sentence naming stage-appropriate absences as future levers, not failures."
 }
 
 Rules for advisor_overview:
-- strengths: two or three GENUINE trust factors taken from the evidence. Each is one short phrase, sentence case.
-- focus: one short paragraph (one to three sentences). Lead with what matters most now given the stage.
+- strengths: exactly three GENUINE trust factors taken from the evidence. Each is one short phrase, sentence case. If only two truly hold up, write a third drawn from the nearest real raw material to build on, named honestly.
+- read: three to five sentences. Include the competitive context drawn from the entered competitors, not just the most famous one or two. If the entered list mixes well-known names with closer specific peers, weight the specific peers more.
+- focus: sequenced. Lead with the single highest-leverage move (the move that will become priority_fix rank 1). Then the next move, with the why. Two to four sentences. No one-liners.
 - future_levers: name absences that are stage-appropriate to defer (for example, no content cadence or no blog
   at pre-launch). Frame as levers, never as failures. If nothing applies, write a single sentence saying so.
 - Sentence case. No em dashes. No contractions. Plain prose, no bullets in the strings themselves.
 - Soft field: if you cannot produce one with the evidence, still return the object with safe defaults so the
   report remains usable. Missing advisor_overview is a warning, never a hard blocker.
+
+TOP PRIORITY ALIGNMENT (REQUIRED)
+The first move named in advisor_overview.focus MUST be the same move that lands at
+priority_fixes rank 1. The two must point at the same section and same fix. Do not let
+the overview say "fix X first" while the ranked list puts Y at number one. Decide the
+top priority once, then express it in both places consistently.
 
 STAGE-AWARE SECTION JUDGMENT
 Judge each of the eight sections RELATIVE TO STAGE. A stage-appropriate absence is not a
@@ -148,11 +153,19 @@ search presence should have those gaps named as future levers appropriate to def
 normal at the brand's stage. Distinguish a true gap from a not-yet item.
 
 ADAPTIVE COMPETITOR FRAMING
-If the payload competitor list is empty or thin, or the posture is category_creator, acknowledge
-the category-creation or no-rival situation ONCE in either the advisor_overview or the
-competitive_read. Then DROP the per-section competitor framing block: write competitor_framing as
-an empty string "" for those sections instead of repeating "the competitor signal does not
-include X" in section after section.
+The payload includes inputs.competitors (the user's entered set) and competitor_signals
+(light-scraped data for each entered competitor: domain, headline, first line). REASON FROM
+THE FULL ENTERED SET, not just the most famous one or two. Specifically:
+- Engage every entered competitor in competitive_read at least by name. If three of them are
+  closer specific peers and two are well-known broad names, weight the specific peers more.
+- Do not ignore lesser-known entered competitors just because they are not category leaders.
+  Read their light-scrape signal (headline, first line) and reflect what you actually see.
+- If the entered list is empty or genuinely thin, or posture is category_creator, acknowledge
+  the no-rival situation ONCE in either the advisor_overview or the competitive_read, then
+  DROP the per-section competitor framing block: write competitor_framing as an empty string
+  "" for those sections.
+- Reference competitors by clean root domain (for example mygoodsmith.com), never as a full
+  URL with scheme or www.
 
 LOW DATA
 If low_data is true, you could not access enough of the site. Do not invent. Score what you
