@@ -124,6 +124,14 @@ function pickSections(all: AuditSection[], order: string[]) {
     .filter(Boolean) as AuditSection[];
 }
 
+function cleanDomain(input: string): string {
+  let s = (input || "").trim().toLowerCase();
+  if (!s) return "";
+  s = s.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  s = s.split("/")[0].split("?")[0].split("#")[0];
+  return s;
+}
+
 function tierHex(tier: string): string {
   const k = tierKey(tier);
   if (k === "dialed") return "#10b981";
@@ -357,15 +365,14 @@ function SectionCard({ s }: { s: AuditSection }) {
         )}
 
         {s.evidence?.length > 0 && (
-          <details className="group">
-            <summary className="cursor-pointer text-xs font-bold uppercase tracking-[0.18em] text-[#9aa0ad] hover:text-[#7a7e8c] list-none flex items-center gap-1.5">
-              <span className="transition-transform group-open:rotate-90">›</span>
+          <div>
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#9aa0ad] mb-2">
               What we looked at
-            </summary>
-            <ul className="mt-2 text-[13px] text-[#9aa0ad] space-y-1 list-disc pl-7">
+            </div>
+            <ul className="text-[13px] text-[#9aa0ad] space-y-1 list-disc pl-5">
               {s.evidence.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
-          </details>
+          </div>
         )}
 
         <div className="pt-1">
