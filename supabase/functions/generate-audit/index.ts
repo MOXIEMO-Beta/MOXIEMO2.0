@@ -226,6 +226,54 @@ function formatFailures(issues: ValidationFailure[]) {
   return issues.map((issue) => `${issue.section}.${issue.field}: ${issue.reason}`);
 }
 
+// Tier each validation failure into "hard" (blocks the report) or "soft" (warn only).
+// Hard: factual contradictions vs signals, missing required sections / fields,
+//       hallucinated competitors, score out of range, model output not JSON.
+// Soft: specificity lint ("lacks a specific token"), voice lint (em dash, contractions),
+//       banned generic phrases, tier-score mismatch.
+function classifyFailure(f: ValidationFailure): "hard" | "soft" {
+  const reason = f.reason.toLowerCase();
+  if (
+    reason.includes("contradicts signal") ||
+    reason.includes("hallucinated competitor") ||
+    reason.includes("missing or empty") ||
+    reason.includes("missing section label") ||
+    reason.includes("unexpected section label") ||
+    reason.includes("must be non-empty array") ||
+    reason.includes("must have at least 3 items") ||
+    reason.includes("expected 8 sections") ||
+    reason.includes("out of range") ||
+    reason.includes("missing or not a number") ||
+    reason.includes("not valid json") ||
+    reason.includes("not an object")
+  ) {
+    return "hard";
+  }
+  return "soft";
+}
+
+function tagFailures(issues: ValidationFailure[]): ValidationFailure[] {
+  return issues.map((i) => ({ ...i, severity: classifyFailure(i) }));
+}
+
+// A flat list of every check we ran, marked pass or fail with a reason.
+// Used by the /audit-test harness so a human can see exactly what gated.
+function buildValidationReport(issues: ValidationFailure[]) {
+  const tagged = tagFailures(issues);
+  const hard = tagged.filter((i) => i.severity === "hard");
+  const soft = tagged.filter((i) => i.severity === "soft");
+  return {
+    pass: hard.length === 0,
+    hard_failures: hard,
+    soft_warnings: soft,
+    all_failures: tagged,
+    summary: {
+      hard_count: hard.length,
+      soft_count: soft.length,
+    },
+  };
+}
+
 function validate(report: any, payload: any): ValidationFailure[] {
   const issues: ValidationFailure[] = [];
 
