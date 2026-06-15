@@ -43,16 +43,19 @@ export default function BrandAuditReportPage() {
 
   useEffect(() => { setStatus("loading"); load(); }, [load]);
 
-  // Poll while generating, with a stuck guard.
+  // Poll while generating. Re-render on every status change.
   useEffect(() => {
     if (status !== "generating") { setStuck(false); return; }
-    const startMs = startedAt ? new Date(startedAt).getTime() : Date.now();
-    if (Date.now() - startMs > STUCK_AFTER_MS) {
-      setStuck(true);
-      return;
-    }
-    const t = setTimeout(() => { load(); }, POLL_INTERVAL_MS);
-    return () => clearTimeout(t);
+    const tick = () => {
+      const startMs = startedAt ? new Date(startedAt).getTime() : Date.now();
+      if (Date.now() - startMs > STUCK_AFTER_MS) {
+        setStuck(true);
+        return;
+      }
+      load();
+    };
+    const id = setInterval(tick, POLL_INTERVAL_MS);
+    return () => clearInterval(id);
   }, [status, startedAt, load]);
 
   async function regenerate() {
