@@ -483,6 +483,26 @@ function validate(report: any, payload: any): ValidationFailure[] {
     checkVoiceLint(issues, "report", field, report?.[field]);
   }
 
+  // Advisor overview is a SOFT field. Missing or partial is a warning, never
+  // a hard blocker. Voice lint still applies to its strings.
+  const ao = report?.advisor_overview;
+  if (ao && typeof ao === "object" && !Array.isArray(ao)) {
+    for (const field of ["read", "focus", "future_levers", "stage_label", "posture_label"] as const) {
+      if (ao[field] !== undefined) checkVoiceLint(issues, "advisor_overview", field, ao[field]);
+    }
+    if (!ao.read || typeof ao.read !== "string" || !ao.read.trim()) {
+      addFailure(issues, "advisor_overview", "read", "advisor read is empty (soft)");
+    }
+    if (!Array.isArray(ao.strengths) || ao.strengths.length === 0) {
+      addFailure(issues, "advisor_overview", "strengths", "advisor strengths missing (soft)");
+    }
+    if (!ao.focus || typeof ao.focus !== "string" || !ao.focus.trim()) {
+      addFailure(issues, "advisor_overview", "focus", "advisor focus is empty (soft)");
+    }
+  } else {
+    addFailure(issues, "advisor_overview", "root", "advisor_overview missing (soft)");
+  }
+
   return issues;
 }
 
