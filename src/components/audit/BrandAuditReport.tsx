@@ -36,6 +36,14 @@ export type AuditReport = {
   competitive_read: string;
   priority_fixes: { rank: number; move: string; agent: string; section: string }[];
   handoff_cta: string;
+  advisor_overview?: {
+    stage_label?: string;
+    posture_label?: string;
+    read?: string;
+    strengths?: string[];
+    focus?: string;
+    future_levers?: string;
+  } | null;
 };
 
 export type AuditResponse = {
@@ -49,6 +57,8 @@ export type AuditResponse = {
     competitors?: string[] | null;
     url?: string | null;
   } | null;
+  stage?: string | null;
+  posture?: string | null;
 };
 
 const FOUNDATION_ORDER = [
