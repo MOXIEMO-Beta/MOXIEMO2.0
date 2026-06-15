@@ -2,6 +2,14 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { deriveFraming } from "../_shared/audit-framing.ts";
 
+function cleanCompetitorDomain(input: string): string {
+  let s = (input || "").trim().toLowerCase();
+  if (!s) return "";
+  s = s.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  s = s.split("/")[0].split("?")[0].split("#")[0];
+  return s;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -47,11 +55,27 @@ async function runGeneration(audit_id: string) {
           low_data: row.low_data ?? null,
         });
 
+    // Normalize entered competitor list to clean root domains before Vera sees it.
+    const rawInputs: any = row.inputs ?? {};
+    const cleanCompetitors: string[] = Array.isArray(rawInputs.competitors)
+      ? rawInputs.competitors
+          .map((c: any) => (typeof c === "string" ? cleanCompetitorDomain(c) : ""))
+          .filter((c: string) => !!c)
+      : [];
+    const inputsForVera = { ...rawInputs, competitors: cleanCompetitors };
+
+    // Pull competitor_signals out of stored signals so Vera sees real per-competitor data.
+    const storedSignals: any = row.signals ?? {};
+    const competitor_signals = Array.isArray(storedSignals.competitor_signals)
+      ? storedSignals.competitor_signals
+      : [];
+
     const payload = {
-      inputs: row.inputs ?? {},
+      inputs: inputsForVera,
       model_type: row.model_type ?? null,
       low_data: row.low_data ?? false,
-      signals: row.signals ?? {},
+      signals: storedSignals,
+      competitor_signals,
       framing,
     };
     const previousValidationError = typeof row.review_reason === "string" ? row.review_reason.trim() : "";
