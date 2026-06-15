@@ -157,19 +157,21 @@ function AdvisorOverviewPdf({
 }
 
 const s = StyleSheet.create({
-  page: { padding: 48, backgroundColor: C.paper, color: C.ink, fontFamily: "Helvetica", fontSize: 11, lineHeight: 1.5 },
-  card: { backgroundColor: C.white, borderWidth: 2, borderColor: C.border, borderRadius: 10, padding: 20, marginBottom: 16 },
+  page: { padding: 36, paddingBottom: 48, backgroundColor: C.paper, color: C.ink, fontFamily: "Helvetica", fontSize: 11, lineHeight: 1.5 },
+  card: { backgroundColor: C.white, borderWidth: 2, borderColor: C.border, borderRadius: 10, padding: 16, marginBottom: 12 },
   eyebrow: { fontSize: 8, color: C.muted, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginBottom: 6 },
   h1: { fontSize: 26, color: C.ink, fontFamily: "Helvetica-Bold", letterSpacing: -0.6, marginBottom: 4 },
   h2: { fontSize: 16, color: C.ink, fontFamily: "Helvetica-Bold", marginBottom: 10 },
   small: { fontSize: 9, color: C.muted },
+  evidence: { fontSize: 9, color: "#5A5F6B", marginBottom: 2 },
+  evidenceLabel: { fontSize: 8, color: "#5A5F6B", letterSpacing: 2, fontFamily: "Helvetica-Bold", marginBottom: 6 },
   body: { fontSize: 11, color: C.ink, lineHeight: 1.5 },
   notProvided: { fontSize: 11, color: C.muted, fontStyle: "italic" },
-  groupLabel: { fontSize: 9, color: C.muted, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginTop: 8, marginBottom: 10 },
+  groupLabel: { fontSize: 9, color: C.muted, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginTop: 4, marginBottom: 8 },
   chip: { fontSize: 8, fontFamily: "Helvetica-Bold", paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999, borderWidth: 1 },
   pillMuted: { fontSize: 8, color: C.muted, backgroundColor: C.paper, borderColor: C.border, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999 },
   pillCoral: { fontSize: 8, color: C.coral, backgroundColor: "#FFE9E6", borderColor: "#FFCFC8", borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 999 },
-  footer: { position: "absolute", left: 48, right: 48, bottom: 22, fontSize: 8, color: C.muted, textAlign: "center", letterSpacing: 1 },
+  footer: { position: "absolute", left: 36, right: 36, bottom: 18, fontSize: 8, color: C.muted, textAlign: "center", letterSpacing: 1 },
 });
 
 function Footer() {
