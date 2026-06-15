@@ -31,7 +31,12 @@ export default function BrandAuditReportPage() {
       setReviewReason(res.review_reason ?? "");
       setStartedAt(res.generation_started_at ?? null);
       if (nextStatus === "ready") {
-        setData({ status: "ready", brand_audit_score: res.brand_audit_score, report: res.report });
+        setData({
+          status: "ready",
+          brand_audit_score: res.brand_audit_score,
+          report: res.report,
+          inputs: res.inputs ?? null,
+        });
       } else {
         setData(null);
       }
