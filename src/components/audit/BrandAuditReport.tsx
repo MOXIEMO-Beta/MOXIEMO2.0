@@ -550,6 +550,10 @@ function AdvisorOverview({
     sections,
   });
 
+  // The composed read is always non-empty as long as we have any structured
+  // fields. Only skip the card when literally nothing usable exists.
+  if (!read && strengths.length === 0 && !focus && !futureLevers) return null;
+
   return (
     <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8" id="advisor-overview">
       <div className="flex flex-wrap items-center gap-2 mb-3">
