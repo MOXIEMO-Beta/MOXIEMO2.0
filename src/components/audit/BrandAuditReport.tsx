@@ -1,7 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { downloadAuditPdf } from "@/lib/brandAuditPdf";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+} from "recharts";
 
 export type AuditSection = {
   label: string;
@@ -106,6 +114,182 @@ function pickSections(all: AuditSection[], order: string[]) {
     .filter(Boolean) as AuditSection[];
 }
 
+function tierHex(tier: string): string {
+  const k = tierKey(tier);
+  if (k === "dialed") return "#10b981";
+  if (k === "developing") return "#f59e0b";
+  if (k === "risk") return "#f97316";
+  if (k === "critical") return "#ef4444";
+  return "#94a3b8";
+}
+
+function RingGauge({ score, tier }: { score: number; tier: string }) {
+  const size = 200;
+  const stroke = 16;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, score));
+  const dash = (pct / 100) * c;
+  const color = tierHex(tier);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
+      <circle cx={size / 2} cy={size / 2} r={r} stroke="#ECEAE4" strokeWidth={stroke} fill="none" />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        stroke={color}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        fill="none"
+        strokeDasharray={`${dash} ${c}`}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+      <text
+        x="50%"
+        y="50%"
+        dy="0.05em"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        className="fill-[#15171C]"
+        style={{ fontSize: 56, fontWeight: 700, fontFamily: "Inter, sans-serif" }}
+      >
+        {score}
+      </text>
+      <text
+        x="50%"
+        y="50%"
+        dy="2em"
+        textAnchor="middle"
+        className="fill-[#7a7e8c]"
+        style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.12em", fontFamily: "Inter, sans-serif" }}
+      >
+        / 100
+      </text>
+    </svg>
+  );
+}
+
+function BrandRadar({ sections }: { sections: AuditSection[] }) {
+  const data = sections.map((s) => ({
+    subject: s.label.replace(" & ", " &\n"),
+    score: Math.max(0, Math.min(100, s.score)),
+  }));
+  return (
+    <div className="w-full h-[340px]">
+      <ResponsiveContainer>
+        <RadarChart data={data} outerRadius="78%">
+          <PolarGrid stroke="#E4E1DA" />
+          <PolarAngleAxis
+            dataKey="subject"
+            tick={{ fill: "#15171C", fontSize: 11, fontWeight: 600 }}
+          />
+          <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+          <Radar
+            dataKey="score"
+            stroke="#FF6B5C"
+            fill="#FF6B5C"
+            fillOpacity={0.28}
+            strokeWidth={2}
+            dot={{ r: 3, fill: "#FF6B5C" }}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function SideNav({
+  foundation,
+  showup,
+  activeId,
+}: {
+  foundation: AuditSection[];
+  showup: AuditSection[];
+  activeId: string;
+}) {
+  const renderGroup = (title: string, items: AuditSection[]) => (
+    <div className="mb-6">
+      <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9aa0ad] mb-2 px-2">
+        {title}
+      </div>
+      <ul className="space-y-0.5">
+        {items.map((s) => {
+          const id = sectionAnchor(s.label);
+          const active = activeId === id;
+          const color = tierHex(s.tier);
+          return (
+            <li key={s.label}>
+              <a
+                href={`#${id}`}
+                className={`flex items-center gap-2 rounded-lg px-2 py-2 text-[13px] leading-snug transition-colors ${
+                  active
+                    ? "bg-[#FFF4F2] text-[#15171C] font-semibold"
+                    : "text-[#15171C]/80 hover:bg-[#F0EDE6]"
+                }`}
+              >
+                <span
+                  className="h-2 w-2 rounded-full shrink-0"
+                  style={{ backgroundColor: color }}
+                  aria-hidden
+                />
+                <span className="flex-1 break-words">{s.label}</span>
+                <span className="text-xs tabular-nums text-[#7a7e8c] shrink-0">{s.score}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+
+  return (
+    <nav className="text-sm">
+      <a
+        href="#top"
+        className={`block rounded-lg px-2 py-2 text-[13px] font-medium mb-4 ${
+          activeId === "top" ? "bg-[#FFF4F2] text-[#15171C] font-semibold" : "text-[#15171C]/80 hover:bg-[#F0EDE6]"
+        }`}
+      >
+        Overview
+      </a>
+      {renderGroup("Your brand foundation", foundation)}
+      {renderGroup("How your brand shows up", showup)}
+      <a
+        href="#priority-fixes"
+        className={`block rounded-lg px-2 py-2 text-[13px] font-medium ${
+          activeId === "priority-fixes" ? "bg-[#FFF4F2] text-[#15171C] font-semibold" : "text-[#15171C]/80 hover:bg-[#F0EDE6]"
+        }`}
+      >
+        What I would fix first
+      </a>
+    </nav>
+  );
+}
+
+function useActiveSection(ids: string[]) {
+  const [active, setActive] = useState<string>(ids[0] ?? "");
+  useEffect(() => {
+    if (!ids.length) return;
+    const elements = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => !!el);
+    if (!elements.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: "-30% 0px -60% 0px", threshold: [0, 0.25, 0.5, 1] },
+    );
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [ids.join("|")]);
+  return active;
+}
+
 function SectionCard({ s }: { s: AuditSection }) {
   const meta = TIER_META[tierKey(s.tier)];
   return (
@@ -179,9 +363,9 @@ function AtAGlance({ all, score }: { all: AuditSection[]; score: number }) {
             <li key={s.label}>
               <a
                 href={`#${sectionAnchor(s.label)}`}
-                className="group grid grid-cols-[1fr_auto] md:grid-cols-[1fr_140px_auto] items-center gap-3 md:gap-4 py-2"
+                className="group grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.4fr)_minmax(120px,1fr)_auto] items-center gap-3 md:gap-4 py-2"
               >
-                <span className="text-[15px] text-[#15171C] font-medium group-hover:text-[#FF6B5C] truncate">{s.label}</span>
+                <span className="text-[15px] text-[#15171C] font-medium group-hover:text-[#FF6B5C] leading-snug break-words">{s.label}</span>
                 <span className={`hidden md:block h-1.5 rounded-full ${meta.track} overflow-hidden`}>
                   <span className={`block h-full ${meta.bar}`} style={{ width: `${pct}%` }} />
                 </span>
@@ -201,7 +385,7 @@ function AtAGlance({ all, score }: { all: AuditSection[]; score: number }) {
   const showup = pickSections(all, SHOWUP_ORDER);
 
   return (
-    <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8 mb-8">
+    <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8 mb-8 scroll-mt-24" id="at-a-glance">
       <h2 className="text-xl md:text-2xl font-bold text-[#15171C] mb-1">At a glance</h2>
       <p className="text-sm text-[#7a7e8c] mb-6">Eight sections, one quick read. Tap any row to jump to the detail.</p>
       <div className="grid md:grid-cols-2 gap-8">
@@ -255,107 +439,178 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
     }
   }
 
+  // Derive ranked priorities. Prefer real priority_fixes with non-empty moves;
+  // otherwise build from each section's fix_first, ranked by lowest score.
+  const derivedPriorities = useMemo(() => {
+    const real = (report.priority_fixes ?? [])
+      .map((p) => ({
+        rank: p.rank,
+        move: (p.move ?? "").trim(),
+        section: p.section,
+        agent: p.agent,
+      }))
+      .filter((p) => p.move.length > 0);
+    if (real.length >= 3) {
+      return real.sort((a, b) => a.rank - b.rank);
+    }
+    return [...allSections]
+      .filter((s) => (s.fix_first ?? "").trim().length > 0)
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 5)
+      .map((s, i) => ({
+        rank: i + 1,
+        move: s.fix_first.trim(),
+        section: s.label,
+        agent: s.agent,
+      }));
+  }, [report.priority_fixes, allSections]);
+
+  const sectionIds = useMemo(
+    () => ["top", ...allSections.map((s) => sectionAnchor(s.label)), "priority-fixes"],
+    [allSections],
+  );
+  const activeId = useActiveSection(sectionIds);
+
+  const paragraphs = (text: string) =>
+    text
+      .split(/\n{2,}|(?<=[.!?])\s{2,}/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+
   return (
-    <div className="min-h-screen bg-[#F7F5F1] py-12 px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-[#F7F5F1]">
+      <div id="top" />
+      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-10">
         <div className="flex justify-end mb-6">
           <Button onClick={handleDownload} disabled={downloading} variant="outline" className="border-2">
             {downloading ? "Preparing PDF..." : "Download PDF"}
           </Button>
         </div>
 
-        {/* 1. Verdict */}
-        <Card className="border-2 rounded-2xl shadow-sm bg-white p-8 md:p-12 mb-8 text-center">
-          <div className="text-xs font-bold uppercase tracking-[0.22em] text-[#7a7e8c] mb-4">Brand audit score</div>
-          <div className="text-7xl md:text-8xl font-bold text-[#FF6B5C] leading-none mb-2">
-            {data.brand_audit_score}
-            <span className="text-3xl md:text-4xl text-[#7a7e8c] font-medium"> / 100</span>
-          </div>
-          <div className={`inline-block text-sm font-semibold px-3 py-1 rounded-full border mt-2 mb-6 ${tierClasses(band.label)}`}>
-            {band.label}
-          </div>
-          <p className="text-xl md:text-2xl text-[#15171C] font-medium leading-snug max-w-2xl mx-auto">
-            {report.verdict}
-          </p>
-          <p className="text-xs text-[#7a7e8c] mt-6">
-            Powered by MOXIEMO, the growth system that builds your brand and your go-to-market.
-          </p>
-        </Card>
-
-        {/* At a glance */}
-        {allSections.length > 0 && (
-          <AtAGlance all={allSections} score={data.brand_audit_score} />
-        )}
-
-        {/* 2. What we found */}
-        <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8 mb-8">
-          <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-[#7a7e8c] mb-4">What we found</h2>
-          <dl className="grid md:grid-cols-2 gap-x-8 gap-y-4 text-[15px]">
-            <div>
-              <dt className="text-xs font-bold uppercase tracking-[0.14em] text-[#7a7e8c] mb-1">Brand</dt>
-              <dd className="text-[#15171C]">{textOr(brand)}</dd>
+        <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-8 lg:gap-10">
+          {/* Sticky left nav */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-6">
+              <SideNav foundation={foundation} showup={showup} activeId={activeId} />
             </div>
-            <div>
-              <dt className="text-xs font-bold uppercase tracking-[0.14em] text-[#7a7e8c] mb-1">What you do</dt>
-              <dd className="text-[#15171C]">{textOr(whatYouDo)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-bold uppercase tracking-[0.14em] text-[#7a7e8c] mb-1">Who you serve</dt>
-              <dd className="text-[#15171C]">{textOr(whoYouServe)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-bold uppercase tracking-[0.14em] text-[#7a7e8c] mb-1">Competitors</dt>
-              <dd className="text-[#15171C]">
-                {competitorList.length > 0 ? competitorList.join(", ") : <NotProvided />}
-              </dd>
-            </div>
-          </dl>
-        </Card>
+          </aside>
 
-        {/* 3. Sections */}
-        {foundation.length > 0 && (
-          <>
-            <h2 className="text-xs font-bold uppercase tracking-[0.22em] text-[#7a7e8c] mb-4 mt-4">
-              Your brand foundation
-            </h2>
-            <div className="space-y-6 mb-10">
-              {foundation.map((s) => <SectionCard key={s.label} s={s} />)}
-            </div>
-          </>
-        )}
+          {/* Content */}
+          <div className="min-w-0 space-y-8">
+            {/* Hero: ring gauge + verdict */}
+            <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-10">
+              <div className="grid md:grid-cols-[auto_minmax(0,1fr)] gap-8 md:gap-10 items-center">
+                <div className="flex flex-col items-center md:items-start">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#7a7e8c] mb-3">
+                    Brand audit score
+                  </div>
+                  <RingGauge score={data.brand_audit_score} tier={band.label} />
+                  <div
+                    className={`inline-block text-sm font-semibold px-3 py-1 rounded-full border mt-4 ${tierClasses(band.label)}`}
+                  >
+                    {band.label}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-2xl md:text-3xl font-bold text-[#15171C] leading-tight tracking-tight mb-5">
+                    {report.verdict}
+                  </h1>
+                  <p className="text-[13px] text-[#7a7e8c]">
+                    Powered by MOXIEMO, the growth system that builds your brand and your go-to-market.
+                  </p>
+                </div>
+              </div>
+            </Card>
 
-        {showup.length > 0 && (
-          <>
-            <h2 className="text-xs font-bold uppercase tracking-[0.22em] text-[#7a7e8c] mb-4 mt-4">
-              How your brand shows up
-            </h2>
-            <div className="space-y-6 mb-10">
-              {showup.map((s) => <SectionCard key={s.label} s={s} />)}
-            </div>
-          </>
-        )}
+            {/* Radar */}
+            {allSections.length > 0 && (
+              <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8">
+                <h2 className="text-xl md:text-2xl font-bold text-[#15171C] mb-1">Brand health radar</h2>
+                <p className="text-sm text-[#7a7e8c] mb-4">
+                  The shape of your strengths and gaps across the eight sections.
+                </p>
+                <BrandRadar sections={allSections} />
+              </Card>
+            )}
 
-        {/* 4. How you stack up */}
-        {report.competitive_read && report.competitive_read.trim() && (
-          <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8 mb-8">
-            <h2 className="text-xl md:text-2xl font-bold text-[#15171C] mb-4">How you stack up</h2>
-            <p className="text-[15px] leading-relaxed text-[#15171C] whitespace-pre-line">
-              {report.competitive_read}
-            </p>
-          </Card>
-        )}
+            {/* At a glance */}
+            {allSections.length > 0 && (
+              <AtAGlance all={allSections} score={data.brand_audit_score} />
+            )}
 
-        {/* 5. Priority fixes */}
-        {report.priority_fixes?.length > 0 && (
-          <Card className="border-2 rounded-2xl shadow-md bg-white p-6 md:p-8 mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-[#15171C] mb-2">What I would fix first</h2>
-            <p className="text-sm text-[#7a7e8c] mb-6">Your founder to-do list, ranked.</p>
-            <ol className="space-y-4">
-              {[...report.priority_fixes]
-                .sort((a, b) => a.rank - b.rank)
-                .map((p) => {
-                  const move = (p.move ?? "").trim();
-                  return (
+            {/* What we found */}
+            <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8">
+              <h2 className="text-xs font-bold uppercase tracking-[0.18em] text-[#7a7e8c] mb-4">What we found</h2>
+              <dl className="grid md:grid-cols-2 gap-x-10 gap-y-5 text-[15px]">
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-[0.14em] text-[#7a7e8c] mb-1">Brand</dt>
+                  <dd className="text-[#15171C]">{textOr(brand)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-[0.14em] text-[#7a7e8c] mb-1">What you do</dt>
+                  <dd className="text-[#15171C]">{textOr(whatYouDo)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-[0.14em] text-[#7a7e8c] mb-1">Who you serve</dt>
+                  <dd className="text-[#15171C]">{textOr(whoYouServe)}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs font-bold uppercase tracking-[0.14em] text-[#7a7e8c] mb-1">Competitors</dt>
+                  <dd className="text-[#15171C]">
+                    {competitorList.length > 0 ? competitorList.join(", ") : <NotProvided />}
+                  </dd>
+                </div>
+              </dl>
+            </Card>
+
+            {/* Foundation */}
+            {foundation.length > 0 && (
+              <section>
+                <h2 className="text-xs font-bold uppercase tracking-[0.22em] text-[#7a7e8c] mb-4">
+                  Your brand foundation
+                </h2>
+                <div className="space-y-6">
+                  {foundation.map((s) => <SectionCard key={s.label} s={s} />)}
+                </div>
+              </section>
+            )}
+
+            {/* Show up */}
+            {showup.length > 0 && (
+              <section>
+                <h2 className="text-xs font-bold uppercase tracking-[0.22em] text-[#7a7e8c] mb-4">
+                  How your brand shows up
+                </h2>
+                <div className="space-y-6">
+                  {showup.map((s) => <SectionCard key={s.label} s={s} />)}
+                </div>
+              </section>
+            )}
+
+            {/* How you stack up */}
+            {report.competitive_read && report.competitive_read.trim() && (
+              <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8">
+                <h2 className="text-xl md:text-2xl font-bold text-[#15171C] mb-5">How you stack up</h2>
+                <div className="space-y-4 text-[15px] leading-relaxed text-[#15171C]">
+                  {paragraphs(report.competitive_read).map((p, i) => (
+                    <p key={i}>{p}</p>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Priority fixes (derived) */}
+            {derivedPriorities.length > 0 && (
+              <Card
+                id="priority-fixes"
+                className="scroll-mt-24 border-2 rounded-2xl shadow-md bg-white p-6 md:p-8"
+              >
+                <h2 className="text-2xl md:text-3xl font-bold text-[#15171C] mb-2">
+                  What I would fix first
+                </h2>
+                <p className="text-sm text-[#7a7e8c] mb-6">Your founder to-do list, ranked.</p>
+                <ol className="space-y-4">
+                  {derivedPriorities.map((p) => (
                     <li
                       key={p.rank}
                       className="flex gap-4 border-t border-[#ECEAE4] pt-4 first:border-t-0 first:pt-0"
@@ -363,9 +618,9 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
                       <div className="shrink-0 text-2xl font-bold text-[#FF6B5C] tabular-nums leading-none w-8 pt-0.5">
                         {p.rank}
                       </div>
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <p className="text-[16px] text-[#15171C] font-medium leading-snug">
-                          {move ? move : <NotProvided />}
+                          {p.move}
                         </p>
                         <p className="text-xs text-[#7a7e8c] mt-1.5">
                           <a
@@ -378,25 +633,26 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
                         </p>
                       </div>
                     </li>
-                  );
-                })}
-            </ol>
-          </Card>
-        )}
+                  ))}
+                </ol>
+              </Card>
+            )}
 
-        {/* 6. Handoff */}
-        <Card className="border-2 rounded-2xl shadow-sm bg-white p-8 md:p-12 mb-8 text-center">
-          {report.handoff_cta && (
-            <p className="text-xl md:text-2xl text-[#15171C] font-medium leading-snug mb-6 max-w-2xl mx-auto">
-              {report.handoff_cta}
-            </p>
-          )}
-          <a href="/signup">
-            <Button className="bg-[#FF6B5C] hover:bg-[#FF6B5C]/90 text-white rounded-full px-8 h-12 text-base font-semibold">
-              Start with MOXIEMO
-            </Button>
-          </a>
-        </Card>
+            {/* Handoff */}
+            <Card className="border-2 rounded-2xl shadow-sm bg-white p-8 md:p-12 text-center">
+              {report.handoff_cta && (
+                <p className="text-xl md:text-2xl text-[#15171C] font-medium leading-snug mb-6 max-w-2xl mx-auto">
+                  {report.handoff_cta}
+                </p>
+              )}
+              <a href="/signup">
+                <Button className="bg-[#FF6B5C] hover:bg-[#FF6B5C]/90 text-white rounded-full px-8 h-12 text-base font-semibold">
+                  Start with MOXIEMO
+                </Button>
+              </a>
+            </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
