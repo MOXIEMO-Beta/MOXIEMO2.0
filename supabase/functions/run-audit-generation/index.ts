@@ -102,6 +102,8 @@ async function runGeneration(audit_id: string) {
         report: genData.report,
         brand_audit_score: genData.brand_audit_score,
         review_reason: null,
+        raw_report: genData.raw_report ?? null,
+        validation: genData.validation ?? null,
       });
       console.log(`[run-audit-generation] ${audit_id} ready in ${Date.now() - t0}ms total`);
       return;
@@ -120,6 +122,8 @@ async function runGeneration(audit_id: string) {
         status: "review",
         report: genData.report ?? { issues: genData.issues ?? issueMessages },
         review_reason: reason,
+        raw_report: genData.raw_report ?? null,
+        validation: genData.validation ?? null,
       });
       console.log(`[run-audit-generation] ${audit_id} review reason=${reason}`);
       return;
