@@ -203,17 +203,21 @@ function SideNav({
   foundation,
   showup,
   activeId,
+  overallScore,
+  overallTier,
 }: {
   foundation: AuditSection[];
   showup: AuditSection[];
   activeId: string;
+  overallScore: number;
+  overallTier: string;
 }) {
   const renderGroup = (title: string, items: AuditSection[]) => (
     <div className="mb-6">
-      <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9aa0ad] mb-2 px-2">
+      <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9aa0ad] mb-2.5 px-2">
         {title}
       </div>
-      <ul className="space-y-0.5">
+      <ul className="space-y-1">
         {items.map((s) => {
           const id = sectionAnchor(s.label);
           const active = activeId === id;
@@ -222,19 +226,19 @@ function SideNav({
             <li key={s.label}>
               <a
                 href={`#${id}`}
-                className={`flex items-center gap-2 rounded-lg px-2 py-2 text-[13px] leading-snug transition-colors ${
+                className={`flex items-center gap-2.5 rounded-lg px-2 py-2 text-[15px] leading-snug transition-colors ${
                   active
                     ? "bg-[#FFF4F2] text-[#15171C] font-semibold"
                     : "text-[#15171C]/80 hover:bg-[#F0EDE6]"
                 }`}
               >
                 <span
-                  className="h-2 w-2 rounded-full shrink-0"
+                  className="h-2.5 w-2.5 rounded-full shrink-0"
                   style={{ backgroundColor: color }}
                   aria-hidden
                 />
                 <span className="flex-1 break-words">{s.label}</span>
-                <span className="text-xs tabular-nums text-[#7a7e8c] shrink-0">{s.score}</span>
+                <span className="text-[13px] tabular-nums text-[#7a7e8c] shrink-0">{s.score}</span>
               </a>
             </li>
           );
@@ -243,11 +247,24 @@ function SideNav({
     </div>
   );
 
+  const overallMeta = TIER_META[tierKey(overallTier)];
   return (
     <nav className="text-sm">
+      <div className="mb-5 px-2">
+        <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-[#9aa0ad]">
+          Brand audit
+        </div>
+        <div className="mt-1.5 flex items-baseline gap-1.5">
+          <span className="text-2xl font-bold text-[#15171C] tabular-nums">{overallScore}</span>
+          <span className="text-[13px] text-[#7a7e8c] tabular-nums">/ 100</span>
+        </div>
+        <span className={`inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded-full border ${overallMeta.pill}`}>
+          {overallTier}
+        </span>
+      </div>
       <a
         href="#top"
-        className={`block rounded-lg px-2 py-2 text-[13px] font-medium mb-4 ${
+        className={`block rounded-lg px-2 py-2 text-[15px] font-medium mb-4 ${
           activeId === "top" ? "bg-[#FFF4F2] text-[#15171C] font-semibold" : "text-[#15171C]/80 hover:bg-[#F0EDE6]"
         }`}
       >
@@ -257,7 +274,7 @@ function SideNav({
       {renderGroup("How your brand shows up", showup)}
       <a
         href="#priority-fixes"
-        className={`block rounded-lg px-2 py-2 text-[13px] font-medium ${
+        className={`block rounded-lg px-2 py-2 text-[15px] font-medium ${
           activeId === "priority-fixes" ? "bg-[#FFF4F2] text-[#15171C] font-semibold" : "text-[#15171C]/80 hover:bg-[#F0EDE6]"
         }`}
       >
@@ -480,18 +497,24 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
   return (
     <div className="min-h-screen bg-[#F7F5F1]">
       <div id="top" />
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-10">
+      <div className="w-[92%] max-w-[1680px] mx-auto px-2 md:px-4 py-8 md:py-10">
         <div className="flex justify-end mb-6">
           <Button onClick={handleDownload} disabled={downloading} variant="outline" className="border-2">
             {downloading ? "Preparing PDF..." : "Download PDF"}
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-10 lg:gap-12">
           {/* Sticky left nav */}
           <aside className="hidden lg:block">
             <div className="sticky top-6">
-              <SideNav foundation={foundation} showup={showup} activeId={activeId} />
+              <SideNav
+                foundation={foundation}
+                showup={showup}
+                activeId={activeId}
+                overallScore={data.brand_audit_score}
+                overallTier={band.label}
+              />
             </div>
           </aside>
 
@@ -512,9 +535,11 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-2xl md:text-3xl font-bold text-[#15171C] leading-tight tracking-tight mb-5">
-                    {report.verdict}
-                  </h1>
+                  <div className="space-y-4 text-[17px] leading-relaxed text-[#15171C] mb-6">
+                    {paragraphs(report.verdict).map((p, i) => (
+                      <p key={i}>{p}</p>
+                    ))}
+                  </div>
                   <p className="text-[13px] text-[#7a7e8c]">
                     Powered by MOXIEMO, the growth system that builds your brand and your go-to-market.
                   </p>
