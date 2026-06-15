@@ -187,9 +187,9 @@ function AtAGlance({ all, score }: { all: AuditSection[]; score: number }) {
             <li key={s.label}>
               <a
                 href={`#${sectionAnchor(s.label)}`}
-                className="group grid grid-cols-[1fr_auto] md:grid-cols-[1fr_140px_auto] items-center gap-3 md:gap-4 py-2"
+                className="group grid grid-cols-[minmax(0,1fr)_auto] md:grid-cols-[minmax(0,1.4fr)_minmax(120px,1fr)_auto] items-center gap-3 md:gap-4 py-2"
               >
-                <span className="text-[15px] text-[#15171C] font-medium group-hover:text-[#FF6B5C] truncate">{s.label}</span>
+                <span className="text-[15px] text-[#15171C] font-medium group-hover:text-[#FF6B5C] leading-snug break-words">{s.label}</span>
                 <span className={`hidden md:block h-1.5 rounded-full ${meta.track} overflow-hidden`}>
                   <span className={`block h-full ${meta.bar}`} style={{ width: `${pct}%` }} />
                 </span>
@@ -209,7 +209,7 @@ function AtAGlance({ all, score }: { all: AuditSection[]; score: number }) {
   const showup = pickSections(all, SHOWUP_ORDER);
 
   return (
-    <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8 mb-8">
+    <Card className="border-2 rounded-2xl shadow-sm bg-white p-6 md:p-8 mb-8 scroll-mt-24" id="at-a-glance">
       <h2 className="text-xl md:text-2xl font-bold text-[#15171C] mb-1">At a glance</h2>
       <p className="text-sm text-[#7a7e8c] mb-6">Eight sections, one quick read. Tap any row to jump to the detail.</p>
       <div className="grid md:grid-cols-2 gap-8">
