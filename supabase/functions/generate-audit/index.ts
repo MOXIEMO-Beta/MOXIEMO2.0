@@ -627,20 +627,27 @@ serve(async (req) => {
 
     let report: any;
     let issues: ValidationFailure[] = [];
+    let rawReport: any = null;
+    const factsBlock = buildFactsBlock(payload);
 
     if (debugForce !== undefined) {
       report = debugForce;
+      rawReport = debugForce;
       issues = validate(report, payload);
     } else if (body?.existing_report && typeof body.existing_report === "object" && !Array.isArray(body.existing_report)) {
       report = body.existing_report;
+      rawReport = body.existing_report;
       issues = validate(report, payload);
     } else {
       const text1 = await callAnthropic(
         req,
         payload,
-        previousValidationError ? buildValidationRepairNote([previousValidationError], "previous generation") : undefined,
+        previousValidationError
+          ? `${factsBlock}\n\n${buildValidationRepairNote([previousValidationError], "previous generation")}`
+          : factsBlock,
       );
       report = parseModel(text1);
+      rawReport = report ?? { _unparsed: text1 };
       if (!report) {
         issues = [{ section: "report", field: "root", reason: "model output was not valid JSON" }];
       } else {
@@ -648,23 +655,42 @@ serve(async (req) => {
       }
     }
 
-    if (report && issues.length > 0) {
-      for (let attempt = 1; attempt <= 3 && issues.length > 0; attempt += 1) {
-        report = await repairReport(req, report, issues, payload);
+    // Repair only hard blockers, up to 2 passes. Soft warnings never block.
+    if (report) {
+      let hard = tagFailures(issues).filter((i) => i.severity === "hard");
+      for (let attempt = 1; attempt <= 2 && hard.length > 0; attempt += 1) {
+        report = await repairReport(req, report, hard, payload);
         issues = validate(report, payload);
+        hard = tagFailures(issues).filter((i) => i.severity === "hard");
       }
     }
 
-    if (issues.length > 0) {
+    const validation = buildValidationReport(issues);
+
+    if (!validation.pass) {
       return new Response(
-        JSON.stringify({ status: "review", issues, issue_messages: formatFailures(issues), report }),
+        JSON.stringify({
+          status: "review",
+          issues: validation.hard_failures,
+          issue_messages: formatFailures(validation.hard_failures),
+          soft_warnings: validation.soft_warnings,
+          report,
+          raw_report: rawReport,
+          validation,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const brand_audit_score = computeScore(report);
     return new Response(
-      JSON.stringify({ status: "ready", brand_audit_score, report }),
+      JSON.stringify({
+        status: "ready",
+        brand_audit_score,
+        report,
+        raw_report: rawReport,
+        validation,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
