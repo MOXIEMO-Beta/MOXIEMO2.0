@@ -135,6 +135,34 @@ or statement.
 OUTPUT
 Return only valid JSON matching the schema. No preamble, no markdown, no commentary.`;
 
+// Distilled, deterministic facts pulled from the payload signals.
+// Vera must treat these as authoritative and never contradict them.
+function buildFactsBlock(payload: any): string {
+  const s = payload?.signals ?? {};
+  const facts: string[] = [];
+  const cc = s.content_consistency ?? {};
+  const face = s.face_of_the_brand ?? {};
+  const vis = s.visual_identity ?? {};
+  const find = s.findability ?? {};
+  if (typeof cc.blog_present === "boolean") facts.push(`blog_present = ${cc.blog_present}`);
+  if (typeof face.named_founder_on_site === "boolean") facts.push(`named_founder_on_site = ${face.named_founder_on_site}`);
+  if (typeof vis.logo_present === "boolean") facts.push(`logo_present = ${vis.logo_present}`);
+  if (typeof find.found_for_name === "boolean") facts.push(`found_for_name = ${find.found_for_name}`);
+  if (typeof find.found_for_category === "boolean") facts.push(`found_for_category = ${find.found_for_category}`);
+  if (typeof payload?.low_data === "boolean") facts.push(`low_data = ${payload.low_data}`);
+  if (typeof payload?.model_type === "string") facts.push(`model_type = "${payload.model_type}"`);
+  const inputCompetitors: string[] = Array.isArray(payload?.inputs?.competitors) ? payload.inputs.competitors : [];
+  if (inputCompetitors.length > 0) facts.push(`competitors = [${inputCompetitors.map((c) => `"${c}"`).join(", ")}]`);
+  const body = facts.length > 0 ? facts.join("\n") : "(no deterministic signals provided)";
+  return `FACTS (authoritative, must not be contradicted)
+These are deterministic signals extracted from the actual site and inputs.
+Every finding must be consistent with them. If a fact says blog_present is false,
+never refer to a blog as existing. If named_founder_on_site is false, never claim
+the founder is visible. Only reference competitor domains that appear in the
+competitors list above.
+${body}`;
+}
+
 const SECTION_WEIGHTS: Record<string, number> = {
   "Positioning & Differentiation": 22,
   "Messaging & Voice": 16,
@@ -172,6 +200,7 @@ type ValidationFailure = {
   section: string;
   field: string;
   reason: string;
+  severity?: "hard" | "soft";
 };
 
 type FieldRepair = {
@@ -223,6 +252,54 @@ function checkVoiceLint(issues: ValidationFailure[], section: string, field: str
 
 function formatFailures(issues: ValidationFailure[]) {
   return issues.map((issue) => `${issue.section}.${issue.field}: ${issue.reason}`);
+}
+
+// Tier each validation failure into "hard" (blocks the report) or "soft" (warn only).
+// Hard: factual contradictions vs signals, missing required sections / fields,
+//       hallucinated competitors, score out of range, model output not JSON.
+// Soft: specificity lint ("lacks a specific token"), voice lint (em dash, contractions),
+//       banned generic phrases, tier-score mismatch.
+function classifyFailure(f: ValidationFailure): "hard" | "soft" {
+  const reason = f.reason.toLowerCase();
+  if (
+    reason.includes("contradicts signal") ||
+    reason.includes("hallucinated competitor") ||
+    reason.includes("missing or empty") ||
+    reason.includes("missing section label") ||
+    reason.includes("unexpected section label") ||
+    reason.includes("must be non-empty array") ||
+    reason.includes("must have at least 3 items") ||
+    reason.includes("expected 8 sections") ||
+    reason.includes("out of range") ||
+    reason.includes("missing or not a number") ||
+    reason.includes("not valid json") ||
+    reason.includes("not an object")
+  ) {
+    return "hard";
+  }
+  return "soft";
+}
+
+function tagFailures(issues: ValidationFailure[]): ValidationFailure[] {
+  return issues.map((i) => ({ ...i, severity: classifyFailure(i) }));
+}
+
+// A flat list of every check we ran, marked pass or fail with a reason.
+// Used by the /audit-test harness so a human can see exactly what gated.
+function buildValidationReport(issues: ValidationFailure[]) {
+  const tagged = tagFailures(issues);
+  const hard = tagged.filter((i) => i.severity === "hard");
+  const soft = tagged.filter((i) => i.severity === "soft");
+  return {
+    pass: hard.length === 0,
+    hard_failures: hard,
+    soft_warnings: soft,
+    all_failures: tagged,
+    summary: {
+      hard_count: hard.length,
+      soft_count: soft.length,
+    },
+  };
 }
 
 function validate(report: any, payload: any): ValidationFailure[] {
@@ -550,20 +627,27 @@ serve(async (req) => {
 
     let report: any;
     let issues: ValidationFailure[] = [];
+    let rawReport: any = null;
+    const factsBlock = buildFactsBlock(payload);
 
     if (debugForce !== undefined) {
       report = debugForce;
+      rawReport = debugForce;
       issues = validate(report, payload);
     } else if (body?.existing_report && typeof body.existing_report === "object" && !Array.isArray(body.existing_report)) {
       report = body.existing_report;
+      rawReport = body.existing_report;
       issues = validate(report, payload);
     } else {
       const text1 = await callAnthropic(
         req,
         payload,
-        previousValidationError ? buildValidationRepairNote([previousValidationError], "previous generation") : undefined,
+        previousValidationError
+          ? `${factsBlock}\n\n${buildValidationRepairNote([previousValidationError], "previous generation")}`
+          : factsBlock,
       );
       report = parseModel(text1);
+      rawReport = report ?? { _unparsed: text1 };
       if (!report) {
         issues = [{ section: "report", field: "root", reason: "model output was not valid JSON" }];
       } else {
@@ -571,23 +655,42 @@ serve(async (req) => {
       }
     }
 
-    if (report && issues.length > 0) {
-      for (let attempt = 1; attempt <= 3 && issues.length > 0; attempt += 1) {
-        report = await repairReport(req, report, issues, payload);
+    // Repair only hard blockers, up to 2 passes. Soft warnings never block.
+    if (report) {
+      let hard = tagFailures(issues).filter((i) => i.severity === "hard");
+      for (let attempt = 1; attempt <= 2 && hard.length > 0; attempt += 1) {
+        report = await repairReport(req, report, hard, payload);
         issues = validate(report, payload);
+        hard = tagFailures(issues).filter((i) => i.severity === "hard");
       }
     }
 
-    if (issues.length > 0) {
+    const validation = buildValidationReport(issues);
+
+    if (!validation.pass) {
       return new Response(
-        JSON.stringify({ status: "review", issues, issue_messages: formatFailures(issues), report }),
+        JSON.stringify({
+          status: "review",
+          issues: validation.hard_failures,
+          issue_messages: formatFailures(validation.hard_failures),
+          soft_warnings: validation.soft_warnings,
+          report,
+          raw_report: rawReport,
+          validation,
+        }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const brand_audit_score = computeScore(report);
     return new Response(
-      JSON.stringify({ status: "ready", brand_audit_score, report }),
+      JSON.stringify({
+        status: "ready",
+        brand_audit_score,
+        report,
+        raw_report: rawReport,
+        validation,
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
