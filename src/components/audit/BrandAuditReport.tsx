@@ -497,18 +497,24 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
   return (
     <div className="min-h-screen bg-[#F7F5F1]">
       <div id="top" />
-      <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 md:py-10">
+      <div className="w-[92%] max-w-[1680px] mx-auto px-2 md:px-4 py-8 md:py-10">
         <div className="flex justify-end mb-6">
           <Button onClick={handleDownload} disabled={downloading} variant="outline" className="border-2">
             {downloading ? "Preparing PDF..." : "Download PDF"}
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)] gap-8 lg:gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)] gap-10 lg:gap-12">
           {/* Sticky left nav */}
           <aside className="hidden lg:block">
             <div className="sticky top-6">
-              <SideNav foundation={foundation} showup={showup} activeId={activeId} />
+              <SideNav
+                foundation={foundation}
+                showup={showup}
+                activeId={activeId}
+                overallScore={data.brand_audit_score}
+                overallTier={band.label}
+              />
             </div>
           </aside>
 
@@ -529,9 +535,11 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-2xl md:text-3xl font-bold text-[#15171C] leading-tight tracking-tight mb-5">
-                    {report.verdict}
-                  </h1>
+                  <div className="space-y-4 text-[17px] leading-relaxed text-[#15171C] mb-6">
+                    {paragraphs(report.verdict).map((p, i) => (
+                      <p key={i}>{p}</p>
+                    ))}
+                  </div>
                   <p className="text-[13px] text-[#7a7e8c]">
                     Powered by MOXIEMO, the growth system that builds your brand and your go-to-market.
                   </p>
