@@ -366,10 +366,10 @@ function SectionCard({ s }: { s: AuditSection }) {
 
         {s.evidence?.length > 0 && (
           <div>
-            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#9aa0ad] mb-2">
+            <div className="text-xs font-bold uppercase tracking-[0.18em] text-[#5A5F6B] mb-2">
               What we looked at
             </div>
-            <ul className="text-[13px] text-[#9aa0ad] space-y-1 list-disc pl-5">
+            <ul className="text-[13px] text-[#5A5F6B] space-y-1 list-disc pl-5">
               {s.evidence.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
           </div>
