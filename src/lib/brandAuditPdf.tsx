@@ -392,7 +392,16 @@ function AuditDoc({ data }: { data: AuditResponse }) {
           </View>
         </View>
 
-        <AdvisorOverviewPdf overview={r.advisor_overview} stage={data.stage} posture={data.posture} />
+        <AdvisorOverviewPdf
+          overview={r.advisor_overview}
+          stage={data.stage}
+          posture={data.posture}
+          brand={brand}
+          whatYouDo={whatYouDo}
+          whoYouServe={whoYouServe}
+          competitors={competitorDisplay}
+          sections={allSections}
+        />
 
         {allSections.length > 0 && (
           <View style={s.card}>
@@ -434,25 +443,30 @@ function AuditDoc({ data }: { data: AuditResponse }) {
         </Page>
       )}
 
-      {foundation.length > 0 && (
-        <Page size="A4" style={s.page}>
-          <Text style={s.groupLabel}>YOUR BRAND FOUNDATION</Text>
-          {foundation.map((sec) => <SectionBlock key={sec.label} sec={sec} />)}
-          <Footer />
-        </Page>
-      )}
-
-      {showup.length > 0 && (
-        <Page size="A4" style={s.page}>
-          <Text style={s.groupLabel}>HOW YOUR BRAND SHOWS UP</Text>
-          {showup.map((sec) => <SectionBlock key={sec.label} sec={sec} />)}
-          <Footer />
-        </Page>
-      )}
+      {/* Section detail flows continuously; cards never split (wrap=false). */}
+      <Page size="A4" style={s.page}>
+        {foundation.length > 0 && (
+          <>
+            <View wrap={false} minPresenceAhead={120}>
+              <Text style={s.groupLabel}>YOUR BRAND FOUNDATION</Text>
+            </View>
+            {foundation.map((sec) => <SectionBlock key={sec.label} sec={sec} />)}
+          </>
+        )}
+        {showup.length > 0 && (
+          <>
+            <View wrap={false} minPresenceAhead={120}>
+              <Text style={s.groupLabel}>HOW YOUR BRAND SHOWS UP</Text>
+            </View>
+            {showup.map((sec) => <SectionBlock key={sec.label} sec={sec} />)}
+          </>
+        )}
+        <Footer />
+      </Page>
 
       <Page size="A4" style={s.page}>
         {r.competitive_read && r.competitive_read.trim() && (
-          <View style={s.card}>
+          <View style={s.card} wrap={false}>
             <Text style={s.h2}>How you stack up</Text>
             {paragraphs(r.competitive_read).map((p, i) => (
               <Text key={i} style={{ ...s.body, marginBottom: 8 }}>{p}</Text>
@@ -461,7 +475,7 @@ function AuditDoc({ data }: { data: AuditResponse }) {
         )}
 
         {derivedPriorities.length > 0 && (
-          <View style={s.card}>
+          <View style={s.card} wrap={false}>
             <Text style={s.h2}>What I would fix first</Text>
             <Text style={{ ...s.small, marginBottom: 10 }}>Your founder to-do list, ranked.</Text>
             {derivedPriorities.map((p) => (
@@ -478,7 +492,7 @@ function AuditDoc({ data }: { data: AuditResponse }) {
           </View>
         )}
 
-        <View style={{ ...s.card, alignItems: "center", padding: 28 }}>
+        <View style={{ ...s.card, alignItems: "center", padding: 24 }} wrap={false}>
           {r.handoff_cta && (
             <Text style={{ fontSize: 14, color: C.ink, textAlign: "center", marginBottom: 16, fontFamily: "Helvetica-Bold", lineHeight: 1.4 }}>
               {r.handoff_cta}
