@@ -24,7 +24,7 @@ serve(async (req) => {
     }
     const { data, error } = await supabase
       .from("audits")
-      .select("status, brand_audit_score, report, review_reason, generation_started_at")
+      .select("status, brand_audit_score, report, review_reason, generation_started_at, raw_report, validation, signals, inputs, model_type, low_data")
       .eq("id", id)
       .maybeSingle();
 
@@ -44,6 +44,12 @@ serve(async (req) => {
       report: data.report,
       review_reason: data.review_reason,
       generation_started_at: data.generation_started_at,
+      raw_report: data.raw_report,
+      validation: data.validation,
+      signals: data.signals,
+      inputs: data.inputs,
+      model_type: data.model_type,
+      low_data: data.low_data,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
