@@ -65,10 +65,12 @@ export type Database = {
           inputs: Json | null
           low_data: boolean | null
           model_type: string | null
+          raw_report: Json | null
           report: Json | null
           review_reason: string | null
           signals: Json | null
           status: string
+          validation: Json | null
         }
         Insert: {
           brand_audit_score?: number | null
@@ -79,10 +81,12 @@ export type Database = {
           inputs?: Json | null
           low_data?: boolean | null
           model_type?: string | null
+          raw_report?: Json | null
           report?: Json | null
           review_reason?: string | null
           signals?: Json | null
           status?: string
+          validation?: Json | null
         }
         Update: {
           brand_audit_score?: number | null
@@ -93,10 +97,12 @@ export type Database = {
           inputs?: Json | null
           low_data?: boolean | null
           model_type?: string | null
+          raw_report?: Json | null
           report?: Json | null
           review_reason?: string | null
           signals?: Json | null
           status?: string
+          validation?: Json | null
         }
         Relationships: []
       }
