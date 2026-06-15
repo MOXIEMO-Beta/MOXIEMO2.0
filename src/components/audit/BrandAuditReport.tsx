@@ -114,6 +114,182 @@ function pickSections(all: AuditSection[], order: string[]) {
     .filter(Boolean) as AuditSection[];
 }
 
+function tierHex(tier: string): string {
+  const k = tierKey(tier);
+  if (k === "dialed") return "#10b981";
+  if (k === "developing") return "#f59e0b";
+  if (k === "risk") return "#f97316";
+  if (k === "critical") return "#ef4444";
+  return "#94a3b8";
+}
+
+function RingGauge({ score, tier }: { score: number; tier: string }) {
+  const size = 200;
+  const stroke = 16;
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const pct = Math.max(0, Math.min(100, score));
+  const dash = (pct / 100) * c;
+  const color = tierHex(tier);
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="block">
+      <circle cx={size / 2} cy={size / 2} r={r} stroke="#ECEAE4" strokeWidth={stroke} fill="none" />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        stroke={color}
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        fill="none"
+        strokeDasharray={`${dash} ${c}`}
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+      />
+      <text
+        x="50%"
+        y="50%"
+        dy="0.05em"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        className="fill-[#15171C]"
+        style={{ fontSize: 56, fontWeight: 700, fontFamily: "Inter, sans-serif" }}
+      >
+        {score}
+      </text>
+      <text
+        x="50%"
+        y="50%"
+        dy="2em"
+        textAnchor="middle"
+        className="fill-[#7a7e8c]"
+        style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.12em", fontFamily: "Inter, sans-serif" }}
+      >
+        / 100
+      </text>
+    </svg>
+  );
+}
+
+function BrandRadar({ sections }: { sections: AuditSection[] }) {
+  const data = sections.map((s) => ({
+    subject: s.label.replace(" & ", " &\n"),
+    score: Math.max(0, Math.min(100, s.score)),
+  }));
+  return (
+    <div className="w-full h-[340px]">
+      <ResponsiveContainer>
+        <RadarChart data={data} outerRadius="78%">
+          <PolarGrid stroke="#E4E1DA" />
+          <PolarAngleAxis
+            dataKey="subject"
+            tick={{ fill: "#15171C", fontSize: 11, fontWeight: 600 }}
+          />
+          <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
+          <Radar
+            dataKey="score"
+            stroke="#FF6B5C"
+            fill="#FF6B5C"
+            fillOpacity={0.28}
+            strokeWidth={2}
+            dot={{ r: 3, fill: "#FF6B5C" }}
+          />
+        </RadarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function SideNav({
+  foundation,
+  showup,
+  activeId,
+}: {
+  foundation: AuditSection[];
+  showup: AuditSection[];
+  activeId: string;
+}) {
+  const renderGroup = (title: string, items: AuditSection[]) => (
+    <div className="mb-6">
+      <div className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#9aa0ad] mb-2 px-2">
+        {title}
+      </div>
+      <ul className="space-y-0.5">
+        {items.map((s) => {
+          const id = sectionAnchor(s.label);
+          const active = activeId === id;
+          const color = tierHex(s.tier);
+          return (
+            <li key={s.label}>
+              <a
+                href={`#${id}`}
+                className={`flex items-center gap-2 rounded-lg px-2 py-2 text-[13px] leading-snug transition-colors ${
+                  active
+                    ? "bg-[#FFF4F2] text-[#15171C] font-semibold"
+                    : "text-[#15171C]/80 hover:bg-[#F0EDE6]"
+                }`}
+              >
+                <span
+                  className="h-2 w-2 rounded-full shrink-0"
+                  style={{ backgroundColor: color }}
+                  aria-hidden
+                />
+                <span className="flex-1 break-words">{s.label}</span>
+                <span className="text-xs tabular-nums text-[#7a7e8c] shrink-0">{s.score}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+
+  return (
+    <nav className="text-sm">
+      <a
+        href="#top"
+        className={`block rounded-lg px-2 py-2 text-[13px] font-medium mb-4 ${
+          activeId === "top" ? "bg-[#FFF4F2] text-[#15171C] font-semibold" : "text-[#15171C]/80 hover:bg-[#F0EDE6]"
+        }`}
+      >
+        Overview
+      </a>
+      {renderGroup("Your brand foundation", foundation)}
+      {renderGroup("How your brand shows up", showup)}
+      <a
+        href="#priority-fixes"
+        className={`block rounded-lg px-2 py-2 text-[13px] font-medium ${
+          activeId === "priority-fixes" ? "bg-[#FFF4F2] text-[#15171C] font-semibold" : "text-[#15171C]/80 hover:bg-[#F0EDE6]"
+        }`}
+      >
+        What I would fix first
+      </a>
+    </nav>
+  );
+}
+
+function useActiveSection(ids: string[]) {
+  const [active, setActive] = useState<string>(ids[0] ?? "");
+  useEffect(() => {
+    if (!ids.length) return;
+    const elements = ids
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => !!el);
+    if (!elements.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible[0]) setActive(visible[0].target.id);
+      },
+      { rootMargin: "-30% 0px -60% 0px", threshold: [0, 0.25, 0.5, 1] },
+    );
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [ids.join("|")]);
+  return active;
+}
+
 function SectionCard({ s }: { s: AuditSection }) {
   const meta = TIER_META[tierKey(s.tier)];
   return (
