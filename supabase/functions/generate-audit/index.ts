@@ -759,7 +759,9 @@ function deriveDataConfidence(payload: any): DataConfidence {
     vis.logo_present !== undefined && vis.logo_present !== null,
     cc.blog_present !== undefined && cc.blog_present !== null,
     cc.case_studies_present !== undefined && cc.case_studies_present !== null,
-    face.named_founder_on_site !== undefined && face.named_founder_on_site !== null,
+    (face.face_visible !== undefined && face.face_visible !== null)
+      || (face.founder_named_in_text !== undefined && face.founder_named_in_text !== null)
+      || (face.named_founder_on_site !== undefined && face.named_founder_on_site !== null),
     face.about_person_section !== undefined && face.about_person_section !== null,
     story.about_present !== undefined && story.about_present !== null,
     find.ranks_for_name !== undefined && find.ranks_for_name !== null && find.ranks_for_name !== "not assessed",
@@ -785,9 +787,12 @@ function calibrateReport(report: any, payload: any): { report: any; data_confide
   // absent or unverifiable signal can never raise a score.
   const logoPresent = vis.logo_present === true;
   const aboutPresent = story.about_present === true || face.about_person_section === true;
-  // "Named and pictured face" requires an explicit about-person section or bylines.
+  // face_visible is the source of truth. Fall back to about_person_section/bylines
+  // when face_visible is absent so older signal shapes still calibrate correctly.
   const namedAndPicturedFace =
-    (face.about_person_section === true) || (face.bylines === true);
+    face.face_visible === true
+    || face.about_person_section === true
+    || face.bylines === true;
   const caseStudiesPresent = cc.case_studies_present === true;
   // Developed story = real About page OR a multi-paragraph founding narrative.
   // story_detail is a free-text field from the extractor; treat short/empty as cue-only.
