@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import {
   comparisonGroups,
   Competitor,
+  competitors,
   Mark,
 } from "@/data/compareData";
 
@@ -76,7 +77,7 @@ export function ComparisonView({ competitor }: { competitor: Competitor }) {
       {/* INTERNAL: verified={String(competitor.verified)} */}
       {/* Hero */}
       <section className="border-b border-border">
-        <div className="mx-auto max-w-5xl px-6 py-20 text-center md:py-28">
+        <div className="mx-auto max-w-5xl px-6 pb-20 pt-10 text-center md:pb-28 md:pt-14">
           <div className="mb-6 inline-block rounded-full bg-accent-soft px-4 py-2 text-xs font-bold uppercase tracking-[0.25em] text-accent md:text-sm">
             Compare
           </div>
@@ -183,6 +184,59 @@ export function ComparisonView({ competitor }: { competitor: Competitor }) {
             <span className="text-[#15171C]/30">·</span>
             <Link to="/founding" className="font-semibold text-[#FF6B5C] underline-offset-4 hover:underline">
               Join the Founding Round
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Continue Reading */}
+      <section className="border-b border-border bg-background">
+        <div className="mx-auto max-w-6xl px-6 py-20">
+          <h2 className="mb-10 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
+            Continue Reading
+          </h2>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {competitors
+              .filter((c) => c.slug !== competitor.slug)
+              .map((c) => {
+                const angle = c.heroHeadline.includes(":")
+                  ? c.heroHeadline.split(":").slice(1).join(":").trim()
+                  : c.heroHeadline;
+                return (
+                  <Link
+                    key={c.slug}
+                    to={`/compare/${c.slug}`}
+                    className="group block rounded-2xl border border-border bg-white p-6 transition-colors hover:border-[#FF6B5C]/40 hover:bg-[#F7F5F1]"
+                  >
+                    <div className="mb-3 inline-block rounded-full bg-[#FF6B5C]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#FF6B5C]">
+                      Comparison
+                    </div>
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <h3 className="text-xl font-bold tracking-tight text-foreground">
+                        MOXIEMO vs {c.name}
+                      </h3>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-[#15171C]/40 transition-transform group-hover:translate-x-0.5 group-hover:text-[#FF6B5C]" />
+                    </div>
+                    <p className="text-sm leading-relaxed text-[#15171C]/65">{angle}</p>
+                  </Link>
+                );
+              })}
+            <Link
+              to="/compare"
+              className="group block rounded-2xl border border-dashed border-[#15171C]/20 bg-[#F7F5F1] p-6 transition-colors hover:border-[#FF6B5C]/50 hover:bg-white"
+            >
+              <div className="mb-3 inline-block rounded-full bg-[#15171C]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-[#15171C]/70">
+                Hub
+              </div>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <h3 className="text-xl font-bold tracking-tight text-foreground">
+                  See all comparisons
+                </h3>
+                <ArrowRight className="h-4 w-4 shrink-0 text-[#15171C]/40 transition-transform group-hover:translate-x-0.5 group-hover:text-[#FF6B5C]" />
+              </div>
+              <p className="text-sm leading-relaxed text-[#15171C]/65">
+                Browse every MOXIEMO comparison in one place.
+              </p>
             </Link>
           </div>
         </div>
