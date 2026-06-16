@@ -14,9 +14,7 @@ export default function BrandAuditReportPage() {
   const [data, setData] = useState<AuditResponse | null>(null);
   const [status, setStatus] = useState<string>("loading");
   const [error, setError] = useState("");
-  const [reviewReason, setReviewReason] = useState<string>("");
   const [startedAt, setStartedAt] = useState<string | null>(null);
-  const [regenerating, setRegenerating] = useState(false);
   const [stuck, setStuck] = useState(false);
 
   const load = useCallback(async () => {
@@ -26,9 +24,13 @@ export default function BrandAuditReportPage() {
       const { data: res, error: err } = await supabase.functions.invoke("get-audit-report", { body: { id } });
       if (err) { setError(err.message); setStatus("error"); return; }
       if (!res) { setError("Not found."); setStatus("error"); return; }
-      const nextStatus = typeof res.status === "string" ? res.status.toLowerCase() : "error";
+      const rawStatus = typeof res.status === "string" ? res.status.toLowerCase() : "error";
+      // Legacy rows may still carry status "review" with a usable report. Treat
+      // any row that has a renderable report as ready. The regenerate wall is
+      // gone by design: validation and repair are server-side only.
+      const hasUsableReport = res.report && typeof res.report === "object" && Array.isArray((res.report as any).sections);
+      const nextStatus = (rawStatus === "review" && hasUsableReport) ? "ready" : rawStatus;
       setStatus(nextStatus);
-      setReviewReason(res.review_reason ?? "");
       setStartedAt(res.generation_started_at ?? null);
       if (nextStatus === "ready") {
         setData({
@@ -63,22 +65,18 @@ export default function BrandAuditReportPage() {
     return () => clearInterval(id);
   }, [status, startedAt, load]);
 
-  async function regenerate() {
+  async function retry() {
     if (!id) return;
-    setRegenerating(true);
     setError("");
     try {
       const { error: err } = await supabase.functions.invoke("run-audit-generation", { body: { audit_id: id } });
       if (err) { setError(err.message); return; }
       setStuck(false);
-      setReviewReason("");
       setData(null);
       setStatus("generating");
       setStartedAt(new Date().toISOString());
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setRegenerating(false);
     }
   }
 
@@ -92,7 +90,10 @@ export default function BrandAuditReportPage() {
     );
   }
 
-  const showFinalizing = status === "review" || status === "failed" || stuck;
+  // Only true failures (network/parse error or hard timeout) show a retry.
+  // Validation failures never reach the UI because generate-audit always
+  // terminates in a ready report.
+  const showRetry = status === "failed" || stuck;
 
   return (
     <>
@@ -115,22 +116,17 @@ export default function BrandAuditReportPage() {
             </p>
           </>
         )}
-        {showFinalizing && (
+        {showRetry && (
           <>
-            <h2 className="text-xl font-bold text-[#15171C] mb-2">Your report is being finalized</h2>
+            <h2 className="text-xl font-bold text-[#15171C] mb-2">Something interrupted your report</h2>
             <p className="text-sm text-[#7a7e8c] mb-2">
-              {status === "failed"
-                ? "Something went wrong while generating. You can try again."
-                : stuck
+              {stuck
                 ? "This is taking longer than expected. You can try again."
-                : "We need to tighten a few things so it reads cleanly. Run it again to finish."}
+                : "Something went wrong while generating. You can try again."}
             </p>
-            {reviewReason && (
-              <p className="text-xs text-[#7a7e8c] mb-5 italic">Reason: {reviewReason}</p>
-            )}
             <div className="flex justify-center mt-3">
-              <Button onClick={regenerate} disabled={regenerating} className="bg-[#FF6B5C] hover:bg-[#FF6B5C]/90 text-white rounded-full px-5">
-                {regenerating ? "Regenerating..." : "Regenerate"}
+              <Button onClick={retry} className="bg-[#FF6B5C] hover:bg-[#FF6B5C]/90 text-white rounded-full px-5">
+                Try again
               </Button>
             </div>
           </>
