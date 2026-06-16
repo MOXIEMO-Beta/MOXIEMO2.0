@@ -253,13 +253,13 @@ export function SiteHeader({ featuredImageSrc = featuredLoadingImage }: SiteHead
                       onClick={() => setMegaOpen((v) => !v)}
                       onFocus={() => setMegaOpen(true)}
                       className={cn(
-                        "moxie-nav-link relative px-3.5 py-2 rounded-md inline-flex items-center gap-1 m-0 border-0 bg-transparent appearance-none leading-none align-middle focus:outline-none",
+                        "moxie-nav-link relative px-3.5 py-2 rounded-md !inline-flex !flex-row items-center gap-1 m-0 border-0 bg-transparent appearance-none leading-none align-middle focus:outline-none whitespace-nowrap w-auto",
                       )}
                     >
-                      <span>Resources</span>
+                      <span className="inline-block">Resources</span>
                       <ChevronDown
                         className={cn(
-                          "h-3.5 w-3.5 text-[#15171C] transition-transform",
+                          "!inline-block flex-none h-3 w-3 text-[#15171C] transition-transform",
                           megaOpen && "rotate-180",
                         )}
                       />
