@@ -41,6 +41,8 @@ serve(async (req) => {
     const mergedSignals = {
       ...(payload?.signals ?? {}),
       competitor_signals: Array.isArray(payload?.competitor_signals) ? payload.competitor_signals : [],
+      render_ok: payload?.render_ok !== false,
+      render_meta: payload?.render_meta ?? null,
     };
 
     // 1. Create audit row first (status = generating, with start timestamp)
