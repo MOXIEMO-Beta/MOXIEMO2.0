@@ -210,7 +210,8 @@ function buildFactsBlock(payload: any): string {
   if (typeof cc.blog_present === "boolean") facts.push(`blog_present = ${cc.blog_present}`);
   if (typeof cc.waitlist_present === "boolean") facts.push(`waitlist_present = ${cc.waitlist_present}`);
   if (typeof cc.newsletter_capture === "boolean") facts.push(`newsletter_capture = ${cc.newsletter_capture}`);
-  if (typeof face.named_founder_on_site === "boolean") facts.push(`named_founder_on_site = ${face.named_founder_on_site}`);
+  if (typeof face.founder_named_in_text === "boolean") facts.push(`founder_named_in_text = ${face.founder_named_in_text}`);
+  if (typeof face.face_visible === "boolean") facts.push(`face_visible = ${face.face_visible}`);
   if (typeof vis.logo_present === "boolean") facts.push(`logo_present = ${vis.logo_present}`);
   if (typeof vis.logo_kind === "string") facts.push(`logo_kind = "${vis.logo_kind}"`);
   if (typeof find.found_for_name === "boolean") facts.push(`found_for_name = ${find.found_for_name}`);
@@ -228,7 +229,10 @@ Every finding must be consistent with them. If a fact says blog_present is false
 never refer to a blog as existing. If waitlist_present is true and newsletter_capture
 is false, do not call the waitlist a newsletter. If logo_kind is "wordmark", treat the
 logo as present in styled text form, not as missing. If named_founder_on_site is false,
-never claim the founder is visible. Only reference competitor domains that appear in
+never claim the founder is visible. The Face of the Brand section must key off
+face_visible, not founder_named_in_text. If face_visible is false, frame the missing
+face as the gap. Never claim a visible founder or visible face when face_visible is
+false, even if a name appears in text. Only reference competitor domains that appear in
 the competitors list above. Read the stage and posture facts and use them to judge each
 section in a stage-aware way.
 ${body}`;
