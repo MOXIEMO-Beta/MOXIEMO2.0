@@ -15,8 +15,8 @@ export default function AiEverywhereStandOut() {
       readTime="6 min read"
       date="June 16, 2026"
       headline="AI is everywhere. Here is how you still stand out."
-      dek="AI is here to stay, and yes, the slop is real. That does not mean you have to blend in. A few honest strategies for staying original while using the same tools as everyone else."
     >
+      <P><em>AI is here to stay, and yes, the slop is real. That does not mean you have to blend in. A few honest strategies for staying original while using the same tools as everyone else.</em></P>
       <P>Let me start with the thing nobody wants to admit. AI is everywhere now, a lot of the output is generic, and none of that is going to reverse. The tools are not going back in the box. So the useful question is not whether to use AI. It is how to use it and still sound like yourself.</P>
       <P>I run a company built on AI, so I am not here to talk you out of it. I am here to say the part that gets lost in the noise. AI is a tool. You are the creative driver. The people who stand out in this next stretch are not the ones who use AI the least, or the most. They are the ones who never hand over the wheel.</P>
       <P>Here is what that looks like in practice.</P>
