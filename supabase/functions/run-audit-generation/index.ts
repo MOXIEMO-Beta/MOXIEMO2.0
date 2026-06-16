@@ -145,25 +145,11 @@ async function runGeneration(audit_id: string) {
       return;
     }
 
-    if (genData?.status === "review") {
-      const issueMessages: string[] = Array.isArray(genData.issue_messages)
-        ? genData.issue_messages.filter((issue: unknown) => typeof issue === "string")
-        : Array.isArray(genData.issues)
-        ? genData.issues.map((issue: unknown) => typeof issue === "string" ? issue : JSON.stringify(issue))
-        : [];
-      const reason = issueMessages.length > 0
-        ? issueMessages.join("; ")
-        : "Report did not pass validation.";
-      await writeTerminal({
-        status: "review",
-        report: genData.report ?? { issues: genData.issues ?? issueMessages },
-        review_reason: reason,
-        raw_report: genData.raw_report ?? null,
-        validation: genData.validation ?? null,
-      });
-      console.log(`[run-audit-generation] ${audit_id} review reason=${reason}`);
-      return;
-    }
+    // Note: generate-audit no longer returns a "review" status. Validation and
+    // surgical repair run server-side and always terminate in either "ready"
+    // (with any unresolved contradictions downgraded to soft warnings and the
+    // copy rewritten to a signal-safe version) or an error. The user-facing
+    // regenerate wall has been removed by design.
 
     throw new Error(genData?.error ?? `generate-audit returned unexpected status: ${genData?.status ?? "none"}`);
   } catch (e: any) {
