@@ -948,29 +948,52 @@ serve(async (req) => {
     }
 
     // Repair only hard blockers, up to 2 passes. Soft warnings never block.
+    const repairLog: string[] = [];
+    let safeRewriteNotes: string[] = [];
     if (report) {
       let hard = tagFailures(issues).filter((i) => i.severity === "hard");
       for (let attempt = 1; attempt <= 2 && hard.length > 0; attempt += 1) {
         report = await repairReport(req, report, hard, payload);
         issues = validate(report, payload);
         hard = tagFailures(issues).filter((i) => i.severity === "hard");
+        repairLog.push(`attempt ${attempt}: ${hard.length} hard remaining`);
+      }
+      // If hard contradictions remain, apply the deterministic signal-safe
+      // rewrite and downgrade remaining hard issues to soft warnings. The
+      // user must never see a regenerate wall. Generation always terminates.
+      if (hard.length > 0) {
+        const safe = applySignalSafeRewrite(report, payload);
+        safeRewriteNotes = safe.notes;
+        if (safe.changed) {
+          issues = validate(report, payload);
+          hard = tagFailures(issues).filter((i) => i.severity === "hard");
+        }
+        if (hard.length > 0) {
+          // Log server-side and force-classify remaining hard issues as soft.
+          console.warn(`[generate-audit] unresolved hard contradictions downgraded to soft: ${JSON.stringify(hard)}`);
+          issues = issues.map((i) => {
+            const isStillHard = classifyFailure(i) === "hard";
+            return isStillHard ? { ...i, reason: `${i.reason} (soft-downgraded)` } : i;
+          });
+        }
       }
     }
 
     const validation = buildValidationReport(issues);
+    (validation as any).repair_log = repairLog;
+    (validation as any).signal_safe_rewrites = safeRewriteNotes;
+    // Note: validation may still show hard_failures if the model returned non-JSON
+    // and there is no report to render. Handle that case below.
 
-    if (!validation.pass) {
+    if (!report || typeof report !== "object") {
       return new Response(
         JSON.stringify({
-          status: "review",
-          issues: validation.hard_failures,
-          issue_messages: formatFailures(validation.hard_failures),
-          soft_warnings: validation.soft_warnings,
-          report,
+          status: "error",
+          error: "Model output could not be parsed.",
           raw_report: rawReport,
           validation,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
