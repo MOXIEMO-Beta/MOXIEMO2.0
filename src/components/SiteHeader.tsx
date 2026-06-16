@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, useId } from "react";
 import { MoxieLogo } from "@/components/MoxieLogo";
 import { Menu, X, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import foundingRoundImage from "@/assets/founding-round.jpg";
+import featuredLoadingImage from "@/assets/resources-featured-loading.jpg";
 
 const navItems = [
   { to: "/platform", label: "Platform" },
@@ -23,22 +23,11 @@ type ResourceItem = {
   children?: ResourceItem[];
 };
 
-const compareItems: ResourceItem[] = [
-  { label: "vs Averi", description: "Brand to GTM, not content.", status: "soon" },
-  { label: "vs ChatGPT", description: "The brand layer it lacks.", status: "soon" },
-  { label: "vs Claude", description: "Purpose-built on Claude.", status: "soon" },
-  { label: "vs Jasper", description: "Strategy before production.", status: "soon" },
-  { label: "vs Blaze", description: "Integrity over volume.", status: "soon" },
-  { label: "vs Rella", description: "Strategy before scheduling.", status: "soon" },
-  { label: "vs Gemini", description: "A system, not general AI.", status: "soon" },
-  { label: "vs Canva", description: "Strategy, not just design.", status: "soon" },
-];
-
 const resourceColumns: { heading: string; items: ResourceItem[] }[] = [
   {
     heading: "Free tools",
     items: [
-      { label: "Brand Audit Report", description: "Score your brand and see what to fix first.", status: "soon" },
+      { label: "Brand Audit Report", description: "Score your brand and see what to fix first.", href: "/brand-audit", status: "new" },
       { label: "Brand Kit", description: "Turn your site into a polished brand kit.", href: "/brand-kit", status: "live" },
       { label: "Prompt packs", description: "Proven prompts for content that sounds like you.", href: "/resources", status: "live" },
     ],
@@ -49,7 +38,7 @@ const resourceColumns: { heading: string; items: ResourceItem[] }[] = [
       { label: "Building with MOXIEMO", description: "Strategy and growth playbooks for founders.", href: "/blog", status: "live" },
       { label: "Field notes", description: "Follow the build in the open, wins and misses.", href: "/changelog", status: "live" },
       { label: "This Is Branding", description: "The method, as a free worksheet or the book.", status: "soon" },
-      { label: "Compare", description: "See how MOXIEMO stacks up, head to head.", status: "live", children: compareItems },
+      { label: "Compare", description: "See how MOXIEMO stacks up, head to head.", status: "soon" },
     ],
   },
   {
@@ -160,7 +149,7 @@ type SiteHeaderProps = {
   featuredImageSrc?: string;
 };
 
-export function SiteHeader({ featuredImageSrc = foundingRoundImage }: SiteHeaderProps = {}) {
+export function SiteHeader({ featuredImageSrc = featuredLoadingImage }: SiteHeaderProps = {}) {
   const [open, setOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -327,11 +316,10 @@ export function SiteHeader({ featuredImageSrc = foundingRoundImage }: SiteHeader
                               <div className="mt-3 overflow-hidden rounded-xl">
                                 <img
                                   src={featuredImageSrc}
-                                  alt="Abstract coral and cream brand composition for the MOXIEMO Founding Round"
+                                  alt="Vintage collage of a figure with a black vinyl record for a head reading LOADING, layered over sheet music in coral and amber"
                                   loading="lazy"
-                                  width={1280}
-                                  height={720}
-                                  className="block w-full aspect-[16/9] object-cover"
+                                  className="block w-full aspect-[4/3] object-cover"
+                                  style={{ objectPosition: "center 32%" }}
                                 />
                               </div>
                               <Link
