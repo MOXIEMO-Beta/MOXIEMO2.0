@@ -853,6 +853,7 @@ function deriveDataConfidence(payload: any): DataConfidence {
 function calibrateReport(report: any, payload: any): { report: any; data_confidence: DataConfidence } {
   const conf = deriveDataConfidence(payload);
   const confCap = conf === "low" ? 70 : conf === "medium" ? 85 : 100;
+  const renderOk = payload?.render_ok !== false;
 
   const s = payload?.signals ?? {};
   const vis = s.visual_identity ?? {};
@@ -893,6 +894,35 @@ function calibrateReport(report: any, payload: any): { report: any; data_confide
   if (!caseStudiesPresent) reason("Content & Consistency", 45, "case_studies_present false");
   if (!developedStory) reason("Brand Story", 45, "no developed story");
 
+  // Render-failure guardrail. When the live site could not be fully read,
+  // page-dependent sections must read as "could not assess", never as
+  // critical gaps and never as low scores driven by absence.
+  const PAGE_DEPENDENT = new Set([
+    "Visual Identity",
+    "The Face of the Brand",
+    "Content & Consistency",
+    "Findability & Search",
+  ]);
+  const NOT_ASSESSED_SCORE = 65; // neutral, lands in Developing band; never Critical gap
+  if (!renderOk && Array.isArray(report?.sections)) {
+    for (const sec of report.sections) {
+      if (!PAGE_DEPENDENT.has(sec?.label)) continue;
+      // Findability is partially head/search based; preserve a non-page finding if present.
+      sec.score = Math.max(typeof sec.score === "number" ? sec.score : 0, NOT_ASSESSED_SCORE);
+      if (sec.score < NOT_ASSESSED_SCORE) sec.score = NOT_ASSESSED_SCORE;
+      sec.score = NOT_ASSESSED_SCORE;
+      sec.tier = "Developing";
+      sec.whats_working = sec.label === "Findability & Search"
+        ? "Search and metadata signals were captured and remain assessable, even though the live page body could not be fully read."
+        : "We could not fully read the live site, so the underlying assets may already exist. We are not claiming a gap here.";
+      sec.whats_holding_back = "We could not assess this from your live site, most likely because it is a JavaScript-rendered site that did not return body content on this pass.";
+      sec.fix_first = "Re-run this audit after the site is reachable to a plain fetch, or share a public preview link, so the live read can score this section.";
+      sec.competitor_framing = "";
+      sec.evidence = Array.isArray(sec.evidence) ? sec.evidence : [];
+      sec.evidence = ["Live site body could not be fully read on this pass; section marked as not assessed."];
+    }
+  }
+
   const adjustments: Array<{ section: string; from: number; to: number; cap: number }> = [];
   for (const sec of report.sections ?? []) {
     const sectionCap = sectionCaps[sec.label] ?? 100;
@@ -911,7 +941,32 @@ function calibrateReport(report: any, payload: any): { report: any; data_confide
     confidence_cap: confCap,
     section_caps: sectionCaps,
     adjustments,
+    render_ok: renderOk,
+    render_reason: payload?.render_meta?.render_reason ?? null,
+    render_method: payload?.render_meta?.render_method ?? null,
   };
+
+  // Honesty line in the advisor overview when render failed.
+  if (!renderOk) {
+    if (!report.advisor_overview || typeof report.advisor_overview !== "object") {
+      report.advisor_overview = {};
+    }
+    const ao = report.advisor_overview;
+    const honesty = "The live site could not be fully read on this pass, most likely because it is a JavaScript-rendered site, so the assessment below is based on the inputs provided.";
+    const existing = typeof ao.read === "string" ? ao.read.trim() : "";
+    if (!/could not be fully read/i.test(existing)) {
+      ao.read = existing ? `${honesty} ${existing}` : honesty;
+    }
+    // Scrub forbidden framing from verdict and overview copy.
+    const forbidden = /\b(placeholder|template (?:site|page)|not live|empty site|parked|no accessible pages|appears to be (?:a )?(?:default|empty))\b/gi;
+    if (typeof report.verdict === "string" && forbidden.test(report.verdict)) {
+      report.verdict = "We could not fully read your live site on this pass. The assessment below is based on the inputs you provided.";
+    }
+    for (const f of ["read", "focus", "future_levers"] as const) {
+      if (typeof ao[f] === "string") ao[f] = ao[f].replace(forbidden, "could not be fully read");
+    }
+  }
+
   return { report, data_confidence: conf };
 }
 
