@@ -13,12 +13,15 @@ export type RawScrape = {
   url: string;
   origin: string;
   domain: string;
-  pages: { url: string; title: string | null; h1: string | null; text: string; html: string }[];
+  pages: { url: string; title: string | null; h1: string | null; text: string; html: string; rendered?: boolean }[];
   homepage_html: string;
   links: string[];
   social_links: string[];
   fetched_at: string;
   fetch_ok: boolean;
+  render_ok?: boolean;
+  render_reason?: string;
+  render_method?: "firecrawl" | "raw" | "mixed";
 };
 
 export function normalizeDomain(input: string): string {
@@ -67,6 +70,83 @@ async function fetchHtml(url: string, timeoutMs = 8000): Promise<string> {
   } catch { return ""; }
 }
 
+// Firecrawl-rendered fetch. Returns rendered HTML when the key is available
+// and the page renders. Returns null on any failure so callers fall back to
+// the raw fetch path.
+async function firecrawlRenderedHtml(url: string, timeoutMs = 20000): Promise<string | null> {
+  const key = Deno.env.get("FIRECRAWL_API_KEY");
+  if (!key) return null;
+  try {
+    const r = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        formats: ["html"],
+        onlyMainContent: false,
+        waitFor: 2500,
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!r.ok) return null;
+    const data = await r.json().catch(() => null);
+    const html: string | undefined = data?.data?.html ?? data?.html ?? data?.data?.rawHtml ?? data?.rawHtml;
+    return typeof html === "string" && html.length > 0 ? html : null;
+  } catch {
+    return null;
+  }
+}
+
+// Render-failure detection. Looks at the assembled pages and the homepage
+// HTML to decide whether body content is trustworthy. When false, the audit
+// must refuse body-dependent negative claims.
+const SPA_MARKERS: Array<{ re: RegExp; label: string }> = [
+  { re: /lovable\.dev|lovableproject|lovable-uploads/i, label: "Lovable" },
+  { re: /gpt-engineer/i, label: "gpt-engineer" },
+  { re: /(static\.parastorage\.com|wix-warmup|wixstatic|_wixCIDX|wix\.com\/run)/i, label: "Wix" },
+  { re: /(squarespace\.com|static1\.squarespace|sqs-cdn)/i, label: "Squarespace" },
+  { re: /(framer\.com|framerstatic|framerusercontent)/i, label: "Framer" },
+  { re: /webflow\.com|website-files\.com/i, label: "Webflow" },
+];
+
+const BODY_THRESHOLD = 500;
+
+function detectRender(pages: RawScrape["pages"], homepageHtml: string): { render_ok: boolean; render_reason: string } {
+  const bodyLens = pages.map((p) => (p.text || "").length);
+  const maxBody = bodyLens.reduce((m, n) => Math.max(m, n), 0);
+
+  // Only head metadata captured / rendered body below threshold everywhere.
+  if (maxBody < BODY_THRESHOLD) {
+    return { render_ok: false, render_reason: `rendered body below threshold (max ${maxBody} chars)` };
+  }
+
+  // Every probed route returns an identical shell title with no distinct body.
+  const titles = new Set(pages.map((p) => (p.title || "").trim()).filter(Boolean));
+  const bodyFingerprints = new Set(pages.map((p) => (p.text || "").slice(0, 200)));
+  if (pages.length >= 2 && titles.size <= 1 && bodyFingerprints.size <= 1) {
+    return { render_ok: false, render_reason: "every probed route returned an identical shell" };
+  }
+
+  // Known CSR markers + bare React root with no SSR content.
+  for (const { re, label } of SPA_MARKERS) {
+    if (re.test(homepageHtml)) {
+      // Only flag when the rendered body is also thin or templated.
+      if (maxBody < 1200) {
+        return { render_ok: false, render_reason: `client-rendered (${label}) and rendered body thin` };
+      }
+    }
+  }
+  const bareRoot =
+    /<div[^>]+id=["']root["'][^>]*>\s*<\/div>/i.test(homepageHtml) ||
+    /<div[^>]+id=["']__next["'][^>]*>\s*<\/div>/i.test(homepageHtml) ||
+    /<div[^>]+id=["']app["'][^>]*>\s*<\/div>/i.test(homepageHtml);
+  if (bareRoot && maxBody < 1200) {
+    return { render_ok: false, render_reason: "bare client-render root with no server-rendered content" };
+  }
+
+  return { render_ok: true, render_reason: "rendered body present across routes" };
+}
+
 function pickTitle(html: string): string | null {
   return html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? null;
 }
@@ -85,25 +165,43 @@ export async function scrapePrimary(inputUrl: string): Promise<RawScrape> {
     url: inputUrl, origin: "", domain: normalizeDomain(inputUrl),
     pages: [], homepage_html: "", links: [], social_links: [],
     fetched_at: new Date().toISOString(), fetch_ok: false,
+    render_ok: false, render_reason: "fetch failed", render_method: "raw",
   };
   if (!u) return empty;
   const parsed = new URL(u);
   const origin = parsed.origin;
   const domain = parsed.hostname.replace(/^www\./, "");
 
-  const homepage_html = await fetchHtml(u);
+  // Try a JS-rendered fetch first when the key is available; fall back to raw.
+  let homepageRendered = await firecrawlRenderedHtml(u);
+  let homepage_html = homepageRendered ?? await fetchHtml(u);
+  let homepageWasRendered = !!homepageRendered;
+  // If raw is suspiciously thin and Firecrawl is available, try once more.
+  if (!homepageWasRendered && homepage_html && htmlToText(homepage_html).length < BODY_THRESHOLD) {
+    const retry = await firecrawlRenderedHtml(u);
+    if (retry) { homepage_html = retry; homepageWasRendered = true; }
+  }
   if (!homepage_html) return { ...empty, origin, domain };
 
   const subResults = await Promise.allSettled(
     SUBPATHS.filter((p) => p !== "/").map(async (p) => {
-      const html = await fetchHtml(`${origin}${p}`);
-      return { p, html };
+      const target = `${origin}${p}`;
+      let renderedFlag = false;
+      let html = await fetchHtml(target);
+      if (html && htmlToText(html).length < BODY_THRESHOLD) {
+        const r = await firecrawlRenderedHtml(target, 15000);
+        if (r) { html = r; renderedFlag = true; }
+      } else if (!html) {
+        const r = await firecrawlRenderedHtml(target, 15000);
+        if (r) { html = r; renderedFlag = true; }
+      }
+      return { p, html, rendered: renderedFlag };
     }),
   );
 
   const pages: RawScrape["pages"] = [{
     url: u, title: pickTitle(homepage_html), h1: pickH1(homepage_html),
-    text: htmlToText(homepage_html).slice(0, 8000), html: homepage_html,
+    text: htmlToText(homepage_html).slice(0, 8000), html: homepage_html, rendered: homepageWasRendered,
   }];
   for (const r of subResults) {
     if (r.status === "fulfilled" && r.value.html) {
@@ -112,7 +210,7 @@ export async function scrapePrimary(inputUrl: string): Promise<RawScrape> {
         title: pickTitle(r.value.html),
         h1: pickH1(r.value.html),
         text: htmlToText(r.value.html).slice(0, 6000),
-        html: r.value.html,
+        html: r.value.html, rendered: !!r.value.rendered,
       });
     }
   }
@@ -124,6 +222,12 @@ export async function scrapePrimary(inputUrl: string): Promise<RawScrape> {
   const social_links = links.filter((h) =>
     /(linkedin|twitter|x\.com|instagram|facebook|youtube|tiktok|threads)\.com/i.test(h));
 
+  const { render_ok, render_reason } = detectRender(pages, homepage_html);
+  const anyRendered = pages.some((p) => p.rendered);
+  const allRendered = pages.every((p) => p.rendered);
+  const render_method: RawScrape["render_method"] =
+    allRendered ? "firecrawl" : anyRendered ? "mixed" : "raw";
+
   // Strip giant html before returning to keep cache small.
   return {
     url: u, origin, domain,
@@ -131,6 +235,7 @@ export async function scrapePrimary(inputUrl: string): Promise<RawScrape> {
     homepage_html,
     links, social_links,
     fetched_at: new Date().toISOString(), fetch_ok: true,
+    render_ok, render_reason, render_method,
   };
 }
 
