@@ -176,8 +176,22 @@ serve(async (req) => {
       },
       face_of_the_brand: {
         ...(baseSignals.face_of_the_brand ?? {}),
-        named_founder_on_site: facts.named_person.detected || !!(baseSignals.face_of_the_brand?.named_founder_on_site),
+        // founder_named_in_text: a person/founder name appears anywhere in the site text.
+        founder_named_in_text:
+          facts.named_person.detected
+          || !!(baseSignals.face_of_the_brand?.founder_named_in_text)
+          || !!(baseSignals.face_of_the_brand?.named_founder_on_site),
+        // Legacy alias retained for back-compat. Do not key copy off this.
+        named_founder_on_site:
+          facts.named_person.detected
+          || !!(baseSignals.face_of_the_brand?.named_founder_on_site),
         about_person_section: facts.named_person.about_person_section || !!(baseSignals.face_of_the_brand?.about_person_section),
+        // face_visible: a person is actually presented with a photo and a bio.
+        // True only when an about-person section exists, or bylines do.
+        face_visible:
+          (facts.named_person.about_person_section || !!(baseSignals.face_of_the_brand?.about_person_section))
+          || !!(baseSignals.face_of_the_brand?.bylines),
+        bylines: !!(baseSignals.face_of_the_brand?.bylines),
         personal_brand_link: facts.named_person.personal_profile_links[0] ?? baseSignals.face_of_the_brand?.personal_brand_link ?? null,
       },
       findability: {

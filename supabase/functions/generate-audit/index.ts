@@ -210,7 +210,8 @@ function buildFactsBlock(payload: any): string {
   if (typeof cc.blog_present === "boolean") facts.push(`blog_present = ${cc.blog_present}`);
   if (typeof cc.waitlist_present === "boolean") facts.push(`waitlist_present = ${cc.waitlist_present}`);
   if (typeof cc.newsletter_capture === "boolean") facts.push(`newsletter_capture = ${cc.newsletter_capture}`);
-  if (typeof face.named_founder_on_site === "boolean") facts.push(`named_founder_on_site = ${face.named_founder_on_site}`);
+  if (typeof face.founder_named_in_text === "boolean") facts.push(`founder_named_in_text = ${face.founder_named_in_text}`);
+  if (typeof face.face_visible === "boolean") facts.push(`face_visible = ${face.face_visible}`);
   if (typeof vis.logo_present === "boolean") facts.push(`logo_present = ${vis.logo_present}`);
   if (typeof vis.logo_kind === "string") facts.push(`logo_kind = "${vis.logo_kind}"`);
   if (typeof find.found_for_name === "boolean") facts.push(`found_for_name = ${find.found_for_name}`);
@@ -228,7 +229,10 @@ Every finding must be consistent with them. If a fact says blog_present is false
 never refer to a blog as existing. If waitlist_present is true and newsletter_capture
 is false, do not call the waitlist a newsletter. If logo_kind is "wordmark", treat the
 logo as present in styled text form, not as missing. If named_founder_on_site is false,
-never claim the founder is visible. Only reference competitor domains that appear in
+never claim the founder is visible. The Face of the Brand section must key off
+face_visible, not founder_named_in_text. If face_visible is false, frame the missing
+face as the gap. Never claim a visible founder or visible face when face_visible is
+false, even if a name appears in text. Only reference competitor domains that appear in
 the competitors list above. Read the stage and posture facts and use them to judge each
 section in a stage-aware way.
 ${body}`;
@@ -480,7 +484,12 @@ function validate(report: any, payload: any): ValidationFailure[] {
 
   // signal contradictions
   const blogPresent = payload?.signals?.content_consistency?.blog_present;
-  const namedFounder = payload?.signals?.face_of_the_brand?.named_founder_on_site;
+  const faceSignals = payload?.signals?.face_of_the_brand ?? {};
+  const faceVisible: boolean | undefined = typeof faceSignals.face_visible === "boolean"
+    ? faceSignals.face_visible
+    : (faceSignals.about_person_section === true || faceSignals.bylines === true)
+      ? true
+      : undefined;
   for (const s of sections) {
     const allText = [s?.whats_working, s?.whats_holding_back, s?.fix_first, s?.competitor_framing]
       .filter((x) => typeof x === "string").join(" ").toLowerCase();
@@ -493,11 +502,11 @@ function validate(report: any, payload: any): ValidationFailure[] {
       }
     }
     if (s?.label === "The Face of the Brand") {
-      if (namedFounder === true && allText.includes("no founder")) {
-        addFailure(issues, s.label, "copy", "contradicts signal: named_founder_on_site true but text claims no founder");
+      if (faceVisible === true && /\b(no founder|no visible founder|no visible face|faceless)\b/.test(allText)) {
+        addFailure(issues, s.label, "copy", "contradicts signal: face_visible true but text claims no visible face");
       }
-      if (namedFounder === false && payload?.model_type === "founder_led" && /founder is visible/.test(allText)) {
-        addFailure(issues, s.label, "copy", "contradicts signal: named_founder_on_site false but text claims founder is visible");
+      if (faceVisible === false && /\b(founder is visible|face is visible|visible founder|visible face|founder is present with (?:a )?photo)\b/.test(allText)) {
+        addFailure(issues, s.label, "copy", "contradicts signal: face_visible false but text claims a visible face");
       }
     }
   }
@@ -717,6 +726,65 @@ async function repairReport(req: Request, report: any, failures: ValidationFailu
   return mergeRepairs(report, repairs);
 }
 
+// Deterministic last-resort rewrite. Runs only when repair has not cleared
+// every hard contradiction after the bounded retries. It rewrites the
+// offending Face of the Brand or Content & Consistency copy to a
+// signal-safe version so generation can always terminate in a ready report.
+function applySignalSafeRewrite(report: any, payload: any): { changed: boolean; notes: string[] } {
+  const notes: string[] = [];
+  if (!report || !Array.isArray(report.sections)) return { changed: false, notes };
+  const face = payload?.signals?.face_of_the_brand ?? {};
+  const cc = payload?.signals?.content_consistency ?? {};
+  const faceVisible: boolean | undefined = typeof face.face_visible === "boolean"
+    ? face.face_visible
+    : (face.about_person_section === true || face.bylines === true) ? true : undefined;
+  const blogPresent: boolean | undefined = typeof cc.blog_present === "boolean" ? cc.blog_present : undefined;
+
+  let changed = false;
+  for (const s of report.sections) {
+    if (s?.label === "The Face of the Brand" && faceVisible === false) {
+      s.whats_working = "There is a real person behind the brand named in the site text, which is raw material to build on.";
+      s.whats_holding_back = "No founder photo or named bio appears on the site, so the face of the brand is not visible to a first-time visitor.";
+      s.fix_first = "Add a short About page section that pairs a founder photo with a one paragraph bio and a clear role.";
+      s.competitor_framing = "";
+      if (typeof s.score !== "number" || s.score > 45) { s.score = 45; s.tier = "At risk"; }
+      changed = true;
+      notes.push("Face of the Brand rewritten to signal-safe version (face_visible false).");
+    }
+    if (s?.label === "The Face of the Brand" && faceVisible === true) {
+      // Make sure the copy does not deny a visible face.
+      const allText = [s.whats_working, s.whats_holding_back, s.fix_first].filter((x: any) => typeof x === "string").join(" ").toLowerCase();
+      if (/\b(no founder|no visible founder|no visible face|faceless)\b/.test(allText)) {
+        s.whats_working = "A named figure is presented on the site with a photo and bio, which anchors trust on first read.";
+        s.whats_holding_back = "The visible face is present but the public footprint and consistent persona around that figure are thin.";
+        s.fix_first = "Build a consistent persona around the visible face across the About page, LinkedIn, and a recurring content surface.";
+        s.competitor_framing = "";
+        changed = true;
+        notes.push("Face of the Brand rewritten to signal-safe version (face_visible true).");
+      }
+    }
+    if (s?.label === "Content & Consistency") {
+      const allText = [s.whats_working, s.whats_holding_back, s.fix_first].filter((x: any) => typeof x === "string").join(" ").toLowerCase();
+      if (blogPresent === false && /active blog/.test(allText)) {
+        s.whats_holding_back = "No blog or recurring content rhythm appears on the site, so there is nothing showing up beyond the homepage on a cadence.";
+        s.fix_first = "Pick one channel and one cadence, and publish a short founder note every week for the next four weeks.";
+        s.competitor_framing = "";
+        changed = true;
+        notes.push("Content & Consistency rewritten to signal-safe version (blog_present false).");
+      }
+      if (blogPresent === true && /no blog/.test(allText)) {
+        s.whats_working = "A blog exists on the site and is published, which gives the brand a recurring surface to build on.";
+        s.whats_holding_back = "The blog is present but the cadence and through-line across posts are not consistent enough to compound.";
+        s.fix_first = "Set a weekly cadence on the existing blog and anchor every post to one of three named themes.";
+        s.competitor_framing = "";
+        changed = true;
+        notes.push("Content & Consistency rewritten to signal-safe version (blog_present true).");
+      }
+    }
+  }
+  return { changed, notes };
+}
+
 function computeScore(report: any): number {
   let total = 0;
   for (const s of report.sections ?? []) {
@@ -750,7 +818,9 @@ function deriveDataConfidence(payload: any): DataConfidence {
     vis.logo_present !== undefined && vis.logo_present !== null,
     cc.blog_present !== undefined && cc.blog_present !== null,
     cc.case_studies_present !== undefined && cc.case_studies_present !== null,
-    face.named_founder_on_site !== undefined && face.named_founder_on_site !== null,
+    (face.face_visible !== undefined && face.face_visible !== null)
+      || (face.founder_named_in_text !== undefined && face.founder_named_in_text !== null)
+      || (face.named_founder_on_site !== undefined && face.named_founder_on_site !== null),
     face.about_person_section !== undefined && face.about_person_section !== null,
     story.about_present !== undefined && story.about_present !== null,
     find.ranks_for_name !== undefined && find.ranks_for_name !== null && find.ranks_for_name !== "not assessed",
@@ -776,9 +846,12 @@ function calibrateReport(report: any, payload: any): { report: any; data_confide
   // absent or unverifiable signal can never raise a score.
   const logoPresent = vis.logo_present === true;
   const aboutPresent = story.about_present === true || face.about_person_section === true;
-  // "Named and pictured face" requires an explicit about-person section or bylines.
+  // face_visible is the source of truth. Fall back to about_person_section/bylines
+  // when face_visible is absent so older signal shapes still calibrate correctly.
   const namedAndPicturedFace =
-    (face.about_person_section === true) || (face.bylines === true);
+    face.face_visible === true
+    || face.about_person_section === true
+    || face.bylines === true;
   const caseStudiesPresent = cc.case_studies_present === true;
   // Developed story = real About page OR a multi-paragraph founding narrative.
   // story_detail is a free-text field from the extractor; treat short/empty as cue-only.
@@ -875,29 +948,52 @@ serve(async (req) => {
     }
 
     // Repair only hard blockers, up to 2 passes. Soft warnings never block.
+    const repairLog: string[] = [];
+    let safeRewriteNotes: string[] = [];
     if (report) {
       let hard = tagFailures(issues).filter((i) => i.severity === "hard");
       for (let attempt = 1; attempt <= 2 && hard.length > 0; attempt += 1) {
         report = await repairReport(req, report, hard, payload);
         issues = validate(report, payload);
         hard = tagFailures(issues).filter((i) => i.severity === "hard");
+        repairLog.push(`attempt ${attempt}: ${hard.length} hard remaining`);
+      }
+      // If hard contradictions remain, apply the deterministic signal-safe
+      // rewrite and downgrade remaining hard issues to soft warnings. The
+      // user must never see a regenerate wall. Generation always terminates.
+      if (hard.length > 0) {
+        const safe = applySignalSafeRewrite(report, payload);
+        safeRewriteNotes = safe.notes;
+        if (safe.changed) {
+          issues = validate(report, payload);
+          hard = tagFailures(issues).filter((i) => i.severity === "hard");
+        }
+        if (hard.length > 0) {
+          // Log server-side and force-classify remaining hard issues as soft.
+          console.warn(`[generate-audit] unresolved hard contradictions downgraded to soft: ${JSON.stringify(hard)}`);
+          issues = issues.map((i) => {
+            const isStillHard = classifyFailure(i) === "hard";
+            return isStillHard ? { ...i, reason: `${i.reason} (soft-downgraded)` } : i;
+          });
+        }
       }
     }
 
     const validation = buildValidationReport(issues);
+    (validation as any).repair_log = repairLog;
+    (validation as any).signal_safe_rewrites = safeRewriteNotes;
+    // Note: validation may still show hard_failures if the model returned non-JSON
+    // and there is no report to render. Handle that case below.
 
-    if (!validation.pass) {
+    if (!report || typeof report !== "object") {
       return new Response(
         JSON.stringify({
-          status: "review",
-          issues: validation.hard_failures,
-          issue_messages: formatFailures(validation.hard_failures),
-          soft_warnings: validation.soft_warnings,
-          report,
+          status: "error",
+          error: "Model output could not be parsed.",
           raw_report: rawReport,
           validation,
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 

@@ -55,7 +55,10 @@ export function deriveFraming(opts: {
 
   if (looksCategoryCreator && (looksSaaS || waitlist)) {
     posture = "category_creator";
-  } else if (opts.model_type === "founder_led" && (face.named_founder_on_site || looksService)) {
+  } else if (
+    opts.model_type === "founder_led" &&
+    (face.face_visible || face.founder_named_in_text || face.named_founder_on_site || looksService)
+  ) {
     posture = "founder_led_expertise";
   } else if (looksService) {
     posture = "service_business";

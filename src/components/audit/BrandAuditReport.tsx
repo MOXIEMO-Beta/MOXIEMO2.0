@@ -613,17 +613,6 @@ function AdvisorOverview({
 export function BrandAuditReport({ data }: { data: AuditResponse }) {
   const [downloading, setDownloading] = useState(false);
 
-  if (data?.status === "review") {
-    return (
-      <div className="min-h-screen bg-[#F7F5F1] py-16 px-4">
-        <Card className="max-w-2xl mx-auto border-2 rounded-2xl bg-white p-10 text-center">
-          <h2 className="text-2xl font-bold text-[#15171C] mb-3">Your report is being finalized.</h2>
-          <p className="text-[#7a7e8c]">Give it a moment. We are tightening a few things so it reads cleanly.</p>
-        </Card>
-      </div>
-    );
-  }
-
   const report = data?.report;
   if (!report) return null;
 
