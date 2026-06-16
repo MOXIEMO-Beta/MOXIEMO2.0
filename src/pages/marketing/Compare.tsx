@@ -3,19 +3,22 @@ import { useNavigate, useParams, Navigate } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ComparisonView } from "@/components/ComparisonView";
-import { competitors, competitorMap } from "@/data/compareData";
+import { COMPARISONS, comparisonMap } from "@/data/comparisons";
 import { cn } from "@/lib/utils";
 
 export default function Compare() {
   const { slug } = useParams<{ slug?: string }>();
   const navigate = useNavigate();
 
-  const activeSlug = slug ?? "chatgpt";
-  const competitor = competitorMap[activeSlug];
+  const activeSlug = slug ?? COMPARISONS[0].slug;
+  const comparison = comparisonMap[activeSlug];
 
-  const tabs = useMemo(() => competitors.map((c) => ({ slug: c.slug, name: c.name })), []);
+  const tabs = useMemo(
+    () => COMPARISONS.map((c) => ({ slug: c.slug, competitor: c.competitor })),
+    [],
+  );
 
-  if (slug && !competitor) {
+  if (slug && !comparison) {
     return <Navigate to="/compare" replace />;
   }
 
@@ -24,7 +27,7 @@ export default function Compare() {
       <SiteHeader />
 
       <main className="flex-1">
-        {/* In-page comparison switcher, sits above the hero */}
+        {/* In-page comparison switcher, sits below the nav divider, above the hero */}
         <div className="bg-background pt-8 md:pt-12">
           <div className="mx-auto max-w-6xl px-4 md:px-6">
             {/* Mobile: select */}
@@ -40,7 +43,7 @@ export default function Compare() {
               >
                 {tabs.map((t) => (
                   <option key={t.slug} value={t.slug}>
-                    MOXIEMO vs {t.name}
+                    vs {t.competitor}
                   </option>
                 ))}
               </select>
@@ -50,7 +53,7 @@ export default function Compare() {
               <div
                 role="tablist"
                 aria-label="Compare MOXIEMO with"
-                className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-[#15171C]/10 bg-[#15171C] p-1.5 shadow-sm"
+                className="inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full bg-[#15171C] p-1.5 shadow-sm"
               >
                 {tabs.map((t) => {
                   const isActive = t.slug === activeSlug;
@@ -68,7 +71,7 @@ export default function Compare() {
                           : "text-white/70 hover:bg-white/10 hover:text-white",
                       )}
                     >
-                      vs {t.name}
+                      vs {t.competitor}
                     </button>
                   );
                 })}
@@ -77,7 +80,7 @@ export default function Compare() {
           </div>
         </div>
 
-        <ComparisonView competitor={competitor ?? competitorMap.chatgpt} />
+        <ComparisonView comparison={comparison ?? COMPARISONS[0]} />
       </main>
 
       <SiteFooter />
