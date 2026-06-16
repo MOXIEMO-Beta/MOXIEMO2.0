@@ -155,7 +155,12 @@ function ResourceLink({
   );
 }
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  /** Image shown in the Resources mega-menu featured card. Swap for a brand asset when ready. */
+  featuredImageSrc?: string;
+};
+
+export function SiteHeader({ featuredImageSrc = foundingRoundImage }: SiteHeaderProps = {}) {
   const [open, setOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
