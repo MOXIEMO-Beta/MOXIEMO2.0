@@ -220,6 +220,11 @@ function buildFactsBlock(payload: any): string {
   if (typeof payload?.model_type === "string") facts.push(`model_type = "${payload.model_type}"`);
   if (typeof payload?.framing?.stage === "string") facts.push(`stage = "${payload.framing.stage}"`);
   if (typeof payload?.framing?.posture === "string") facts.push(`posture = "${payload.framing.posture}"`);
+  const renderOk = payload?.render_ok !== false; // default true when missing
+  facts.push(`render_ok = ${renderOk}`);
+  if (!renderOk && payload?.render_meta?.render_reason) {
+    facts.push(`render_reason = "${String(payload.render_meta.render_reason).replace(/"/g, "'")}"`);
+  }
   const inputCompetitors: string[] = Array.isArray(payload?.inputs?.competitors) ? payload.inputs.competitors : [];
   if (inputCompetitors.length > 0) facts.push(`competitors = [${inputCompetitors.map((c) => `"${c}"`).join(", ")}]`);
   const body = facts.length > 0 ? facts.join("\n") : "(no deterministic signals provided)";
@@ -235,6 +240,19 @@ face as the gap. Never claim a visible founder or visible face when face_visible
 false, even if a name appears in text. Only reference competitor domains that appear in
 the competitors list above. Read the stage and posture facts and use them to judge each
 section in a stage-aware way.
+
+RENDER GUARDRAIL (CRITICAL)
+If render_ok is false, the live site could not be fully read. This is a confidence gap,
+not a brand verdict. You MUST NOT say the site is a placeholder, a template, empty, not
+live, broken, parked, or that the brand has no accessible pages. Do not infer that
+content, visuals, or pages are missing from a read failure. For Visual Identity, The
+Face of the Brand, Content & Consistency, and the page-presence parts of Findability &
+Search: frame each as "could not assess from your live site" and key the read off the
+inputs only. Search-based and head-based findings remain valid: ranks_for_name, page
+title, and meta description may still be reported. The advisor_overview.read MUST open
+with one plain sentence saying the live site could not be fully read, most likely
+because it is a JavaScript-rendered site, and the assessment is based on the inputs
+provided. Sentence case. No em dashes. No contractions.
 ${body}`;
 }
 
