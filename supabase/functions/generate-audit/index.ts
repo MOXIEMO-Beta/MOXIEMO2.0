@@ -726,6 +726,65 @@ async function repairReport(req: Request, report: any, failures: ValidationFailu
   return mergeRepairs(report, repairs);
 }
 
+// Deterministic last-resort rewrite. Runs only when repair has not cleared
+// every hard contradiction after the bounded retries. It rewrites the
+// offending Face of the Brand or Content & Consistency copy to a
+// signal-safe version so generation can always terminate in a ready report.
+function applySignalSafeRewrite(report: any, payload: any): { changed: boolean; notes: string[] } {
+  const notes: string[] = [];
+  if (!report || !Array.isArray(report.sections)) return { changed: false, notes };
+  const face = payload?.signals?.face_of_the_brand ?? {};
+  const cc = payload?.signals?.content_consistency ?? {};
+  const faceVisible: boolean | undefined = typeof face.face_visible === "boolean"
+    ? face.face_visible
+    : (face.about_person_section === true || face.bylines === true) ? true : undefined;
+  const blogPresent: boolean | undefined = typeof cc.blog_present === "boolean" ? cc.blog_present : undefined;
+
+  let changed = false;
+  for (const s of report.sections) {
+    if (s?.label === "The Face of the Brand" && faceVisible === false) {
+      s.whats_working = "There is a real person behind the brand named in the site text, which is raw material to build on.";
+      s.whats_holding_back = "No founder photo or named bio appears on the site, so the face of the brand is not visible to a first-time visitor.";
+      s.fix_first = "Add a short About page section that pairs a founder photo with a one paragraph bio and a clear role.";
+      s.competitor_framing = "";
+      if (typeof s.score !== "number" || s.score > 45) { s.score = 45; s.tier = "At risk"; }
+      changed = true;
+      notes.push("Face of the Brand rewritten to signal-safe version (face_visible false).");
+    }
+    if (s?.label === "The Face of the Brand" && faceVisible === true) {
+      // Make sure the copy does not deny a visible face.
+      const allText = [s.whats_working, s.whats_holding_back, s.fix_first].filter((x: any) => typeof x === "string").join(" ").toLowerCase();
+      if (/\b(no founder|no visible founder|no visible face|faceless)\b/.test(allText)) {
+        s.whats_working = "A named figure is presented on the site with a photo and bio, which anchors trust on first read.";
+        s.whats_holding_back = "The visible face is present but the public footprint and consistent persona around that figure are thin.";
+        s.fix_first = "Build a consistent persona around the visible face across the About page, LinkedIn, and a recurring content surface.";
+        s.competitor_framing = "";
+        changed = true;
+        notes.push("Face of the Brand rewritten to signal-safe version (face_visible true).");
+      }
+    }
+    if (s?.label === "Content & Consistency") {
+      const allText = [s.whats_working, s.whats_holding_back, s.fix_first].filter((x: any) => typeof x === "string").join(" ").toLowerCase();
+      if (blogPresent === false && /active blog/.test(allText)) {
+        s.whats_holding_back = "No blog or recurring content rhythm appears on the site, so there is nothing showing up beyond the homepage on a cadence.";
+        s.fix_first = "Pick one channel and one cadence, and publish a short founder note every week for the next four weeks.";
+        s.competitor_framing = "";
+        changed = true;
+        notes.push("Content & Consistency rewritten to signal-safe version (blog_present false).");
+      }
+      if (blogPresent === true && /no blog/.test(allText)) {
+        s.whats_working = "A blog exists on the site and is published, which gives the brand a recurring surface to build on.";
+        s.whats_holding_back = "The blog is present but the cadence and through-line across posts are not consistent enough to compound.";
+        s.fix_first = "Set a weekly cadence on the existing blog and anchor every post to one of three named themes.";
+        s.competitor_framing = "";
+        changed = true;
+        notes.push("Content & Consistency rewritten to signal-safe version (blog_present true).");
+      }
+    }
+  }
+  return { changed, notes };
+}
+
 function computeScore(report: any): number {
   let total = 0;
   for (const s of report.sections ?? []) {
