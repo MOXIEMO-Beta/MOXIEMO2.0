@@ -10,21 +10,32 @@ interface MarketingPageProps {
   title: string;
   subtitle: string;
   children?: ReactNode;
+  heroContainerClassName?: string;
+  heroTitleClassName?: string;
+  heroSubtitleClassName?: string;
 }
 
-export function MarketingPage({ eyebrow, title, subtitle, children }: MarketingPageProps) {
+export function MarketingPage({
+  eyebrow,
+  title,
+  subtitle,
+  children,
+  heroContainerClassName,
+  heroTitleClassName,
+  heroSubtitleClassName,
+}: MarketingPageProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
       <section className="border-b border-border">
-        <div className="max-w-5xl mx-auto px-6 py-24 text-center">
+        <div className={`mx-auto px-6 py-24 text-center ${heroContainerClassName ?? "max-w-5xl"}`}>
           <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">
             {eyebrow}
           </div>
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.02] tracking-[-0.04em] mb-6 text-foreground">
+          <h1 className={heroTitleClassName ?? "text-5xl md:text-7xl lg:text-8xl font-bold leading-[1.02] tracking-[-0.04em] mb-6 text-foreground"}>
             {title}
           </h1>
-          <p className="text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light">
+          <p className={heroSubtitleClassName ?? "text-lg md:text-2xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light"}>
             {subtitle}
           </p>
         </div>

@@ -85,11 +85,12 @@ const notForYou = [
 
 // Outcomes band. Each item is an editable slot: a qualitative claim today,
 // ready to be replaced with a real figure (e.g. value: "18+ hrs") once beta data is in.
+// Outcomes band. Each value is an editable slot so a measured figure can replace it later.
 const outcomes: { value: string; label: string }[] = [
-  { value: "Hours back", label: "every week, spent steering instead of grinding" },
-  { value: "One platform", label: "in place of a stack of disconnected tools" },
-  { value: "Minutes, not months", label: "to a complete strategy" },
-  { value: "Agency-level", label: "strategy and execution, without the agency price" },
+  { value: "18+", label: "hours back per week, spent steering instead of grinding" },
+  { value: "4 to 6", label: "tools eliminated, replaced by one platform" },
+  { value: "20 min", label: "to a full strategy, not months" },
+  { value: "$93K", label: "saved annually, agency-level strategy and execution without the agency price" },
 ];
 
 export default function WhyMoxie() {
@@ -98,6 +99,9 @@ export default function WhyMoxie() {
       eyebrow="Why MOXIEMO"
       title="MOXIEMO is not another tool. It is a growth system."
       subtitle="You have tried VAs, Zapier, HubSpot, all-in-one platforms, and generic AI. They all failed for the same reason. They were tools, bolted onto a go-to-market that was never built. MOXIEMO is a growth system. It finds what makes you valuable, turns it into content that earns attention, puts it in market, and proves it kept driving your growth. It starts with strategy, runs the work on it, and is moving to do that work autonomously, with your approval."
+      heroContainerClassName="max-w-[1040px]"
+      heroTitleClassName="text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-[-0.04em] mb-6 text-foreground mx-auto max-w-[18ch]"
+      heroSubtitleClassName="text-lg md:text-xl text-muted-foreground mx-auto leading-relaxed font-light max-w-[880px]"
     >
       <div className="space-y-24">
         <section className="-mx-6 md:-mx-12 px-6 md:px-12" style={{ paddingTop: "16px", paddingBottom: "40px" }}>
