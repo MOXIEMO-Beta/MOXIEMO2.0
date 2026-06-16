@@ -28,6 +28,8 @@ import Resources from "./pages/marketing/Resources.tsx";
 import Changelog from "./pages/marketing/Changelog.tsx";
 import Founding from "./pages/marketing/Founding.tsx";
 import BrandKit from "./pages/marketing/BrandKit.tsx";
+import BrandArchitectureMethod from "./pages/marketing/BrandArchitectureMethod.tsx";
+import WhyMoxiemo from "./pages/marketing/WhyMoxiemo.tsx";
 import AuditTest from "./pages/AuditTest.tsx";
 import AuditReportPreview from "./pages/AuditReportPreview.tsx";
 import BrandAudit from "./pages/BrandAudit.tsx";
@@ -93,6 +95,8 @@ const App = () => (
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/founding" element={<Founding />} />
             <Route path="/brand-kit" element={<BrandKit />} />
+            <Route path="/brand-architecture-method" element={<BrandArchitectureMethod />} />
+            <Route path="/why-moxiemo" element={<WhyMoxiemo />} />
             <Route path="/audit-test" element={<AuditTest />} />
             <Route path="/audit-report-preview" element={<AuditReportPreview />} />
             <Route path="/brand-audit" element={<BrandAudit />} />

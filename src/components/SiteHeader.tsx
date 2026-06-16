@@ -44,8 +44,8 @@ const resourceColumns: { heading: string; items: ResourceItem[] }[] = [
   {
     heading: "The approach",
     items: [
-      { label: "Brand Architecture Method", description: "The strategy-first system that gates every output.", status: "soon" },
-      { label: "Why MOXIEMO", description: "The case for getting clear before you create.", status: "soon" },
+      { label: "Brand Architecture Method", description: "The strategy-first system that gates every output.", href: "/brand-architecture-method", status: "live" },
+      { label: "Why MOXIEMO", description: "The case for getting clear before you create.", href: "/why-moxiemo", status: "live" },
     ],
   },
 ];
