@@ -149,7 +149,7 @@ type SiteHeaderProps = {
   featuredImageSrc?: string;
 };
 
-export function SiteHeader({ featuredImageSrc = foundingRoundImage }: SiteHeaderProps = {}) {
+export function SiteHeader({ featuredImageSrc = featuredLoadingImage }: SiteHeaderProps = {}) {
   const [open, setOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
