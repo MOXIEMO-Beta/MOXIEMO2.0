@@ -484,7 +484,12 @@ function validate(report: any, payload: any): ValidationFailure[] {
 
   // signal contradictions
   const blogPresent = payload?.signals?.content_consistency?.blog_present;
-  const namedFounder = payload?.signals?.face_of_the_brand?.named_founder_on_site;
+  const faceSignals = payload?.signals?.face_of_the_brand ?? {};
+  const faceVisible: boolean | undefined = typeof faceSignals.face_visible === "boolean"
+    ? faceSignals.face_visible
+    : (faceSignals.about_person_section === true || faceSignals.bylines === true)
+      ? true
+      : undefined;
   for (const s of sections) {
     const allText = [s?.whats_working, s?.whats_holding_back, s?.fix_first, s?.competitor_framing]
       .filter((x) => typeof x === "string").join(" ").toLowerCase();
@@ -497,11 +502,11 @@ function validate(report: any, payload: any): ValidationFailure[] {
       }
     }
     if (s?.label === "The Face of the Brand") {
-      if (namedFounder === true && allText.includes("no founder")) {
-        addFailure(issues, s.label, "copy", "contradicts signal: named_founder_on_site true but text claims no founder");
+      if (faceVisible === true && /\b(no founder|no visible founder|no visible face|faceless)\b/.test(allText)) {
+        addFailure(issues, s.label, "copy", "contradicts signal: face_visible true but text claims no visible face");
       }
-      if (namedFounder === false && payload?.model_type === "founder_led" && /founder is visible/.test(allText)) {
-        addFailure(issues, s.label, "copy", "contradicts signal: named_founder_on_site false but text claims founder is visible");
+      if (faceVisible === false && /\b(founder is visible|face is visible|visible founder|visible face|founder is present with (?:a )?photo)\b/.test(allText)) {
+        addFailure(issues, s.label, "copy", "contradicts signal: face_visible false but text claims a visible face");
       }
     }
   }
