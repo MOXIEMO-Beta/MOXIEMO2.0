@@ -316,11 +316,10 @@ export function SiteHeader({ featuredImageSrc = featuredLoadingImage }: SiteHead
                               <div className="mt-3 overflow-hidden rounded-xl">
                                 <img
                                   src={featuredImageSrc}
-                                  alt="Abstract coral and cream brand composition for the MOXIEMO Founding Round"
+                                  alt="Vintage collage of a figure with a black vinyl record for a head reading LOADING, layered over sheet music in coral and amber"
                                   loading="lazy"
-                                  width={1280}
-                                  height={720}
-                                  className="block w-full aspect-[16/9] object-cover"
+                                  className="block w-full aspect-[4/3] object-cover"
+                                  style={{ objectPosition: "center 32%" }}
                                 />
                               </div>
                               <Link
