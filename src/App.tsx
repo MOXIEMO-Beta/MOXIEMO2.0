@@ -24,6 +24,7 @@ import WhyLinkedInPostsArentLanding from "./pages/blog/WhyLinkedInPostsArentLand
 import AiSlopVsAiStrategy from "./pages/blog/AiSlopVsAiStrategy.tsx";
 import SixToolStack from "./pages/blog/SixToolStack.tsx";
 import CaseForOptimism from "./pages/blog/CaseForOptimism.tsx";
+import AiEverywhereStandOut from "./pages/blog/AiEverywhereStandOut.tsx";
 import Resources from "./pages/marketing/Resources.tsx";
 import Changelog from "./pages/marketing/Changelog.tsx";
 import Founding from "./pages/marketing/Founding.tsx";
@@ -92,6 +93,7 @@ const App = () => (
             <Route path="/blog/ai-slop-vs-ai-strategy" element={<AiSlopVsAiStrategy />} />
             <Route path="/blog/six-tool-stack-killing-productivity" element={<SixToolStack />} />
             <Route path="/blog/case-for-optimism-best-time-to-build" element={<CaseForOptimism />} />
+            <Route path="/blog/ai-everywhere-how-you-stand-out" element={<AiEverywhereStandOut />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/founding" element={<Founding />} />
