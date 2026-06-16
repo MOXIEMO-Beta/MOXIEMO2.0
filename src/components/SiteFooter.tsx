@@ -40,7 +40,6 @@ export function SiteFooter() {
             <ul className="space-y-2">
               <li><Link to="/blog" className="moxie-footer-link">Building with MOXIEMO</Link></li>
               <li><Link to="/changelog" className="moxie-footer-link">Changelog</Link></li>
-              <li><Link to="/resources" className="moxie-footer-link">Resources</Link></li>
               <li><Link to="/brand-audit" className="moxie-footer-link">Free Brand Audit</Link></li>
               <li><a href="mailto:hello@buildwithmoxiemo.com" className="moxie-footer-link">Contact</a></li>
               <li>
