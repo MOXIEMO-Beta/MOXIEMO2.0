@@ -213,6 +213,14 @@ serve(async (req) => {
       competitor_signals: extracted?.competitor_signals ?? compBrief.map((c) => ({
         domain: c!.domain, headline: c!.h1 ?? c!.title ?? "", stance: c!.first_line ?? "",
       })),
+      render_ok: raw.render_ok !== false, // default true when undefined
+      render_meta: {
+        render_ok: raw.render_ok !== false,
+        render_reason: raw.render_reason ?? null,
+        render_method: raw.render_method ?? "raw",
+        fetch_ok: raw.fetch_ok,
+        page_count: raw.pages.length,
+      },
     };
 
     return new Response(JSON.stringify(payload), {

@@ -77,6 +77,8 @@ async function runGeneration(audit_id: string) {
       signals: storedSignals,
       competitor_signals,
       framing,
+      render_ok: storedSignals?.render_ok !== false,
+      render_meta: storedSignals?.render_meta ?? null,
     };
     const previousValidationError = typeof row.review_reason === "string" ? row.review_reason.trim() : "";
     const existingReport = row.report && typeof row.report === "object" && !Array.isArray(row.report) && Array.isArray((row.report as any).sections)
