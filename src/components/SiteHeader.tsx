@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useId } from "react";
 import { MoxieLogo } from "@/components/MoxieLogo";
 import { Menu, X, ChevronDown, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import foundingRoundImage from "@/assets/founding-round.jpg";
 
 const navItems = [
   { to: "/platform", label: "Platform" },
@@ -164,6 +165,25 @@ export function SiteHeader() {
   const resourcesRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelId = useId();
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelClose = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+  };
+  const scheduleClose = () => {
+    cancelClose();
+    closeTimer.current = setTimeout(() => {
+      setMegaOpen(false);
+      setCompareOpen(false);
+    }, 200);
+  };
+  const openNow = () => {
+    cancelClose();
+    setMegaOpen(true);
+  };
 
   // Close on route change
   useEffect(() => {
@@ -223,15 +243,12 @@ export function SiteHeader() {
             // Insert Resources between Platform (index 0) and Solutions (index 1)
             if (idx === 1) {
               return (
-                <span key="with-resources" className="flex items-center gap-2">
+                <span key="with-resources" className="contents">
                   <div
                     ref={resourcesRef}
-                    className="relative"
-                    onMouseEnter={() => setMegaOpen(true)}
-                    onMouseLeave={() => {
-                      setMegaOpen(false);
-                      setCompareOpen(false);
-                    }}
+                    className="relative flex items-center"
+                    onMouseEnter={openNow}
+                    onMouseLeave={scheduleClose}
                   >
                     <button
                       ref={triggerRef}
@@ -242,19 +259,24 @@ export function SiteHeader() {
                       onClick={() => setMegaOpen((v) => !v)}
                       onFocus={() => setMegaOpen(true)}
                       className={cn(
-                        "moxie-nav-link relative px-3.5 py-2 rounded-md inline-flex items-center gap-1",
+                        "moxie-nav-link relative px-3.5 py-2 rounded-md inline-flex items-center gap-1 m-0 border-0 bg-transparent appearance-none leading-none align-middle focus:outline-none",
                       )}
                     >
-                      Resources
+                      <span>Resources</span>
                       <ChevronDown
-                        className={cn("h-3.5 w-3.5 transition-transform", megaOpen && "rotate-180")}
+                        className={cn(
+                          "h-3.5 w-3.5 text-[#15171C] transition-transform",
+                          megaOpen && "rotate-180",
+                        )}
                       />
                     </button>
                     {megaOpen && (
                       <div
                         id={panelId}
                         role="menu"
-                        className="absolute left-1/2 top-full z-50 mt-3 -translate-x-1/2"
+                        className="absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3"
+                        onMouseEnter={openNow}
+                        onMouseLeave={scheduleClose}
                       >
                         <div className="w-[860px] rounded-2xl border border-[#15171C]/10 bg-[#F7F5F1] p-6 shadow-[0_20px_50px_-20px_rgba(21,23,28,0.25)]">
                           <div className="grid grid-cols-[1fr_1fr_1fr_1.1fr] gap-6">
@@ -294,9 +316,19 @@ export function SiteHeader() {
                               <h5 className="text-[15px] font-semibold text-[#15171C] leading-snug">
                                 The Founding Round is open.
                               </h5>
-                              <p className="mt-1.5 text-[12.5px] leading-snug text-[#15171C]/65 flex-1">
+                              <p className="mt-1.5 text-[12.5px] leading-snug text-[#15171C]/65">
                                 MOXIEMO Beta 2.0 is in the build phase. Limited founding-member spots to build with us early.
                               </p>
+                              <div className="mt-3 overflow-hidden rounded-xl">
+                                <img
+                                  src={featuredImageSrc}
+                                  alt="Abstract coral and cream brand composition for the MOXIEMO Founding Round"
+                                  loading="lazy"
+                                  width={1280}
+                                  height={720}
+                                  className="block w-full aspect-[16/9] object-cover"
+                                />
+                              </div>
                               <Link
                                 to="/founding"
                                 className="mt-3 inline-flex items-center justify-center rounded-full bg-[#FF6B5C] px-3.5 py-2 text-[13px] font-medium text-white transition-colors hover:bg-[#e85555]"
