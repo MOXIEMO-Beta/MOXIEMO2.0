@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
 import { ResourcesMega } from "@/components/ResourcesMega";
 import heroCollage from "@/assets/redesign/hero-collage.jpg.asset.json";
-import watchBadge from "@/assets/redesign/watch-badge.svg.asset.json";
+import watchBadge from "@/assets/redesign/watch-badge-2.svg.asset.json";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
 import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
 import pAgency from "@/assets/redesign/persona-agency-owner.jpg.asset.json";
@@ -124,7 +124,7 @@ function Hero() {
                 document.getElementById("platform")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
               style={{ display: "inline-block", flexShrink: 0, lineHeight: 0 }}
-              className="transition-transform duration-300 ease-out hover:rotate-12"
+              className="transition-transform duration-300 ease-out hover:-rotate-[4deg]"
             >
               <img src={watchBadge.url} alt="Watch how it works, two minutes" width={120} height={120} style={{ width: 120, height: 120, display: "block" }} />
             </a>
