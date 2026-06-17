@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
 import { ResourcesMega } from "@/components/ResourcesMega";
 import heroCollage from "@/assets/redesign/hero-collage.jpg.asset.json";
-import watchBadge from "@/assets/redesign/watch-badge-2.svg.asset.json";
+import watchBadge from "@/assets/redesign/watch-badge-3.svg.asset.json";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
 import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
 import pAgency from "@/assets/redesign/persona-agency-owner.jpg.asset.json";
