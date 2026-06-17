@@ -63,10 +63,10 @@ function PillButton({ children, href, to, dark = true, onClick, full = false }: 
 function Nav() {
   const links = [
     ["Platform", "/platform"],
-    ["Resources", "/resources"],
     ["Solutions", "/solutions"],
     ["Why Moxiemo", "/why-moxie"],
     ["Pricing", "/pricing"],
+    ["Community", "/community"],
     ["About", "/about"],
   ] as const;
   return (
@@ -77,7 +77,12 @@ function Nav() {
           <img src={logoDark.url} alt="MOXIEMO" style={{ height: 22 }} />
         </Link>
         <div className="hidden lg:flex items-center" style={{ gap: 28 }}>
-          {links.map(([l, h]) => (
+          <Link to="/platform" className="hover:text-[#ef6f53] transition-colors uppercase" style={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, textDecoration: "none" }}>Platform</Link>
+          <ResourcesMega
+            triggerClassName="hover:text-[#ef6f53] transition-colors uppercase"
+            triggerStyle={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK }}
+          />
+          {links.slice(1).map(([l, h]) => (
             <Link key={l} to={h} className="hover:text-[#ef6f53] transition-colors uppercase" style={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, textDecoration: "none" }}>{l}</Link>
           ))}
         </div>
