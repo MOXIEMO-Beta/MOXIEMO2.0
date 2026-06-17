@@ -70,26 +70,26 @@ function Nav() {
     ["Community", "/community"],
     ["About", "/about"],
   ] as const;
+  const linkStyle: React.CSSProperties = { ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, textDecoration: "none", whiteSpace: "nowrap", flexShrink: 0 };
   return (
-    <nav style={{ position: "sticky", top: 0, zIndex: 100, background: CREAM, borderBottom: "1px solid rgba(19,19,15,0.08)" }}>
-      <div className="mx-auto flex items-center justify-between" style={{ maxWidth: 1200, padding: "18px 40px" }}>
-        <Link to="/" className="flex items-center gap-2.5">
-          <span style={{ width: 11, height: 11, background: CORAL, borderRadius: 3, display: "inline-block" }} />
-          <img src={logoDark.url} alt="MOXIEMO" style={{ height: 22 }} />
+    <nav style={{ position: "sticky", top: 0, zIndex: 100, background: CREAM, borderBottom: "1px solid rgba(19,19,15,0.08)", margin: 0 }}>
+      <div className="mx-auto flex items-center justify-between" style={{ maxWidth: 1280, padding: "16px 32px", flexWrap: "nowrap", gap: 24 }}>
+        <Link to="/" className="flex items-center" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
+          <img src={logoDark.url} alt="MOXIEMO" style={{ height: 29, display: "block" }} />
         </Link>
-        <div className="hidden lg:flex items-center" style={{ gap: 28 }}>
-          <Link to="/platform" className="hover:text-[#ef6f53] transition-colors uppercase" style={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, textDecoration: "none" }}>Platform</Link>
+        <div className="hidden lg:flex items-center" style={{ gap: 22, flexWrap: "nowrap", flexShrink: 0 }}>
+          <Link to="/platform" className="hover:text-[#ef6f53] transition-colors uppercase" style={linkStyle}>Platform</Link>
           <ResourcesMega
-            triggerClassName="hover:text-[#ef6f53] transition-colors uppercase"
-            triggerStyle={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK }}
+            triggerClassName="hover:text-[#ef6f53] transition-colors uppercase whitespace-nowrap"
+            triggerStyle={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, whiteSpace: "nowrap" }}
           />
           {links.slice(1).map(([l, h]) => (
-            <Link key={l} to={h} className="hover:text-[#ef6f53] transition-colors uppercase" style={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, textDecoration: "none" }}>{l}</Link>
+            <Link key={l} to={h} className="hover:text-[#ef6f53] transition-colors uppercase" style={linkStyle}>{l}</Link>
           ))}
         </div>
-        <div className="flex items-center" style={{ gap: 18 }}>
-          <Link to="/auth?mode=signin" className="hidden sm:inline hover:text-[#ef6f53] uppercase" style={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, textDecoration: "none" }}>Sign in</Link>
-          <PillButton to="/founding">Join as Founding Member</PillButton>
+        <div className="flex items-center" style={{ gap: 16, flexWrap: "nowrap", flexShrink: 0 }}>
+          <Link to="/auth?mode=signin" className="hidden sm:inline hover:text-[#ef6f53] uppercase" style={linkStyle}>Sign in</Link>
+          <span style={{ whiteSpace: "nowrap" }}><PillButton to="/founding">Join</PillButton></span>
         </div>
       </div>
     </nav>
@@ -870,6 +870,7 @@ function Footer() {
 function Styles() {
   return (
     <style>{`
+      html, body, #root { margin: 0; padding: 0; }
       html { scroll-behavior: smooth; }
       body { font-family: 'Hanken Grotesk', system-ui, sans-serif; color: ${INK}; }
       @keyframes mx-marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
