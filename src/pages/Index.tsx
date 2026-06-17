@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
 import { ResourcesMega } from "@/components/ResourcesMega";
 import heroCollage from "@/assets/redesign/hero-collage.jpg.asset.json";
+import watchBadge from "@/assets/redesign/watch-badge.svg.asset.json";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
 import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
 import pAgency from "@/assets/redesign/persona-agency-owner.jpg.asset.json";
@@ -115,16 +116,17 @@ function Hero() {
               <PillButton to="/brand-audit">Run my free Brand Audit <ArrowRight size={16} /></PillButton>
               <PillButton to="/founding" dark={false}>Join as a Founding Member</PillButton>
             </div>
-            <a href="#platform" aria-label="Watch how it works" style={{ position: "relative", width: 120, height: 120, borderRadius: "50%", background: CORAL, color: CREAM, display: "inline-flex", alignItems: "center", justifyContent: "center", flexDirection: "column", textDecoration: "none", flexShrink: 0 }} className="hover:rotate-12 transition-transform">
-              <svg viewBox="0 0 120 120" style={{ position: "absolute", inset: 0, animation: "mx-spin 18s linear infinite" }}>
-                <defs><path id="mx-arc" d="M 60,60 m -46,0 a 46,46 0 1,1 92,0 a 46,46 0 1,1 -92,0" /></defs>
-                <text fill={CREAM} style={{ ...mono, fontSize: 9, letterSpacing: "0.22em", textTransform: "uppercase" }}>
-                  <textPath href="#mx-arc">Watch how it works · Watch how it works · </textPath>
-                </text>
-              </svg>
-              <Play size={14} fill={CREAM} />
-              <span style={{ ...serif, fontSize: 24, fontWeight: 600, lineHeight: 1 }}>2</span>
-              <span style={{ ...mono, fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase" }}>mins</span>
+            <a
+              href="#platform"
+              aria-label="Watch how it works"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById("platform")?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              style={{ display: "inline-block", flexShrink: 0, lineHeight: 0 }}
+              className="transition-transform duration-300 ease-out hover:rotate-12"
+            >
+              <img src={watchBadge.url} alt="Watch how it works, two minutes" width={120} height={120} style={{ width: 120, height: 120, display: "block" }} />
             </a>
           </div>
           <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_SAGE, marginTop: 24 }}>Founding members get free access. No card required.</div>
