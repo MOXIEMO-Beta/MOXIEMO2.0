@@ -76,7 +76,7 @@ function Nav() {
     <nav style={{ position: "sticky", top: 0, zIndex: 100, background: CREAM, borderBottom: "1px solid rgba(19,19,15,0.08)", margin: 0 }}>
       <div className="mx-auto flex items-center justify-between" style={{ maxWidth: 1280, padding: "16px 32px", flexWrap: "nowrap", gap: 24 }}>
         <Link to="/" className="flex items-center" style={{ flexShrink: 0, whiteSpace: "nowrap" }}>
-          <img src={logoDark.url} alt="MOXIEMO" style={{ height: 29, display: "block" }} />
+          <img src={logoDark.url} alt="MOXIEMO" style={{ height: 44, display: "block" }} />
         </Link>
         <div className="hidden lg:flex items-center" style={{ gap: 22, flexWrap: "nowrap", flexShrink: 0 }}>
           <Link to="/platform" className="hover:text-[#ef6f53] transition-colors uppercase" style={linkStyle}>Platform</Link>
@@ -835,7 +835,7 @@ function Footer() {
         </div>
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4" style={{ paddingTop: 56 }}>
           <div>
-            <img src={logoLight.url} alt="MOXIEMO" style={{ height: 14, marginBottom: 18 }} />
+            <img src={logoLight.url} alt="MOXIEMO" style={{ height: 42, marginBottom: 18 }} />
             <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_DARK, lineHeight: 1.7 }}>
               Currently in private beta<br />Founding members free access
             </div>
