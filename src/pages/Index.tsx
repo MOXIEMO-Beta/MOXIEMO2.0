@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Play, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
+import { ResourcesMega } from "@/components/ResourcesMega";
 import heroCollage from "@/assets/redesign/hero-collage.jpg.asset.json";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
 import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
