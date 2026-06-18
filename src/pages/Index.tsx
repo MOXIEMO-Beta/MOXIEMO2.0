@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
 import { ResourcesMega } from "@/components/ResourcesMega";
+import { SiteFooter } from "@/components/SiteFooter";
 import heroCollage from "@/assets/redesign/hero-collage.jpg.asset.json";
 import watchBadge from "@/assets/redesign/watch-badge-3.svg.asset.json";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
@@ -912,7 +913,7 @@ export default function Index() {
       <Why />
       <FoundingSection />
       <FinalCta />
-      <Footer />
+      <SiteFooter />
     </div>
   );
 }
