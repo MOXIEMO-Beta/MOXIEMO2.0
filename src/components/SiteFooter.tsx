@@ -139,7 +139,7 @@ export function SiteFooter() {
         >
           {/* Column 1 — brand */}
           <div>
-            <img src={logoLight.url} alt="MOXIEMO" style={{ height: 14, display: "block" }} />
+            <img src={logoLight.url} alt="MOXIEMO" style={{ height: 32, display: "block" }} />
             <div style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: C.muted, lineHeight: 1.8, marginTop: 18 }}>
               Currently in private beta<br />Founding members free access
             </div>
