@@ -406,16 +406,16 @@ export default function Resources() {
 
       <PromptPacksSection />
 
-      <section className="bg-[#101116] py-20">
+      <section className="bg-background border-t border-border py-20">
         <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-white leading-[1.1] mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-[1.1] mb-4">
             Get early access to every resource.
           </h2>
-          <p className="text-white/70 text-lg mb-7">
+          <p className="text-muted-foreground text-lg mb-7">
             We'll send you each resource the moment it drops — free for founding members.
           </p>
-          <ResourcesEmail dark />
-          <p className="text-white/50 text-xs mt-4">Free for founding members. No spam.</p>
+          <ResourcesEmail />
+          <p className="text-muted-foreground/70 text-xs mt-4">Free for founding members. No spam.</p>
         </div>
       </section>
 
