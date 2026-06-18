@@ -594,64 +594,7 @@ export default function Platform() {
       </section>
 
       {/* SECTION 8 — FOOTER */}
-      <footer style={{ background: C.ink, color: "#f4efe5" }}>
-        <div style={{ borderBottom: "1px solid rgba(244,239,229,0.1)", paddingTop: 72 }}>
-          <div style={{ padding: "0 40px", display: "flex", justifyContent: "space-between", color: "#fff", fontWeight: 700, ...fontBody, fontSize: "clamp(60px,16vw,260px)", letterSpacing: "0.04em", lineHeight: 0.85 }}>
-            {"MOXIEMO".split("").map((c, i) => <span key={i}>{c}</span>)}
-          </div>
-          <div style={{ padding: "32px 40px 56px", display: "flex", justifyContent: "space-between", gap: 40, flexWrap: "wrap", alignItems: "end" }}>
-            <div style={{ maxWidth: 560 }}>
-              <div style={{ ...fontDisplay, fontStyle: "italic", fontWeight: 400, fontSize: "clamp(22px,2.8vw,36px)", color: "#86847a", letterSpacing: "-0.01em", lineHeight: 1.15 }}>
-                One platform. Confident marketing.
-              </div>
-              <div style={{ ...fontBody, fontSize: 15, color: "#55534a", marginTop: 12 }}>
-                Strategy-first marketing for founder-coaches scaling beyond execution.
-              </div>
-            </div>
-            <Link to="/auth" style={{ ...fontBody, background: C.coral, color: "#fff", fontWeight: 600, padding: "16px 28px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
-              Join as Founding Member →
-            </Link>
-          </div>
-        </div>
-
-        <div className="pf-footer-grid" style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1fr 1fr", gap: 40, padding: "52px 40px" }}>
-          <div>
-            <div style={{ ...fontDisplay, fontSize: 22, fontWeight: 700, color: "#fff", letterSpacing: "-0.01em" }}>MOXIEMO</div>
-            <div style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: "#55534a", marginTop: 12 }}>
-              Currently in private beta · Founding members free access
-            </div>
-            <div style={{ display: "flex", gap: 12, marginTop: 20 }}>
-              {["IG", "in"].map(s => (
-                <a key={s} href="#" style={{ width: 36, height: 36, borderRadius: 99, border: "1px solid rgba(244,239,229,0.18)", display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#86847a", fontSize: 12, ...fontMono, textDecoration: "none" }}>{s}</a>
-              ))}
-            </div>
-          </div>
-          {[
-            { h: "Product", links: [["Platform", "/platform"], ["Solutions", "/solutions"], ["Why MOXIEMO", "/why-moxiemo"], ["Pricing", "/pricing"], ["Community", "/community"], ["About", "/about"], ["Join as a Founding Member →", "/founding", true]] as const },
-            { h: "Resources", links: [["Building with MOXIEMO", "/resources"], ["Changelog", "/changelog"], ["Free Brand Audit", "/brand-audit"], ["Contact", "/about"], ["Free Brand Kit ✦", "/brand-kit", true]] as const },
-            { h: "Legal", links: [["Privacy", "/privacy"], ["Terms", "/terms"], ["Data Deletion", "/data-deletion"]] as const },
-          ].map(col => (
-            <div key={col.h}>
-              <div style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: "#86847a", marginBottom: 18 }}>{col.h}</div>
-              <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-                {col.links.map(l => (
-                  <li key={l[0]}>
-                    <Link to={l[1]} style={{ ...fontBody, fontSize: 14, color: l[2] ? C.coral : "#d9d6cb", textDecoration: "none" }}>{l[0]}</Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ borderTop: "1px solid rgba(244,239,229,0.1)", padding: "20px 40px", display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <div style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.18em", color: "#55534a" }}>© 2026 MOXIEMO. All rights reserved.</div>
-          <div style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.18em", color: "#55534a", display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 7, height: 7, background: C.coral, display: "inline-block" }} />
-            Built with care
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
