@@ -1,307 +1,125 @@
-import { useState, FormEvent, useRef } from "react";
+import { useState, useRef, FormEvent, type CSSProperties } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ArrowRight, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import collage1 from "@/assets/redesign/collage-1.jpg.asset.json";
+import collage2 from "@/assets/redesign/collage-2.jpg.asset.json";
+import collage3 from "@/assets/redesign/collage-3.jpg.asset.json";
+import collage4 from "@/assets/redesign/collage-4.jpg.asset.json";
+import collage5 from "@/assets/redesign/collage-5.jpg.asset.json";
 
-type Resource = { type: "Template" | "Guide" | "Toolkit" | "Framework"; title: string; description: string };
+/* ───────────── design tokens ───────────── */
+const CREAM = "#f4efe5";
+const SAGE = "#dce3d2";
+const CARD_BG = "#fbf9f3";
+const INK = "#13130f";
+const CORAL = "#ef6f53";
+const CORAL_HOVER = "#d85f44";
+const MUTED = "#56544c";
+const LIGHT_MUTED = "#6c6a60";
+const SAGE_TEXT = "#48533c";
+const SAGE_MUTED = "#5f6a52";
+const BORDER = "#e6e0d2";
+const CARD_BORDER = "#ddd8cb";
+const CARD_BORDER_HOVER = "#d8cdb8";
 
-const FEATURED: Resource[] = [
-  { type: "Template", title: "The Brand Architecture Worksheet", description: "Map your positioning, ideal client, voice, and content pillars in one structured doc." },
-  { type: "Guide", title: "The Founder's LinkedIn Playbook", description: "Data-backed posting strategy for expertise-based founders: hooks, cadence, and content that converts." },
-  { type: "Toolkit", title: "The Anti-AI-Slop Content Kit", description: "How to use AI for content without losing your voice, your authority, or your audience's trust." },
-  { type: "Framework", title: "The 90-Day Marketing Engine", description: "Build a quarter of strategy-aligned content in one afternoon. Calendar, pillars, and platform plan included." },
-  { type: "Template", title: "The Messaging Vault", description: "One-liner, elevator pitch, bio, and email signature — all written from your Brand Architecture." },
-];
+const serif: CSSProperties = { fontFamily: "'Newsreader', Georgia, serif" };
+const sans: CSSProperties = { fontFamily: "'Hanken Grotesk', system-ui, sans-serif" };
+const mono: CSSProperties = { fontFamily: "'IBM Plex Mono', ui-monospace, monospace" };
 
-type PackTag = "Framework" | "Prompt" | "Guide" | "Toolkit" | "Checklist";
-type Pack = { tag: PackTag; title: string; description: string; button: string; link: string };
-
-const PACKS: Pack[] = [
-  { tag: "Framework", title: "Website Copy Framework", description: "The structure behind high-converting websites. The exact prompts and frameworks used to build CRO-optimized headlines, CTA formulas, and audience-specific copy templates.", button: "Download the Website Copy Framework", link: "https://docs.google.com/document/d/1YYpJRhy2Hou4BSmwA1HzzA7OcnTaFJuo/" },
-  { tag: "Framework", title: "Pitch Deck Framework", description: "Build decks investors can't ignore. Our full pitch deck framework — including deep research prompts, structure templates, and storytelling cues designed to win attention and funding.", button: "Access the Pitch Deck Framework", link: "https://docs.google.com/document/d/1sTyGI--JHZFEQEMVj63FrrMRjjC0a4Dr/" },
-  { tag: "Prompt", title: "ChatGPT Founder Brain Prompt", description: "Train ChatGPT to think like you. Turn your AI into a second brain that remembers context, challenges your thinking, and co-creates with your style.", button: "Activate the Founder Brain Prompt", link: "https://docs.google.com/document/d/1sM_9i0uVd6HTKmbp8XmkM2sFO6odnt8M/" },
-  { tag: "Prompt", title: "Market Size Prompt", description: "Validate your market with precision. A guided prompt for calculating TAM, SAM, and SOM — ideal for investor decks, pitch prep, or understanding your growth ceiling.", button: "Run the Market Size Prompt", link: "https://docs.google.com/document/d/1v26SLGIl7wpyWCHTEMOiJrdxcrhtheXq/" },
-  { tag: "Prompt", title: "Competitor Prompt", description: "Know your landscape before you build. A single, powerful prompt for ChatGPT or Gemini that reveals competitor insights, positioning angles, and market opportunities.", button: "Download the Competitor Prompt", link: "https://docs.google.com/document/d/1pysYBdURqICRE-GaxZH-59UkHxlB2S8h/" },
-  { tag: "Guide", title: "How To Create A Brand With AI", description: "From concept to creation — all inside AI. A full step-by-step system for building brands with AI, including prompts, tools, and real examples that show what's possible when creativity meets strategy.", button: "Unlock the Brand Creation Framework", link: "https://docs.google.com/document/d/1RIMDlqXAFp28ZrWj_riUNlEJsgMeaETr/" },
-  { tag: "Toolkit", title: "Marketing Checklist", description: "Your AI-assisted marketing playbook. A complete list of how to market your brand — with prompts, strategies, and AI shortcuts for faster, smarter execution.", button: "Get the Marketing Checklist", link: "https://docs.google.com/document/d/1sG_Nc9yKpZ76BYmh_cuzQMBUzO8F-Xwq/" },
-  { tag: "Toolkit", title: "Content Custom GPTs", description: "Generate ideas that go viral — on purpose. Includes two custom GPTs: one for crafting viral hooks and another for refining storytelling scripts built to convert.", button: "Try the Content GPTs", link: "https://docs.google.com/document/d/1MTkygCM2DE7knXu2BsVRUHb_Nax69TQN/" },
-  { tag: "Checklist", title: "Business Stage Checklist With AI Tools", description: "Every stage. Every advantage. This checklist maps every phase of building a business — and the AI tools that give you leverage at each step.", button: "Access the Business Stage Checklist", link: "https://docs.google.com/document/d/1R41X9bXTcCVUg4y94iLpOTbadRzoC1fq/" },
-  { tag: "Guide", title: "AI Tools Guide", description: "The exact AI stack behind modern creative teams. Explore the tools actually used — from research and branding to mockups and MVPs — and learn how to integrate them into your daily build process.", button: "Explore the Tools Guide", link: "https://docs.google.com/document/d/1LFoxWFYIBPrgMlVZQaXgcNKqWAkPGzbA/" },
-  { tag: "Framework", title: "Deep Research Framework", description: "Research like a strategist, not a student. Learn how to prompt AI for true insight — validating demand, analyzing competitors, and surfacing pricing models that make sense for your market.", button: "Get the Deep Research Framework", link: "https://docs.google.com/document/d/121TF2julvfRkKT8HX8xbLEDSDPbz0NbF/" },
-  { tag: "Framework", title: "How To Find A Business Idea With AI", description: "AI won't hand you a million-dollar idea — but it can help you discover one. This framework shows you how to use AI to identify market gaps, validate ideas, and uncover opportunities worth building.", button: "Get the Idea Discovery Framework", link: "https://docs.google.com/document/d/1Q-lB4UvQsX0Y_6lEftZ8GNOjCa7EXmeD/" },
-  { tag: "Toolkit", title: "Branding Prompts", description: "Turn AI into your brand architect. The exact prompts used to build brand identity — from tone and color to logos, visual direction, and messaging. Design a brand that feels intentional, not automated.", button: "Access the Branding Toolkit", link: "https://docs.google.com/document/d/1uQRGPQ0UAGdBb6dAG4JvCiKEXoFpfYlw/" },
-  { tag: "Guide", title: "High-Performance ChatGPT Setup", description: "Build your AI to think like a founder. A step-by-step guide to configure ChatGPT as your strategist, co-founder, and creative coach — for high-performance leaders who want sharper output and less mental friction.", button: "Download Your Setup Guide", link: "https://docs.google.com/document/d/1WBtfWMB5eAeA83URVdmJ9AoY0ELuL5SW/" },
-  { tag: "Prompt", title: "AI Thought Partner Prompts", description: "Stop outsourcing your ideas — sharpen them. These prompts transform AI from a yes-machine into your boldest creative challenger. Push your thinking further, question assumptions, and unlock new directions for your brand or business.", button: "Unlock the Thought Partner Prompts", link: "https://docs.google.com/document/d/1NYu8nCgjf0lB9XbOUBK9jn51OvpiwRz6/" },
-];
-
-const FILTERS: Array<"All" | PackTag> = ["All", "Prompt", "Framework", "Guide", "Toolkit", "Checklist"];
-
-function PromptPacksSection() {
-  const [filter, setFilter] = useState<"All" | PackTag>("All");
+/* ───────────── shared bits ───────────── */
+function Eyebrow({
+  children,
+  color = "#8a887e",
+  squareColor = CORAL,
+  squareSize = 8,
+  size = 12,
+  spacing = "0.2em",
+  style,
+}: {
+  children: React.ReactNode;
+  color?: string;
+  squareColor?: string;
+  squareSize?: number;
+  size?: number;
+  spacing?: string;
+  style?: CSSProperties;
+}) {
   return (
-    <section style={{ background: "#f8f8f8" }} className="py-20">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-10">
-          <div className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-accent mb-5 px-4 py-2 rounded-full bg-accent-soft">
-            AI Prompt Packs & Toolkits
-          </div>
-          <h2 className="text-4xl md:text-5xl font-bold tracking-[-0.03em] leading-[1.1] text-foreground mb-5">
-            AI systems and tools for founders,<br />builders, and strategic thinkers.
-          </h2>
-          <p className="text-base md:text-lg text-muted-foreground max-w-[640px] mx-auto leading-relaxed">
-            The exact prompts, frameworks, and toolkits to turn ideas into execution — with clarity, speed, and strategy. Free for everyone. No signup required.
-          </p>
-        </div>
+    <div
+      style={{
+        ...mono,
+        fontSize: size,
+        letterSpacing: spacing,
+        textTransform: "uppercase",
+        color,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 10,
+        ...style,
+      }}
+    >
+      <span style={{ width: squareSize, height: squareSize, background: squareColor, display: "inline-block" }} />
+      <span>{children}</span>
+    </div>
+  );
+}
 
-        <div className="flex gap-2 overflow-x-auto pb-2 mb-8 justify-start md:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {FILTERS.map((f) => {
-            const active = filter === f;
-            return (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors border ${
-                  active ? "bg-accent text-white border-accent" : "bg-white text-foreground border-border hover:border-accent/50"
-                }`}
-              >
-                {f}
-              </button>
-            );
-          })}
+/* ───────────── 1. HERO ───────────── */
+function Hero() {
+  return (
+    <section style={{ background: SAGE }}>
+      <div style={{ maxWidth: 1080, margin: "0 auto", padding: "100px 40px 96px", textAlign: "center" }}>
+        <div style={{ marginBottom: 28, display: "flex", justifyContent: "center" }}>
+          <Eyebrow color={SAGE_MUTED}>§ · AI Prompt Packs & Toolkits</Eyebrow>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-          {PACKS.map((p) => {
-            const hidden = filter !== "All" && p.tag !== filter;
-            return (
-              <div
-                key={p.title}
-                style={{ display: hidden ? "none" : "flex", boxShadow: "0 4px 20px rgba(0,0,0,0.07)", borderRadius: 16 }}
-                className="bg-white p-6 flex-col justify-between h-full"
-              >
-                <div>
-                  <div className="text-accent font-bold mb-3" style={{ fontSize: 11, letterSpacing: "1.5px", textTransform: "uppercase" }}>
-                    {p.tag}
-                  </div>
-                  <h3 className="text-[18px] font-bold text-foreground leading-snug mb-3">{p.title}</h3>
-                  <p className="text-muted-foreground" style={{ fontSize: 14, lineHeight: 1.7 }}>{p.description}</p>
-                </div>
-                <a
-                  href={p.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 block text-center transition-colors hover:bg-accent hover:text-white"
-                  style={{
-                    border: "1.5px solid #ff6b6b",
-                    color: "#ff6b6b",
-                    background: "transparent",
-                    borderRadius: 40,
-                    padding: "12px 20px",
-                    fontSize: 11,
-                    letterSpacing: "1.5px",
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                    width: "100%",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = "#ff6b6b"; e.currentTarget.style.color = "#ffffff"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#ff6b6b"; }}
-                >
-                  {p.button}
-                </a>
-              </div>
-            );
-          })}
+        <h1
+          style={{
+            ...serif,
+            fontWeight: 600,
+            fontSize: "clamp(42px, 5.6vw, 82px)",
+            lineHeight: 1.02,
+            letterSpacing: "-0.025em",
+            color: INK,
+            margin: 0,
+          }}
+        >
+          AI systems and tools
+          <br />
+          <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>
+            for founders, builders &amp; strategic thinkers.
+          </span>
+        </h1>
+        <p
+          style={{
+            ...sans,
+            fontSize: 19,
+            lineHeight: 1.55,
+            color: SAGE_TEXT,
+            maxWidth: 600,
+            margin: "32px auto 14px",
+          }}
+        >
+          The exact prompts, frameworks, and toolkits to turn ideas into execution — with clarity, speed, and strategy.
+        </p>
+        <div style={{ marginTop: 8, display: "flex", justifyContent: "center" }}>
+          <Eyebrow color={SAGE_MUTED} squareSize={7} size={11.5} spacing="0.16em">
+            Free for everyone · No signup required
+          </Eyebrow>
         </div>
       </div>
     </section>
   );
 }
 
-function ComingSoonPill() {
-  return (
-    <span className="inline-block rounded-full bg-accent text-white uppercase font-semibold" style={{ fontSize: 10, letterSpacing: 0.5, padding: "3px 8px" }}>
-      Coming Soon
-    </span>
-  );
-}
-
-function ResourceCover({ title }: { title: string }) {
-  return (
-    <div className="aspect-[16/10] rounded-t-2xl overflow-hidden flex items-center justify-center p-4" style={{ background: "#1A2744" }}>
-      {renderCoverSvg(title)}
-    </div>
-  );
-}
-
-function renderCoverSvg(title: string) {
-  switch (title) {
-    case "The Brand Architecture Worksheet":
-      return (
-        <svg viewBox="0 0 180 110" width="100%" role="img" aria-label="Brand Architecture Worksheet preview">
-          <rect x="10" y="6" width="72" height="44" rx="3" fill="none" stroke="#C9A96E" strokeWidth="0.7" opacity="0.55"/>
-          <text x="46" y="19" textAnchor="middle" fill="#C9A96E" fontSize="7.5" opacity="0.85">Positioning</text>
-          <line x1="18" y1="26" x2="72" y2="26" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="18" y1="32" x2="62" y2="32" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="18" y1="38" x2="68" y2="38" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="18" y1="44" x2="56" y2="44" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <rect x="98" y="6" width="72" height="44" rx="3" fill="none" stroke="#C9A96E" strokeWidth="0.7" opacity="0.55"/>
-          <text x="134" y="19" textAnchor="middle" fill="#C9A96E" fontSize="7.5" opacity="0.85">Ideal Client</text>
-          <line x1="106" y1="26" x2="160" y2="26" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="106" y1="32" x2="148" y2="32" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="106" y1="38" x2="154" y2="38" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="106" y1="44" x2="144" y2="44" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <rect x="10" y="62" width="72" height="44" rx="3" fill="none" stroke="#C9A96E" strokeWidth="0.7" opacity="0.55"/>
-          <text x="46" y="75" textAnchor="middle" fill="#C9A96E" fontSize="7.5" opacity="0.85">Brand Voice</text>
-          <line x1="18" y1="82" x2="72" y2="82" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="18" y1="88" x2="60" y2="88" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="18" y1="94" x2="66" y2="94" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="18" y1="100" x2="52" y2="100" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <rect x="98" y="62" width="72" height="44" rx="3" fill="none" stroke="#C9A96E" strokeWidth="0.7" opacity="0.55"/>
-          <text x="134" y="75" textAnchor="middle" fill="#C9A96E" fontSize="7.5" opacity="0.85">Content Pillars</text>
-          <line x1="106" y1="82" x2="160" y2="82" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="106" y1="88" x2="150" y2="88" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="106" y1="94" x2="156" y2="94" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="106" y1="100" x2="142" y2="100" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.16"/>
-          <line x1="82" y1="28" x2="98" y2="28" stroke="#C9A96E" strokeWidth="0.5" opacity="0.3"/>
-          <line x1="82" y1="84" x2="98" y2="84" stroke="#C9A96E" strokeWidth="0.5" opacity="0.3"/>
-          <line x1="46" y1="50" x2="46" y2="62" stroke="#C9A96E" strokeWidth="0.5" opacity="0.3"/>
-          <line x1="134" y1="50" x2="134" y2="62" stroke="#C9A96E" strokeWidth="0.5" opacity="0.3"/>
-          <circle cx="90" cy="56" r="4" fill="none" stroke="#C9A96E" strokeWidth="0.7" opacity="0.5"/>
-          <circle cx="90" cy="56" r="1.5" fill="#C9A96E" opacity="0.8"/>
-          <text x="170" y="108" textAnchor="end" fill="#C9A96E" fontSize="6.5" opacity="0.35">MOXIE</text>
-        </svg>
-      );
-    case "The Founder's LinkedIn Playbook":
-      return (
-        <svg viewBox="0 0 180 110" width="100%" role="img" aria-label="Founder's LinkedIn Playbook preview">
-          <line x1="8" y1="104" x2="172" y2="104" stroke="#F4EFE6" strokeWidth="0.5" opacity="0.15"/>
-          <rect x="12" y="82" width="14" height="22" rx="2" fill="#C9A96E" opacity="0.22"/>
-          <rect x="32" y="68" width="14" height="36" rx="2" fill="#C9A96E" opacity="0.32"/>
-          <rect x="52" y="54" width="14" height="50" rx="2" fill="#C9A96E" opacity="0.42"/>
-          <rect x="72" y="40" width="14" height="64" rx="2" fill="#C9A96E" opacity="0.54"/>
-          <rect x="92" y="24" width="14" height="80" rx="2" fill="#C9A96E" opacity="0.68"/>
-          <rect x="112" y="10" width="14" height="94" rx="2" fill="#C9A96E" opacity="0.88"/>
-          <rect x="132" y="18" width="14" height="86" rx="2" fill="#C9A96E" opacity="0.72"/>
-          <rect x="152" y="30" width="14" height="74" rx="2" fill="#C9A96E" opacity="0.55"/>
-          <polyline points="19,82 39,68 59,54 79,40 99,24 119,10" fill="none" stroke="#F4EFE6" strokeWidth="1.1" opacity="0.45" strokeDasharray="3,2"/>
-          <circle cx="19" cy="82" r="2.2" fill="#F4EFE6" opacity="0.45"/>
-          <circle cx="39" cy="68" r="2.2" fill="#F4EFE6" opacity="0.45"/>
-          <circle cx="59" cy="54" r="2.2" fill="#F4EFE6" opacity="0.45"/>
-          <circle cx="79" cy="40" r="2.2" fill="#F4EFE6" opacity="0.45"/>
-          <circle cx="99" cy="24" r="2.2" fill="#F4EFE6" opacity="0.55"/>
-          <circle cx="119" cy="10" r="3" fill="#C9A96E"/>
-          <text x="119" y="7" textAnchor="middle" fill="#C9A96E" fontSize="6.5" opacity="0.85">↑ 340%</text>
-          <text x="19" y="109" textAnchor="middle" fill="#F4EFE6" fontSize="5.5" opacity="0.28">W1</text>
-          <text x="52" y="109" textAnchor="middle" fill="#F4EFE6" fontSize="5.5" opacity="0.28">W2</text>
-          <text x="86" y="109" textAnchor="middle" fill="#F4EFE6" fontSize="5.5" opacity="0.28">W3</text>
-          <text x="119" y="109" textAnchor="middle" fill="#F4EFE6" fontSize="5.5" opacity="0.28">W4</text>
-          <text x="152" y="109" textAnchor="middle" fill="#F4EFE6" fontSize="5.5" opacity="0.28">W5</text>
-          <text x="170" y="108" textAnchor="end" fill="#C9A96E" fontSize="6.5" opacity="0.35">MOXIE</text>
-        </svg>
-      );
-    case "The Anti-AI-Slop Content Kit":
-      return (
-        <svg viewBox="0 0 180 110" width="100%" role="img" aria-label="Anti-AI-Slop Content Kit preview">
-          <text x="44" y="14" textAnchor="middle" fill="#F4EFE6" fontSize="7" opacity="0.28">Generic</text>
-          <text x="134" y="14" textAnchor="middle" fill="#C9A96E" fontSize="7" opacity="0.9">Your voice</text>
-          <line x1="90" y1="6" x2="90" y2="106" stroke="#C9A96E" strokeWidth="0.5" opacity="0.25"/>
-          {[20,28,36,44,52,60,68,76,84,92].map((y) => (
-            <rect key={y} x="12" y={y} width="62" height="4" rx="2" fill="#F4EFE6" opacity="0.1"/>
-          ))}
-          <line x1="12" y1="18" x2="74" y2="98" stroke="#C9A96E" strokeWidth="1.2" opacity="0.45"/>
-          <line x1="74" y1="18" x2="12" y2="98" stroke="#C9A96E" strokeWidth="1.2" opacity="0.45"/>
-          <rect x="98" y="20" width="44" height="4" rx="2" fill="#C9A96E" opacity="0.75"/>
-          <rect x="98" y="28" width="68" height="4" rx="2" fill="#F4EFE6" opacity="0.2"/>
-          <rect x="98" y="36" width="52" height="4" rx="2" fill="#F4EFE6" opacity="0.2"/>
-          <rect x="98" y="44" width="70" height="4" rx="2" fill="#C9A96E" opacity="0.5"/>
-          <rect x="98" y="52" width="38" height="4" rx="2" fill="#F4EFE6" opacity="0.2"/>
-          <rect x="98" y="60" width="62" height="4" rx="2" fill="#F4EFE6" opacity="0.2"/>
-          <rect x="98" y="68" width="48" height="4" rx="2" fill="#C9A96E" opacity="0.4"/>
-          <rect x="98" y="76" width="68" height="4" rx="2" fill="#F4EFE6" opacity="0.2"/>
-          <rect x="98" y="84" width="40" height="4" rx="2" fill="#F4EFE6" opacity="0.2"/>
-          <rect x="98" y="92" width="58" height="4" rx="2" fill="#C9A96E" opacity="0.55"/>
-          <text x="170" y="108" textAnchor="end" fill="#C9A96E" fontSize="6.5" opacity="0.35">MOXIE</text>
-        </svg>
-      );
-    case "The 90-Day Marketing Engine":
-      return (
-        <svg viewBox="0 0 180 110" width="100%" role="img" aria-label="90-Day Marketing Engine preview">
-          <text x="90" y="85" textAnchor="middle" fill="#C9A96E" fontSize="78" fontWeight="700" opacity="0.06">90</text>
-          <text x="30" y="13" textAnchor="middle" fill="#C9A96E" fontSize="6.5" opacity="0.6">Month 1</text>
-          <text x="90" y="13" textAnchor="middle" fill="#C9A96E" fontSize="6.5" opacity="0.7">Month 2</text>
-          <text x="150" y="13" textAnchor="middle" fill="#C9A96E" fontSize="6.5" opacity="0.9">Month 3</text>
-          <line x1="60" y1="8" x2="60" y2="72" stroke="#C9A96E" strokeWidth="0.5" opacity="0.2"/>
-          <line x1="120" y1="8" x2="120" y2="72" stroke="#C9A96E" strokeWidth="0.5" opacity="0.2"/>
-          <g opacity="0.45">
-            <circle cx="14" cy="22" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="24" cy="22" r="2.5" fill="#C9A96E"/><circle cx="34" cy="22" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="44" cy="22" r="2.5" fill="#F4EFE6" opacity="0.35"/>
-            <circle cx="14" cy="34" r="2.5" fill="#C9A96E"/><circle cx="24" cy="34" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="34" cy="34" r="2.5" fill="#C9A96E"/><circle cx="44" cy="34" r="2.5" fill="#F4EFE6" opacity="0.35"/>
-            <circle cx="14" cy="46" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="24" cy="46" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="34" cy="46" r="2.5" fill="#C9A96E"/><circle cx="44" cy="46" r="2.5" fill="#C9A96E"/>
-            <circle cx="14" cy="58" r="2.5" fill="#C9A96E"/><circle cx="24" cy="58" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="34" cy="58" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="44" cy="58" r="2.5" fill="#C9A96E"/>
-          </g>
-          <g opacity="0.65">
-            <circle cx="72" cy="22" r="2.5" fill="#C9A96E"/><circle cx="82" cy="22" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="92" cy="22" r="2.5" fill="#C9A96E"/><circle cx="104" cy="22" r="2.5" fill="#F4EFE6" opacity="0.35"/>
-            <circle cx="72" cy="34" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="82" cy="34" r="2.5" fill="#C9A96E"/><circle cx="92" cy="34" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="104" cy="34" r="2.5" fill="#C9A96E"/>
-            <circle cx="72" cy="46" r="2.5" fill="#C9A96E"/><circle cx="82" cy="46" r="2.5" fill="#C9A96E"/><circle cx="92" cy="46" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="104" cy="46" r="2.5" fill="#C9A96E"/>
-            <circle cx="72" cy="58" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="82" cy="58" r="2.5" fill="#C9A96E"/><circle cx="92" cy="58" r="2.5" fill="#C9A96E"/><circle cx="104" cy="58" r="2.5" fill="#F4EFE6" opacity="0.35"/>
-          </g>
-          <g opacity="0.92">
-            <circle cx="130" cy="22" r="2.5" fill="#C9A96E"/><circle cx="140" cy="22" r="2.5" fill="#C9A96E"/><circle cx="152" cy="22" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="162" cy="22" r="2.5" fill="#C9A96E"/>
-            <circle cx="130" cy="34" r="2.5" fill="#C9A96E"/><circle cx="140" cy="34" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="152" cy="34" r="2.5" fill="#C9A96E"/><circle cx="162" cy="34" r="2.5" fill="#C9A96E"/>
-            <circle cx="130" cy="46" r="2.5" fill="#F4EFE6" opacity="0.35"/><circle cx="140" cy="46" r="2.5" fill="#C9A96E"/><circle cx="152" cy="46" r="2.5" fill="#C9A96E"/><circle cx="162" cy="46" r="2.5" fill="#C9A96E"/>
-            <circle cx="130" cy="58" r="2.5" fill="#C9A96E"/><circle cx="140" cy="58" r="2.5" fill="#C9A96E"/><circle cx="152" cy="58" r="2.5" fill="#C9A96E"/><circle cx="162" cy="58" r="2.5" fill="#F4EFE6" opacity="0.35"/>
-          </g>
-          <rect x="14" y="78" width="152" height="4" rx="2" fill="#F4EFE6" opacity="0.08"/>
-          <rect x="14" y="78" width="108" height="4" rx="2" fill="#C9A96E" opacity="0.55"/>
-          <text x="90" y="94" textAnchor="middle" fill="#F4EFE6" fontSize="6.5" opacity="0.35">71% of quarter planned</text>
-          <circle cx="16" cy="101" r="2.5" fill="#C9A96E" opacity="0.7"/><text x="22" y="104" fill="#C9A96E" fontSize="6" opacity="0.6">Scheduled</text>
-          <circle cx="78" cy="101" r="2.5" fill="#F4EFE6" opacity="0.28"/><text x="84" y="104" fill="#F4EFE6" fontSize="6" opacity="0.28">Open</text>
-          <text x="170" y="108" textAnchor="end" fill="#C9A96E" fontSize="6.5" opacity="0.35">MOXIE</text>
-        </svg>
-      );
-    case "The Messaging Vault":
-      return (
-        <svg viewBox="0 0 180 110" width="100%" role="img" aria-label="Messaging Vault preview">
-          <rect x="20" y="10" width="140" height="16" rx="3.5" fill="#F4EFE6" opacity="0.04"/>
-          <rect x="16" y="14" width="140" height="16" rx="3.5" fill="#F4EFE6" opacity="0.05"/>
-          <rect x="12" y="18" width="156" height="16" rx="3.5" fill="none" stroke="#C9A96E" strokeWidth="0.7" opacity="0.5"/>
-          <text x="42" y="29" fill="#C9A96E" fontSize="7" opacity="0.8">One-liner</text>
-          <line x1="85" y1="23" x2="158" y2="23" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.17"/>
-          <line x1="85" y1="30" x2="145" y2="30" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.17"/>
-          <rect x="12" y="42" width="156" height="16" rx="3.5" fill="none" stroke="#C9A96E" strokeWidth="0.7" opacity="0.62"/>
-          <text x="42" y="53" fill="#C9A96E" fontSize="7" opacity="0.82">Elevator pitch</text>
-          <line x1="96" y1="47" x2="158" y2="47" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.17"/>
-          <line x1="96" y1="54" x2="150" y2="54" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.17"/>
-          <rect x="12" y="66" width="156" height="16" rx="3.5" fill="none" stroke="#C9A96E" strokeWidth="0.7" opacity="0.76"/>
-          <text x="42" y="77" fill="#C9A96E" fontSize="7" opacity="0.85">Bio</text>
-          <line x1="58" y1="71" x2="158" y2="71" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.17"/>
-          <line x1="58" y1="78" x2="132" y2="78" stroke="#F4EFE6" strokeWidth="0.6" opacity="0.17"/>
-          <rect x="12" y="90" width="156" height="16" rx="3.5" fill="rgba(201,169,110,0.1)" stroke="#C9A96E" strokeWidth="0.8" opacity="0.95"/>
-          <text x="42" y="101" fill="#C9A96E" fontSize="7" opacity="0.95">Email signature</text>
-          <line x1="102" y1="95" x2="158" y2="95" stroke="#C9A96E" strokeWidth="0.6" opacity="0.4"/>
-          <line x1="102" y1="102" x2="148" y2="102" stroke="#C9A96E" strokeWidth="0.6" opacity="0.4"/>
-          <circle cx="7" cy="26" r="1.8" fill="#C9A96E" opacity="0.28"/>
-          <circle cx="7" cy="50" r="1.8" fill="#C9A96E" opacity="0.46"/>
-          <circle cx="7" cy="74" r="1.8" fill="#C9A96E" opacity="0.68"/>
-          <circle cx="7" cy="98" r="2.5" fill="#C9A96E" opacity="1"/>
-          <line x1="7" y1="28" x2="7" y2="48" stroke="#C9A96E" strokeWidth="0.5" opacity="0.28"/>
-          <line x1="7" y1="52" x2="7" y2="72" stroke="#C9A96E" strokeWidth="0.5" opacity="0.42"/>
-          <line x1="7" y1="76" x2="7" y2="96" stroke="#C9A96E" strokeWidth="0.5" opacity="0.58"/>
-          <text x="170" y="108" textAnchor="end" fill="#C9A96E" fontSize="6.5" opacity="0.35">MOXIE</text>
-        </svg>
-      );
-    default:
-      return null;
-  }
-}
-
-function ResourcesEmail({ dark = false }: { dark?: boolean }) {
+/* ───────────── 2. EARLY ACCESS ───────────── */
+function EarlyAccess() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [hover, setHover] = useState(false);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -317,108 +135,716 @@ function ResourcesEmail({ dark = false }: { dark?: boolean }) {
     setEmail("");
   }
 
-  if (submitted) return <p className={`text-sm font-medium ${dark ? "text-white" : "text-foreground"}`}>You're on the list.</p>;
-
   return (
-    <form onSubmit={onSubmit} className="flex flex-col sm:flex-row gap-2 max-w-lg mx-auto w-full">
-      <Input
-        type="email"
-        required
-        placeholder="your@email.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        className={`h-12 flex-1 ${dark ? "bg-white text-foreground border-white" : ""}`}
-      />
-      <Button type="submit" disabled={loading} className="h-12 px-5 rounded-md bg-accent hover:bg-accent/90 text-white font-semibold">
-        Get early access <ArrowRight className="ml-1 h-4 w-4" />
-      </Button>
-    </form>
+    <section style={{ background: CREAM }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "56px 40px 8px" }}>
+        <div
+          style={{
+            position: "relative",
+            overflow: "hidden",
+            background: INK,
+            borderRadius: 24,
+            padding: "64px 56px",
+            boxShadow: "0 40px 80px -50px rgba(19,19,15,0.6)",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              right: -80,
+              top: -80,
+              width: 320,
+              height: 320,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, rgba(239,111,83,0.28) 0%, rgba(239,111,83,0) 70%)",
+              pointerEvents: "none",
+            }}
+          />
+          <div
+            className="ea-grid"
+            style={{
+              position: "relative",
+              display: "grid",
+              gridTemplateColumns: "1.05fr 0.95fr",
+              gap: 56,
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <Eyebrow color={CORAL} squareSize={7} size={11.5} spacing="0.2em" style={{ marginBottom: 22 }}>
+                Founding Members
+              </Eyebrow>
+              <h2
+                style={{
+                  ...serif,
+                  fontWeight: 600,
+                  fontSize: "clamp(30px, 3.4vw, 46px)",
+                  lineHeight: 1.04,
+                  letterSpacing: "-0.02em",
+                  color: CREAM,
+                  margin: 0,
+                }}
+              >
+                Get early access to
+                <br />
+                <span style={{ fontWeight: 340, fontStyle: "italic", color: "#c8c6bc" }}>
+                  every new resource.
+                </span>
+              </h2>
+              <p
+                style={{
+                  ...sans,
+                  fontSize: 17,
+                  lineHeight: 1.6,
+                  color: "rgba(244,239,229,0.66)",
+                  maxWidth: 420,
+                  marginTop: 22,
+                }}
+              >
+                We'll send you each prompt, framework, and toolkit the moment it drops — free for founding members.
+              </p>
+            </div>
+            <div>
+              {submitted ? (
+                <p style={{ ...sans, color: CREAM, fontSize: 17, fontWeight: 500 }}>You're on the list.</p>
+              ) : (
+                <form
+                  onSubmit={onSubmit}
+                  style={{ display: "flex", gap: 12, flexWrap: "wrap" }}
+                >
+                  <input
+                    type="email"
+                    required
+                    placeholder="your@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    style={{
+                      ...sans,
+                      flex: "1 1 240px",
+                      minWidth: 0,
+                      background: "rgba(244,239,229,0.06)",
+                      border: `1.5px solid ${focused ? CORAL : "rgba(244,239,229,0.2)"}`,
+                      borderRadius: 999,
+                      padding: "16px 22px",
+                      fontSize: 15,
+                      color: CREAM,
+                      outline: "none",
+                      transition: "border-color .2s",
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    onMouseEnter={() => setHover(true)}
+                    onMouseLeave={() => setHover(false)}
+                    style={{
+                      ...sans,
+                      flex: "none",
+                      background: hover ? CORAL_HOVER : CORAL,
+                      color: "#fff",
+                      fontWeight: 600,
+                      fontSize: 15,
+                      padding: "16px 28px",
+                      borderRadius: 999,
+                      border: 0,
+                      cursor: loading ? "default" : "pointer",
+                      transition: "background .2s",
+                    }}
+                  >
+                    Get early access →
+                  </button>
+                </form>
+              )}
+              <div style={{ marginTop: 16 }}>
+                <Eyebrow color="rgba(244,239,229,0.4)" squareSize={6} size={11} spacing="0.14em">
+                  Free for founding members · No spam
+                </Eyebrow>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <style>{`
+        @media (max-width: 820px) {
+          .ea-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
+        }
+      `}</style>
+    </section>
   );
 }
 
-function FeaturedCarousel() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [idx, setIdx] = useState(0);
+/* ───────────── 3. DROPPING SOON ───────────── */
+type DropCard = {
+  category: string;
+  title: string;
+  body: string;
+  image: string;
+  objectPosition: string;
+  viz: React.ReactNode;
+};
 
-  function scrollBy(dir: 1 | -1) {
-    const el = ref.current;
-    if (!el) return;
-    const card = el.querySelector<HTMLElement>("[data-card]");
-    const w = card ? card.offsetWidth + 24 : 320;
-    el.scrollBy({ left: dir * w, behavior: "smooth" });
-    setIdx((i) => Math.max(0, Math.min(FEATURED.length - 1, i + dir)));
-  }
-
+function ProgressRow({ label, pct, color }: { label: string; pct: number; color: string }) {
   return (
-    <div className="relative">
-      <div ref={ref} className="flex gap-6 overflow-x-auto snap-x scroll-smooth pb-4 -mx-6 px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {FEATURED.map((r) => (
-          <div key={r.title} data-card className="snap-start shrink-0 w-[85%] sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] rounded-2xl border border-border bg-card overflow-hidden flex flex-col">
-            <ResourceCover title={r.title} />
-            <div className="p-6 flex flex-col gap-3 flex-1">
-              <span className="self-start inline-block rounded-full bg-accent-soft text-accent text-xs font-bold uppercase tracking-wider px-3 py-1">{r.type}</span>
-              <h3 className="text-[20px] font-bold leading-snug text-foreground">{r.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{r.description}</p>
-              <span className="mt-auto text-sm font-medium text-muted-foreground">Coming Soon →</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center justify-center gap-4 mt-4">
-        <button onClick={() => scrollBy(-1)} aria-label="Previous" className="h-10 w-10 rounded-full bg-accent text-white flex items-center justify-center hover:bg-accent/90">
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div className="flex gap-1.5">
-          {FEATURED.map((_, i) => (
-            <span key={i} className={`h-1.5 rounded-full transition-all ${i === idx ? "w-6 bg-accent" : "w-1.5 bg-muted-foreground/30"}`} />
-          ))}
-        </div>
-        <button onClick={() => scrollBy(1)} aria-label="Next" className="h-10 w-10 rounded-full bg-accent text-white flex items-center justify-center hover:bg-accent/90">
-          <ArrowRight className="h-4 w-4" />
-        </button>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+      <span style={{ ...mono, fontSize: 9, color: "rgba(244,239,229,0.6)", width: 80, flexShrink: 0, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+        {label}
+      </span>
+      <div style={{ flex: 1, height: 6, background: "rgba(244,239,229,0.14)", borderRadius: 3, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 3 }} />
       </div>
     </div>
   );
 }
 
+function Viz1() {
+  return (
+    <div>
+      <ProgressRow label="Positioning" pct={100} color={CORAL} />
+      <ProgressRow label="Ideal client" pct={78} color="rgba(239,111,83,0.75)" />
+      <ProgressRow label="Voice" pct={64} color="rgba(239,111,83,0.6)" />
+      <div style={{ marginBottom: -8 }}>
+        <ProgressRow label="Pillars" pct={90} color={CORAL} />
+      </div>
+    </div>
+  );
+}
+
+function Viz2() {
+  const heights = [24, 34, 46, 60, 76, 90, 100];
+  return (
+    <div>
+      <div style={{ ...mono, fontSize: 10, color: CORAL, marginBottom: 10, letterSpacing: "0.1em" }}>↑ 340% REACH</div>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 7, height: 62 }}>
+        {heights.map((h, i) => (
+          <div
+            key={i}
+            style={{
+              flex: 1,
+              height: `${h}%`,
+              background: i >= 4 ? CORAL : `rgba(244,239,229,${0.2 + i * 0.025})`,
+              borderRadius: "3px 3px 0 0",
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Viz3() {
+  const left = [92, 72, 84, 60];
+  const right = [96, 78, 88, 66];
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+      <div>
+        <div style={{ ...mono, fontSize: 9, color: "rgba(244,239,229,0.45)", marginBottom: 9, letterSpacing: "0.1em" }}>GENERIC</div>
+        {left.map((w, i) => (
+          <div key={i} style={{ height: 6, width: `${w}%`, background: "rgba(244,239,229,0.16)", borderRadius: 3, marginBottom: 6 }} />
+        ))}
+      </div>
+      <div>
+        <div style={{ ...mono, fontSize: 9, color: CORAL, marginBottom: 9, letterSpacing: "0.1em" }}>YOUR VOICE</div>
+        {right.map((w, i) => (
+          <div key={i} style={{ height: 6, width: `${w}%`, background: i % 2 === 0 ? CORAL : "rgba(239,111,83,0.6)", borderRadius: 3, marginBottom: 6 }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Viz4() {
+  const monthDots = [
+    [true, true, true, true, true, true],
+    [true, true, true, true, true, false],
+    [true, true, false, false, false, false],
+  ];
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, marginBottom: 12 }}>
+        {monthDots.map((m, mi) => (
+          <div key={mi}>
+            <div style={{ ...mono, fontSize: 8.5, color: "rgba(244,239,229,0.45)", marginBottom: 7, letterSpacing: "0.1em" }}>M{mi + 1}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 7px)", gridAutoRows: "7px", gap: 4 }}>
+              {m.map((on, i) => (
+                <span key={i} style={{ width: 7, height: 7, borderRadius: "50%", background: on ? CORAL : "rgba(244,239,229,0.2)" }} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ height: 5, background: "rgba(244,239,229,0.14)", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
+        <div style={{ width: "71%", height: "100%", background: CORAL }} />
+      </div>
+      <div style={{ ...mono, fontSize: 8.5, color: "rgba(244,239,229,0.5)", letterSpacing: "0.1em" }}>71% OF QUARTER PLANNED</div>
+    </div>
+  );
+}
+
+function Viz5() {
+  const tiles = [
+    { label: "One-liner", accent: false },
+    { label: "Elevator", accent: false },
+    { label: "Bio", accent: false },
+    { label: "Signature", accent: true },
+  ];
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
+      {tiles.map((t) => (
+        <div
+          key={t.label}
+          style={{
+            ...mono,
+            fontSize: 10,
+            padding: "9px 11px",
+            borderRadius: 8,
+            textAlign: "center",
+            color: t.accent ? CORAL : "rgba(244,239,229,0.72)",
+            border: `1px solid ${t.accent ? CORAL : "rgba(244,239,229,0.2)"}`,
+          }}
+        >
+          {t.label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const DROPS: DropCard[] = [
+  {
+    category: "WORKSHEET",
+    title: "The Brand Architecture Worksheet",
+    body: "Map your positioning, ideal client, voice, and content pillars in one structured doc.",
+    image: collage1.url,
+    objectPosition: "center 18%",
+    viz: <Viz1 />,
+  },
+  {
+    category: "GUIDE",
+    title: "The Founder's LinkedIn Playbook",
+    body: "Data-backed posting strategy for expertise-based founders: hooks, cadence, and content that converts.",
+    image: collage2.url,
+    objectPosition: "center 12%",
+    viz: <Viz2 />,
+  },
+  {
+    category: "TOOLKIT",
+    title: "The Anti-AI-Slop Content Kit",
+    body: "How to use AI for content without losing your voice, your authority, or your audience's trust.",
+    image: collage3.url,
+    objectPosition: "center 15%",
+    viz: <Viz3 />,
+  },
+  {
+    category: "FRAMEWORK",
+    title: "The 90-Day Marketing Engine",
+    body: "Build a quarter of strategy-aligned content in one afternoon. Calendar, pillars, and platform plan included.",
+    image: collage4.url,
+    objectPosition: "center 20%",
+    viz: <Viz4 />,
+  },
+  {
+    category: "TEMPLATE",
+    title: "The Messaging Vault",
+    body: "One-liner, elevator pitch, bio, and email signature, all written from your Brand Architecture.",
+    image: collage5.url,
+    objectPosition: "center 16%",
+    viz: <Viz5 />,
+  },
+];
+
+function DroppingSoon() {
+  const railRef = useRef<HTMLDivElement>(null);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [prevHover, setPrevHover] = useState(false);
+  const [nextHover, setNextHover] = useState(false);
+
+  const scroll = (dir: 1 | -1) => {
+    railRef.current?.scrollBy({ left: dir * 384, behavior: "smooth" });
+  };
+
+  return (
+    <section style={{ background: CREAM }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 40px 24px" }}>
+        <div
+          className="ds-head"
+          style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24, marginBottom: 38 }}
+        >
+          <div>
+            <Eyebrow style={{ marginBottom: 18 }}>§ 01 · Dropping Soon</Eyebrow>
+            <h2
+              style={{
+                ...serif,
+                fontWeight: 600,
+                fontSize: "clamp(30px, 3.6vw, 50px)",
+                lineHeight: 1.04,
+                letterSpacing: "-0.02em",
+                color: INK,
+                margin: 0,
+              }}
+            >
+              Flagship packs,
+              <br />
+              <span style={{ fontWeight: 340, fontStyle: "italic", color: "#9a988e" }}>on the way.</span>
+            </h2>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 14, maxWidth: 360 }}>
+            <p style={{ ...sans, fontSize: 16, color: MUTED, textAlign: "right", margin: 0, lineHeight: 1.55 }}>
+              Bigger, deeper builds we're finishing now. Founding members get them first.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button
+                type="button"
+                aria-label="Previous"
+                onClick={() => scroll(-1)}
+                onMouseEnter={() => setPrevHover(true)}
+                onMouseLeave={() => setPrevHover(false)}
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: "50%",
+                  border: `1.5px solid ${CARD_BORDER_HOVER}`,
+                  background: prevHover ? INK : "transparent",
+                  color: prevHover ? "#f7f3ea" : INK,
+                  cursor: "pointer",
+                  fontSize: 18,
+                  transition: "background .2s, color .2s",
+                }}
+              >
+                ←
+              </button>
+              <button
+                type="button"
+                aria-label="Next"
+                onClick={() => scroll(1)}
+                onMouseEnter={() => setNextHover(true)}
+                onMouseLeave={() => setNextHover(false)}
+                style={{
+                  width: 46,
+                  height: 46,
+                  borderRadius: "50%",
+                  border: 0,
+                  background: nextHover ? CORAL_HOVER : CORAL,
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontSize: 18,
+                  transition: "background .2s",
+                }}
+              >
+                →
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          ref={railRef}
+          className="cs-rail"
+          style={{
+            display: "flex",
+            gap: 24,
+            overflowX: "auto",
+            scrollSnapType: "x mandatory",
+            scrollPaddingLeft: 4,
+            padding: "4px 4px 24px",
+            margin: "0 -4px",
+          }}
+        >
+          {DROPS.map((c, i) => (
+            <article
+              key={c.title}
+              onMouseEnter={() => setHoverIdx(i)}
+              onMouseLeave={() => setHoverIdx(null)}
+              style={{
+                flex: "none",
+                width: 360,
+                scrollSnapAlign: "start",
+                background: INK,
+                border: "1px solid rgba(244,239,229,0.08)",
+                borderRadius: 20,
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                transition: "transform .25s ease, box-shadow .25s ease",
+                transform: hoverIdx === i ? "translateY(-5px)" : "none",
+                boxShadow: hoverIdx === i ? "0 34px 64px -36px rgba(19,19,15,0.6)" : "none",
+              }}
+            >
+              <div style={{ position: "relative", height: 300, overflow: "hidden" }}>
+                <img
+                  src={c.image}
+                  alt=""
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    objectPosition: c.objectPosition,
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                      "linear-gradient(180deg, rgba(19,19,15,0.05) 0%, rgba(19,19,15,0.5) 52%, #13130f 100%)",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 18,
+                    right: 18,
+                    bottom: 16,
+                    background: "rgba(13,13,10,0.55)",
+                    backdropFilter: "blur(9px)",
+                    WebkitBackdropFilter: "blur(9px)",
+                    border: "1px solid rgba(244,239,229,0.14)",
+                    borderRadius: 13,
+                    padding: "15px 16px",
+                  }}
+                >
+                  {c.viz}
+                </div>
+              </div>
+              <div style={{ padding: "22px 24px 26px", flex: 1, display: "flex", flexDirection: "column" }}>
+                <div
+                  style={{
+                    ...mono,
+                    fontSize: 10.5,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.18em",
+                    color: CORAL,
+                    marginBottom: 13,
+                  }}
+                >
+                  {c.category}
+                </div>
+                <h3 style={{ ...serif, fontWeight: 600, fontSize: 22, lineHeight: 1.14, color: "#f7f3ea", margin: 0 }}>
+                  {c.title}
+                </h3>
+                <p style={{ ...sans, fontSize: 14, color: "rgba(244,239,229,0.6)", lineHeight: 1.6, flex: 1, marginTop: 12, marginBottom: 20 }}>
+                  {c.body}
+                </p>
+                <div style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "#c8c6bc" }}>
+                  Coming soon →
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+      <style>{`
+        @media (max-width: 720px) {
+          .ds-head { flex-direction: column; align-items: flex-start !important; }
+          .ds-head p { text-align: left !important; }
+        }
+      `}</style>
+    </section>
+  );
+}
+
+/* ───────────── 4. THE LIBRARY ───────────── */
+type LibCat = "Prompt" | "Framework" | "Guide" | "Toolkit" | "Checklist";
+type LibCard = { category: LibCat; title: string; description: string; cta: string; link: string };
+
+const LIB: LibCard[] = [
+  { category: "Framework", title: "Website Copy Framework", description: "The structure behind high-converting websites. The exact prompts and frameworks used to build CRO-optimized headlines, CTA formulas, and audience-specific copy templates.", cta: "Download the framework", link: "https://docs.google.com/document/d/1YYpJRhy2Hou4BSmwA1HzzA7OcnTaFJuo/" },
+  { category: "Framework", title: "Pitch Deck Framework", description: "Build decks investors can't ignore. Deep research prompts, structure templates, and storytelling cues designed to win attention and funding.", cta: "Access the framework", link: "https://docs.google.com/document/d/1sTyGI--JHZFEQEMVj63FrrMRjjC0a4Dr/" },
+  { category: "Prompt", title: "ChatGPT Founder Brain Prompt", description: "Train ChatGPT to think like you. Turn your AI into a second brain that remembers context, challenges your thinking, and co-creates with your style.", cta: "Activate the prompt", link: "https://docs.google.com/document/d/1sM_9i0uVd6HTKmbp8XmkM2sFO6odnt8M/" },
+  { category: "Prompt", title: "Market Size Prompt", description: "Validate your market with precision. A guided prompt for calculating TAM, SAM, and SOM — ideal for investor decks, pitch prep, or sizing your growth ceiling.", cta: "Run the prompt", link: "https://docs.google.com/document/d/1v26SLGIl7wpyWCHTEMOiJrdxcrhtheXq/" },
+  { category: "Prompt", title: "Competitor Prompt", description: "Know your landscape before you build. A single, powerful prompt that reveals competitor insights, positioning angles, and market opportunities.", cta: "Download the prompt", link: "https://docs.google.com/document/d/1pysYBdURqICRE-GaxZH-59UkHxlB2S8h/" },
+  { category: "Guide", title: "How to Create a Brand with AI", description: "From concept to creation — all inside AI. A full step-by-step system for building brands, including prompts, tools, and real examples.", cta: "Unlock the guide", link: "https://docs.google.com/document/d/1RIMDlqXAFp28ZrWj_riUNlEJsgMeaETr/" },
+  { category: "Toolkit", title: "Marketing Checklist", description: "Your AI-assisted marketing playbook. A complete list of how to market your brand — with prompts, strategies, and AI shortcuts for faster execution.", cta: "Get the checklist", link: "https://docs.google.com/document/d/1sG_Nc9yKpZ76BYmh_cuzQMBUzO8F-Xwq/" },
+  { category: "Toolkit", title: "Content Custom GPTs", description: "Generate ideas that go viral — on purpose. Two custom GPTs: one for crafting viral hooks, another for refining storytelling scripts built to convert.", cta: "Try the GPTs", link: "https://docs.google.com/document/d/1MTkygCM2DE7knXu2BsVRUHb_Nax69TQN/" },
+  { category: "Checklist", title: "Business Stage Checklist with AI Tools", description: "Every stage. Every advantage. This checklist maps each phase of building a business — and the AI tools that give you leverage at each step.", cta: "Access the checklist", link: "https://docs.google.com/document/d/1R41X9bXTcCVUg4y94iLpOTbadRzoC1fq/" },
+  { category: "Guide", title: "AI Tools Guide", description: "The exact AI stack behind modern creative teams. Explore the tools actually used — from research and branding to mockups and MVPs.", cta: "Explore the guide", link: "https://docs.google.com/document/d/1LFoxWFYIBPrgMlVZQaXgcNKqWAkPGzbA/" },
+  { category: "Framework", title: "Deep Research Framework", description: "Research like a strategist, not a student. Prompt AI for true insight — validating demand, analyzing competitors, and surfacing pricing models.", cta: "Get the framework", link: "https://docs.google.com/document/d/121TF2julvfRkKT8HX8xbLEDSDPbz0NbF/" },
+  { category: "Framework", title: "How to Find a Business Idea with AI", description: "AI won't hand you a million-dollar idea — but it can help you discover one. Identify market gaps, validate ideas, and uncover opportunities worth building.", cta: "Get the framework", link: "https://docs.google.com/document/d/1Q-lB4UvQsX0Y_6lEftZ8GNOjCa7EXmeD/" },
+  { category: "Toolkit", title: "Branding Prompts", description: "Turn AI into your brand architect. The exact prompts used to build brand identity — from tone and color to logos, visual direction, and messaging.", cta: "Access the toolkit", link: "https://docs.google.com/document/d/1uQRGPQ0UAGdBb6dAG4JvCiKEXoFpfYlw/" },
+  { category: "Guide", title: "High-Performance ChatGPT Setup", description: "Build your AI to think like a founder. A step-by-step guide to configure ChatGPT as your strategist, co-founder, and creative coach.", cta: "Download the guide", link: "https://docs.google.com/document/d/1WBtfWMB5eAeA83URVdmJ9AoY0ELuL5SW/" },
+  { category: "Prompt", title: "AI Thought Partner Prompts", description: "Stop outsourcing your ideas — sharpen them. These prompts transform AI from a yes-machine into your boldest creative challenger.", cta: "Unlock the prompts", link: "https://docs.google.com/document/d/1NYu8nCgjf0lB9XbOUBK9jn51OvpiwRz6/" },
+];
+
+const FILTERS: Array<"All" | LibCat> = ["All", "Prompt", "Framework", "Guide", "Toolkit", "Checklist"];
+
+function Library() {
+  const [filter, setFilter] = useState<"All" | LibCat>("All");
+  const [hover, setHover] = useState<string | null>(null);
+  return (
+    <section style={{ background: CREAM }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "80px 40px 120px" }}>
+        <Eyebrow style={{ marginBottom: 18 }}>§ 02 · The Library</Eyebrow>
+        <h2
+          style={{
+            ...serif,
+            fontWeight: 600,
+            fontSize: "clamp(32px, 4.2vw, 58px)",
+            lineHeight: 0.98,
+            letterSpacing: "-0.025em",
+            color: INK,
+            margin: "0 0 36px",
+            maxWidth: 760,
+          }}
+        >
+          Browse the full toolkit,{" "}
+          <span style={{ fontWeight: 340, fontStyle: "italic", color: "#9a988e" }}>free.</span>
+        </h2>
+
+        <div
+          style={{
+            borderTop: "1px solid rgba(19,19,15,0.08)",
+            paddingTop: 32,
+            marginBottom: 44,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 10,
+          }}
+        >
+          {FILTERS.map((f) => {
+            const active = filter === f;
+            return (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setFilter(f)}
+                style={{
+                  ...mono,
+                  fontSize: 12,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  padding: "10px 20px",
+                  borderRadius: 999,
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  background: active ? INK : "transparent",
+                  color: active ? "#f7f3ea" : MUTED,
+                  border: `1.5px solid ${active ? INK : CARD_BORDER_HOVER}`,
+                }}
+              >
+                {f}
+              </button>
+            );
+          })}
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(330px, 1fr))",
+            gap: 24,
+          }}
+        >
+          {LIB.filter((c) => filter === "All" || c.category === filter).map((c) => {
+            const isHover = hover === c.title;
+            return (
+              <article
+                key={c.title}
+                onMouseEnter={() => setHover(c.title)}
+                onMouseLeave={() => setHover(null)}
+                style={{
+                  background: CARD_BG,
+                  border: `1px solid ${isHover ? CARD_BORDER_HOVER : BORDER}`,
+                  borderRadius: 18,
+                  padding: "30px 30px 28px",
+                  display: "flex",
+                  flexDirection: "column",
+                  transition: "transform .25s ease, box-shadow .25s ease, border-color .25s ease",
+                  transform: isHover ? "translateY(-4px)" : "none",
+                  boxShadow: isHover ? "0 28px 50px -34px rgba(30,45,55,0.4)" : "none",
+                }}
+              >
+                <Eyebrow color={CORAL} squareSize={7} size={11} spacing="0.18em" style={{ marginBottom: 18 }}>
+                  {c.category}
+                </Eyebrow>
+                <h3
+                  style={{
+                    ...serif,
+                    fontWeight: 600,
+                    fontSize: 23,
+                    lineHeight: 1.14,
+                    letterSpacing: "-0.015em",
+                    color: INK,
+                    margin: "0 0 12px",
+                  }}
+                >
+                  {c.title}
+                </h3>
+                <p style={{ ...sans, fontSize: 14.5, lineHeight: 1.6, color: MUTED, flex: 1, marginBottom: 26 }}>
+                  {c.description}
+                </p>
+                <a
+                  href={c.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lib-cta"
+                  style={{
+                    ...mono,
+                    fontSize: 11,
+                    fontWeight: 500,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.14em",
+                    padding: "14px 16px",
+                    borderRadius: 999,
+                    textAlign: "center",
+                    textDecoration: "none",
+                    border: `1.5px solid ${CORAL}`,
+                    color: CORAL,
+                    background: "transparent",
+                    transition: "background .2s ease, color .2s ease, border-color .2s ease",
+                    display: "block",
+                  }}
+                >
+                  {c.cta}
+                </a>
+              </article>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────────── PAGE ───────────── */
 export default function Resources() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div style={{ background: CREAM, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        .lib-cta:hover, .lib-cta:active {
+          background: ${CORAL} !important;
+          color: #fff !important;
+          border-color: ${CORAL} !important;
+        }
+        .lib-cta:active { background: ${CORAL_HOVER} !important; }
+        .cs-rail::-webkit-scrollbar { height: 8px; }
+        .cs-rail::-webkit-scrollbar-track { background: rgba(19,19,15,0.06); border-radius: 99px; }
+        .cs-rail::-webkit-scrollbar-thumb { background: rgba(19,19,15,0.2); border-radius: 99px; }
+        .cs-rail { scrollbar-width: thin; scrollbar-color: rgba(19,19,15,0.2) transparent; }
+      `}</style>
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 9999,
+          opacity: 0.5,
+          mixBlendMode: "multiply",
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E\")",
+          backgroundSize: "200px",
+        }}
+      />
       <SiteHeader />
-
-      <section className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-20 md:py-24 text-center">
-          <div className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">
-            Resources
-          </div>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-[-0.04em] leading-[1.02] text-foreground mb-5">
-            Everything you need to build smarter.
-          </h1>
-          <p className="text-lg md:text-2xl text-muted-foreground font-light max-w-3xl mx-auto">
-            Templates, toolkits, guides, and frameworks — built specifically for expertise-based founders at $250K+.
-          </p>
-        </div>
-      </section>
-
-      <main className="max-w-6xl mx-auto px-6 py-14 w-full space-y-16">
-        <FeaturedCarousel />
+      <main style={{ flex: 1 }}>
+        <Hero />
+        <EarlyAccess />
+        <DroppingSoon />
+        <Library />
       </main>
-
-      <PromptPacksSection />
-
-      <section className="bg-background border-t border-border py-20">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground leading-[1.1] mb-4">
-            Get early access to every resource.
-          </h2>
-          <p className="text-muted-foreground text-lg mb-7">
-            We'll send you each resource the moment it drops — free for founding members.
-          </p>
-          <ResourcesEmail />
-          <p className="text-muted-foreground/70 text-xs mt-4">Free for founding members. No spam.</p>
-        </div>
-      </section>
-
       <SiteFooter />
     </div>
   );
