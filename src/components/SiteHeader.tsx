@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
 import { ResourcesMega } from "@/components/ResourcesMega";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
+import { useLocation } from "react-router-dom";
 
 const CREAM = "#f4efe5";
 const INK = "#13130f";
@@ -13,6 +14,7 @@ type SiteHeaderProps = {
 };
 
 export function SiteHeader(_props: SiteHeaderProps = {}) {
+  const { pathname } = useLocation();
   const links: Array<readonly [string, string]> = [
     ["Solutions", "/solutions"],
     ["Why Moxiemo", "/why-moxie"],
@@ -72,16 +74,23 @@ export function SiteHeader(_props: SiteHeaderProps = {}) {
             triggerClassName="hover:text-[#ef6f53] transition-colors uppercase whitespace-nowrap"
             triggerStyle={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, whiteSpace: "nowrap" }}
           />
-          {links.map(([l, h]) => (
-            <Link
-              key={l}
-              to={h}
-              className="hover:text-[#ef6f53] transition-colors uppercase"
-              style={linkStyle}
-            >
-              {l}
-            </Link>
-          ))}
+          {links.map(([l, h]) => {
+            const active = pathname === h;
+            return (
+              <Link
+                key={l}
+                to={h}
+                className="hover:text-[#ef6f53] transition-colors uppercase"
+                style={
+                  active
+                    ? { ...linkStyle, color: "#ef6f53", paddingBottom: 3, borderBottom: "2px solid #ef6f53" }
+                    : linkStyle
+                }
+              >
+                {l}
+              </Link>
+            );
+          })}
         </div>
         <div className="flex items-center" style={{ gap: 16, flexWrap: "nowrap", flexShrink: 0 }}>
           <Link
