@@ -84,6 +84,7 @@ export default function Pricing() {
         .mo-dark-btn:hover { background:#2a2722 !important; }
         .mo-outline-btn:hover { border-color:#13130f !important; }
         .mo-foundation-cta:hover { background:#13130f !important; color:#f4efe5 !important; }
+        .mo-scale-cta:hover { background:#13130f !important; color:#f4efe5 !important; }
         @media (max-width: 900px) {
           .mo-tiers { grid-template-columns: 1fr !important; }
           .mo-stats { grid-template-columns: 1fr 1fr !important; }
