@@ -251,7 +251,7 @@ export default function Pricing() {
               price={foundationPrice}
               founding={foundationFounding}
               billingLabel={billingLabel}
-              ctaLabel="Join Beta to Lock This In"
+              ctaLabel="Join the Beta 2.0 Waitlist"
               ctaVariant="outline"
               ctaHref="/beta20-founding?tier=foundation"
               features={[
@@ -285,7 +285,7 @@ export default function Pricing() {
               price={growthPrice}
               founding={growthFounding}
               billingLabel={billingLabel}
-              ctaLabel="Join Beta to Lock This In"
+              ctaLabel="Join the Beta 2.0 Waitlist"
               ctaVariant="coral"
               ctaHref="/beta20-founding?tier=growth"
               features={[
@@ -322,6 +322,7 @@ export default function Pricing() {
               billingLabel={billingLabel}
               ctaLabel="Notify Me When Available"
               ctaVariant="disabled"
+              ctaHref="/beta20-founding?tier=scale"
               checkColor="#b8b4aa"
               features={[
                 "Everything in Growth",
@@ -545,7 +546,7 @@ function Tier({
           <a href={ctaHref || "/founding"} className="mo-coral-btn" style={{ display: "block", textAlign: "center", background: CORAL, color: "#fff", fontWeight: 700, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none" }}>{ctaLabel}</a>
         )}
         {ctaVariant === "disabled" && (
-          <div style={{ display: "block", textAlign: "center", background: "#ece7de", color: "#8a877a", fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, cursor: "not-allowed" }}>{ctaLabel}</div>
+          <a href={ctaHref || "/beta20-founding"} style={{ display: "block", textAlign: "center", background: "#ece7de", color: "#8a877a", fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none" }}>{ctaLabel}</a>
         )}
       </div>
       <div style={{ padding: "20px 28px 28px", flex: 1, display: "flex", flexDirection: "column", gap: 10, borderTop: `1px solid ${borderColor}` }}>
