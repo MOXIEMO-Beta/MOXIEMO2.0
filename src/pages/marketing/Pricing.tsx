@@ -253,6 +253,7 @@ export default function Pricing() {
               billingLabel={billingLabel}
               ctaLabel="Join Beta to Lock This In"
               ctaVariant="outline"
+              ctaHref="/beta20-founding?tier=foundation"
               features={[
                 "Complete AI strategic discovery",
                 "Marketing foundation: positioning, ICP, voice, content pillars",
@@ -286,6 +287,7 @@ export default function Pricing() {
               billingLabel={billingLabel}
               ctaLabel="Join Beta to Lock This In"
               ctaVariant="coral"
+              ctaHref="/beta20-founding?tier=growth"
               features={[
                 "Everything in Foundation",
                 "Unlimited content generation",
@@ -481,7 +483,7 @@ export default function Pricing() {
 }
 
 function Tier({
-  dark, popular, comingSoon, icon, name, desc, price, founding, billingLabel, ctaLabel, ctaVariant, features, replaces, checkColor = CORAL,
+  dark, popular, comingSoon, icon, name, desc, price, founding, billingLabel, ctaLabel, ctaVariant, ctaHref, features, replaces, checkColor = CORAL,
 }: {
   dark: boolean;
   popular?: boolean;
@@ -494,6 +496,7 @@ function Tier({
   billingLabel: string;
   ctaLabel: string;
   ctaVariant: "outline" | "coral" | "disabled";
+  ctaHref?: string;
   features: string[];
   replaces: string;
   checkColor?: string;
@@ -536,10 +539,10 @@ function Tier({
         </div>
         <div style={{ ...mono, fontSize: 10.5, color: comingSoon ? "#9a9789" : CORAL, letterSpacing: "0.1em", marginBottom: 22 }}>FOUNDING PRICE · LOCKED FOR LIFE</div>
         {ctaVariant === "outline" && (
-          <a href="/founding" className="mo-foundation-cta" style={{ display: "block", textAlign: "center", background: CREAM, color: INK, fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none", border: `1.5px solid ${INK}` }}>{ctaLabel}</a>
+          <a href={ctaHref || "/founding"} className="mo-foundation-cta" style={{ display: "block", textAlign: "center", background: CREAM, color: INK, fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none", border: `1.5px solid ${INK}` }}>{ctaLabel}</a>
         )}
         {ctaVariant === "coral" && (
-          <a href="/founding" className="mo-coral-btn" style={{ display: "block", textAlign: "center", background: CORAL, color: "#fff", fontWeight: 700, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none" }}>{ctaLabel}</a>
+          <a href={ctaHref || "/founding"} className="mo-coral-btn" style={{ display: "block", textAlign: "center", background: CORAL, color: "#fff", fontWeight: 700, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none" }}>{ctaLabel}</a>
         )}
         {ctaVariant === "disabled" && (
           <div style={{ display: "block", textAlign: "center", background: "#ece7de", color: "#8a877a", fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, cursor: "not-allowed" }}>{ctaLabel}</div>
