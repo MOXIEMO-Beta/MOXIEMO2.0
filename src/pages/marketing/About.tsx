@@ -198,6 +198,9 @@ export default function About() {
             />
             <div aria-hidden style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 220, background: "linear-gradient(to right, #0d0d0a, transparent)", zIndex: 2, pointerEvents: "none" }} />
             <div aria-hidden style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 180, background: "linear-gradient(to top, #0d0d0a, transparent)", pointerEvents: "none" }} />
+            {/* Soft vignette / diffusion to blend photo backdrop into hero */}
+            <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none", background: "radial-gradient(ellipse 62% 70% at 62% 38%, transparent 0%, transparent 42%, rgba(13,13,10,0.55) 78%, rgba(13,13,10,0.95) 100%)" }} />
+            <div aria-hidden style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none", background: "linear-gradient(to right, transparent 55%, rgba(13,13,10,0.7) 100%)" }} />
 
             {/* Annotation layer */}
             <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3 }}>
@@ -217,7 +220,7 @@ export default function About() {
 
               {/* Chips */}
               <div style={{ ...chipCoral, right: "6%", top: "8%", animation: "mo-chip-in .7s .9s ease both, mo-float-a 8s 1.6s ease-in-out infinite" }}>15+ YRS</div>
-              <div style={{ ...chipDark, right: "34%", top: "28%", animation: "mo-chip-in .7s 1.2s ease both, mo-float-b 10s 1.9s ease-in-out infinite" }}>4× Entrepreneur</div>
+              <div style={{ ...chipDark, right: "38%", top: "74%", animation: "mo-chip-in .7s 1.2s ease both, mo-float-b 10s 1.9s ease-in-out infinite" }}>4× Entrepreneur</div>
               <div style={{ ...chipDark, right: "5%", top: "52%", animation: "mo-chip-in .7s 1.5s ease both, mo-float-c 12s 2.2s ease-in-out infinite" }}>GS 10KSB Scholar</div>
               <div style={{ ...chipCoral, right: "28%", top: "58%", animation: "mo-chip-in .7s 1.8s ease both, mo-float-d 9s 2.5s ease-in-out infinite" }}>HBJ 40 Under 40</div>
 
