@@ -28,6 +28,7 @@ import AiEverywhereStandOut from "./pages/blog/AiEverywhereStandOut.tsx";
 import Resources from "./pages/marketing/Resources.tsx";
 import Changelog from "./pages/marketing/Changelog.tsx";
 import Founding from "./pages/marketing/Founding.tsx";
+import Beta20Founding from "./pages/marketing/Beta20Founding.tsx";
 import BrandKit from "./pages/marketing/BrandKit.tsx";
 import BrandArchitectureMethod from "./pages/marketing/BrandArchitectureMethod.tsx";
 import WhyMoxiemo from "./pages/marketing/WhyMoxiemo.tsx";
@@ -97,6 +98,7 @@ const App = () => (
             <Route path="/resources" element={<Resources />} />
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/founding" element={<Founding />} />
+            <Route path="/beta20-founding" element={<Beta20Founding />} />
             <Route path="/brand-kit" element={<BrandKit />} />
             <Route path="/brand-architecture-method" element={<BrandArchitectureMethod />} />
             <Route path="/why-moxiemo" element={<WhyMoxiemo />} />
