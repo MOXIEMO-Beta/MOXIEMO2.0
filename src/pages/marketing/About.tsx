@@ -1,204 +1,452 @@
-import { Link } from "react-router-dom";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import kareeHeadshot from "@/assets/karee-headshot.png";
-import kareeBranson from "@/assets/karee-branson.png";
-import kareePersonal from "@/assets/karee-full-bio.png";
-import kareeTable from "@/assets/karee-table.png";
-import kareeQuote from "@/assets/karee-quote.png";
+import heroAsset from "@/assets/karee-hero.png.asset.json";
+import bioAsset from "@/assets/karee-full-bio-new.png.asset.json";
+import tableAsset from "@/assets/karee-table-new.png.asset.json";
+import quoteAsset from "@/assets/karee-quote-new.png.asset.json";
 
-const values = [
-  { n: "01", t: "End fragmentation, don't add to it.", d: "Every feature should reduce tools, not add layers. We're not making better integrations — we're replacing fragmented systems entirely.", filter: "Does this end fragmentation or perpetuate it?" },
-  { n: "02", t: "Respect time as currency.", d: "Customers are drowning in 20 hours/week of tool management. Every minute we waste is time they could spend on their business.", filter: "Does this save more time than it takes?" },
-  { n: "03", t: "Built for operators, not engineers.", d: "Sarah is brilliant at coaching. She's not a developer. If a feature requires technical knowledge, we've failed.", filter: "Can Sarah use this without frustration?" },
-  { n: "04", t: "Honest urgency over hype.", d: "The problem is real (20 hrs/week wasted). The ROI is real ($93K saved). We don't need to exaggerate.", filter: "Is this true and specific, or vague hype?" },
-  { n: "05", t: "Compound simplicity over feature bloat.", d: "Fewer features that multiply each other's value. Tool-fatigued users don't want more — they want fewer, better.", filter: "Does this make the platform simpler or more complex?" },
-];
+const COLORS = {
+  cream: "#f4efe5",
+  sage: "#dce3d2",
+  near: "#13130f",
+  dark: "#0d0d0a",
+  deep: "#1a1915",
+  coral: "#ef6f53",
+  coralHover: "#e05c40",
+  coralMuted: "#c85638",
+  muted: "#56544c",
+  lightMuted: "#6c6a60",
+  warmMuted: "#9a9789",
+};
 
-const vision = [
-  { y: "2026", t: "Year 1", d: "Free 200 founders from tool chaos, reclaiming 3,600 hours weekly for strategic growth." },
-  { y: "2028", t: "Year 3", d: "Free 1,000 founders across coaching, consulting, and service businesses, each reclaiming 18+ hours weekly." },
-  { y: "2030", t: "Year 5", d: "Free 5,000 service businesses from tool chaos, proving consolidation beats fragmentation as the industry standard." },
-];
+const GRAIN =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E\")";
 
-const credentials = ["Brand Strategist", "JD/MBA", "Goldman Sachs 10KSB Scholar", "HBJ 40 Under 40"];
+const GLOBAL_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-const photoShadow = { boxShadow: "0 8px 40px rgba(0,0,0,0.10)" };
+.mo-about, .mo-about * { box-sizing: border-box; }
+.mo-about { font-family: 'Hanken Grotesk', system-ui, sans-serif; color: ${COLORS.near}; }
+.mo-serif { font-family: 'Newsreader', Georgia, serif; }
+.mo-mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+
+.mo-reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s ease, transform .8s ease; }
+.mo-reveal.in { opacity: 1; transform: translateY(0); }
+
+@keyframes mo-scroll { from { transform: translateX(0);} to { transform: translateX(-50%);} }
+@keyframes mo-pulse-ring { 0%,100%{opacity:.35;transform:scale(1);} 50%{opacity:.60;transform:scale(1.025);} }
+@keyframes mo-float-a { 0%,100%{transform:translateY(0) rotate(-2deg);} 55%{transform:translateY(-9px) rotate(-2deg);} }
+@keyframes mo-float-b { 0%,100%{transform:translateY(0) rotate(1.5deg);} 60%{transform:translateY(-7px) rotate(1.5deg);} }
+@keyframes mo-float-c { 0%,100%{transform:translateY(0) rotate(-0.5deg);} 50%{transform:translateY(-11px) rotate(-0.5deg);} }
+@keyframes mo-float-d { 0%,100%{transform:translateY(0) rotate(2deg);} 45%{transform:translateY(-6px) rotate(2deg);} }
+@keyframes mo-chip-in { from{opacity:0;transform:translateY(-10px);} to{opacity:1;transform:translateY(0);} }
+@keyframes mo-node-pulse {
+  0%,100%{ box-shadow: 0 0 0 5px rgba(239,111,83,0.18), 0 0 22px rgba(239,111,83,0.35);}
+  50%{ box-shadow: 0 0 0 9px rgba(239,111,83,0.12), 0 0 40px rgba(239,111,83,0.5);}
+}
+
+.mo-btn-primary { background:${COLORS.coral}; color:#fff; font-weight:700; font-size:16px; padding:18px 36px; border-radius:999px; box-shadow:0 10px 36px -8px rgba(239,111,83,0.5); text-decoration:none; display:inline-block; transition:background .2s ease; }
+.mo-btn-primary:hover { background:${COLORS.coralHover}; }
+.mo-btn-outline { background:transparent; color:${COLORS.near}; border:1.5px solid rgba(19,19,15,0.22); font-weight:600; font-size:16px; padding:17px 36px; border-radius:999px; text-decoration:none; display:inline-block; transition:background .2s ease; }
+.mo-btn-outline:hover { background:rgba(19,19,15,0.06); }
+
+@media (max-width: 880px) {
+  .mo-hero { flex-direction: column !important; min-height: auto !important; padding-bottom: 60px !important; }
+  .mo-hero-left { width: 100% !important; padding-top: 40px !important; }
+  .mo-hero-right { position: relative !important; width: 100% !important; height: 420px !important; }
+  .mo-hero-left-base { display: none !important; }
+  .mo-personal-grid, .mo-rules-grid, .mo-experience-grid { grid-template-columns: 1fr !important; }
+  .mo-timeline-row { grid-template-columns: 1fr !important; text-align: left !important; padding-left: 32px !important; }
+  .mo-timeline-row > * { text-align: left !important; padding: 0 !important; }
+  .mo-timeline-spine { left: 8px !important; }
+  .mo-rule-card-5 { grid-template-columns: 1fr !important; }
+}
+`;
+
+function useReveal() {
+  useEffect(() => {
+    const els = document.querySelectorAll(".mo-about .mo-reveal");
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("in");
+            io.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, []);
+}
 
 export default function About() {
+  useReveal();
+  const spineRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const spine = spineRef.current;
+    const container = timelineRef.current;
+    if (!spine || !container) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            spine.style.height = container.offsetHeight + "px";
+            io.disconnect();
+          }
+        });
+      },
+      { threshold: 0.05 }
+    );
+    io.observe(container);
+    return () => io.disconnect();
+  }, []);
+
+  const grainStyle: React.CSSProperties = {
+    position: "fixed", inset: 0, zIndex: 9000, pointerEvents: "none",
+    opacity: 0.42, mixBlendMode: "multiply",
+    backgroundImage: GRAIN, backgroundSize: "200px",
+  };
+
+  const eyebrow: React.CSSProperties = {
+    fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase",
+    letterSpacing: "0.22em", color: COLORS.coral,
+  };
+
+  const chipDark: React.CSSProperties = {
+    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em",
+    textTransform: "uppercase", padding: "5px 11px", borderRadius: 3,
+    background: "rgba(15,15,12,0.82)", color: COLORS.cream,
+    border: "0.5px solid rgba(244,239,229,0.3)", backdropFilter: "blur(8px)",
+    position: "absolute" as const, pointerEvents: "none",
+  };
+  const chipCoral: React.CSSProperties = {
+    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em",
+    textTransform: "uppercase", padding: "5px 11px", borderRadius: 3,
+    background: COLORS.coral, color: "#fff",
+    boxShadow: "0 6px 20px rgba(239,111,83,0.4)",
+    position: "absolute" as const, pointerEvents: "none",
+  };
+
+  const milestones = [
+    { yr: "YEAR 1 · 2026", num: "500", desc: "founders and business owners find what makes them valuable, and start building real content around it.", side: "left", size: 18 },
+    { yr: "YEAR 2 · 2027", num: "1,000", desc: "founders distributing their content consistently, without doing it by hand.", side: "right", size: 20 },
+    { yr: "YEAR 3 · 2028", num: "3,000", desc: "businesses and personal brands running on autonomous distribution, organic and paid.", side: "left", size: 22 },
+    { yr: "YEAR 4 · 2029", num: "5,000", desc: "founders who can see, in real numbers, what their marketing is doing for their business.", side: "right", size: 24 },
+    { yr: "YEAR 5 · 2030", num: "10,000", desc: "founders and businesses growing on one system. Proof, not guesswork, as the standard.", side: "left", size: 28 },
+  ] as const;
+
+  const rules = [
+    { n: "01", t: "End fragmentation, don't add to it.", d: "Every feature should reduce tools, not add layers. We're not making better integrations, we're replacing fragmented systems entirely.", f: "Does this end fragmentation or perpetuate it?" },
+    { n: "02", t: "Respect time as currency.", d: "Customers are drowning in 20 hours/week of tool management. Every minute we waste is time they could spend on their business.", f: "Does this save more time than it takes?" },
+    { n: "03", t: "Built for operators, not engineers.", d: "An executive coach building her personal brand. A local service business owner growing his company. Neither is a developer. If a feature requires technical knowledge, we've failed.", f: "Can a founder or business owner use this without frustration?" },
+    { n: "04", t: "Honest urgency over hype.", d: "The problem is real: hours lost every week to managing disconnected tools. The fix is real too — one autonomous growth system instead of a stack of tools, freelancers, and subscriptions you don't need anymore. We don't need to exaggerate it.", f: "Is this true and specific, or vague hype?" },
+  ];
+
+  const tickerItems = [
+    "Brand Strategist", "JD / MBA", "Goldman Sachs 10KSB Scholar", "HBJ 40 Under 40",
+    "4× Entrepreneur", "15+ Years in Marketing", "Founder of MOXIEMO",
+  ];
+  const tickerSpan = (
+    <span style={{ display: "inline-flex", alignItems: "center", whiteSpace: "nowrap", paddingRight: 0 }}>
+      {tickerItems.map((t, i) => (
+        <span key={i} style={{ display: "inline-flex", alignItems: "center" }}>
+          <span style={{ padding: "0 28px" }}>{t}</span>
+          <span style={{ opacity: 0.45, fontSize: 8 }}>◆</span>
+        </span>
+      ))}
+    </span>
+  );
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: COLORS.cream }}>
+      <style>{GLOBAL_CSS}</style>
+      <div style={grainStyle} aria-hidden="true" />
       <SiteHeader />
 
-      {/* HERO */}
-      <section className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-20 md:py-24 grid md:grid-cols-5 gap-12 items-center">
-          <div className="md:col-span-3 order-2 md:order-1">
-            <div className="inline-block text-xs md:text-sm font-bold uppercase tracking-[0.25em] text-accent mb-6 px-4 py-2 rounded-full bg-accent-soft">
-              About
-            </div>
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.02] tracking-[-0.04em] mb-6 text-foreground">
-              Ending the tool fragmentation era.
-            </h1>
-            <p className="text-lg md:text-2xl text-muted-foreground max-w-2xl leading-relaxed font-light">
-              MOXIEMO exists because brilliant entrepreneurs deserve to be strategic leaders — not exhausted system administrators.
-            </p>
-          </div>
-          <div className="md:col-span-2 order-1 md:order-2">
-            <div className="rounded-2xl overflow-hidden border-l-4 border-accent" style={photoShadow}>
-              <img src={kareeHeadshot} alt="Karee Laing, Founder of MOXIEMO" className="w-full h-auto object-cover" loading="eager" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-3 text-center md:text-left">
-              Karee Laing — Founder, Brand Strategist, 4x Entrepreneur
-            </p>
-          </div>
-        </div>
-      </section>
+      <main className="mo-about flex-1">
+        {/* SECTION 1: HERO */}
+        <section
+          className="mo-hero"
+          style={{
+            position: "relative", background: COLORS.dark, minHeight: "100vh",
+            display: "flex", alignItems: "center",
+            paddingTop: "max(88px, calc(var(--nav-height, 72px) + 24px))",
+            paddingBottom: 40, overflow: "hidden",
+          }}
+        >
+          <div className="mo-hero-left-base" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "50%", background: COLORS.dark, pointerEvents: "none" }} />
 
-      <main className="flex-1 w-full">
-        {/* FOUNDER STORY */}
-        <section className="max-w-6xl mx-auto px-6 py-24">
-          <div className="grid md:grid-cols-2 gap-12 items-start">
-            <div>
-              <div
-                className="rounded-2xl overflow-hidden bg-muted"
-                style={{ ...photoShadow, borderRadius: "16px" }}
-              >
-                <img
-                  src={kareePersonal}
-                  alt="Karee Laing"
-                  className="w-full h-auto block"
-                  loading="lazy"
-                />
+          {/* RIGHT PANEL */}
+          <div
+            className="mo-hero-right"
+            style={{
+              position: "absolute", right: 0, top: 0, bottom: 0, width: "52%",
+              overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center",
+              background: COLORS.dark,
+            }}
+          >
+            <img
+              src={heroAsset.url}
+              alt="Karee Laing — Founder of MOXIEMO"
+              style={{ height: "100%", width: "auto", objectFit: "contain", objectPosition: "top center", filter: "brightness(0.88)", flex: "none" }}
+            />
+            <div aria-hidden style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 220, background: "linear-gradient(to right, #0d0d0a, transparent)", zIndex: 2, pointerEvents: "none" }} />
+            <div aria-hidden style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 180, background: "linear-gradient(to top, #0d0d0a, transparent)", pointerEvents: "none" }} />
+
+            {/* Annotation layer */}
+            <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 3 }}>
+              {/* Face ring primary */}
+              <div style={{ position: "absolute", right: "11%", top: "10%", width: "clamp(200px, 20vw, 290px)", height: "clamp(200px, 20vw, 290px)", borderRadius: "50%", border: "1.5px solid rgba(239,111,83,0.5)", animation: "mo-pulse-ring 6s ease-in-out infinite" }} />
+              {/* Face ring inner */}
+              <div style={{ position: "absolute", right: "calc(11% + clamp(28px, 2.8vw, 40px))", top: "calc(10% + clamp(28px, 2.8vw, 40px))", width: "clamp(144px, 14.4vw, 210px)", height: "clamp(144px, 14.4vw, 210px)", borderRadius: "50%", border: "0.5px solid rgba(239,111,83,0.2)" }} />
+              {/* Crosshair horizontal */}
+              <div style={{ position: "absolute", left: "32%", right: 0, top: "calc(10% + clamp(100px, 10vw, 145px))", height: "0.5px", background: "linear-gradient(to right, transparent, rgba(239,111,83,0.25) 10%, rgba(239,111,83,0.25) 90%, transparent)" }} />
+              {/* Crosshair vertical */}
+              <div style={{ position: "absolute", top: 0, bottom: 0, right: "calc(11% + clamp(100px, 10vw, 145px))", width: "0.5px", background: "linear-gradient(to bottom, transparent 4%, rgba(239,111,83,0.2) 15%, rgba(239,111,83,0.2) 85%, transparent)" }} />
+              {/* Corner brackets */}
+              <div style={{ position: "absolute", width: 16, height: 16, right: "calc(11% + clamp(200px,20vw,290px) + 10px)", top: "calc(10% - 10px)", borderTop: "1.5px solid rgba(239,111,83,0.6)", borderLeft: "1.5px solid rgba(239,111,83,0.6)" }} />
+              <div style={{ position: "absolute", width: 16, height: 16, right: "calc(11% - 10px)", top: "calc(10% - 10px)", borderTop: "1.5px solid rgba(239,111,83,0.6)", borderRight: "1.5px solid rgba(239,111,83,0.6)" }} />
+              <div style={{ position: "absolute", width: 16, height: 16, right: "calc(11% + clamp(200px,20vw,290px) + 10px)", top: "calc(10% + clamp(200px,20vw,290px) + 10px)", borderBottom: "1.5px solid rgba(239,111,83,0.6)", borderLeft: "1.5px solid rgba(239,111,83,0.6)" }} />
+              <div style={{ position: "absolute", width: 16, height: 16, right: "calc(11% - 10px)", top: "calc(10% + clamp(200px,20vw,290px) + 10px)", borderBottom: "1.5px solid rgba(239,111,83,0.6)", borderRight: "1.5px solid rgba(239,111,83,0.6)" }} />
+
+              {/* Chips */}
+              <div style={{ ...chipCoral, right: "6%", top: "8%", animation: "mo-chip-in .7s .9s ease both, mo-float-a 8s 1.6s ease-in-out infinite" }}>15+ YRS</div>
+              <div style={{ ...chipDark, right: "34%", top: "28%", animation: "mo-chip-in .7s 1.2s ease both, mo-float-b 10s 1.9s ease-in-out infinite" }}>4× Entrepreneur</div>
+              <div style={{ ...chipDark, right: "5%", top: "52%", animation: "mo-chip-in .7s 1.5s ease both, mo-float-c 12s 2.2s ease-in-out infinite" }}>GS 10KSB Scholar</div>
+              <div style={{ ...chipCoral, right: "28%", top: "58%", animation: "mo-chip-in .7s 1.8s ease both, mo-float-d 9s 2.5s ease-in-out infinite" }}>HBJ 40 Under 40</div>
+
+              {/* Ghost measurement numbers */}
+              <div style={{ position: "absolute", fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "rgba(239,111,83,0.5)", right: "calc(11% + clamp(100px, 10vw, 145px) + 12px)", top: "calc(10% + clamp(100px, 10vw, 145px) - 14px)", animation: "mo-chip-in .7s 2s ease both" }}>332.11</div>
+              <div style={{ position: "absolute", fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "rgba(239,111,83,0.5)", right: "calc(11% + clamp(100px, 10vw, 145px) - 60px)", top: "calc(10% + clamp(100px, 10vw, 145px) - 14px)", animation: "mo-chip-in .7s 2s ease both" }}>361.11</div>
+            </div>
+
+            {/* Photo caption */}
+            <div style={{ position: "absolute", bottom: 30, right: 40, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, letterSpacing: "0.1em", color: "rgba(244,239,229,0.3)", zIndex: 4 }}>
+              Karee Laing — Founder, Brand Strategist, 4x Entrepreneur
+            </div>
+          </div>
+
+          {/* LEFT TEXT */}
+          <div className="mo-hero-left" style={{ position: "relative", zIndex: 10, width: "50%", padding: "0 40px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32, animation: "mo-chip-in 0.9s 0.1s ease both" }}>
+              <span style={{ width: 7, height: 7, background: COLORS.coral, display: "inline-block" }} />
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.24em", color: COLORS.coral }}>About</span>
+            </div>
+
+            <h1 className="mo-serif" style={{ fontWeight: 600, fontSize: "clamp(52px, 6.8vw, 98px)", lineHeight: 0.93, letterSpacing: "-0.026em", color: COLORS.cream, marginBottom: 30, maxWidth: 520, animation: "mo-chip-in 0.9s 0.25s ease both" }}>
+              Ending<br />the tool<br />
+              <span className="mo-serif" style={{ fontWeight: 320, fontStyle: "italic", color: "rgba(244,239,229,0.45)" }}>fragmentation era.</span>
+            </h1>
+
+            <p style={{ fontSize: 18, lineHeight: 1.65, color: "rgba(244,239,229,0.58)", maxWidth: 450, marginBottom: 46, animation: "mo-chip-in 0.9s 0.4s ease both" }}>
+              MOXIEMO is the growth system that replaces it. Built so brilliant entrepreneurs become strategic leaders, not exhausted system administrators.
+            </p>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 16, animation: "mo-chip-in 0.9s 0.55s ease both" }}>
+              <div style={{ width: 1, height: 52, background: "linear-gradient(to bottom, rgba(239,111,83,0.6), transparent)" }} />
+              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(244,239,229,0.3)" }}>Scroll to explore</span>
+            </div>
+          </div>
+        </section>
+
+        {/* SECTION 2: MARQUEE */}
+        <section style={{ background: COLORS.coral, padding: "14px 0", overflow: "hidden" }}>
+          <div style={{ display: "flex", animation: "mo-scroll 30s linear infinite", whiteSpace: "nowrap", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.18em", color: "#fff" }}>
+            {tickerSpan}{tickerSpan}
+          </div>
+        </section>
+
+        {/* SECTION 3: THIS IS PERSONAL */}
+        <section style={{ background: COLORS.cream, padding: "120px 40px" }}>
+          <div className="mo-personal-grid" style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "0.82fr 1.18fr", gap: 80, alignItems: "start" }}>
+            <div className="mo-reveal">
+              <div style={{ borderRadius: 6, overflow: "hidden", boxShadow: "0 28px 70px -24px rgba(19,19,15,0.22)", position: "relative" }}>
+                <img src={bioAsset.url} alt="Karee Laing" style={{ width: "100%", height: "auto", display: "block" }} />
+                <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: COLORS.coral }} />
               </div>
-              <div style={{ marginTop: "12px" }}>
-                <div className="text-foreground" style={{ fontSize: "15px", fontWeight: 400 }}>— Karee Laing</div>
-                <div className="text-muted-foreground" style={{ fontSize: "14px", marginTop: "2px" }}>Founder, MOXIEMO</div>
-                <div
-                  className="text-accent"
-                  style={{ fontSize: "11px", textTransform: "uppercase", letterSpacing: "1.5px", marginTop: "10px" }}
-                >
-                  {credentials.map((c, i) => (
-                    <span key={c}>
-                      {i > 0 && <span className="text-muted-foreground"> • </span>}
-                      {c}
-                    </span>
+              <div style={{ marginTop: 22, paddingLeft: 4 }}>
+                <div style={{ fontFamily: "'Hanken Grotesk', sans-serif", fontWeight: 600, fontSize: 16, color: COLORS.near, marginBottom: 4 }}>— Karee Laing</div>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: COLORS.warmMuted, marginBottom: 18 }}>Founder, MOXIEMO</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {["Brand Strategist","JD/MBA","Goldman Sachs 10KSB Scholar","HBJ 40 Under 40"].map((c) => (
+                    <span key={c} style={{ background: "rgba(239,111,83,0.1)", color: COLORS.coralMuted, fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 10px", borderRadius: 3 }}>{c}</span>
                   ))}
                 </div>
               </div>
             </div>
+
             <div>
-              <div
-                className="text-accent font-bold mb-3 uppercase"
-                style={{ fontSize: "13px", letterSpacing: "2px" }}
-              >
-                Why MOXIEMO exists
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight leading-tight mb-6">This is personal.</h2>
-              <div className="space-y-5 text-muted-foreground font-light leading-relaxed">
-                <p>I've lived the Monday night tool panic. You know the one where it's 9 PM and you need to prep and schedule the Tuesday morning newsletter, but first you have to pull the list from your website, check Analytics for what performed best, find that graphic in Canva, copy the caption from Claude, and format it all while updating the CTA. Two hours later, you've sent one email.</p>
-                <p>I've spent 14 years in marketing. I should know better. But I was still drowning in tools, building Zapier automations at 11 PM, wondering why marketing felt like IT work instead of strategy. If I was struggling, what about the founders I work with? The ones building real businesses, whether it's coaching practices, consulting firms, or service companies who never signed up to become software administrators.</p>
-                <p>Here's what I kept seeing: Brilliant founders spending 20+ hours a week on marketing operations; from copying content between platforms, troubleshooting integrations, managing subscriptions and zero hours on marketing strategy. No time to think about positioning, building a consistent narrative, or creating content that actually moves the needle. Just managing systems.</p>
-                <p className="text-foreground font-medium">That's the real problem. It's not too many tools, and the issue is that every tool jumps straight to execution without fully asking the strategic questions: Who are you? Who do you serve? What makes you different? What's your actual narrative? You can't build a business that lasts on random posts and duct-taped automations.</p>
-                <p>So, I built MOXIEMO — your AI CMO. Not another tool to manage, but your actual Chief Marketing Officer. The one who asks the strategic questions, creates your foundation, then executes it consistently so you can get back to building the business you actually started. Because you didn't become a founder to be a system administrator. You became one to build a legacy.</p>
-                <p className="text-foreground font-medium">MOXIEMO gives you the marketing brain to do it.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* PERSONAL SECTION */}
-        <section className="bg-[#f8f8f8]">
-          <div className="max-w-6xl mx-auto px-6 py-24">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-14 leading-[1.1]">
-              Built from experience.<br />Not just ambition.
-            </h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              <div>
-                <div className="rounded-2xl overflow-hidden aspect-[4/5]" style={photoShadow}>
-                  <img src={kareeTable} alt="Karee at The Table dinner" className="w-full h-full object-cover" loading="lazy" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-3 italic">The Table — curated dinners for women founders in Houston</p>
-              </div>
-              <div>
-                <div className="rounded-2xl overflow-hidden aspect-[4/5]" style={photoShadow}>
-                  <img src={kareeQuote} alt="Karee Laing quote" className="w-full h-full object-cover" loading="lazy" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-3 italic">15+ years. Hundreds of founders. One recurring problem.</p>
-              </div>
-              <div className="rounded-2xl bg-[#101116] text-white p-8 md:p-10 flex flex-col justify-center aspect-[4/5]" style={photoShadow}>
-                <div className="font-display text-6xl text-accent leading-none mb-4">"</div>
-                <p className="text-2xl md:text-3xl italic font-light leading-snug mb-6">
-                  You're not missing knowledge. You're missing a system.
+              <div className="mo-reveal" style={{ ...eyebrow, marginBottom: 16, transitionDelay: "0ms" }}>WHY MOXIEMO EXISTS</div>
+              <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(36px, 4.6vw, 58px)", lineHeight: 1.0, letterSpacing: "-0.022em", color: COLORS.near, marginBottom: 38, transitionDelay: "80ms" }}>This is personal.</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 22, color: "#3a382f", fontSize: 17, lineHeight: 1.72 }}>
+                <p className="mo-reveal" style={{ transitionDelay: "160ms" }}>I've lived the Monday night tool panic. You know the one where it's 9 PM and you need to prep and schedule the Tuesday morning newsletter, but first you have to pull the list from your website, check Analytics for what performed best, find that graphic in Canva, copy the caption from Claude, and format it all while updating the CTA. Two hours later, you've sent one email.</p>
+                <p className="mo-reveal" style={{ transitionDelay: "240ms" }}>I've spent 15+ years in marketing. I should know better. But I was still drowning in tools, building Zapier automations at 11 PM, wondering why marketing felt like IT work instead of strategy. If I was struggling, what about the founders I work with? The ones building real businesses, whether it's coaching practices, consulting firms, or service companies who never signed up to become software administrators.</p>
+                <p className="mo-reveal" style={{ transitionDelay: "320ms" }}>Here's what I kept seeing: Brilliant founders spending 20+ hours a week on marketing operations, copying content between platforms, troubleshooting integrations, managing subscriptions, and zero hours on marketing strategy. No time to think about positioning, building a consistent narrative, or creating content that actually moves the needle. Just managing systems.</p>
+                <p className="mo-reveal" style={{ borderLeft: `3px solid ${COLORS.coral}`, paddingLeft: 22, transitionDelay: "400ms" }}>
+                  <strong style={{ color: COLORS.near }}>That's the real problem.</strong> It's not too many tools — every tool jumps straight to execution without fully asking the strategic questions: Who are you? Who do you serve? What makes you different? What's your actual narrative? You can't build a business that lasts on random posts and duct-taped automations.
                 </p>
-                <p className="text-sm text-white/70 font-medium">That's why MOXIEMO exists.</p>
+                <p className="mo-reveal" style={{ transitionDelay: "480ms" }}>So, I built MOXIEMO. Not another tool to manage, but a growth system that works like your actual Chief Marketing Officer: it asks the strategic questions, creates your foundation, then executes it consistently so you can get back to building the business you actually started. Because you didn't become a founder to be a system administrator. You became one to build a legacy.</p>
+                <p className="mo-reveal" style={{ fontWeight: 600, fontSize: 18, lineHeight: 1.55, color: COLORS.near, transitionDelay: "560ms" }}>MOXIEMO is the growth system that gives that back to you.</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* MISSION */}
-        <section className="max-w-6xl mx-auto px-6 py-24">
-          <div className="bg-foreground text-background px-6 md:px-12 py-16 rounded-3xl">
-            <div className="max-w-3xl mx-auto text-center">
-              <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-4">Our mission</div>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight leading-tight mb-6">We're ending the tool fragmentation era — turning exhausted operators into strategic marketers who actually grow revenue.</h2>
-              <p className="text-background/70 font-light leading-relaxed">In five years, we want "tool fragmentation" to feel as outdated as fax machines. The default answer should be: <em>just use MOXIEMO.</em></p>
+        {/* SECTION 4: BUILT FROM EXPERIENCE */}
+        <section style={{ background: COLORS.sage, padding: "100px 40px" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(36px, 5vw, 64px)", lineHeight: 1.0, letterSpacing: "-0.022em", color: COLORS.near, textAlign: "center", marginBottom: 56 }}>
+              Built from experience.<br />
+              <span className="mo-serif" style={{ fontWeight: 320, fontStyle: "italic", color: "#6d7a5e" }}>Not just ambition.</span>
+            </h2>
+
+            <div className="mo-experience-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+              {[
+                { src: tableAsset.url, caption: "The Table — curated dinners for women founders in Houston", alt: "The Table dinner" },
+                { src: quoteAsset.url, caption: "15+ years. Hundreds of founders. One recurring problem.", alt: "Karee Laing" },
+              ].map((c, i) => (
+                <div key={i} className="mo-reveal" style={{ borderRadius: 8, overflow: "hidden", position: "relative", height: 370, transitionDelay: `${i*100}ms` }}>
+                  <img src={c.src} alt={c.alt} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(to top, rgba(15,15,12,0.85), transparent)" }} />
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "20px 18px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(244,239,229,0.7)" }}>{c.caption}</div>
+                </div>
+              ))}
+              <div className="mo-reveal" style={{ background: COLORS.near, borderRadius: 8, padding: "40px 34px", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 370, transitionDelay: "200ms" }}>
+                <div style={{ width: 28, height: 2.5, background: COLORS.coral, borderRadius: 2, marginBottom: 30 }} />
+                <p className="mo-serif" style={{ fontWeight: 500, fontSize: "clamp(22px, 2.4vw, 30px)", lineHeight: 1.28, color: COLORS.cream, letterSpacing: "-0.01em", marginBottom: 24 }}>
+                  You're not missing knowledge. You're missing a growth system.
+                </p>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "rgba(244,239,229,0.4)" }}>That's why MOXIEMO exists.</div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* VALUES */}
-        <section className="max-w-6xl mx-auto px-6 py-12 pb-24">
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-14">The rules we never break.</h2>
-          <div className="grid md:grid-cols-2 gap-6">
-            {values.map((v) => (
-              <Card key={v.n} className="p-8 border-border shadow-soft">
-                <div className="font-display text-4xl text-accent mb-3">{v.n}</div>
-                <h3 className="font-bold text-xl mb-3 tracking-tight">{v.t}</h3>
-                <p className="text-sm text-muted-foreground font-light leading-relaxed mb-4">{v.d}</p>
-                <div className="border-l-2 border-accent pl-3 py-1">
-                  <div className="text-xs uppercase tracking-[0.15em] text-muted-foreground font-bold mb-1">Decision filter</div>
-                  <p className="text-sm font-medium italic">"{v.filter}"</p>
+        {/* SECTION 5: MISSION */}
+        <section style={{ background: COLORS.near, position: "relative", overflow: "hidden" }}>
+          <div style={{ maxWidth: 900, margin: "0 auto", padding: "128px 40px", textAlign: "center", position: "relative" }}>
+            <div aria-hidden style={{ position: "absolute", right: -120, top: -120, width: 640, height: 640, borderRadius: "50%", border: "1px solid rgba(239,111,83,0.07)", pointerEvents: "none" }} />
+            <div aria-hidden style={{ position: "absolute", right: -60, top: -60, width: 400, height: 400, borderRadius: "50%", border: "1px solid rgba(239,111,83,0.05)", pointerEvents: "none" }} />
+            <div aria-hidden style={{ position: "absolute", left: -100, bottom: -80, width: 500, height: 500, borderRadius: "50%", border: "0.5px solid rgba(239,111,83,0.04)", pointerEvents: "none" }} />
+
+            <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.26em", color: COLORS.coral, marginBottom: 30, display: "inline-block", position: "relative" }}>OUR MISSION</div>
+            <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(30px, 4.8vw, 64px)", lineHeight: 1.02, letterSpacing: "-0.024em", color: COLORS.cream, marginBottom: 34, textWrap: "balance", position: "relative", transitionDelay: "100ms" } as React.CSSProperties}>
+              We're turning exhausted operators into strategic leaders, with a growth system that finds what makes you valuable, puts it in market, and proves it grows your business.
+            </h2>
+            <p className="mo-reveal" style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(244,239,229,0.48)", maxWidth: 640, margin: "0 auto", position: "relative", transitionDelay: "200ms" }}>
+              In five years, we want tool fragmentation to feel as outdated as fax machines, and "is this actually growing my business" to always have a clear answer. The default answer should be: just use MOXIEMO.
+            </p>
+          </div>
+        </section>
+
+        {/* SECTION 6: RULES */}
+        <section style={{ background: COLORS.cream, padding: "120px 40px" }}>
+          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+            <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(36px, 5vw, 64px)", letterSpacing: "-0.022em", color: COLORS.near, textAlign: "center", marginBottom: 68 }}>
+              The rules we never break.
+            </h2>
+            <div className="mo-rules-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16 }}>
+              {rules.map((r, i) => (
+                <div key={r.n} className="mo-reveal" style={{ border: "1px solid rgba(19,19,15,0.10)", borderRadius: 8, padding: "38px 34px", transitionDelay: `${i*80}ms` }}>
+                  <div className="mo-serif" style={{ fontSize: 40, color: COLORS.coral, lineHeight: 1, marginBottom: 16 }}>{r.n}</div>
+                  <h3 style={{ fontWeight: 700, fontSize: 18, color: COLORS.near, letterSpacing: "-0.01em", marginBottom: 14 }}>{r.t}</h3>
+                  <p style={{ fontSize: 16, lineHeight: 1.65, color: COLORS.muted, marginBottom: 22 }}>{r.d}</p>
+                  <div style={{ borderLeft: "3px solid rgba(19,19,15,0.10)", paddingLeft: 18 }}>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: COLORS.coral, marginBottom: 7 }}>DECISION FILTER</div>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: COLORS.lightMuted, lineHeight: 1.5 }}>"{r.f}"</div>
+                  </div>
                 </div>
-              </Card>
-            ))}
+              ))}
+              <div className="mo-reveal mo-rule-card-5" style={{ gridColumn: "1 / -1", border: "1px solid rgba(19,19,15,0.10)", borderRadius: 8, padding: "38px 34px", display: "grid", gridTemplateColumns: "auto 1fr", gap: "0 48px", alignItems: "start", transitionDelay: "320ms" }}>
+                <div className="mo-serif" style={{ fontSize: 40, color: COLORS.coral, lineHeight: 1 }}>05</div>
+                <div>
+                  <h3 style={{ fontWeight: 700, fontSize: 18, color: COLORS.near, letterSpacing: "-0.01em", marginBottom: 14 }}>Compound simplicity over feature bloat.</h3>
+                  <p style={{ fontSize: 16, lineHeight: 1.65, color: COLORS.muted, marginBottom: 22, maxWidth: 680 }}>Fewer features that multiply each other's value. Tool-fatigued users don't want more, they want fewer, better.</p>
+                  <div style={{ borderLeft: "3px solid rgba(19,19,15,0.10)", paddingLeft: 18 }}>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: COLORS.coral, marginBottom: 7 }}>DECISION FILTER</div>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: COLORS.lightMuted, lineHeight: 1.5 }}>"Does this make the platform simpler or more complex?"</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* VISION */}
-        <section className="max-w-6xl mx-auto px-6 pb-24">
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-center mb-4">Where we're going.</h2>
-          <p className="text-center italic text-accent font-medium mb-12">
-            We measure success in hours returned and tools eliminated. Not vanity metrics.
-          </p>
-          <div className="grid md:grid-cols-3 gap-6">
-            {vision.map((v) => (
-              <Card key={v.y} className="p-8 border-border shadow-soft text-center">
-                <div className="text-xs uppercase tracking-[0.2em] text-accent font-bold mb-3">{v.t}</div>
-                <div className="font-display text-5xl mb-4">{v.y}</div>
-                <p className="text-sm text-muted-foreground font-light leading-relaxed">{v.d}</p>
-              </Card>
-            ))}
+        {/* SECTION 7: ROADMAP */}
+        <section style={{ background: COLORS.deep, padding: "120px 40px 100px" }}>
+          <div style={{ maxWidth: 1060, margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: 88 }}>
+              <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(42px, 5.5vw, 74px)", lineHeight: 0.95, letterSpacing: "-0.026em", color: COLORS.cream, marginBottom: 20 }}>Where we're going.</h2>
+              <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, letterSpacing: "0.12em", color: COLORS.coral, fontStyle: "italic", transitionDelay: "100ms" }}>
+                We measure success in growth you can prove and hours you get back. Not vanity metrics.
+              </div>
+            </div>
+
+            <div ref={timelineRef} style={{ position: "relative" }}>
+              <div
+                ref={spineRef}
+                className="mo-timeline-spine"
+                style={{
+                  position: "absolute", left: "50%", top: 0, width: 1.5, transform: "translateX(-50%)",
+                  background: "linear-gradient(to bottom, #ef6f53, rgba(239,111,83,0.2))",
+                  zIndex: 0, height: 0, transition: "height 2.4s cubic-bezier(0.4, 0, 0.2, 1)",
+                }}
+              />
+              {milestones.map((m, i) => {
+                const last = i === milestones.length - 1;
+                const isLeft = m.side === "left";
+                const content = (
+                  <div className="mo-reveal" style={{ transitionDelay: `${i*100}ms` }}>
+                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.26em", color: COLORS.coral, marginBottom: 10 }}>{m.yr}</div>
+                    <div className="mo-serif" style={{ fontWeight: 600, fontSize: "clamp(60px, 7.5vw, 96px)", lineHeight: 0.88, letterSpacing: "-0.025em", color: COLORS.cream }}>{m.num}</div>
+                    <div style={{ fontSize: 15, lineHeight: 1.65, color: "rgba(244,239,229,0.48)", marginTop: 14, maxWidth: 310, marginLeft: isLeft ? "auto" : 0 }}>{m.desc}</div>
+                  </div>
+                );
+                return (
+                  <div key={i} className="mo-timeline-row" style={{ display: "grid", gridTemplateColumns: "1fr 90px 1fr", alignItems: "center", marginBottom: last ? 0 : 60 }}>
+                    <div style={{ textAlign: "right", paddingRight: 48 }}>{isLeft ? content : null}</div>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      <div style={{ width: m.size, height: m.size, borderRadius: "50%", background: COLORS.coral, position: "relative", zIndex: 2, animation: `mo-node-pulse 3.5s ${i*0.4}s ease-in-out infinite` }} />
+                    </div>
+                    <div style={{ paddingLeft: 48 }}>{!isLeft ? content : null}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mo-reveal" style={{ marginTop: 80, paddingTop: 56, borderTop: "1px solid rgba(244,239,229,0.06)", textAlign: "center" }}>
+              <div className="mo-serif" style={{ fontStyle: "italic", fontSize: "clamp(18px, 2.2vw, 26px)", color: "rgba(244,239,229,0.38)" }}>
+                "I'm a strategist again, not an operator." That's the North Star.
+              </div>
+            </div>
           </div>
-          <p className="text-center mt-10 italic text-muted-foreground font-light max-w-2xl mx-auto">"I'm a strategist again, not an operator." That's the North Star.</p>
         </section>
 
+        {/* SECTION 8: CLOSING CTA */}
+        <section style={{ background: COLORS.sage, padding: "120px 40px" }}>
+          <div style={{ maxWidth: 780, margin: "0 auto", textAlign: "center" }}>
+            <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(44px, 6.5vw, 84px)", lineHeight: 0.93, letterSpacing: "-0.026em", color: COLORS.near, marginBottom: 26 }}>
+              Ready when you are.
+            </h2>
+            <p className="mo-reveal" style={{ fontSize: 18, lineHeight: 1.7, color: COLORS.muted, maxWidth: 580, margin: "0 auto 48px", transitionDelay: "100ms" }}>
+              Start your MOXIEMO Discovery in under a minute, free while private beta is open. The full strategy takes about 20 to 25 minutes, and it's yours by the end of it. Or get on the list for Beta 2.0, with founding pricing locked in for life.
+            </p>
+            <div className="mo-reveal" style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 26, transitionDelay: "200ms" }}>
+              <a href="https://buildwithmoxiemo.com/founding" target="_blank" rel="noopener noreferrer" className="mo-btn-primary">Start your Discovery →</a>
+              <a href="https://buildwithmoxiemo.com/beta20-founding?tier=growth" target="_blank" rel="noopener noreferrer" className="mo-btn-outline">Join the Beta 2.0 waitlist →</a>
+            </div>
+            <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: COLORS.warmMuted, transitionDelay: "300ms" }}>
+              Private beta is free while it's open · Beta 2.0 founding members get 50% off for life
+            </div>
+          </div>
+        </section>
       </main>
-
-      {/* FINAL CTA */}
-      <section className="border-t border-border bg-muted/40 py-20">
-        <div className="max-w-3xl mx-auto px-6 text-center">
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4 leading-[1.1]">Ready when you are.</h2>
-          <p className="text-muted-foreground mb-7 text-lg">Start your MOXIEMO Discovery in under a minute.</p>
-          <Button asChild size="lg" className="bg-foreground hover:bg-foreground/90 text-background h-12 px-8 rounded-full font-semibold">
-            <Link to="/auth">Get started <ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
-        </div>
-      </section>
 
       <SiteFooter />
     </div>
