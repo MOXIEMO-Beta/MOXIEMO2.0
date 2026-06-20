@@ -84,6 +84,7 @@ export default function Pricing() {
         .mo-dark-btn:hover { background:#2a2722 !important; }
         .mo-outline-btn:hover { border-color:#13130f !important; }
         .mo-foundation-cta:hover { background:#13130f !important; color:#f4efe5 !important; }
+        .mo-scale-cta:hover { background:#13130f !important; color:#f4efe5 !important; }
         @media (max-width: 900px) {
           .mo-tiers { grid-template-columns: 1fr !important; }
           .mo-stats { grid-template-columns: 1fr 1fr !important; }
@@ -546,7 +547,7 @@ function Tier({
           <a href={ctaHref || "/founding"} className="mo-coral-btn" style={{ display: "block", textAlign: "center", background: CORAL, color: "#fff", fontWeight: 700, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none" }}>{ctaLabel}</a>
         )}
         {ctaVariant === "disabled" && (
-          <a href={ctaHref || "/beta20-founding"} style={{ display: "block", textAlign: "center", background: "#ece7de", color: "#8a877a", fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none" }}>{ctaLabel}</a>
+          <a href={ctaHref || "/beta20-founding"} className="mo-scale-cta" style={{ display: "block", textAlign: "center", background: "#ece7de", color: INK, fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none", border: `1.5px solid ${INK}`, transition: "background 0.2s ease, color 0.2s ease" }}>{ctaLabel}</a>
         )}
       </div>
       <div style={{ padding: "20px 28px 28px", flex: 1, display: "flex", flexDirection: "column", gap: 10, borderTop: `1px solid ${borderColor}` }}>
