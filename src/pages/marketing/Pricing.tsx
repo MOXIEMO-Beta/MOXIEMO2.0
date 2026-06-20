@@ -80,7 +80,7 @@ export default function Pricing() {
       <style>{`
         @keyframes mo-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         @keyframes mo-blink { 0%,100%{opacity:1} 50%{opacity:.35} }
-        .mo-coral-btn:hover { background:#c24a30 !important; box-shadow:0 8px 20px -6px rgba(194,74,48,0.55) !important; }
+        .mo-coral-btn:hover { background:#fbd9cf !important; color:#13130f !important; }
         .mo-dark-btn:hover { background:#2a2722 !important; }
         .mo-outline-btn:hover { border-color:#13130f !important; }
         .mo-foundation-cta:hover { background:#64748b !important; color:#f4efe5 !important; border-color:#64748b !important; }
