@@ -145,6 +145,51 @@ export type Database = {
         }
         Relationships: []
       }
+      beta20_founding: {
+        Row: {
+          company: string | null
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          referral_source: string | null
+          role: string | null
+          source: string
+          status: string
+          tier_interest: string
+          user_id: string | null
+          website: string | null
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          referral_source?: string | null
+          role?: string | null
+          source?: string
+          status?: string
+          tier_interest?: string
+          user_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          referral_source?: string | null
+          role?: string | null
+          source?: string
+          status?: string
+          tier_interest?: string
+          user_id?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       blog_waitlist: {
         Row: {
           created_at: string
