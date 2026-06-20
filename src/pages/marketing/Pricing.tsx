@@ -547,7 +547,7 @@ function Tier({
           <a href={ctaHref || "/founding"} className="mo-coral-btn" style={{ display: "block", textAlign: "center", background: CORAL, color: "#fff", fontWeight: 700, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none" }}>{ctaLabel}</a>
         )}
         {ctaVariant === "disabled" && (
-          <a href={ctaHref || "/beta20-founding"} className="mo-scale-cta" style={{ display: "block", textAlign: "center", background: "#ece7de", color: INK, fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none", border: `1.5px solid ${INK}`, transition: "background 0.2s ease, color 0.2s ease" }}>{ctaLabel}</a>
+          <a href={ctaHref || "/beta20-founding"} className="mo-foundation-cta" style={{ display: "block", textAlign: "center", background: CREAM, color: INK, fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none", border: `1.5px solid ${INK}` }}>{ctaLabel}</a>
         )}
       </div>
       <div style={{ padding: "20px 28px 28px", flex: 1, display: "flex", flexDirection: "column", gap: 10, borderTop: `1px solid ${borderColor}` }}>
