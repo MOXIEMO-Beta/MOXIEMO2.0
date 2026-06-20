@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ArrowRight, Send } from "lucide-react";
-import kareeHeadshot from "@/assets/karee-headshot.png";
+import kareeHeadshotAsset from "@/assets/karee-hero.png.asset.json";
+const kareeHeadshot = kareeHeadshotAsset.url;
 import radicaHeadshot from "@/assets/radica-headshot.jpeg";
 import moxieDevelopers from "@/assets/moxie-developers.jpg";
 
