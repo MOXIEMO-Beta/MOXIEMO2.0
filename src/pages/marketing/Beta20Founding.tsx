@@ -548,6 +548,7 @@ export default function Beta20Founding() {
           </div>
         </div>
       </div>
+      <SiteFooter />
     </>
   );
 }
