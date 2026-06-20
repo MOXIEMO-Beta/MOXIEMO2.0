@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { SiteHeader } from "@/components/SiteHeader";
+import { SiteFooter } from "@/components/SiteFooter";
 
 const FONTS_HREF =
   "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,wght@0,300;0,500;0,600;0,700;1,300;1,500&display=swap";
@@ -109,6 +111,7 @@ export default function Beta20Founding() {
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       <link rel="stylesheet" href={FONTS_HREF} />
+      <SiteHeader />
       <style>{`
         @keyframes mo-scroll { from { transform: translateX(0);} to { transform: translateX(-50%);} }
         .b20-wrap input::placeholder, .b20-wrap select { color: rgba(26,48,40,0.5); }
