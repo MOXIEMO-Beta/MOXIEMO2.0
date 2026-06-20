@@ -149,12 +149,12 @@ export default function Community() {
 
       {/* SECTION 1 — HERO */}
       <section style={{ background: CREAM }}>
-        <div style={{ maxWidth: 820, margin: "0 auto", padding: "100px 40px 88px", textAlign: "center" }}>
+        <div style={{ maxWidth: 960, margin: "0 auto", padding: "100px 40px 88px", textAlign: "center" }}>
           <div style={{ marginBottom: 28 }}><Eyebrow>Community</Eyebrow></div>
-          <h1 style={{ ...display, fontWeight: 700, fontSize: "clamp(54px, 8vw, 110px)", lineHeight: 0.93, letterSpacing: "-0.03em", color: INK, margin: 0 }}>
-            You're not building<br />this alone.
+          <h1 style={{ ...display, fontWeight: 700, fontSize: "clamp(46px, 6.6vw, 92px)", lineHeight: 0.96, letterSpacing: "-0.03em", color: INK, margin: 0 }}>
+            You're not building this alone.
           </h1>
-          <p style={{ fontSize: 19, color: MUTED, maxWidth: 520, margin: "28px auto 36px", lineHeight: 1.55 }}>
+          <p style={{ fontSize: 17.5, color: MUTED, maxWidth: 680, margin: "24px auto 30px", lineHeight: 1.55 }}>
             The MOXIEMO beta community is where the platform gets built. Every founding member is a collaborator, not just a user.
           </p>
           <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
