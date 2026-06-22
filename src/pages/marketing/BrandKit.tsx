@@ -98,12 +98,12 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 // Alpha is preserved so the silhouette stays intact.
 async function generateLogoVariants(
   src: string
-): Promise<{ grayscale?: string; reversed?: string }> {
+): Promise<{ color?: string; grayscale?: string; reversed?: string }> {
   try {
     const img = await loadImage(src);
     const w = img.naturalWidth || 512;
     const h = img.naturalHeight || 512;
-    const make = (mode: "gray" | "white") => {
+    const make = (mode: "color" | "gray" | "white") => {
       const canvas = document.createElement("canvas");
       canvas.width = w;
       canvas.height = h;
@@ -111,6 +111,11 @@ async function generateLogoVariants(
       if (!ctx) return undefined;
       ctx.clearRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
+      if (mode === "color") {
+        // Rasterize the color logo to PNG so the PDF renderer (which cannot
+        // embed SVG data URLs) always receives an embeddable raster image.
+        return canvas.toDataURL("image/png");
+      }
       const id = ctx.getImageData(0, 0, w, h);
       const d = id.data;
       for (let i = 0; i < d.length; i += 4) {
@@ -131,7 +136,7 @@ async function generateLogoVariants(
       ctx.putImageData(id, 0, 0);
       return canvas.toDataURL("image/png");
     };
-    return { grayscale: make("gray"), reversed: make("white") };
+    return { color: make("color"), grayscale: make("gray"), reversed: make("white") };
   } catch {
     return {};
   }
