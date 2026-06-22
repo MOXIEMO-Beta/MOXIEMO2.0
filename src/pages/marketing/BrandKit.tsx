@@ -384,8 +384,34 @@ export default function BrandKit() {
     );
   }, [firstName, lastName, email]);
 
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  function validateEmailStrict(raw: string): string | null {
+    const value = raw.trim();
+    if (!value) return "Enter your email address.";
+    if (/\s/.test(value)) return "Double-check your email address.";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return "Double-check your email address.";
+    const domain = value.split("@")[1] ?? "";
+    const labels = domain.toLowerCase().split(".");
+    // Catch typos like foo@bar.com.com
+    if (labels.length >= 2 && labels[labels.length - 1] === labels[labels.length - 2]) {
+      return "Double-check your email address.";
+    }
+    const tld = labels[labels.length - 1];
+    if (!tld || tld.length < 2 || !/^[a-z]+$/.test(tld)) {
+      return "Double-check your email address.";
+    }
+    return null;
+  }
+
   async function handleCapture(e: React.FormEvent) {
     e.preventDefault();
+    const err = validateEmailStrict(email);
+    if (err) {
+      setEmailError(err);
+      return;
+    }
+    setEmailError(null);
     if (!canSend) return;
     setSending(true);
     try {
@@ -455,12 +481,10 @@ export default function BrandKit() {
       (async () => {
         try {
           const base64 = await blobToBase64(blob);
-          const { error } = await supabase.functions.invoke("send-brand-kit", {
+          const { error } = await supabase.functions.invoke("send-brand-kit-email", {
             body: {
-              first_name: firstName.trim(),
-              last_name: lastName.trim(),
               email: email.trim(),
-              website_url: website.trim(),
+              firstName: firstName.trim(),
               pdfBase64: base64,
             },
           });
@@ -999,11 +1023,21 @@ export default function BrandKit() {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (emailError) setEmailError(null);
+                    }}
+                    onBlur={() => {
+                      if (email.trim()) setEmailError(validateEmailStrict(email));
+                    }}
                     required
                     autoComplete="email"
-                    className="mt-2 h-12"
+                    aria-invalid={!!emailError}
+                    className={`mt-2 h-12 ${emailError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                   />
+                  {emailError && (
+                    <p className="mt-2 text-sm text-red-600">{emailError}</p>
+                  )}
                 </div>
 
                 <Button
