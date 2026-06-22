@@ -1079,23 +1079,12 @@ export default function Strategy() {
   const showInterstitial =
     isBuilding || (sawBuildingRef.current && !!strategy && !interstitialDismissed);
 
-  if (!strategy) {
-    const showManualRetry = isFailed && (autoRetryDoneRef.current || (session?.synthesis_attempts ?? 0) >= 2);
+  const showManualRetry = isFailed && (autoRetryDoneRef.current || (session?.synthesis_attempts ?? 0) >= 2);
 
-    if (isBuilding) {
-      return (
-        <StrategyEngineInterstitial
-          active
-          done={false}
-          onFadedOut={() => setInterstitialDismissed(true)}
-        />
-      );
-    }
-
-    return (
-      <div className="px-6 lg:px-10 py-16 max-w-3xl mx-auto text-center">
-        <div className="h-16 w-16 rounded-2xl bg-foreground mx-auto mb-6 flex items-center justify-center"><Compass className="h-7 w-7 text-accent" /></div>
-        {isFailed && !showManualRetry ? (
+  const emptyOrFailedState = !strategy ? (
+    <div className="px-6 lg:px-10 py-16 max-w-3xl mx-auto text-center">
+      <div className="h-16 w-16 rounded-2xl bg-foreground mx-auto mb-6 flex items-center justify-center"><Compass className="h-7 w-7 text-accent" /></div>
+      {isBuilding ? null : isFailed && !showManualRetry ? (
           <>
             <h1 className="font-display text-4xl mb-3">Strategy generation hit a snag</h1>
             <p className="text-muted-foreground mb-8">
