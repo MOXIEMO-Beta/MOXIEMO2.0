@@ -168,6 +168,23 @@ export default function BrandKit() {
 
   const generatedPdfRef = useRef<Blob | null>(null);
 
+  // Safe in-page scroll. Never falls through to page-bottom when the target is missing.
+  function scrollToSection(id: string, opts?: { focus?: boolean }) {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn(`[BrandKit] scroll target not found: #${id}`);
+      return;
+    }
+    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth", block: "center" });
+    if (opts?.focus) {
+      window.setTimeout(
+        () => (el as HTMLElement).focus({ preventScroll: true }),
+        prefersReduced ? 0 : 450,
+      );
+    }
+  }
+
   useEffect(() => {
     if (step !== "loading") return;
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -472,14 +489,7 @@ export default function BrandKit() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    const el = document.getElementById("website");
-                    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-                    if (el) {
-                      el.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth", block: "center" });
-                      window.setTimeout(() => (el as HTMLInputElement).focus({ preventScroll: true }), prefersReduced ? 0 : 450);
-                    }
-                  }}
+                  onClick={() => scrollToSection("website", { focus: true })}
                   className="mt-8 inline-flex items-center justify-center rounded-full px-7 py-4 text-base font-semibold text-white shadow-md transition-transform motion-safe:hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                   style={{ backgroundColor: "#FF6B5C" }}
                 >
