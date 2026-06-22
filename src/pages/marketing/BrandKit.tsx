@@ -358,12 +358,16 @@ export default function BrandKit() {
     if (!canSend) return;
     setSending(true);
     try {
+      // The PDF renderer cannot fetch external URLs (CORS / network-restricted),
+      // so only pass logos that are already base64 data URLs.
+      const pickEmbeddable = (s: string | undefined) =>
+        s && s.startsWith("data:") ? s : undefined;
       const data: BrandKitData = {
         siteName: siteName || website,
         websiteUrl: website,
-        logo: logoUrl || logoDataUrl || undefined,
-        logoGrayscale: logoGrayscaleUrl || undefined,
-        logoReversed: logoReversedUrl || undefined,
+        logo: pickEmbeddable(logoUrl) || pickEmbeddable(logoDataUrl),
+        logoGrayscale: pickEmbeddable(logoGrayscaleUrl),
+        logoReversed: pickEmbeddable(logoReversedUrl),
         colors,
         fonts: { heading: headingFont, body: bodyFont },
         imagery,
