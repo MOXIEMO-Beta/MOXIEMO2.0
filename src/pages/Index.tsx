@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
 import { ResourcesMega } from "@/components/ResourcesMega";
@@ -897,6 +897,38 @@ function Grain() {
 }
 
 export default function Index() {
+  const navigate = useNavigate();
+  const [interceptingAuth, setInterceptingAuth] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const h = window.location.hash || "";
+    return h.includes("access_token=") || h.includes("type=invite") || h.includes("type=recovery") || h.includes("type=signup") || h.includes("type=magiclink");
+  });
+
+  useEffect(() => {
+    if (!interceptingAuth) return;
+    const raw = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
+    const params = new URLSearchParams(raw);
+    const access_token = params.get("access_token") || "";
+    const refresh_token = params.get("refresh_token") || "";
+    const type = params.get("type") || "";
+    (async () => {
+      try {
+        if (access_token && refresh_token) {
+          await supabase.auth.setSession({ access_token, refresh_token });
+        }
+      } catch (e) {
+        // fall through to callback which will surface the error
+      } finally {
+        const target = "/auth/callback" + (type ? `#type=${encodeURIComponent(type)}` : "");
+        navigate(target, { replace: true });
+      }
+    })();
+  }, [interceptingAuth, navigate]);
+
+  if (interceptingAuth) {
+    return <div style={{ background: CREAM, minHeight: "100vh" }} />;
+  }
+
   return (
     <div style={{ background: CREAM }}>
       <Styles />
