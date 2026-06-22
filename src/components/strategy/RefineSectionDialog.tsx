@@ -63,18 +63,28 @@ interface Props {
   currentValue: string;
   context: any;
   onApply: (newValue: string) => Promise<void> | void;
+  /** Optional override for the modal title (e.g. "Refine Voice sample"). */
+  titleOverride?: string;
+  /** Optional override for the modal subtitle/description. */
+  descriptionOverride?: string;
 }
 
-export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLabel, currentValue, context, onApply }: Props) {
-  const [step, setStep] = useState<"input" | "compare">("input");
+export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLabel, currentValue, context, onApply, titleOverride, descriptionOverride }: Props) {
+  const [step, setStep] = useState<"input" | "compare" | "manual">("input");
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [refined, setRefined] = useState("");
   const [rationale, setRationale] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [manualDraft, setManualDraft] = useState("");
 
-  const config = sectionKey ? COACHING_PROMPTS[sectionKey] : null;
+  const baseConfig = sectionKey ? COACHING_PROMPTS[sectionKey] : null;
+  const config = {
+    title: titleOverride || baseConfig?.title || (sectionLabel ? `Refine ${sectionLabel}` : "Refine section"),
+    help: descriptionOverride || baseConfig?.help || "Sharpen this section with a clarifying note. MOXIEMO will rewrite using your input + the rest of your strategy as context.",
+    placeholder: baseConfig?.placeholder || "Add a few specifics — concrete details, examples, what to keep or change.",
+  };
 
   useEffect(() => {
     if (open) {
@@ -84,10 +94,11 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
       setRationale("");
       setSaving(false);
       setSaveError(null);
+      setManualDraft(currentValue || "");
     }
-  }, [open, sectionKey]);
+  }, [open, sectionKey, currentValue]);
 
-  if (!sectionKey || !config) return null;
+  if (!sectionKey) return null;
 
   async function generate() {
     if (!input.trim()) {
@@ -131,6 +142,21 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
     }
   }
 
+  async function applyManual() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onApply(manualDraft);
+      toast.success("Section updated.", { duration: 3000 });
+      onOpenChange(false);
+    } catch (e: any) {
+      console.error("Manual edit save failed", e);
+      setSaveError("Couldn't save your update — try again");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -160,6 +186,43 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
               />
               <p className="text-xs text-muted-foreground mt-2">MOXIEMO will rewrite the section using your input + the rest of your strategy as context.</p>
             </div>
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setStep("manual")}
+                className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+              >
+                Edit manually instead →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {step === "manual" && (
+          <div className="space-y-4">
+            <div>
+              <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2">Edit directly</div>
+              <Textarea
+                value={manualDraft}
+                onChange={(e) => setManualDraft(e.target.value)}
+                rows={6}
+                className="text-sm"
+                disabled={saving}
+              />
+              {saveError && (
+                <p className="text-sm text-destructive mt-3" role="alert">{saveError}</p>
+              )}
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => { setStep("input"); setSaveError(null); }}
+                disabled={saving}
+                className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 disabled:opacity-50"
+              >
+                ← Back to AI refinement
+              </button>
+            </div>
           </div>
         )}
 
@@ -187,14 +250,23 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
         )}
 
         <DialogFooter>
-          {step === "input" ? (
+          {step === "input" && (
             <>
               <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button onClick={generate} disabled={loading} className="bg-foreground text-background hover:bg-foreground/90">
                 {loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…</> : <>Generate refinement <ArrowRight className="ml-2 h-4 w-4" /></>}
               </Button>
             </>
-          ) : (
+          )}
+          {step === "manual" && (
+            <>
+              <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
+              <Button onClick={applyManual} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent/90">
+                {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</> : "Save"}
+              </Button>
+            </>
+          )}
+          {step === "compare" && (
             <>
               <Button variant="ghost" onClick={() => setStep("input")} disabled={saving}>Keep refining</Button>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Revert</Button>
