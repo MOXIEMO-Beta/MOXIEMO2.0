@@ -1023,11 +1023,21 @@ export default function BrandKit() {
                     id="email"
                     type="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (emailError) setEmailError(null);
+                    }}
+                    onBlur={() => {
+                      if (email.trim()) setEmailError(validateEmailStrict(email));
+                    }}
                     required
                     autoComplete="email"
-                    className="mt-2 h-12"
+                    aria-invalid={!!emailError}
+                    className={`mt-2 h-12 ${emailError ? "border-red-500 focus-visible:ring-red-500" : ""}`}
                   />
+                  {emailError && (
+                    <p className="mt-2 text-sm text-red-600">{emailError}</p>
+                  )}
                 </div>
 
                 <Button
