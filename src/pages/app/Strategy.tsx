@@ -238,7 +238,8 @@ function OverviewTab() {
   return (
     <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
       {/* Positioning */}
-      <Card className="report-card p-8 bg-foreground text-background border-0">
+      <Card className="group relative report-card p-8 bg-foreground text-background border-0">
+        {colPencil("positioning_statement", "positioning statement", "Your one-line statement of who you serve and the shift you create.")}
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">
           {isService ? "Brand positioning" : "Positioning statement"}
         </div>
@@ -293,7 +294,8 @@ function OverviewTab() {
 
       {/* Brand archetype */}
       {(archetype || editing) && (
-        <Card className="report-card p-7 border-border shadow-soft">
+        <Card className="group relative report-card p-7 border-border shadow-soft">
+          {efPencil(["brandArchetype", "description"], "brand archetype", "Your dominant archetype and how it shows up in your brand.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Brand archetype</div>
           <div className="flex items-start gap-4 mb-5">
             <div className="text-5xl leading-none">
@@ -393,7 +395,8 @@ function OverviewTab() {
           { label: isService ? "Customer pain point" : "Pain point", key: "pain_point" },
           { label: isService ? "Customer outcome" : "Transformation", key: "transformation" },
         ].map((s) => (
-          <Card key={s.key} className="report-card p-5 border-border shadow-soft">
+          <Card key={s.key} className="group relative report-card p-5 border-border shadow-soft">
+            {colPencil(s.key, s.label.toLowerCase(), `Who you serve / what's painful / what shifts — the ${s.label.toLowerCase()} snapshot.`)}
             <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">{s.label}</div>
             <p className="text-sm leading-relaxed">
               <EditableField
@@ -474,7 +477,8 @@ function OverviewTab() {
 
       {/* Competitive positioning */}
       {(competitive || editing) && (
-        <Card className="report-card p-7 border-border shadow-soft">
+        <Card className="group relative report-card p-7 border-border shadow-soft">
+          {efPencil(["competitivePositioning", "yourPosition"], "competitive positioning", "Your unique market position and the gap you fill versus alternatives.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">
             {isService ? "Competitive positioning — your ownable gap" : "Competitive positioning"}
           </div>
@@ -522,7 +526,8 @@ function OverviewTab() {
 
       {/* Distribution (service strategies) */}
       {isService && (distribution || editing) && (
-        <Card className="report-card p-7 border-border shadow-soft">
+        <Card className="group relative report-card p-7 border-border shadow-soft">
+          {efPencil(["distribution", "doubleDownOn"], "distribution channels", "The channels already winning for you and where to double down.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Distribution channels</div>
           {(distribution?.doubleDownOn || editing) && (
             <div className="rounded-xl bg-accent-soft/40 p-5 mb-5">
@@ -590,13 +595,15 @@ function OverviewTab() {
 
       {/* Success + goal */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card p-6 border-border shadow-soft">
+          {colPencil("success_definition", "success metric", "How you'll measure traction — a number you can track weekly or monthly.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Success looks like</div>
           <p>
             <EditableField value={strategy.success_definition} onChange={(v) => setField("success_definition", v)} multiline placeholder="What success looks like" />
           </p>
         </Card>
-        <Card className="report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card p-6 border-border shadow-soft">
+          {colPencil("business_goal", "business goal", "Your primary revenue or client target for the next 90–180 days.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Business goal</div>
           <p>
             <EditableField value={strategy.business_goal} onChange={(v) => setField("business_goal", v)} multiline placeholder="Your primary business goal" />
