@@ -6,43 +6,17 @@ import { usePlan } from "@/hooks/usePlan";
 import { canPublishOn } from "@/lib/planConfig";
 import { PublishLockBadge } from "@/components/PublishLockBadge";
 import {
-  Sparkles,
   Loader2,
-  Pin,
-  Pencil,
-  Dices,
-  Mail,
-  Check,
-  ChevronDown,
-  Linkedin,
-  Facebook,
-  Instagram,
-  Image as ImageIcon,
+  X,
+  ImageIcon,
   Palette,
   FolderOpen,
-  X,
-  Calendar as CalendarIcon,
-  Send,
-  Save,
-  ListPlus,
-  Hash,
-  ThumbsUp,
-  MessageSquare,
-  Repeat2,
-  Heart,
-  Share2,
-  Wand2,
-  ArrowRight,
-  History,
-  Bot,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Select,
   SelectTrigger,
@@ -67,8 +41,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import LibraryAssetsDrawer from "./LibraryAssetsDrawer";
 import { cn } from "@/lib/utils";
 
@@ -89,28 +61,20 @@ type Profile = {
 type RecentEmail = { id: string; subject: string | null; sent_at: string | null };
 
 type Platform = "linkedin" | "facebook" | "instagram";
-const ALL_PLATFORMS: Platform[] = ["linkedin", "facebook", "instagram"];
-const PLATFORM_LIMIT: Record<Platform, number> = {
-  linkedin: 3000,
-  facebook: 63206,
-  instagram: 2200,
-};
 const PLATFORM_LABEL: Record<Platform, string> = {
   linkedin: "LinkedIn",
   facebook: "Facebook",
   instagram: "Instagram",
 };
 
-const FORMATS = ["Text post", "List / Tips", "Poll", "Question", "Story idea"];
-const TONES = [
-  { value: "default", label: "Use my strategy voice (recommended)" },
-  { value: "casual", label: "More casual" },
-  { value: "direct", label: "More direct" },
-  { value: "educational", label: "More educational" },
-  { value: "storytelling", label: "More storytelling" },
-];
-
 type FocusMode = "pillar" | "custom" | "surprise" | "email" | null;
+
+const CORAL = "#FF6B5C";
+const CORAL_DARK = "#D94032";
+const INK = "#15171C";
+const BORDER = "#E8E7E5";
+const PAPER = "#F7F5F1";
+const MUTED = "#9B9793";
 
 function asArray(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
@@ -151,6 +115,13 @@ function fileToDataUrl(file: File): Promise<string> {
   });
 }
 
+const FOCUS_CARDS: { mode: Exclude<FocusMode, null>; emoji: string; label: string; sub: string }[] = [
+  { mode: "pillar", emoji: "🚀", label: "Content Pillar", sub: "Stay on-strategy automatically" },
+  { mode: "custom", emoji: "✏️", label: "Custom Topic", sub: "Write your own angle or idea" },
+  { mode: "surprise", emoji: "🎲", label: "Surprise Me", sub: "MOXIEMO picks from your strategy" },
+  { mode: "email", emoji: "✉️", label: "Repurpose Email", sub: "Turn a newsletter into a post" },
+];
+
 export default function CreateTab({
   userId,
   prefillTopic,
@@ -168,7 +139,6 @@ export default function CreateTab({
   pillarContext?: { name: string; monthLabel: string } | null;
   onAfterSave?: () => void;
 }) {
-  /* ---------------- state ---------------- */
   const { plan, checkGenerationLimit, handleGenerationResponse } = usePlan();
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -179,283 +149,19 @@ export default function CreateTab({
   const [selectedPillar, setSelectedPillar] = useState<string>("");
   const [customTopic, setCustomTopic] = useState<string>("");
   const [surprisePick, setSurprisePick] = useState<string>("");
-  const [emailPick, setEmailPick] = useState<string>(""); // email id
+  const [emailPick, setEmailPick] = useState<string>("");
 
-  // Step 2 - platforms
+  // Step 2 - platforms (single platform in new UI)
   const [platforms, setPlatforms] = useState<Platform[]>([]);
-
-  // Step 3 - format
-  const [postFormat, setPostFormat] = useState<string>("");
-
-  // Step 4 - tone
-  const [toneOpen, setToneOpen] = useState(false);
-  const [tone, setTone] = useState<string>("default");
 
   // Generation
   const [generating, setGenerating] = useState(false);
-
-  // Composer content per platform
   const [content, setContent] = useState<Record<Platform, string>>({
     linkedin: "",
     facebook: "",
     instagram: "",
   });
-  const [hashtags, setHashtags] = useState<Record<Platform, string[]>>({
-    linkedin: [],
-    facebook: [],
-    instagram: [],
-  });
-  const [hashtagsLoading, setHashtagsLoading] = useState<Platform | null>(null);
-  const [activeComposerTab, setActiveComposerTab] = useState<Platform>("linkedin");
-
-  // AI editing — selection toolbar, instruction input, version history
-  const textareaRefs = useRef<Record<Platform, HTMLTextAreaElement | null>>({
-    linkedin: null,
-    facebook: null,
-    instagram: null,
-  });
-  const [selToolbar, setSelToolbar] = useState<{
-    platform: Platform;
-    top: number;
-    left: number;
-    start: number;
-    end: number;
-    text: string;
-  } | null>(null);
-  const [aiEditing, setAiEditing] = useState<string | null>(null); // action key while loading
-  const [instructionInput, setInstructionInput] = useState<Record<Platform, string>>({
-    linkedin: "",
-    facebook: "",
-    instagram: "",
-  });
-  const [postHistory, setPostHistory] = useState<Record<Platform, string[]>>({
-    linkedin: [],
-    facebook: [],
-    instagram: [],
-  });
-
-  // ---------- Discoverability cues ----------
-  const [showTipBanner, setShowTipBanner] = useState(false);
-  const [tipDismissed, setTipDismissed] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem("moxie_tip_seen") === "true";
-  });
-  const [hasEdited, setHasEdited] = useState<Record<Platform, boolean>>({
-    linkedin: false,
-    facebook: false,
-    instagram: false,
-  });
-  const [focusHint, setFocusHint] = useState<Record<Platform, boolean>>({
-    linkedin: false,
-    facebook: false,
-    instagram: false,
-  });
-  const [textareaFlash, setTextareaFlash] = useState<Record<Platform, boolean>>({
-    linkedin: false,
-    facebook: false,
-    instagram: false,
-  });
-  const [historyPulse, setHistoryPulse] = useState<Record<Platform, boolean>>({
-    linkedin: false,
-    facebook: false,
-    instagram: false,
-  });
-  const [suggestionsOpenFor, setSuggestionsOpenFor] = useState<Platform | null>(null);
-  const instructionRowRefs = useRef<Record<Platform, HTMLDivElement | null>>({
-    linkedin: null,
-    facebook: null,
-    instagram: null,
-  });
-  const instructionInputRefs = useRef<Record<Platform, HTMLInputElement | null>>({
-    linkedin: null,
-    facebook: null,
-    instagram: null,
-  });
-
-  const ASK_MOXIE_SUGGESTIONS = [
-    "Make the hook more direct",
-    "Add a client success example",
-    "Change the ending question to focus on revenue",
-    "Make this sound less formal",
-    "Shorten the second paragraph",
-    "Add a statistic or data point",
-    "Make the opening line more provocative",
-    "Add a specific call to action",
-  ];
-
-  // Dismiss suggestions on outside click or Escape
-  useEffect(() => {
-    if (!suggestionsOpenFor) return;
-    function handleClick(e: MouseEvent) {
-      const row = instructionRowRefs.current[suggestionsOpenFor!];
-      if (row && !row.contains(e.target as Node)) {
-        setSuggestionsOpenFor(null);
-      }
-    }
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setSuggestionsOpenFor(null);
-    }
-    document.addEventListener("mousedown", handleClick);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [suggestionsOpenFor]);
-
-  // Auto-dismiss tip banner after 8s
-  useEffect(() => {
-    if (!showTipBanner) return;
-    const id = setTimeout(() => {
-      setShowTipBanner(false);
-      setTipDismissed(true);
-      sessionStorage.setItem("moxie_tip_seen", "true");
-    }, 8000);
-    return () => clearTimeout(id);
-  }, [showTipBanner]);
-
-  function dismissTipBanner() {
-    setShowTipBanner(false);
-    setTipDismissed(true);
-    sessionStorage.setItem("moxie_tip_seen", "true");
-    triggerFirstSentenceHighlight();
-  }
-
-  function triggerFirstSentenceHighlight() {
-    if (typeof window === "undefined") return;
-    if (sessionStorage.getItem("moxie_first_highlight_seen") === "true") return;
-    sessionStorage.setItem("moxie_first_highlight_seen", "true");
-    setTimeout(() => {
-      const p = activeComposerTab;
-      setTextareaFlash((prev) => ({ ...prev, [p]: true }));
-      setTimeout(() => {
-        setTextareaFlash((prev) => ({ ...prev, [p]: false }));
-      }, 2000);
-    }, 3000);
-  }
-
-  function pushHistory(p: Platform, prevValue: string) {
-    if (prevValue === undefined || prevValue === null) return;
-    setPostHistory((prev) => {
-      const list = prev[p] ?? [];
-      // skip if identical to most recent
-      if (list[list.length - 1] === prevValue) return prev;
-      const next = [...list, prevValue];
-      while (next.length > 5) next.shift();
-      return { ...prev, [p]: next };
-    });
-  }
-
-  function restoreVersion(p: Platform, index: number) {
-    const list = postHistory[p] ?? [];
-    const v = list[index];
-    if (v === undefined) return;
-    pushHistory(p, content[p]);
-    setContent((prev) => ({ ...prev, [p]: v }));
-    toast.success("Version restored");
-  }
-
-  function handleTextareaSelection(p: Platform) {
-    const el = textareaRefs.current[p];
-    if (!el) return;
-    const start = el.selectionStart ?? 0;
-    const end = el.selectionEnd ?? 0;
-    const sel = el.value.slice(start, end).trim();
-    if (!sel) {
-      setSelToolbar(null);
-      return;
-    }
-    const rect = el.getBoundingClientRect();
-    // approximate position: top of textarea + small offset, centered horizontally on cursor
-    const top = rect.top + window.scrollY - 44;
-    const left = rect.left + window.scrollX + Math.min(rect.width - 280, Math.max(0, rect.width / 2 - 140));
-    setSelToolbar({ platform: p, top, left, start, end, text: el.value.slice(start, end) });
-  }
-
-  // dismiss toolbar on outside click / escape
-  useEffect(() => {
-    if (!selToolbar) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setSelToolbar(null);
-    }
-    function onDown(e: MouseEvent) {
-      const target = e.target as HTMLElement;
-      if (target.closest("[data-ai-toolbar]")) return;
-      if (target.tagName === "TEXTAREA") return;
-      setSelToolbar(null);
-    }
-    document.addEventListener("keydown", onKey);
-    document.addEventListener("mousedown", onDown);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("mousedown", onDown);
-    };
-  }, [selToolbar]);
-
-  function showUndoToast(p: Platform, previousValue: string) {
-    toast.success("✓ Applied — review the changes before publishing", {
-      action: {
-        label: "Undo",
-        onClick: () => {
-          setContent((prev) => ({ ...prev, [p]: previousValue }));
-        },
-      },
-    });
-  }
-
-  async function applyAiEdit(opts: {
-    platform: Platform;
-    action: "improve" | "shorter" | "longer" | "punchier" | "rewrite" | "instruction";
-    selectedText: string;
-    fullPost: string;
-    instruction?: string;
-    replaceRange?: { start: number; end: number } | null;
-  }) {
-    const { platform, action, selectedText, fullPost, instruction, replaceRange } = opts;
-    setAiEditing(action);
-    try {
-      const { data, error } = await supabase.functions.invoke("edit-social-post", {
-        body: {
-          action,
-          selectedText,
-          fullPost,
-          platform,
-          strategy: strategy ?? {},
-          instruction,
-        },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      const newText: string = String(data?.text ?? "").trim();
-      if (!newText) throw new Error("Empty response");
-
-      const previous = content[platform];
-      pushHistory(platform, previous);
-
-      if (replaceRange) {
-        const next =
-          fullPost.slice(0, replaceRange.start) + newText + fullPost.slice(replaceRange.end);
-        setContent((prev) => ({ ...prev, [platform]: next }));
-        toast.success("✓ Updated", {
-          action: { label: "Undo", onClick: () => setContent((prev) => ({ ...prev, [platform]: previous })) },
-        });
-      } else {
-        setContent((prev) => ({ ...prev, [platform]: newText }));
-        showUndoToast(platform, previous);
-      }
-      setSelToolbar(null);
-      // History pulse — signals new saved version
-      setHistoryPulse((prev) => ({ ...prev, [platform]: true }));
-      if (action === "instruction") {
-        setInstructionInput((prev) => ({ ...prev, [platform]: "" }));
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(aiErrorMessage("generic", err));
-    } finally {
-      setAiEditing(null);
-    }
-  }
+  const [activePlatform, setActivePlatform] = useState<Platform>("linkedin");
 
   // Media
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
@@ -465,16 +171,15 @@ export default function CreateTab({
   const [canvaLink, setCanvaLink] = useState("");
   const [libraryOpen, setLibraryOpen] = useState(false);
 
-  // Schedule
+  // Schedule / save / publish
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleDate, setScheduleDate] = useState<string>("");
   const [scheduleTime, setScheduleTime] = useState<string>("09:00");
-
-  // Save / publish state
   const [saving, setSaving] = useState<string | null>(null);
   const [publishConfirm, setPublishConfirm] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [pillarBannerDismissed, setPillarBannerDismissed] = useState(false);
 
   /* ---------------- load ---------------- */
   useEffect(() => {
@@ -501,7 +206,6 @@ export default function CreateTab({
     })();
   }, [userId]);
 
-  /* prefill from URL / overview idea */
   useEffect(() => {
     if (prefillTopic) {
       setFocusMode("custom");
@@ -519,8 +223,6 @@ export default function CreateTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* prefill pillar + platform from Calendar coverage link */
-  const [pillarBannerDismissed, setPillarBannerDismissed] = useState(false);
   useEffect(() => {
     if (prefillPillar) {
       setFocusMode("pillar");
@@ -528,14 +230,12 @@ export default function CreateTab({
       setPillarBannerDismissed(false);
     }
   }, [prefillPillar]);
+
   useEffect(() => {
-    if (prefillPlatform) {
-      setPlatforms([prefillPlatform]);
-    }
+    if (prefillPlatform) setPlatforms([prefillPlatform]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillPlatform]);
 
-  /* default platform: LinkedIn if connected */
   useEffect(() => {
     if (platforms.length === 0 && isLinkedInConnected) {
       setPlatforms(["linkedin"]);
@@ -543,15 +243,20 @@ export default function CreateTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLinkedInConnected]);
 
-  /* Keep composer tab valid */
   useEffect(() => {
-    if (platforms.length > 0 && !platforms.includes(activeComposerTab)) {
-      setActiveComposerTab(platforms[0]);
+    if (platforms.length > 0 && !platforms.includes(activePlatform)) {
+      setActivePlatform(platforms[0]);
     }
-  }, [platforms, activeComposerTab]);
+  }, [platforms, activePlatform]);
 
   /* ---------------- derived ---------------- */
   const pillars = useMemo(() => asArray(strategy?.content_pillars), [strategy]);
+
+  const connectedPlatforms: Platform[] = useMemo(() => {
+    const list: Platform[] = [];
+    if (isLinkedInConnected) list.push("linkedin");
+    return list;
+  }, [isLinkedInConnected]);
 
   const focusTopic = useMemo(() => {
     if (focusMode === "pillar") return selectedPillar;
@@ -566,7 +271,8 @@ export default function CreateTab({
 
   const hasFocus = !!focusTopic;
   const hasPlatforms = platforms.length > 0;
-  const canGenerate = hasFocus && hasPlatforms && !!postFormat;
+  const canGenerate = hasFocus && hasPlatforms;
+  const hasGenerated = platforms.some((p) => content[p].trim().length > 0);
 
   /* ---------------- handlers ---------------- */
   function selectFocus(mode: Exclude<FocusMode, null>) {
@@ -582,9 +288,7 @@ export default function CreateTab({
   }
 
   function togglePlatform(p: Platform) {
-    setPlatforms((prev) =>
-      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p],
-    );
+    setPlatforms((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
   }
 
   async function handleGenerate() {
@@ -596,8 +300,8 @@ export default function CreateTab({
         body: {
           topic: focusTopic,
           platforms,
-          postFormat,
-          toneOverride: tone === "default" ? null : tone,
+          postFormat: "Text post",
+          toneOverride: null,
           strategy: strategy ?? {},
         },
       });
@@ -605,60 +309,17 @@ export default function CreateTab({
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       const posts = (data?.posts ?? {}) as Record<string, string>;
-      // push previous versions to history before overwriting
-      for (const p of platforms) {
-        if (content[p]) pushHistory(p, content[p]);
-      }
       setContent((prev) => ({
         linkedin: platforms.includes("linkedin") ? posts.linkedin || prev.linkedin : prev.linkedin,
         facebook: platforms.includes("facebook") ? posts.facebook || prev.facebook : prev.facebook,
         instagram: platforms.includes("instagram") ? posts.instagram || prev.instagram : prev.instagram,
       }));
       toast.success("Posts generated — review and personalize before publishing");
-      // Reset per-post focus hints so they can show once again for the new post
-      setFocusHint({ linkedin: false, facebook: false, instagram: false });
-      setHasEdited((prev) => {
-        const next = { ...prev };
-        for (const p of platforms) next[p] = false;
-        return next;
-      });
-      // Show the one-time tip banner if user hasn't dismissed it this session
-      if (!tipDismissed && sessionStorage.getItem("moxie_tip_seen") !== "true") {
-        setShowTipBanner(true);
-      } else {
-        triggerFirstSentenceHighlight();
-      }
     } catch (err) {
       console.error(err);
       toast.error(aiErrorMessage("content", err));
     } finally {
       setGenerating(false);
-    }
-  }
-
-  async function handleAddHashtags(p: Platform) {
-    const text = content[p];
-    if (!text.trim()) {
-      toast.error("Write or generate the post first");
-      return;
-    }
-    setHashtagsLoading(p);
-    try {
-      const { data, error } = await supabase.functions.invoke("generate-content", {
-        body: { mode: "hashtags", text },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      const tags = String(data?.hashtags ?? "")
-        .split(/\s+/)
-        .map((t) => t.replace(/^#?/, "#"))
-        .filter((t) => t.length > 1)
-        .slice(0, 6);
-      setHashtags((prev) => ({ ...prev, [p]: tags }));
-    } catch (err) {
-      toast.error(aiErrorMessage("generic", err));
-    } finally {
-      setHashtagsLoading(null);
     }
   }
 
@@ -674,7 +335,6 @@ export default function CreateTab({
     }
     const url = await fileToDataUrl(file);
     setMediaUrls((prev) => [...prev, url]);
-    // Also save to the user's asset library (background, non-blocking).
     if (userId) {
       void (async () => {
         try {
@@ -713,10 +373,7 @@ export default function CreateTab({
 
   function buildSavePayload(status: "draft" | "queued" | "scheduled", scheduledFor: string | null) {
     const contentByPlatform: Record<string, string> = {};
-    for (const p of platforms) {
-      const tagsLine = hashtags[p].length ? "\n\n" + hashtags[p].join(" ") : "";
-      contentByPlatform[p] = (content[p] || "") + tagsLine;
-    }
+    for (const p of platforms) contentByPlatform[p] = content[p] || "";
     return {
       user_id: userId!,
       platforms: platforms as string[],
@@ -795,13 +452,10 @@ export default function CreateTab({
     setPublishing(true);
     setPublishConfirm(false);
     try {
-      // Save first as draft, then publish via edge function
       const id = await savePost("draft", null);
       if (!id) throw new Error("Couldn't save post");
-      const liContent =
-        content.linkedin + (hashtags.linkedin.length ? "\n\n" + hashtags.linkedin.join(" ") : "");
       const { data, error } = await supabase.functions.invoke("publish-social-post", {
-        body: { user_id: userId, post_id: id, platform: "linkedin", content: liContent },
+        body: { user_id: userId, post_id: id, platform: "linkedin", content: content.linkedin },
       });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -815,23 +469,10 @@ export default function CreateTab({
     }
   }
 
-  /* ---------------- render helpers ---------------- */
-  const cardBase = "text-left rounded-lg border-2 p-3 transition-all w-full";
-  const cardSelected = "border-accent bg-accent-soft";
-  const cardUnselected = "border-border bg-background hover:border-accent/50";
-
-  const stepLabel = !hasFocus
-    ? "Step 1 — Focus"
-    : !hasPlatforms
-    ? "Step 2 — Platforms"
-    : !postFormat
-    ? "Step 3 — Format"
-    : "Ready to generate";
-
   /* ===================== render ===================== */
   if (publishedUrl) {
     return (
-      <Card className="flex flex-col items-center gap-3 p-12 text-center">
+      <div className="flex flex-col items-center gap-3 rounded-xl border bg-white p-12 text-center" style={{ borderColor: BORDER }}>
         <div className="rounded-full bg-emerald-100 p-3 text-emerald-600">
           <Check className="h-6 w-6" />
         </div>
@@ -842,656 +483,353 @@ export default function CreateTab({
             href={publishedUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-sm font-medium text-accent underline"
+            className="text-sm font-medium underline"
+            style={{ color: CORAL_DARK }}
           >
             View on LinkedIn →
           </a>
-          <Button variant="outline" size="sm" onClick={() => { setPublishedUrl(null); setContent({linkedin:"",facebook:"",instagram:""}); setHashtags({linkedin:[],facebook:[],instagram:[]}); setMediaUrls([]); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setPublishedUrl(null);
+              setContent({ linkedin: "", facebook: "", instagram: "" });
+              setMediaUrls([]);
+            }}
+          >
             Create another
           </Button>
         </div>
-      </Card>
+      </div>
     );
   }
 
+  const activeContent = content[activePlatform] || "";
+  const firstParagraph = activeContent.split(/\n\n+/)[0] || "";
+
   return (
-    <TooltipProvider>
-      <div className="space-y-4">
-        {pillarContext && !pillarBannerDismissed && (
-          <div className="flex items-start justify-between gap-3 rounded-md border border-accent/30 bg-accent-soft/50 px-4 py-3 text-sm text-foreground">
-            <p>
-              Creating for pillar: <span className="font-semibold">{pillarContext.name}</span>
-              {" — "}this will count toward your {pillarContext.monthLabel} coverage.
-            </p>
-            <button
-              type="button"
-              aria-label="Dismiss"
-              className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground"
-              onClick={() => setPillarBannerDismissed(true)}
+    <div className="space-y-4">
+      {pillarContext && !pillarBannerDismissed && (
+        <div
+          className="flex items-start justify-between gap-3 rounded-md border px-4 py-3 text-sm"
+          style={{ borderColor: "rgba(255,107,92,0.3)", background: "rgba(255,107,92,0.06)", color: INK }}
+        >
+          <p>
+            Creating for pillar: <span className="font-semibold">{pillarContext.name}</span>
+            {" — "}this will count toward your {pillarContext.monthLabel} coverage.
+          </p>
+          <button
+            type="button"
+            aria-label="Dismiss"
+            className="rounded p-1 hover:bg-white"
+            onClick={() => setPillarBannerDismissed(true)}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      <div
+        className="rounded-xl border bg-white p-5"
+        style={{ borderColor: BORDER }}
+      >
+        <div className="grid gap-6 lg:grid-cols-[292px_minmax(0,1fr)_280px]">
+          {/* =================== LEFT PANEL =================== */}
+          <div className="space-y-4">
+            <div
+              style={{
+                color: CORAL,
+                fontSize: "10px",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+              }}
             >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-        <div className="grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)_340px]">
-        {/* =================== LEFT: focus + format =================== */}
-        <Card className="border-accent/20 bg-accent-soft/40">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Sparkles className="h-4 w-4 text-accent" />
-                Build with MOXIEMO
-              </CardTitle>
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{stepLabel}</span>
+              ✦ Build with MOXIEMO
             </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {/* Step 1 - focus */}
+
+            {/* Step 1 */}
             <div className="space-y-3">
-              <div>
-                <h3 className="text-sm font-semibold">Step 1 — Choose your focus</h3>
-                <p className="text-xs text-muted-foreground">Pick one starting point</p>
-              </div>
-              <div className="grid grid-cols-1 gap-2">
-                <button
-                  type="button"
-                  onClick={() => selectFocus("pillar")}
-                  className={cn(cardBase, focusMode === "pillar" ? cardSelected : cardUnselected)}
-                >
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Pin className="h-4 w-4 text-accent" /> 📌 Content Pillar
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">Stay on-strategy automatically</p>
-                </button>
-
-                {focusMode === "pillar" && (
-                  <div className="animate-fade-in rounded-md border bg-background p-3">
-                    {pillars.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">
-                        <Link to="/app/strategy" className="text-accent underline">
-                          Complete your strategy →
-                        </Link>
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5">
-                        {pillars.map((p) => (
-                          <button
-                            key={p}
-                            type="button"
-                            onClick={() => setSelectedPillar(p)}
-                            className={cn(
-                              "rounded-full border px-2.5 py-1 text-xs transition",
-                              selectedPillar === p
-                                ? "border-accent bg-accent text-accent-foreground"
-                                : "bg-background hover:border-accent/50",
-                            )}
-                          >
-                            {p}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => selectFocus("custom")}
-                  className={cn(cardBase, focusMode === "custom" ? cardSelected : cardUnselected)}
-                >
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Pencil className="h-4 w-4 text-accent" /> ✏️ Custom Topic
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">Write your own angle or idea</p>
-                </button>
-
-                {focusMode === "custom" && (
-                  <Textarea
-                    value={customTopic}
-                    onChange={(e) => setCustomTopic(e.target.value)}
-                    placeholder="e.g. The moment I realized consistency beats perfection..."
-                    rows={3}
-                    className="animate-fade-in"
-                  />
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => selectFocus("surprise")}
-                  className={cn(cardBase, focusMode === "surprise" ? cardSelected : cardUnselected)}
-                >
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Dices className="h-4 w-4 text-accent" /> 🎲 Surprise Me
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">MOXIEMO picks from your strategy</p>
-                  {focusMode === "surprise" && surprisePick && (
-                    <div className="mt-2 flex items-center gap-2 text-xs">
-                      <Check className="h-3.5 w-3.5 text-accent" />
-                      <span>
-                        MOXIEMO picked: <span className="font-medium">{surprisePick}</span>
-                      </span>
-                      <span
-                        role="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSurprisePick(pickRandom(pillars) ?? "");
+              <StepLabel n={1} color={INK} label="Choose focus" />
+              <div className="flex flex-col gap-[7px]">
+                {FOCUS_CARDS.map((card) => {
+                  const selected = focusMode === card.mode;
+                  return (
+                    <div key={card.mode}>
+                      <button
+                        type="button"
+                        onClick={() => selectFocus(card.mode)}
+                        className="block w-full text-left transition-all"
+                        style={{
+                          padding: "11px 13px",
+                          borderRadius: "9px",
+                          border: `1.5px solid ${selected ? CORAL : BORDER}`,
+                          background: selected ? "rgba(255,107,92,0.06)" : "#fff",
                         }}
-                        className="ml-auto cursor-pointer text-accent underline"
                       >
-                        pick again
-                      </span>
+                        <div
+                          className="flex items-center gap-2"
+                          style={{
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            color: selected ? CORAL_DARK : INK,
+                          }}
+                        >
+                          <span aria-hidden>{card.emoji}</span>
+                          {card.label}
+                        </div>
+                        <p
+                          style={{
+                            fontSize: "11px",
+                            color: MUTED,
+                            marginTop: "2px",
+                          }}
+                        >
+                          {card.sub}
+                        </p>
+                      </button>
+
+                      {selected && card.mode === "pillar" && (
+                        <div
+                          className="mt-2 space-y-2"
+                          style={{
+                            marginLeft: "14px",
+                            borderLeft: `2px solid ${CORAL}`,
+                            background: PAPER,
+                            padding: "10px 12px",
+                            borderRadius: "0 6px 6px 0",
+                          }}
+                        >
+                          {pillars.length === 0 ? (
+                            <p style={{ fontSize: "11px", color: MUTED }}>
+                              <Link to="/app/strategy" className="underline" style={{ color: CORAL_DARK }}>
+                                Complete your strategy →
+                              </Link>
+                            </p>
+                          ) : (
+                            <div className="flex flex-wrap gap-1.5">
+                              {pillars.map((p) => {
+                                const sel = selectedPillar === p;
+                                return (
+                                  <button
+                                    key={p}
+                                    type="button"
+                                    onClick={() => setSelectedPillar(p)}
+                                    style={{
+                                      borderRadius: "20px",
+                                      border: `1px solid ${sel ? CORAL : "#D8D6D2"}`,
+                                      background: sel ? "rgba(255,107,92,0.08)" : "#fff",
+                                      color: sel ? CORAL_DARK : "#4A4944",
+                                      fontWeight: sel ? 600 : 500,
+                                      padding: "4px 10px",
+                                      fontSize: "11px",
+                                    }}
+                                  >
+                                    {p}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {selected && card.mode === "custom" && (
+                        <div className="mt-2">
+                          <Textarea
+                            value={customTopic}
+                            onChange={(e) => setCustomTopic(e.target.value)}
+                            placeholder="e.g. The moment I realized consistency beats perfection..."
+                            rows={3}
+                            className="text-xs"
+                            style={{ borderColor: BORDER, borderRadius: "9px" }}
+                          />
+                        </div>
+                      )}
+
+                      {selected && card.mode === "surprise" && surprisePick && (
+                        <div
+                          className="mt-2 flex items-center gap-2"
+                          style={{ fontSize: "11px", color: INK, padding: "6px 10px" }}
+                        >
+                          <Check className="h-3 w-3" style={{ color: CORAL }} />
+                          <span>
+                            Picked: <span className="font-medium">{surprisePick}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSurprisePick(pickRandom(pillars) ?? "");
+                            }}
+                            className="ml-auto underline"
+                            style={{ color: CORAL_DARK }}
+                          >
+                            pick again
+                          </button>
+                        </div>
+                      )}
+
+                      {selected && card.mode === "email" && (
+                        <div className="mt-2">
+                          {recentEmails.length === 0 ? (
+                            <p style={{ fontSize: "11px", color: MUTED }}>No sent emails yet.</p>
+                          ) : (
+                            <Select value={emailPick} onValueChange={setEmailPick}>
+                              <SelectTrigger className="h-9 text-xs">
+                                <SelectValue placeholder="Pick a recent email" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {recentEmails.map((e) => (
+                                  <SelectItem key={e.id} value={e.id}>
+                                    {e.subject || "(no subject)"}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => selectFocus("email")}
-                  className={cn(cardBase, focusMode === "email" ? cardSelected : cardUnselected)}
-                >
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Mail className="h-4 w-4 text-accent" /> ✉️ Repurpose Email
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">Turn a newsletter into a post</p>
-                </button>
-
-                {focusMode === "email" && (
-                  <div className="animate-fade-in">
-                    {recentEmails.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No sent emails yet.</p>
-                    ) : (
-                      <Select value={emailPick} onValueChange={setEmailPick}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pick a recent email" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {recentEmails.map((e) => (
-                            <SelectItem key={e.id} value={e.id}>
-                              {e.subject || "(no subject)"}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                )}
+                  );
+                })}
               </div>
             </div>
 
-            {/* Step 2 - platforms */}
-            {hasFocus && (
-              <div className="animate-fade-in space-y-2">
-                <h3 className="text-sm font-semibold">Which platforms?</h3>
-                <div className="flex flex-wrap gap-2">
-                  {ALL_PLATFORMS.map((p) => {
-                    const selected = platforms.includes(p);
-                    const disabled = p !== "linkedin" ? false : !isLinkedInConnected;
-                    const Icon = p === "linkedin" ? Linkedin : p === "facebook" ? Facebook : Instagram;
-                    const btn = (
+            <div style={{ height: "1px", background: "#F0EFED" }} />
+
+            {/* Step 2 */}
+            <div className="space-y-3">
+              <StepLabel n={2} color={INK} label="Choose platform" />
+              {connectedPlatforms.length === 0 ? (
+                <p style={{ fontSize: "11px", color: MUTED }}>
+                  Connect a platform from the Overview tab to publish.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {connectedPlatforms.map((p) => {
+                    const sel = platforms.includes(p);
+                    return (
                       <button
                         key={p}
                         type="button"
                         onClick={() => togglePlatform(p)}
-                        className={cn(
-                          "inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition",
-                          selected
-                            ? "border-accent bg-accent text-accent-foreground"
-                            : "bg-background hover:border-accent/50",
-                          disabled && "opacity-60",
-                        )}
+                        style={{
+                          borderRadius: "20px",
+                          border: `1.5px solid ${sel ? INK : "#E0DED9"}`,
+                          background: sel ? INK : "#fff",
+                          color: sel ? "#fff" : "#4A4944",
+                          fontWeight: 500,
+                          padding: "5px 12px",
+                          fontSize: "12px",
+                        }}
                       >
-                        <Icon className="h-4 w-4" />
                         {PLATFORM_LABEL[p]}
                       </button>
                     );
-                    if (p === "linkedin") return btn;
-                    return (
-                      <Tooltip key={p}>
-                        <TooltipTrigger asChild>{btn}</TooltipTrigger>
-                        <TooltipContent>Available after Meta verification</TooltipContent>
-                      </Tooltip>
-                    );
                   })}
                 </div>
-                {!isLinkedInConnected && (
-                  <p className="text-xs text-muted-foreground">
-                    Connect LinkedIn from the Overview tab to publish.
-                  </p>
-                )}
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Step 3 - format */}
-            {hasFocus && hasPlatforms && (
-              <div className="animate-fade-in space-y-2">
-                <h3 className="text-sm font-semibold">Post format</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {FORMATS.map((f) => (
-                    <button
-                      key={f}
-                      type="button"
-                      onClick={() => setPostFormat(f)}
-                      className={cn(
-                        "rounded-full border px-2.5 py-1 text-xs transition",
-                        postFormat === f
-                          ? "border-foreground bg-foreground text-background"
-                          : "bg-background hover:border-foreground/40",
-                      )}
-                    >
-                      {f}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div style={{ height: "1px", background: "#F0EFED" }} />
 
-            {/* Step 4 - tone */}
-            {hasFocus && hasPlatforms && postFormat && (
-              <div className="animate-fade-in">
-                <button
-                  type="button"
-                  onClick={() => setToneOpen((v) => !v)}
-                  className="flex w-full items-center justify-between text-sm font-semibold"
-                >
-                  <span>Tone</span>
-                  <ChevronDown className={cn("h-4 w-4 transition", toneOpen && "rotate-180")} />
-                </button>
-                {toneOpen && (
-                  <div className="mt-2 space-y-1.5">
-                    {TONES.map((t) => (
-                      <label key={t.value} className="flex items-center gap-2 text-xs">
-                        <input
-                          type="radio"
-                          name="tone"
-                          value={t.value}
-                          checked={tone === t.value}
-                          onChange={() => setTone(t.value)}
-                        />
-                        {t.label}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Generate button */}
-            <div className="space-y-2 pt-1">
-              <Button
+            {/* Step 3 */}
+            <div className="space-y-2">
+              <StepLabel n={3} color={CORAL} label="Generate" />
+              <button
+                type="button"
                 onClick={handleGenerate}
                 disabled={!canGenerate || generating}
-                className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
-                size="lg"
+                className="w-full transition-opacity"
+                style={{
+                  background: CORAL,
+                  color: "#fff",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  borderRadius: "9px",
+                  padding: "12px 0",
+                  opacity: !canGenerate || generating ? 0.55 : 1,
+                  cursor: !canGenerate || generating ? "not-allowed" : "pointer",
+                }}
               >
                 {generating ? (
-                  <>
+                  <span className="inline-flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" /> Generating…
-                  </>
+                  </span>
                 ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" /> Generate with MOXIEMO
-                  </>
+                  <>✦ {hasGenerated ? "Re-generate" : "Generate"} with MOXIEMO</>
                 )}
-              </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                MOXIEMO uses your strategy, voice, and positioning
+              </button>
+              <p className="text-center" style={{ fontSize: "11px", color: "#B8B4AF" }}>
+                Uses your strategy, voice & positioning
               </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* =================== CENTER: composer =================== */}
-        <Card className="p-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">Compose</h2>
-              {platforms.length === 0 && (
-                <span className="text-xs text-muted-foreground">Pick a platform to start</span>
-              )}
+          {/* =================== CENTER PANEL =================== */}
+          <div className="flex flex-col">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 style={{ fontSize: "14px", fontWeight: 600, color: INK }}>Compose</h2>
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="inline-block h-2 w-2 rounded-full"
+                  style={{ background: hasGenerated ? "#4CAF7D" : "#D8D6D2" }}
+                />
+                <span style={{ fontSize: "11px", color: MUTED }}>
+                  {hasGenerated ? "Draft ready" : "Pick a platform to start"}
+                </span>
+              </div>
             </div>
 
-            {platforms.length === 0 ? (
-              <div className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-                Choose your focus, platforms, and format on the left to start composing.
-              </div>
-            ) : (
-              <>
-              {showTipBanner && (
-                <div
-                  role="status"
-                  className="relative flex items-start gap-3 rounded-md p-3 pr-10 animate-fade-in"
-                  style={{
-                    background: "#fff5f5",
-                    borderLeft: "4px solid #ff6b6b",
-                    color: "#262833",
-                    animation: "fade-in 300ms ease-in",
-                  }}
-                >
-                  <span aria-hidden className="text-lg leading-none">💡</span>
-                  <div className="flex-1 text-xs leading-relaxed">
-                    <div className="font-semibold mb-0.5">Pro tip: MOXIEMO can edit any part of your post</div>
-                    <div>Select any text to improve, shorten, or rewrite it. Or type a command below to change anything instantly.</div>
-                  </div>
+            {platforms.length > 1 && (
+              <div className="mb-2 flex gap-1">
+                {platforms.map((p) => (
                   <button
+                    key={p}
                     type="button"
-                    onClick={dismissTipBanner}
-                    className="absolute right-2 top-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium hover:bg-white/60"
-                    style={{ color: "#262833" }}
+                    onClick={() => setActivePlatform(p)}
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      padding: "4px 10px",
+                      borderRadius: "6px",
+                      background: activePlatform === p ? INK : "transparent",
+                      color: activePlatform === p ? "#fff" : MUTED,
+                    }}
                   >
-                    Got it <X className="h-3 w-3" />
+                    {PLATFORM_LABEL[p]}
                   </button>
-                </div>
-              )}
-              <Tabs
-                value={activeComposerTab}
-                onValueChange={(v) => setActiveComposerTab(v as Platform)}
-              >
-                <TabsList>
-                  {platforms.map((p) => (
-                    <TabsTrigger key={p} value={p}>
-                      {PLATFORM_LABEL[p]}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-                {platforms.map((p) => {
-                  const limit = PLATFORM_LIMIT[p];
-                  const text = content[p];
-                  const len = text.length;
-                  const ratio = len / limit;
-                  const counterColor =
-                    ratio > 1
-                      ? "text-red-600"
-                      : ratio > 0.95
-                      ? "text-amber-600"
-                      : ratio > 0.8
-                      ? "text-amber-500"
-                      : "text-emerald-600";
-                  return (
-                    <TabsContent key={p} value={p} className="space-y-3">
-                      {/* History link */}
-                      <div className="flex items-center justify-end">
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setHistoryPulse((prev) => ({ ...prev, [p]: false }))
-                              }
-                              disabled={(postHistory[p]?.length ?? 0) === 0}
-                              className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground disabled:opacity-40"
-                            >
-                              <History className="h-3 w-3" /> History
-                              {postHistory[p]?.length > 0 && (
-                                <span className="ml-1 rounded-full bg-muted px-1.5 text-[10px]">
-                                  {postHistory[p].length}
-                                </span>
-                              )}
-                              {historyPulse[p] && (
-                                <span
-                                  aria-hidden
-                                  className="ml-1 inline-block h-1.5 w-1.5 rounded-full"
-                                  style={{
-                                    backgroundColor: "#ff6b6b",
-                                    animation: "moxie-pulse 800ms ease-in-out 3",
-                                  }}
-                                />
-                              )}
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent align="end" className="w-80 p-2">
-                            <p className="px-2 pb-1 text-xs font-semibold">Previous versions</p>
-                            <div className="max-h-72 space-y-1 overflow-y-auto">
-                              {(postHistory[p] ?? []).length === 0 ? (
-                                <p className="px-2 py-3 text-xs text-muted-foreground">
-                                  No previous versions yet.
-                                </p>
-                              ) : (
-                                postHistory[p].map((v, i) => (
-                                  <button
-                                    key={i}
-                                    type="button"
-                                    onClick={() => restoreVersion(p, i)}
-                                    className="block w-full rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent/40"
-                                  >
-                                    <span className="font-medium">
-                                      Version {i + 1}
-                                      {i === 0 ? " (original)" : ""}
-                                    </span>
-                                    <span className="block truncate text-muted-foreground">
-                                      {v.slice(0, 80) || "(empty)"}
-                                    </span>
-                                  </button>
-                                ))
-                              )}
-                            </div>
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-
-                      <div className="relative">
-                        <Textarea
-                          ref={(el) => {
-                            textareaRefs.current[p] = el;
-                          }}
-                          value={text}
-                          onChange={(e) => {
-                            setContent((prev) => ({ ...prev, [p]: e.target.value }));
-                            if (!hasEdited[p]) {
-                              setHasEdited((prev) => ({ ...prev, [p]: true }));
-                              if (text && !focusHint[p]) {
-                                setFocusHint((prev) => ({ ...prev, [p]: true }));
-                                setTimeout(() => {
-                                  setFocusHint((prev) => ({ ...prev, [p]: false }));
-                                }, 2000);
-                              }
-                            }
-                          }}
-                          onMouseUp={() => handleTextareaSelection(p)}
-                          onTouchEnd={() => handleTextareaSelection(p)}
-                          onKeyUp={(e) => {
-                            if (e.shiftKey || e.key === "ArrowLeft" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowDown") {
-                              handleTextareaSelection(p);
-                            }
-                          }}
-                          placeholder={`Write your ${PLATFORM_LABEL[p]} post…`}
-                          rows={10}
-                          className={cn(
-                            "resize-y transition-colors duration-500",
-                            textareaFlash[p] && "bg-[#fff0f0]",
-                          )}
-                        />
-                        <div className={cn("absolute bottom-2 right-3 text-xs font-medium", counterColor)}>
-                          {len} / {limit}
-                        </div>
-                        {focusHint[p] && (
-                          <div
-                            className="pointer-events-none absolute right-2 top-2 rounded-md border bg-white px-2.5 py-1.5 shadow-sm animate-fade-in"
-                            style={{
-                              borderColor: "#ff6b6b",
-                              fontSize: "12px",
-                              color: "#262833",
-                            }}
-                          >
-                            <div className="font-medium">✨ Try selecting text</div>
-                            <div className="text-[11px] text-muted-foreground">to edit with MOXIEMO</div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Persistent helper hint (after tip banner dismissed) */}
-                      {tipDismissed && (
-                        <div
-                          style={{ fontSize: "11px", color: "#9b9faf" }}
-                          className="-mt-1"
-                        >
-                          💡 Select any text to edit it with MOXIEMO · Or click the command box below for suggestions →
-                        </div>
-                      )}
-
-                      {/* AI instruction row */}
-                      <div
-                        ref={(el) => (instructionRowRefs.current[p] = el)}
-                        className="relative"
-                      >
-                        {suggestionsOpenFor === p && (
-                          <div
-                            className="absolute left-0 right-0 bottom-full mb-2 z-30 overflow-y-auto"
-                            style={{
-                              background: "#ffffff",
-                              border: "1px solid #ede8e0",
-                              borderRadius: "10px",
-                              boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-                              maxHeight: "200px",
-                            }}
-                          >
-                            <div
-                              style={{
-                                fontSize: "10px",
-                                color: "#9b9faf",
-                                textTransform: "uppercase",
-                                letterSpacing: "0.08em",
-                                padding: "10px 12px 6px",
-                              }}
-                            >
-                              Try one of these:
-                            </div>
-                            {ASK_MOXIE_SUGGESTIONS.map((s) => (
-                              <button
-                                key={s}
-                                type="button"
-                                onMouseDown={(e) => {
-                                  // prevent input blur before click handler runs
-                                  e.preventDefault();
-                                }}
-                                onClick={() => {
-                                  setInstructionInput((prev) => ({ ...prev, [p]: s }));
-                                  setSuggestionsOpenFor(null);
-                                  const el = instructionInputRefs.current[p];
-                                  if (el) {
-                                    requestAnimationFrame(() => {
-                                      el.focus();
-                                      const len = s.length;
-                                      try {
-                                        el.setSelectionRange(len, len);
-                                      } catch {}
-                                    });
-                                  }
-                                }}
-                                className="block w-full text-left transition-colors border-l-2 border-transparent hover:border-l-[#ff6b6b] hover:bg-[#fff5f5]"
-                                style={{
-                                  fontSize: "12px",
-                                  color: "#262833",
-                                  padding: "8px 12px",
-                                }}
-                              >
-                                {s}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 rounded-md bg-muted/50 px-2 py-1.5">
-                        <Bot className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                        <Input
-                          ref={(el) => (instructionInputRefs.current[p] = el)}
-                          value={instructionInput[p]}
-                          onChange={(e) =>
-                            setInstructionInput((prev) => ({ ...prev, [p]: e.target.value }))
-                          }
-                          onFocus={() => setSuggestionsOpenFor(p)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && instructionInput[p].trim() && text.trim() && aiEditing === null) {
-                              e.preventDefault();
-                              setSuggestionsOpenFor(null);
-                              void applyAiEdit({
-                                platform: p,
-                                action: "instruction",
-                                selectedText: text,
-                                fullPost: text,
-                                instruction: instructionInput[p].trim(),
-                              });
-                            }
-                          }}
-                          placeholder="Ask MOXIEMO to change something..."
-                          className="h-8 border-0 bg-transparent text-xs focus-visible:ring-0 focus-visible:ring-offset-0"
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 px-2 text-xs"
-                          disabled={!instructionInput[p].trim() || !text.trim() || aiEditing !== null}
-                          onClick={() => {
-                            setSuggestionsOpenFor(null);
-                            applyAiEdit({
-                              platform: p,
-                              action: "instruction",
-                              selectedText: text,
-                              fullPost: text,
-                              instruction: instructionInput[p].trim(),
-                            });
-                          }}
-                        >
-                          {aiEditing === "instruction" ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          )}
-                          Apply
-                        </Button>
-                        </div>
-                      </div>
-
-                      {/* Hashtag row */}
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleAddHashtags(p)}
-                          disabled={hashtagsLoading === p}
-                        >
-                          {hashtagsLoading === p ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Hash className="h-3.5 w-3.5" />
-                          )}
-                          Add hashtags
-                        </Button>
-                        {hashtags[p].length > 0 && (
-                          <>
-                            {hashtags[p].map((tag, i) => (
-                              <Badge key={`${tag}-${i}`} variant="secondary" className="gap-1">
-                                {tag}
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setHashtags((prev) => ({
-                                      ...prev,
-                                      [p]: prev[p].filter((_, idx) => idx !== i),
-                                    }))
-                                  }
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </Badge>
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() => setHashtags((prev) => ({ ...prev, [p]: [] }))}
-                              className="text-xs text-muted-foreground underline"
-                            >
-                              Clear all
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </TabsContent>
-                  );
-                })}
-              </Tabs>
-              </>
+                ))}
+              </div>
             )}
 
+            <Textarea
+              value={activeContent}
+              onChange={(e) =>
+                setContent((prev) => ({ ...prev, [activePlatform]: e.target.value }))
+              }
+              placeholder={
+                hasGenerated
+                  ? `Write your ${PLATFORM_LABEL[activePlatform]} post…`
+                  : "Choose your focus & platform on the left, then click Generate to create your post."
+              }
+              className="flex-1 resize-none"
+              style={{
+                minHeight: "320px",
+                borderRadius: "9px",
+                border: `1.5px solid ${hasGenerated ? "#D8D6D2" : BORDER}`,
+                background: hasGenerated ? "#fff" : "#FAFAF8",
+                padding: "18px",
+                fontSize: "14px",
+                lineHeight: "1.6",
+                color: INK,
+                fontStyle: hasGenerated ? "normal" : activeContent ? "normal" : "italic",
+              }}
+            />
+
             {/* Media row */}
-            <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1512,7 +850,7 @@ export default function CreateTab({
                 <FolderOpen className="h-3.5 w-3.5" /> From library
               </Button>
               {mediaUrls.map((url, i) => (
-                <div key={i} className="relative h-16 w-16 overflow-hidden rounded border">
+                <div key={i} className="relative h-14 w-14 overflow-hidden rounded border" style={{ borderColor: BORDER }}>
                   {url.startsWith("data:") || url.match(/\.(jpe?g|png|gif|webp)$/i) ? (
                     <img src={url} alt="" className="h-full w-full object-cover" />
                   ) : (
@@ -1531,102 +869,175 @@ export default function CreateTab({
               ))}
             </div>
 
-            {/* Action buttons */}
-            <div className="flex flex-wrap gap-2 border-t pt-3">
-              <Button variant="outline" size="sm" onClick={handleSaveDraft} disabled={!!saving}>
-                {saving === "draft" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                Save draft
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleAddToQueue} disabled={!!saving}>
-                {saving === "queued" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ListPlus className="h-3.5 w-3.5" />}
-                Add to queue
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowSchedule((v) => !v)}>
-                <CalendarIcon className="h-3.5 w-3.5" /> Schedule
-              </Button>
-              <Button
-                size="sm"
-                className="bg-accent text-accent-foreground hover:bg-accent/90"
-                onClick={() => setPublishConfirm(true)}
-                disabled={!platforms.includes("linkedin") || !isLinkedInConnected || publishing || !content.linkedin.trim()}
-              >
-                {publishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                Publish now
-              </Button>
-              {platforms.includes("facebook") && !canPublishOn(plan, "facebook") && (
-                <PublishLockBadge platform="facebook" />
-              )}
-              {platforms.includes("instagram") && !canPublishOn(plan, "instagram") && (
-                <PublishLockBadge platform="instagram" />
+            {/* Step 4 */}
+            <div
+              className="mt-4 pt-4"
+              style={{ borderTop: `1px solid #F2F1EF` }}
+            >
+              <div className="mb-3">
+                <StepLabel n={4} color={CORAL} label="Publish or save" />
+              </div>
+              <div className="flex flex-wrap justify-end gap-2">
+                <SecondaryBtn onClick={handleSaveDraft} disabled={!!saving} loading={saving === "draft"}>
+                  Save draft
+                </SecondaryBtn>
+                <SecondaryBtn onClick={handleAddToQueue} disabled={!!saving} loading={saving === "queued"}>
+                  Add to queue
+                </SecondaryBtn>
+                <SecondaryBtn onClick={() => setShowSchedule((v) => !v)}>Schedule</SecondaryBtn>
+                <button
+                  type="button"
+                  onClick={() => setPublishConfirm(true)}
+                  disabled={!platforms.includes("linkedin") || !isLinkedInConnected || publishing || !content.linkedin.trim()}
+                  style={{
+                    background: CORAL,
+                    color: "#fff",
+                    fontWeight: 600,
+                    fontSize: "13px",
+                    padding: "8px 14px",
+                    borderRadius: "8px",
+                    opacity:
+                      !platforms.includes("linkedin") || !isLinkedInConnected || publishing || !content.linkedin.trim()
+                        ? 0.5
+                        : 1,
+                  }}
+                >
+                  {publishing ? (
+                    <Loader2 className="inline h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <>✦ Publish now</>
+                  )}
+                </button>
+                {platforms.includes("facebook") && !canPublishOn(plan, "facebook") && (
+                  <PublishLockBadge platform="facebook" />
+                )}
+                {platforms.includes("instagram") && !canPublishOn(plan, "instagram") && (
+                  <PublishLockBadge platform="instagram" />
+                )}
+              </div>
+
+              {showSchedule && (
+                <div
+                  className="mt-3 space-y-2 rounded-md p-3"
+                  style={{ background: PAPER, border: `1px solid ${BORDER}` }}
+                >
+                  <div className="flex flex-wrap items-end gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Date</label>
+                      <Input
+                        type="date"
+                        value={scheduleDate}
+                        min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 10)}
+                        onChange={(e) => setScheduleDate(e.target.value)}
+                        className="w-44"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-medium">Time</label>
+                      <Input
+                        type="time"
+                        step={1800}
+                        value={scheduleTime}
+                        onChange={(e) => setScheduleTime(e.target.value)}
+                        className="w-32"
+                      />
+                    </div>
+                    <Button size="sm" onClick={handleConfirmSchedule} disabled={!!saving}>
+                      {saving === "scheduled" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                      Confirm schedule
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
+                  </p>
+                </div>
               )}
             </div>
-
-            {showSchedule && (
-              <div className="space-y-2 rounded-md border bg-muted/30 p-3">
-                <div className="flex flex-wrap items-end gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium">Date</label>
-                    <Input
-                      type="date"
-                      value={scheduleDate}
-                      min={new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 10)}
-                      onChange={(e) => setScheduleDate(e.target.value)}
-                      className="w-44"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium">Time</label>
-                    <Input
-                      type="time"
-                      step={1800}
-                      value={scheduleTime}
-                      onChange={(e) => setScheduleTime(e.target.value)}
-                      className="w-32"
-                    />
-                  </div>
-                  <Button size="sm" onClick={handleConfirmSchedule} disabled={!!saving}>
-                    {saving === "scheduled" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
-                    Confirm schedule
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Timezone: {Intl.DateTimeFormat().resolvedOptions().timeZone}
-                </p>
-              </div>
-            )}
           </div>
-        </Card>
 
-        {/* =================== RIGHT: preview =================== */}
-        <Card className="p-4">
-          <h2 className="mb-3 text-base font-semibold">Preview</h2>
-          {platforms.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Select a platform to preview.</p>
-          ) : (
-            <Tabs
-              value={activeComposerTab}
-              onValueChange={(v) => setActiveComposerTab(v as Platform)}
+          {/* =================== RIGHT PANEL =================== */}
+          <div>
+            <h2 style={{ fontSize: "14px", fontWeight: 600, color: INK }}>Preview</h2>
+            <p style={{ fontSize: "11px", color: MUTED, marginBottom: "12px" }}>
+              {platforms.length > 0 ? PLATFORM_LABEL[activePlatform] : "No platform selected"}
+            </p>
+
+            <div
+              className="overflow-hidden"
+              style={{ border: `1px solid ${BORDER}`, borderRadius: "11px", background: "#fff" }}
             >
-              <TabsList>
-                {platforms.map((p) => (
-                  <TabsTrigger key={p} value={p}>
-                    {PLATFORM_LABEL[p]}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {platforms.map((p) => (
-                <TabsContent key={p} value={p}>
-                  <PlatformPreview
-                    platform={p}
-                    content={content[p] + (hashtags[p].length ? "\n\n" + hashtags[p].join(" ") : "")}
-                    image={mediaUrls[0] ?? null}
-                    profile={profile}
+              <div className="flex items-center gap-2 p-3">
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white"
+                  style={{ background: INK }}
+                >
+                  {initials(profile?.full_name)}
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div
+                    className="rounded"
+                    style={{ height: "8px", width: "60%", background: "#EFEDEA" }}
                   />
-                </TabsContent>
-              ))}
-            </Tabs>
-          )}
-        </Card>
+                  <div
+                    className="rounded"
+                    style={{ height: "6px", width: "40%", background: "#F4F2EF" }}
+                  />
+                </div>
+                <span style={{ color: MUTED, fontSize: "14px" }}>···</span>
+              </div>
+
+              <div style={{ padding: "0 12px 12px" }}>
+                {activeContent ? (
+                  <p style={{ fontSize: "11px", lineHeight: "1.5", color: INK, whiteSpace: "pre-wrap" }}>
+                    {firstParagraph}
+                  </p>
+                ) : (
+                  <div className="space-y-1.5">
+                    <div style={{ height: "6px", width: "92%", background: "#F4F2EF", borderRadius: "3px" }} />
+                    <div style={{ height: "6px", width: "85%", background: "#F4F2EF", borderRadius: "3px" }} />
+                    <div style={{ height: "6px", width: "70%", background: "#F4F2EF", borderRadius: "3px" }} />
+                  </div>
+                )}
+              </div>
+
+              <div
+                className="mx-3 mb-3 flex items-center justify-center"
+                style={{
+                  aspectRatio: "1",
+                  background: PAPER,
+                  borderRadius: "6px",
+                  flexDirection: "column",
+                  display: "flex",
+                  gap: "4px",
+                }}
+              >
+                {mediaUrls[0] ? (
+                  <img src={mediaUrls[0]} alt="" className="h-full w-full rounded object-cover" />
+                ) : (
+                  <>
+                    <span style={{ fontSize: "32px", opacity: 0.18 }}>🖼</span>
+                    <span style={{ fontFamily: "monospace", fontSize: "10px", color: MUTED }}>
+                      image placeholder
+                    </span>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between border-t px-3 py-2" style={{ borderColor: "#F2F1EF" }}>
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    style={{ width: "20px", height: "20px", background: "#F4F2EF", borderRadius: "4px" }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <p className="text-center" style={{ fontSize: "11px", color: "#B8B4AF", marginTop: "10px" }}>
+              Updates live as you compose
+            </p>
+          </div>
+        </div>
       </div>
 
       <LibraryAssetsDrawer
@@ -1679,7 +1090,6 @@ export default function CreateTab({
         </DialogContent>
       </Dialog>
 
-      {/* Publish confirm */}
       <AlertDialog open={publishConfirm} onOpenChange={setPublishConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1694,165 +1104,62 @@ export default function CreateTab({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Floating AI selection toolbar */}
-      {selToolbar && (
-        <div
-          data-ai-toolbar
-          style={{
-            position: "absolute",
-            top: selToolbar.top,
-            left: selToolbar.left,
-            zIndex: 60,
-          }}
-          className="flex items-center gap-1 rounded-md border bg-popover p-1 shadow-lg"
-          onMouseDown={(e) => e.preventDefault()}
-        >
-          {([
-            { key: "improve", label: "Improve", icon: <Wand2 className="h-3 w-3" /> },
-            { key: "shorter", label: "Shorter" },
-            { key: "longer", label: "Longer" },
-            { key: "punchier", label: "Punchier" },
-            { key: "rewrite", label: "Rewrite" },
-          ] as const).map((b) => (
-            <Button
-              key={b.key}
-              size="sm"
-              variant="ghost"
-              className="h-7 px-2 text-xs"
-              disabled={aiEditing !== null}
-              onClick={() => {
-                const fullPost = content[selToolbar.platform];
-                void applyAiEdit({
-                  platform: selToolbar.platform,
-                  action: b.key,
-                  selectedText: selToolbar.text,
-                  fullPost,
-                  replaceRange: { start: selToolbar.start, end: selToolbar.end },
-                });
-              }}
-            >
-              {aiEditing === b.key ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                ("icon" in b ? b.icon : null)
-              )}
-              {b.label}
-            </Button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setSelToolbar(null)}
-            className="ml-1 rounded p-1 text-muted-foreground hover:bg-muted"
-            aria-label="Close"
-          >
-            <X className="h-3 w-3" />
-          </button>
-        </div>
-      )}
-      </div>
-    </TooltipProvider>
+    </div>
   );
 }
 
-/* ===================== Previews ===================== */
-function PlatformPreview({
-  platform,
-  content,
-  image,
-  profile,
-}: {
-  platform: Platform;
-  content: string;
-  image: string | null;
-  profile: Profile | null;
-}) {
-  const name = profile?.full_name || "Your name";
-  const business = profile?.business_name || "";
-  const inits = initials(name);
-
-  if (platform === "linkedin") {
-    return (
-      <div className="overflow-hidden rounded-md border bg-background text-sm">
-        <div className="flex items-center gap-2 p-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0A66C2] text-xs font-semibold text-white">
-            {inits}
-          </div>
-          <div>
-            <p className="font-semibold leading-tight">{name}</p>
-            {business && <p className="text-xs text-muted-foreground">{business}</p>}
-            <p className="text-[11px] text-muted-foreground">Just now · 🌐</p>
-          </div>
-        </div>
-        <div className="whitespace-pre-wrap px-3 pb-3 text-sm leading-relaxed">
-          {content || <span className="text-muted-foreground">Your post will appear here…</span>}
-        </div>
-        {image && (
-          <img src={image} alt="" className="max-h-72 w-full border-t object-cover" />
-        )}
-        <div className="flex items-center gap-4 border-t px-3 py-2 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> Like</span>
-          <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> Comment</span>
-          <span className="flex items-center gap-1"><Repeat2 className="h-3.5 w-3.5" /> Repost</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (platform === "instagram") {
-    return (
-      <div className="overflow-hidden rounded-md border bg-background text-sm">
-        <div className="flex items-center gap-2 border-b px-3 py-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF] text-[10px] font-semibold text-white">
-            {inits}
-          </div>
-          <p className="text-xs font-semibold">{name.toLowerCase().replace(/\s+/g, "")}</p>
-        </div>
-        <div className="aspect-square w-full bg-muted">
-          {image ? (
-            <img src={image} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-              Square image preview
-            </div>
-          )}
-        </div>
-        <div className="flex gap-3 px-3 py-2 text-base">
-          <Heart className="h-5 w-5" />
-          <MessageSquare className="h-5 w-5" />
-          <Share2 className="h-5 w-5" />
-        </div>
-        <div className="px-3 pb-3 text-xs leading-relaxed">
-          <span className="font-semibold">{name.toLowerCase().replace(/\s+/g, "")}</span>{" "}
-          <span className="whitespace-pre-wrap">
-            {content || <span className="text-muted-foreground">Caption preview…</span>}
-          </span>
-        </div>
-      </div>
-    );
-  }
-
-  // Facebook
+function StepLabel({ n, color, label }: { n: number; color: string; label: string }) {
   return (
-    <div className="overflow-hidden rounded-md border bg-background text-sm">
-      <div className="flex items-center gap-2 p-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#1877F2] text-xs font-semibold text-white">
-          {inits}
-        </div>
-        <div>
-          <p className="font-semibold leading-tight">{name}</p>
-          <p className="text-[11px] text-muted-foreground">Just now · 🌐</p>
-        </div>
-      </div>
-      <div className="whitespace-pre-wrap px-3 pb-3 text-sm leading-relaxed">
-        {content || <span className="text-muted-foreground">Your post will appear here…</span>}
-      </div>
-      {image && <img src={image} alt="" className="max-h-72 w-full border-t object-cover" />}
-      <div className="flex items-center gap-4 border-t px-3 py-2 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> Like</span>
-        <span className="flex items-center gap-1"><MessageSquare className="h-3.5 w-3.5" /> Comment</span>
-        <span className="flex items-center gap-1"><Share2 className="h-3.5 w-3.5" /> Share</span>
-      </div>
+    <div className="flex items-center gap-2">
+      <span
+        className="inline-flex items-center justify-center"
+        style={{
+          width: "22px",
+          height: "22px",
+          borderRadius: "999px",
+          background: color,
+          color: "#fff",
+          fontSize: "12px",
+          fontWeight: 600,
+        }}
+      >
+        {n}
+      </span>
+      <span style={{ fontSize: "13px", fontWeight: 600, color: INK }}>{label}</span>
     </div>
+  );
+}
+
+function SecondaryBtn({
+  children,
+  onClick,
+  disabled,
+  loading,
+}: {
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  loading?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        border: `1px solid ${BORDER}`,
+        background: "#fff",
+        color: "#4A4944",
+        fontWeight: 500,
+        fontSize: "13px",
+        padding: "8px 14px",
+        borderRadius: "8px",
+        opacity: disabled ? 0.6 : 1,
+        cursor: disabled ? "not-allowed" : "pointer",
+      }}
+    >
+      {loading ? <Loader2 className="inline h-3.5 w-3.5 animate-spin" /> : null}
+      {children}
+    </button>
   );
 }
