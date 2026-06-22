@@ -315,7 +315,20 @@ export default function WaitlistAdmin() {
             {inviting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
             Send invite
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={inviting || !inviteEmail}
+            onClick={(e) => sendInvite(e as any, "resend")}
+            className="h-10"
+            title="Generates a fresh invite token for this email"
+          >
+            Resend invite
+          </Button>
         </form>
+        <p className="text-xs text-muted-foreground mt-2">
+          Tip: use Resend invite to issue a fresh token if a user reports an expired link.
+        </p>
       </Card>
 
       {/* Summary */}
