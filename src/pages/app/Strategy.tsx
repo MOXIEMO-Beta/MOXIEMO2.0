@@ -848,7 +848,8 @@ function VoiceTab() {
 }
 
 function StrategyContent({ reportData }: { reportData?: any }) {
-  const { strategy, setField } = useStrategyEditor();
+  const { strategy, applyServerPatch } = useStrategyEditor();
+  const { user } = useAuth();
   const [refineOpen, setRefineOpen] = useState(false);
   const [refineKey, setRefineKey] = useState<string | null>(null);
   const [refineLabel, setRefineLabel] = useState<string | undefined>();
@@ -930,15 +931,45 @@ function StrategyContent({ reportData }: { reportData?: any }) {
           voice_attributes: strategy?.voice_attributes,
           positioning_statement: strategy?.positioning_statement,
         }}
-        onApply={(newValue) => {
-          if (!refineKey) return;
+        onApply={async (newValue) => {
+          if (!refineKey || !user) return;
           // voice_attributes is an array column — split commas back out.
-          if (refineKey === "voice_attributes") {
-            const arr = newValue.split(/,|\n/).map((s) => s.trim()).filter(Boolean);
-            setField(refineKey, arr);
-          } else {
-            setField(refineKey, newValue);
-          }
+          const nextValue: any = refineKey === "voice_attributes"
+            ? newValue.split(/,|\n/).map((s) => s.trim()).filter(Boolean)
+            : newValue;
+
+          // Recompute strength: mark the refined area as full points, then
+          // recompute the overall score as the rounded sum(points)/sum(max).
+          const curWeak = (strategy?.weak_areas || []) as any[];
+          const curStrong = (strategy?.strong_areas || []) as any[];
+          const bump = (arr: any[]) =>
+            arr.map((a) => (a?.refineKey === refineKey ? { ...a, points: a.max } : a));
+          const bumpedWeak = bump(curWeak);
+          const bumpedStrong = bump(curStrong);
+          const movers = bumpedWeak.filter((a) => a?.refineKey === refineKey && a.points >= a.max);
+          const remainingWeak = bumpedWeak.filter((a) => !(a?.refineKey === refineKey && a.points >= a.max));
+          const mergedStrong = [...bumpedStrong, ...movers];
+          const all = [...mergedStrong, ...remainingWeak];
+          const totalMax = all.reduce((s, a) => s + (Number(a?.max) || 0), 0);
+          const totalPts = all.reduce((s, a) => s + (Number(a?.points) || 0), 0);
+          const newScore = totalMax > 0
+            ? Math.round((totalPts / totalMax) * 100)
+            : (strategy?.strength_score ?? null);
+
+          const patch: Record<string, any> = {
+            [refineKey]: nextValue,
+            weak_areas: remainingWeak,
+            strong_areas: mergedStrong,
+            strength_score: newScore,
+          };
+
+          const { error } = await supabase
+            .from("strategies")
+            .update(patch as never)
+            .eq("user_id", user.id);
+          if (error) throw error;
+
+          applyServerPatch(patch);
         }}
       />
 

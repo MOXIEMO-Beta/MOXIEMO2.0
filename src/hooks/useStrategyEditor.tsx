@@ -15,6 +15,8 @@ interface StrategyEditorCtx {
   /** Update a nested path inside enhanced_foundation, e.g. ["brandArchetype","name"] */
   setEnhanced: (path: (string | number)[], value: any) => void;
   saveNow: () => Promise<void>;
+  /** Merge a server-confirmed patch into local state without queuing another save. */
+  applyServerPatch: (patch: Record<string, any>) => void;
 }
 
 const Ctx = createContext<StrategyEditorCtx | null>(null);
@@ -101,6 +103,12 @@ export function StrategyEditorProvider({
     if (Object.keys(dirtyRef.current).length === 0) toast.success("Strategy saved");
   }, [flush]);
 
+  const applyServerPatch = useCallback((patch: Record<string, any>) => {
+    setStrategy((prev: any) => ({ ...(prev || {}), ...patch }));
+    setLastSavedAt(new Date());
+    setStatus(Object.keys(dirtyRef.current).length > 0 ? "dirty" : "saved");
+  }, []);
+
   const queueColumn = useCallback((key: string, value: any) => {
     if (!TOP_LEVEL_COLUMNS.has(key)) return;
     dirtyRef.current[key] = value;
@@ -134,8 +142,8 @@ export function StrategyEditorProvider({
   }, [status]);
 
   const value = useMemo<StrategyEditorCtx>(() => ({
-    strategy, editing, setEditing, status, lastSavedAt, setField, setEnhanced, saveNow,
-  }), [strategy, editing, status, lastSavedAt, setField, setEnhanced, saveNow]);
+    strategy, editing, setEditing, status, lastSavedAt, setField, setEnhanced, saveNow, applyServerPatch,
+  }), [strategy, editing, status, lastSavedAt, setField, setEnhanced, saveNow, applyServerPatch]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
