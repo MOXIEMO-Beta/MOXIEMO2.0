@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { aiErrorMessage } from "@/lib/aiErrors";
 import {
@@ -52,6 +52,7 @@ type Strategy = {
   content_pillars: unknown;
   content_themes: unknown;
   voice_attributes: unknown;
+  enhanced_foundation?: any;
 };
 
 type PostIdea = { title: string; pillar: string; hook?: string };
@@ -339,6 +340,7 @@ function OverviewTab({
   onCreateFromIdea: (title: string) => void;
   onSwitchTab: (t: TabKey) => void;
 }) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [connections, setConnections] = useState<SocialConnection[]>([]);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -370,7 +372,7 @@ function OverviewTab({
         .order("created_at", { ascending: false }),
       supabase
         .from("strategies")
-        .select("ideal_client, pain_point, content_pillars, content_themes, voice_attributes")
+        .select("ideal_client, pain_point, content_pillars, content_themes, voice_attributes, enhanced_foundation")
         .eq("user_id", userId)
         .maybeSingle(),
     ]);
@@ -484,13 +486,38 @@ function OverviewTab({
     const scheduled = posts.filter((p) => p.status === "scheduled" && inWeek(p.scheduled_for)).length;
     const published = posts.filter((p) => p.status === "published" && inWeek(p.published_at)).length;
     const drafts = posts.filter((p) => p.status === "draft").length;
-    const thisWeekPosts = posts.filter(
-      (p) => inWeek(p.scheduled_for) || inWeek(p.published_at) || inWeek(p.created_at),
-    );
-    const aligned = thisWeekPosts.filter((p) => !!p.pillar).length;
-    const alignment = thisWeekPosts.length > 0 ? Math.round((aligned / thisWeekPosts.length) * 100) : null;
-    return { scheduled, published, drafts, alignment };
+    return { scheduled, published, drafts };
   }, [posts]);
+
+  /* This week's items from the strategy 30-day content calendar */
+  const weekStrategyItems = useMemo(() => {
+    const calendar: any[] = strategy?.enhanced_foundation?.contentCalendar ?? [];
+    if (!Array.isArray(calendar) || calendar.length === 0) return [];
+    const start = startOfWeek();
+    const end = endOfWeek();
+    return calendar.filter((it) => {
+      if (!it?.date) return false;
+      const d = new Date(it.date);
+      if (isNaN(d.getTime())) return false;
+      return d >= start && d < end;
+    });
+  }, [strategy]);
+
+  const goDraftFromCalendar = (item: any) => {
+    const params = new URLSearchParams();
+    if (item?.topic) params.set("prompt", item.topic);
+    if (item?.platform) params.set("platform", item.platform);
+    if (item?.theme) params.set("pillar", item.theme);
+    navigate(`/app/content?${params.toString()}`);
+  };
+
+  const goDraftFromIdea = (idea: PostIdea) => {
+    const params = new URLSearchParams();
+    if (idea?.title) params.set("prompt", idea.title);
+    params.set("platform", "linkedin");
+    if (idea?.pillar) params.set("pillar", idea.pillar);
+    navigate(`/app/content?${params.toString()}`);
+  };
 
   /* Idea generation — client-side fallback */
   const pillars = useMemo(() => asArray(strategy?.content_pillars), [strategy]);
@@ -499,12 +526,10 @@ function OverviewTab({
   const localIdeas: PostIdea[] = useMemo(() => {
     const source = pillars.length > 0 ? pillars : themes;
     if (source.length === 0) return [];
-    const idealClient = strategy?.ideal_client?.trim() || "founders";
-    const painPoint = strategy?.pain_point?.trim() || "scaling without burnout";
     const top = source.slice(0, 3);
     const templates = (pillar: string, i: number) =>
       [
-        `Why most ${idealClient} struggle with ${painPoint} (and what actually works)`,
+        `Why most founders get ${pillar} wrong (and what actually works)`,
         `The truth about ${pillar} that nobody talks about`,
         `${pillar}: here's what changed everything for my clients`,
       ][i];
