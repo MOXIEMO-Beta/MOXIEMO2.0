@@ -597,7 +597,6 @@ export default function Discovery() {
       <StrategyEngineInterstitial
         active={synthesizing || strategyReady}
         done={strategyReady}
-        estimatedMs={45000}
         onFadedOut={() => navigate("/app/strategy")}
       />
       {lane === null && !completed && (

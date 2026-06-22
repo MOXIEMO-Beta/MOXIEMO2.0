@@ -12,25 +12,27 @@ const TASKS = [
 type Props = {
   active: boolean;
   done: boolean;
-  /** Estimated API duration in ms — used to pace progress. */
-  estimatedMs?: number;
+  /** Time per task for tasks 1-5 (ms). Task 6 holds indeterminate until done. */
+  perTaskMs?: number;
   onFadedOut?: () => void;
 };
 
 /**
  * Full-screen branded interstitial shown while the strategy is being generated.
- * - Progress paces toward 95% over `estimatedMs`, then completes when `done` is true.
- * - Fades out over 300ms once `done` is true, then calls `onFadedOut`.
+ * - Tasks 1-5 animate sequentially over `perTaskMs` each, then complete.
+ * - Task 6 ("Compiling your strategy") enters an indeterminate hold until `done`.
+ * - Fades out over ~300ms once `done` is true, then calls `onFadedOut`.
  */
-export function StrategyEngineInterstitial({ active, done, estimatedMs = 45000, onFadedOut }: Props) {
-  const [progress, setProgress] = useState(0); // 0..1
+export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onFadedOut }: Props) {
+  // Elapsed ms drives tasks 1-5; task 6 uses its own looping animation.
+  const [elapsed, setElapsed] = useState(0);
   const [fading, setFading] = useState(false);
   const startRef = useRef<number | null>(null);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!active) {
-      setProgress(0);
+      setElapsed(0);
       setFading(false);
       startRef.current = null;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -39,37 +41,62 @@ export function StrategyEngineInterstitial({ active, done, estimatedMs = 45000, 
     startRef.current = performance.now();
     const tick = () => {
       const start = startRef.current ?? performance.now();
-      const elapsed = performance.now() - start;
-      // Ease toward 95% over estimatedMs; never exceed 0.95 until `done`.
-      const raw = Math.min(0.95, elapsed / estimatedMs);
-      // Slight easing so it doesn't feel linear.
-      const eased = 1 - Math.pow(1 - raw / 0.95, 1.6);
-      setProgress(Math.min(0.95, eased * 0.95));
+      setElapsed(performance.now() - start);
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [active, estimatedMs]);
+  }, [active]);
 
   useEffect(() => {
     if (!active || !done) return;
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    setProgress(1);
     const t = window.setTimeout(() => {
       setFading(true);
       const t2 = window.setTimeout(() => onFadedOut?.(), 320);
       return () => window.clearTimeout(t2);
-    }, 400);
+    }, 300);
     return () => window.clearTimeout(t);
   }, [done, active, onFadedOut]);
 
   if (!active) return null;
 
-  const pct = Math.round(progress * 100);
-  // Distribute tasks across progress: task i runs from i/6 .. (i+1)/6
-  const taskCount = TASKS.length;
+  // Tasks 1-5 each fill over perTaskMs (sequential). Task 6 is indeterminate.
+  const sequentialCount = TASKS.length - 1; // 5
+  const taskPcts: number[] = [];
+  for (let i = 0; i < sequentialCount; i++) {
+    const taskStart = i * perTaskMs;
+    const raw = (elapsed - taskStart) / perTaskMs;
+    taskPcts.push(Math.max(0, Math.min(1, raw)));
+  }
+  // Task 6: 0 until earlier tasks complete, then "indeterminate" — render as
+  // an oscillating value (display only); completes to 1 when `done`.
+  const seqElapsed = sequentialCount * perTaskMs;
+  let task6Pct = 0;
+  let task6Indeterminate = false;
+  if (done) {
+    task6Pct = 1;
+  } else if (elapsed >= seqElapsed) {
+    task6Indeterminate = true;
+    // Oscillate between 0.25 and 0.85 for visual liveliness.
+    const phase = ((elapsed - seqElapsed) % 2400) / 2400; // 0..1
+    task6Pct = 0.25 + 0.6 * (0.5 - 0.5 * Math.cos(phase * Math.PI * 2));
+  }
+  const allTaskPcts = [...taskPcts, task6Pct];
+
+  // Master progress: 0..85% across tasks 1-5, then asymptote toward 95%
+  // while task 6 holds; jumps to 100% on done.
+  let masterPct: number;
+  if (done) {
+    masterPct = 100;
+  } else if (elapsed < seqElapsed) {
+    masterPct = Math.round((elapsed / seqElapsed) * 85);
+  } else {
+    const extra = elapsed - seqElapsed;
+    masterPct = Math.round(85 + 10 * (1 - Math.exp(-extra / 30000)));
+  }
 
   return (
     <div
@@ -132,12 +159,11 @@ export function StrategyEngineInterstitial({ active, done, estimatedMs = 45000, 
         {/* Task list */}
         <ul className="mt-10 sm:mt-14 space-y-5">
           {TASKS.map((label, i) => {
-            const start = i / taskCount;
-            const end = (i + 1) / taskCount;
-            const taskRaw = (progress - start) / (end - start);
-            const taskPct = Math.max(0, Math.min(1, taskRaw));
-            const complete = taskPct >= 1;
-            const active = taskPct > 0 && !complete;
+            const taskPct = allTaskPcts[i];
+            const isLast = i === TASKS.length - 1;
+            const complete = taskPct >= 1 && !(isLast && task6Indeterminate && !done);
+            const active = !complete && taskPct > 0;
+            const showIndeterminate = isLast && task6Indeterminate && !done;
             return (
               <li key={label} className="flex items-center gap-3 sm:gap-4">
                 <span
@@ -148,6 +174,7 @@ export function StrategyEngineInterstitial({ active, done, estimatedMs = 45000, 
                     width: 10,
                     backgroundColor: complete || active ? "#FF6B5C" : "rgba(255,255,255,0.12)",
                     boxShadow: complete ? "0 0 8px #FF6B5C" : "none",
+                    animation: showIndeterminate ? "moxie-pulse 1.6s ease-in-out infinite" : undefined,
                   }}
                 />
                 <div className="flex-1 min-w-0">
@@ -172,7 +199,7 @@ export function StrategyEngineInterstitial({ active, done, estimatedMs = 45000, 
                         flexShrink: 0,
                       }}
                     >
-                      {Math.round(taskPct * 100)}%
+                      {showIndeterminate ? "…" : `${Math.round(taskPct * 100)}%`}
                     </span>
                   </div>
                   <div
@@ -218,7 +245,7 @@ export function StrategyEngineInterstitial({ active, done, estimatedMs = 45000, 
               color: "rgba(255,255,255,0.55)",
             }}
           >
-            {pct}%
+            {masterPct}%
           </span>
         </div>
         <div
@@ -228,7 +255,7 @@ export function StrategyEngineInterstitial({ active, done, estimatedMs = 45000, 
           <div
             style={{
               height: "100%",
-              width: `${pct}%`,
+              width: `${masterPct}%`,
               backgroundColor: "#FF6B5C",
               transition: "width 200ms linear",
             }}
