@@ -85,7 +85,7 @@ export default function WaitlistAdmin() {
   const [inviteName, setInviteName] = useState("");
   const [inviting, setInviting] = useState(false);
 
-  async function sendInvite(e: React.FormEvent) {
+  async function sendInvite(e: React.FormEvent, mode: "send" | "resend" = "send") {
     e.preventDefault();
     if (!inviteEmail) return;
     setInviting(true);
@@ -94,7 +94,11 @@ export default function WaitlistAdmin() {
         body: { email: inviteEmail.trim() },
       });
       if (error) throw error;
-      toast.success(`Invite sent to ${inviteEmail}.`);
+      toast.success(
+        mode === "resend"
+          ? `Fresh invite resent to ${inviteEmail}.`
+          : `Invite sent to ${inviteEmail}.`
+      );
       setInviteEmail("");
       setInviteName("");
     } catch (err: any) {
@@ -311,7 +315,20 @@ export default function WaitlistAdmin() {
             {inviting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
             Send invite
           </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={inviting || !inviteEmail}
+            onClick={(e) => sendInvite(e as any, "resend")}
+            className="h-10"
+            title="Generates a fresh invite token for this email"
+          >
+            Resend invite
+          </Button>
         </form>
+        <p className="text-xs text-muted-foreground mt-2">
+          Tip: use Resend invite to issue a fresh token if a user reports an expired link.
+        </p>
       </Card>
 
       {/* Summary */}

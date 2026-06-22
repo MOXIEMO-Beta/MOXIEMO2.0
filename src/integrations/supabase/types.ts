@@ -819,6 +819,7 @@ export type Database = {
           intended_use: Json | null
           is_admin: boolean | null
           onboarding_completed: boolean | null
+          password_set: boolean
           plan: string | null
           referral_source: string | null
           role: string | null
@@ -839,6 +840,7 @@ export type Database = {
           intended_use?: Json | null
           is_admin?: boolean | null
           onboarding_completed?: boolean | null
+          password_set?: boolean
           plan?: string | null
           referral_source?: string | null
           role?: string | null
@@ -859,6 +861,7 @@ export type Database = {
           intended_use?: Json | null
           is_admin?: boolean | null
           onboarding_completed?: boolean | null
+          password_set?: boolean
           plan?: string | null
           referral_source?: string | null
           role?: string | null

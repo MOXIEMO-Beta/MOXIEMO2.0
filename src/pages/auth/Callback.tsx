@@ -31,12 +31,12 @@ export default function AuthCallback() {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session?.user) {
-          setErrorMsg("We couldn't verify your invitation link. Please request a new one.");
-          setStatus("error");
+          // No session and no usable token — send them home.
+          navigate("/", { replace: true });
           return;
         }
 
-        // Ensure profile has plan = founding_member (in case trigger didn't fire)
+        // Ensure profile exists with founding_member plan.
         await supabase
           .from("profiles")
           .upsert(
@@ -48,12 +48,24 @@ export default function AuthCallback() {
             { onConflict: "id" }
           );
 
-        if (type === "invite" || type === "recovery" || type === "signup") {
+        // Check whether this user has already completed password setup.
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("password_set")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        const passwordSet = Boolean((profile as any)?.password_set);
+
+        // If they still need to set a password (either fresh invite/recovery,
+        // or they returned later with a valid session but never finished), show
+        // the password creation screen.
+        if (!passwordSet || type === "invite" || type === "recovery" || type === "signup") {
           setStatus("set_password");
           return;
         }
 
-        // Default: send them into the app
+        // Already set up — send them into the app.
         navigate("/app/discovery", { replace: true });
       } catch (e: any) {
         setErrorMsg(e?.message ?? "Something went wrong.");
@@ -70,6 +82,15 @@ export default function AuthCallback() {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
+      // Mark the profile as having completed password setup so a second visit
+      // (e.g. re-using the invite link) skips this screen.
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await supabase
+          .from("profiles")
+          .update({ password_set: true })
+          .eq("id", session.user.id);
+      }
       toast.success("Account activated.");
       navigate("/app/discovery", { replace: true });
     } catch (err: any) {
