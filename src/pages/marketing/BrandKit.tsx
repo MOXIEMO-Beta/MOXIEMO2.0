@@ -213,16 +213,9 @@ export default function BrandKit() {
     }
   }
 
-  function scrollToReviewTop() {
+  function scrollToTop() {
     setTimeout(() => {
-      const reviewTop = document.getElementById("brand-kit-review-top");
-      const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-      const behavior: ScrollBehavior = prefersReduced ? "auto" : "smooth";
-      if (reviewTop) {
-        reviewTop.scrollIntoView({ behavior, block: "start" });
-      } else {
-        window.scrollTo({ top: 0, behavior });
-      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }, 100);
   }
 
@@ -302,7 +295,7 @@ export default function BrandKit() {
       }
 
       setStep("review");
-      scrollToReviewTop();
+      scrollToTop();
     } catch (err) {
       console.error(err);
       toast({
@@ -314,7 +307,7 @@ export default function BrandKit() {
       setHeadingFont("Inter");
       setBodyFont("Inter");
       setStep("review");
-      scrollToReviewTop();
+      scrollToTop();
     }
   }
 
@@ -926,7 +919,10 @@ export default function BrandKit() {
                 <Button
                   type="button"
                   size="lg"
-                  onClick={() => setStep("capture")}
+                  onClick={() => {
+                    setStep("capture");
+                    scrollToTop();
+                  }}
                   className="h-12 px-8 rounded-full font-semibold text-white"
                   style={{ backgroundColor: "#FF6B5C" }}
                 >
