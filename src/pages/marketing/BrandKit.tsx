@@ -168,6 +168,34 @@ export default function BrandKit() {
 
   const generatedPdfRef = useRef<Blob | null>(null);
 
+  // Reset all component state back to the initial blank form.
+  function resetKit() {
+    setStep("input");
+    setLoadingMsgIdx(0);
+    setWebsite("");
+    setLogoFile(null);
+    setLogoDataUrl("");
+    setExtra("");
+    setBrandImages([]);
+    setLogoGrayscaleUrl("");
+    setLogoReversedUrl("");
+    setLogoVariationNames([]);
+    setSiteName("");
+    setColors([]);
+    setHeadingFont("Inter");
+    setBodyFont("Inter");
+    setLogoUrl("");
+    setImagery(["clean", "warm"]);
+    setFirstName("");
+    setLastName("");
+    setEmail("");
+    setSending(false);
+    generatedPdfRef.current = null;
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 50);
+  }
+
   // Safe in-page scroll. Never falls through to page-bottom when the target is missing.
   function scrollToSection(id: string, opts?: { focus?: boolean }) {
     const el = document.getElementById(id);
@@ -1004,6 +1032,17 @@ export default function BrandKit() {
               >
                 DOWNLOAD AGAIN
               </Button>
+
+              <div className="mt-5">
+                <button
+                  type="button"
+                  onClick={resetKit}
+                  className="text-sm font-medium underline-offset-4 hover:underline transition"
+                  style={{ color: "#FF6B5C" }}
+                >
+                  Build a kit for another brand →
+                </button>
+              </div>
 
               <div
                 className="mt-16 p-8 md:p-12 rounded-2xl text-left"
