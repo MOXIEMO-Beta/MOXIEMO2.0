@@ -704,10 +704,44 @@ function VoiceTab() {
   const examples = vg.voiceExamples || {};
   const never: any[] = vg.neverSoundLike || [];
 
+  const colPencil = (col: string, label: string, description: string) => (
+    <SectionPencil
+      target={() => ({
+        refineKey: col,
+        label,
+        description,
+        currentValue: Array.isArray(strategy?.[col]) ? (strategy[col] as any[]).join(", ") : (strategy?.[col] || ""),
+        buildPatch: (v) => {
+          const isArr = Array.isArray(strategy?.[col]);
+          return { [col]: isArr ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v };
+        },
+      })}
+    />
+  );
+  const efPencil = (path: (string | number)[], label: string, description: string) => (
+    <SectionPencil
+      target={() => {
+        const cur = path.reduce<any>((acc, k) => (acc == null ? acc : acc[k]), strategy?.enhanced_foundation || {});
+        const isArr = Array.isArray(cur);
+        return {
+          refineKey: `enhanced:${path.join(".")}`,
+          label,
+          description,
+          currentValue: isArr ? cur.join(", ") : (cur || ""),
+          buildPatch: (v) => {
+            const value = isArr ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v;
+            return { enhanced_foundation: setInPath(strategy?.enhanced_foundation || {}, path, value) };
+          },
+        };
+      }}
+    />
+  );
+
   return (
     <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
       {/* Voice attributes */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {colPencil("voice_attributes", "voice attributes", "The 2–3 traits that define how your brand sounds in writing.")}
         <div className="flex items-center justify-between mb-4">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Voice attributes</div>
           {editing && (
@@ -752,7 +786,8 @@ function VoiceTab() {
       </Card>
 
       {/* Sentence structure */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {efPencil(["voiceGuidelines", "sentenceStructure", "example"], "sentence structure", "How your sentences are shaped — rhythm, length, and a canonical example.")}
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Sentence structure</div>
         <div className="mb-5">
           <EditableBulletList
@@ -771,7 +806,8 @@ function VoiceTab() {
 
       {/* Vocabulary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card p-6 border-border shadow-soft">
+          {efPencil(["voiceGuidelines", "vocabulary", "use"], "words to use", "The vocabulary that should consistently show up in your writing.")}
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-accent mb-3"><Check className="h-3.5 w-3.5" /> Words to use</div>
           <EditableList
             items={vocab.use || []}
@@ -779,7 +815,8 @@ function VoiceTab() {
             chipClassName="bg-accent-soft text-accent"
           />
         </Card>
-        <Card className="report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card p-6 border-border shadow-soft">
+          {efPencil(["voiceGuidelines", "vocabulary", "avoid"], "words to avoid", "The vocabulary that should never appear — generic, jargon, or off-brand terms.")}
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3"><X className="h-3.5 w-3.5" /> Words to avoid</div>
           <EditableList
             items={vocab.avoid || []}
@@ -790,7 +827,8 @@ function VoiceTab() {
       </div>
 
       {/* Tone by platform */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {efPencil(["voiceGuidelines", "toneByPlatform", "linkedin", "tone"], "tone by platform", "How your voice shifts across LinkedIn, email, and podcast.")}
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Tone by platform</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {(["linkedin", "email", "podcast"] as const).map((p) => {
@@ -814,7 +852,8 @@ function VoiceTab() {
       </Card>
 
       {/* Voice examples */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {efPencil(["voiceGuidelines", "voiceExamples", "openingHook", "good"], "voice examples", "Concrete good/bad examples — hooks, teaching points, and CTAs in your voice.")}
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-5">Voice examples</div>
         <div className="space-y-5">
           {([
@@ -850,7 +889,8 @@ function VoiceTab() {
       </Card>
 
       {/* Never sound like */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {colPencil("anti_positioning", "what you'd never sound like", "Styles, phrases, or vibes your brand actively rejects.")}
         <div className="flex items-center justify-between mb-4">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Never sound like</div>
           {editing && (
