@@ -62,7 +62,7 @@ interface Props {
   sectionLabel?: string;
   currentValue: string;
   context: any;
-  onApply: (newValue: string) => void;
+  onApply: (newValue: string) => Promise<void> | void;
 }
 
 export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLabel, currentValue, context, onApply }: Props) {
@@ -71,6 +71,8 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
   const [loading, setLoading] = useState(false);
   const [refined, setRefined] = useState("");
   const [rationale, setRationale] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const config = sectionKey ? COACHING_PROMPTS[sectionKey] : null;
 
@@ -80,6 +82,8 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
       setInput("");
       setRefined("");
       setRationale("");
+      setSaving(false);
+      setSaveError(null);
     }
   }, [open, sectionKey]);
 
@@ -112,10 +116,19 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
     }
   }
 
-  function apply() {
-    onApply(refined);
-    toast.success("Refinement applied. Don't forget to save.");
-    onOpenChange(false);
+  async function apply() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await onApply(refined);
+      toast.success("Section updated.", { duration: 3000 });
+      onOpenChange(false);
+    } catch (e: any) {
+      console.error("Refine apply failed", e);
+      setSaveError("Couldn't save your update — try again");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -166,6 +179,9 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
                 {refined}
               </div>
               {rationale && <p className="text-xs text-muted-foreground mt-2 italic">{rationale}</p>}
+              {saveError && (
+                <p className="text-sm text-destructive mt-3" role="alert">{saveError}</p>
+              )}
             </div>
           </div>
         )}
@@ -180,9 +196,11 @@ export function RefineSectionDialog({ open, onOpenChange, sectionKey, sectionLab
             </>
           ) : (
             <>
-              <Button variant="ghost" onClick={() => setStep("input")}>Keep refining</Button>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Revert</Button>
-              <Button onClick={apply} className="bg-foreground text-background hover:bg-foreground/90">Use new version</Button>
+              <Button variant="ghost" onClick={() => setStep("input")} disabled={saving}>Keep refining</Button>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Revert</Button>
+              <Button onClick={apply} disabled={saving} className="bg-foreground text-background hover:bg-foreground/90">
+                {saving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</> : "Use new version"}
+              </Button>
             </>
           )}
         </DialogFooter>
