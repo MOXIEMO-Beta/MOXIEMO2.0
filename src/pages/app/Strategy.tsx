@@ -249,6 +249,7 @@ function OverviewTab() {
             multiline
             placeholder="Your positioning statement"
             ariaLabel="Positioning statement"
+            className="edit-mode-input"
           />
         </div>
 
@@ -264,6 +265,7 @@ function OverviewTab() {
                       value={breakdown[key]}
                       onChange={(v) => setEnhanced(["positioningBreakdown", key], v)}
                       placeholder={ph}
+                      className="edit-mode-input"
                     />
                   </span>
                 </div>
@@ -283,6 +285,7 @@ function OverviewTab() {
                     onChange={(v) => setEnhanced(["positioningVariations", key], v)}
                     multiline
                     placeholder={`${label} version`}
+                    className="edit-mode-input"
                   />
                 </div>
               </div>
