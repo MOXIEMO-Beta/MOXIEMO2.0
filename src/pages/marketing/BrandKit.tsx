@@ -185,6 +185,19 @@ export default function BrandKit() {
     }
   }
 
+  function scrollToReviewTop() {
+    setTimeout(() => {
+      const reviewTop = document.getElementById("brand-kit-review-top");
+      const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      const behavior: ScrollBehavior = prefersReduced ? "auto" : "smooth";
+      if (reviewTop) {
+        reviewTop.scrollIntoView({ behavior, block: "start" });
+      } else {
+        window.scrollTo({ top: 0, behavior });
+      }
+    }, 100);
+  }
+
   useEffect(() => {
     if (step !== "loading") return;
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -261,6 +274,7 @@ export default function BrandKit() {
       }
 
       setStep("review");
+      scrollToReviewTop();
     } catch (err) {
       console.error(err);
       toast({
@@ -272,6 +286,7 @@ export default function BrandKit() {
       setHeadingFont("Inter");
       setBodyFont("Inter");
       setStep("review");
+      scrollToReviewTop();
     }
   }
 
@@ -717,7 +732,7 @@ export default function BrandKit() {
           )}
 
           {step === "review" && (
-            <section>
+            <section id="brand-kit-review-top">
               <p className="text-xs md:text-sm font-bold uppercase tracking-[0.25em] mb-6" style={{ color: "#FF6B5C" }}>
                 REVIEW
               </p>
