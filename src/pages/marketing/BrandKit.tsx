@@ -295,7 +295,7 @@ export default function BrandKit() {
       }
 
       setStep("review");
-      scrollToReviewTop();
+      scrollToTop();
     } catch (err) {
       console.error(err);
       toast({
@@ -307,7 +307,7 @@ export default function BrandKit() {
       setHeadingFont("Inter");
       setBodyFont("Inter");
       setStep("review");
-      scrollToReviewTop();
+      scrollToTop();
     }
   }
 
