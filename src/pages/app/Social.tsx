@@ -672,19 +672,58 @@ function OverviewTab({
         </div>
       </section>
 
-      {/* SECTION 2 — This week */}
+      {/* SECTION 2 — This week from your strategy */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">This week</h2>
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-          <StatCard label="Posts scheduled" value={loading ? null : weekStats.scheduled} subtext="Mon – Sun" />
-          <StatCard label="Posts published" value={loading ? null : weekStats.published} subtext="Mon – Sun" />
-          <StatCard label="Drafts" value={loading ? null : weekStats.drafts} subtext="Total open drafts" />
-          <StatCard
-            label="Strategy alignment"
-            value={loading ? null : weekStats.alignment !== null ? `${weekStats.alignment}%` : "—"}
-            subtext={weekStats.alignment !== null ? "on-strategy" : "No posts yet"}
-          />
-        </div>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          This week from your strategy
+        </h2>
+        {loading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : weekStrategyItems.length === 0 ? (
+          <Card className="flex flex-col items-start gap-2 p-5">
+            <CalendarIcon className="h-5 w-5 text-accent" />
+            <p className="text-sm font-medium text-foreground">Nothing planned for this week.</p>
+            <p className="text-xs text-muted-foreground">View your 30-day content plan to get started.</p>
+            <Link to="/app/strategy" className="text-xs font-medium text-accent hover:underline">
+              Go to your plan →
+            </Link>
+          </Card>
+        ) : (
+          <Card className="divide-y divide-border p-0">
+            {weekStrategyItems.slice(0, 5).map((it: any, i: number) => {
+              const title = it.topic ?? "";
+              const truncated = title.length > 60 ? `${title.slice(0, 60).trimEnd()}…` : title;
+              return (
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  {it.platform && (
+                    <Badge className="shrink-0 bg-muted text-foreground hover:bg-muted">{it.platform}</Badge>
+                  )}
+                  <p className="min-w-0 flex-1 truncate text-sm text-foreground">{truncated}</p>
+                  {it.theme && (
+                    <span className="hidden shrink-0 text-xs text-muted-foreground md:inline">{it.theme}</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => goDraftFromCalendar(it)}
+                    className="shrink-0 text-xs font-medium text-accent hover:underline"
+                  >
+                    Draft content →
+                  </button>
+                </div>
+              );
+            })}
+            {weekStrategyItems.length > 5 && (
+              <div className="px-4 py-3">
+                <Link to="/app/strategy" className="text-xs font-medium text-accent hover:underline">
+                  View full 30-day plan →
+                </Link>
+              </div>
+            )}
+          </Card>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {loading ? "—" : `${weekStats.scheduled} scheduled · ${weekStats.published} published · ${weekStats.drafts} drafts`}
+        </p>
       </section>
 
       {/* SECTION 3 — Ideas */}
@@ -733,14 +772,13 @@ function OverviewTab({
             {ideasToShow.slice(0, aiIdeas ? 6 : 3).map((idea, i) => (
               <Card key={`${idea.title}-${i}`} className="flex flex-col gap-3 p-4">
                 <Badge className="w-fit bg-accent-soft text-accent hover:bg-accent-soft">{idea.pillar}</Badge>
-                <p className="text-sm font-semibold leading-snug text-foreground">{idea.title}</p>
-                {idea.hook && <p className="text-xs italic text-muted-foreground">"{idea.hook}"</p>}
+                <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{idea.title}</p>
                 <p className="text-xs text-muted-foreground">Recommended: LinkedIn</p>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="mt-auto justify-between px-2 text-accent hover:bg-accent-soft hover:text-accent"
-                  onClick={() => onCreateFromIdea(idea.title)}
+                  onClick={() => goDraftFromIdea(idea)}
                 >
                   Create this post <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
