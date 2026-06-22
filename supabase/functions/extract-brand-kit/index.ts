@@ -264,17 +264,108 @@ function abs(url: string, origin: string): string {
   return `${origin}/${url}`;
 }
 
-function extractLogo(html: string, origin: string): string {
-  // common patterns: <img class="logo" />, alt="logo", header img, og:image as fallback
-  const ogImage = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i)?.[1];
-  const logoImg =
-    html.match(/<img[^>]*(?:class|id)=["'][^"']*logo[^"']*["'][^>]*src=["']([^"']+)["']/i)?.[1] ??
-    html.match(/<img[^>]*src=["']([^"']+)["'][^>]*(?:class|id|alt)=["'][^"']*logo[^"']*["']/i)?.[1] ??
-    html.match(/<img[^>]*alt=["'][^"']*logo[^"']*["'][^>]*src=["']([^"']+)["']/i)?.[1];
+function getImgSrc(tag: string): string | null {
+  return tag.match(/\ssrc=["']([^"']+)["']/i)?.[1] ?? null;
+}
+
+function findImgInScope(scope: string, predicate: (tag: string) => boolean): string | null {
+  const re = /<img\b[^>]*>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(scope)) !== null) {
+    if (predicate(m[0])) {
+      const src = getImgSrc(m[0]);
+      if (src) return src;
+    }
+  }
+  return null;
+}
+
+function extractLogo(
+  html: string,
+  origin: string,
+): { url: string | null; source: "logo" | "favicon" | "none"; message?: string } {
+  // 1. img.custom-logo
+  let src = findImgInScope(html, (t) => /\sclass=["'][^"']*\bcustom-logo\b[^"']*["']/i.test(t));
+  if (src) return { url: abs(src, origin), source: "logo" };
+
+  // 2. a.custom-logo-link img
+  const customLogoLink = html.match(/<a\b[^>]*class=["'][^"']*\bcustom-logo-link\b[^"']*["'][^>]*>([\s\S]*?)<\/a>/i)?.[1];
+  if (customLogoLink) {
+    src = findImgInScope(customLogoLink, () => true);
+    if (src) return { url: abs(src, origin), source: "logo" };
+  }
+
+  // 3. img[class*="logo"] inside <header> or <nav>
+  const headerScopes = [...html.matchAll(/<header\b[^>]*>([\s\S]*?)<\/header>/gi)].map((m) => m[1]);
+  const navScopes = [...html.matchAll(/<nav\b[^>]*>([\s\S]*?)<\/nav>/gi)].map((m) => m[1]);
+  const headerOrNavScopes = [...headerScopes, ...navScopes];
+  for (const scope of headerOrNavScopes) {
+    src = findImgInScope(scope, (t) => /\sclass=["'][^"']*logo[^"']*["']/i.test(t));
+    if (src) return { url: abs(src, origin), source: "logo" };
+  }
+
+  // 4. a[class*="logo"] img
+  const logoAnchors = [...html.matchAll(/<a\b[^>]*class=["'][^"']*logo[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi)];
+  for (const a of logoAnchors) {
+    src = findImgInScope(a[1], () => true);
+    if (src) return { url: abs(src, origin), source: "logo" };
+  }
+
+  // 5. .site-header img:first-of-type, .header img:first-of-type
+  for (const cls of ["site-header", "header"]) {
+    const re = new RegExp(`<[^>]*class=["'][^"']*\\b${cls}\\b[^"']*["'][^>]*>([\\s\\S]*?)<\\/[a-z]+>`, "i");
+    const scope = html.match(re)?.[1];
+    if (scope) {
+      src = findImgInScope(scope, () => true);
+      if (src) return { url: abs(src, origin), source: "logo" };
+    }
+  }
+
+  // 6. .navbar-brand img, .navbar-logo img
+  for (const cls of ["navbar-brand", "navbar-logo"]) {
+    const re = new RegExp(`<[^>]*class=["'][^"']*\\b${cls}\\b[^"']*["'][^>]*>([\\s\\S]*?)<\\/[a-z]+>`, "i");
+    const scope = html.match(re)?.[1];
+    if (scope) {
+      src = findImgInScope(scope, () => true);
+      if (src) return { url: abs(src, origin), source: "logo" };
+    }
+  }
+
+  // 7. [rel="logo"]
+  const relLogoImg = html.match(/<img\b[^>]*\srel=["']logo["'][^>]*>/i)?.[0];
+  if (relLogoImg) {
+    src = getImgSrc(relLogoImg);
+    if (src) return { url: abs(src, origin), source: "logo" };
+  }
+  const relLogoLink = html.match(/<link\b[^>]*\srel=["']logo["'][^>]*\shref=["']([^"']+)["']/i)?.[1];
+  if (relLogoLink) return { url: abs(relLogoLink, origin), source: "logo" };
+
+  // 8. header img:first-of-type
+  for (const scope of headerScopes) {
+    src = findImgInScope(scope, () => true);
+    if (src) return { url: abs(src, origin), source: "logo" };
+  }
+
+  // 9. Favicon fallback
   const appleIcon = html.match(/<link[^>]*rel=["']apple-touch-icon[^"']*["'][^>]*href=["']([^"']+)["']/i)?.[1];
-  const favicon = html.match(/<link[^>]*rel=["'][^"']*icon[^"']*["'][^>]*href=["']([^"']+)["']/i)?.[1];
-  const pick = logoImg || appleIcon || ogImage || favicon || "/favicon.ico";
-  return abs(pick, origin);
+  const favicon =
+    html.match(/<link[^>]*rel=["'](?:shortcut icon|icon)["'][^>]*href=["']([^"']+)["']/i)?.[1] ??
+    html.match(/<link[^>]*href=["']([^"']+)["'][^>]*rel=["'](?:shortcut icon|icon)["']/i)?.[1];
+  const icon = appleIcon || favicon;
+  if (icon) {
+    return {
+      url: abs(icon, origin),
+      source: "favicon",
+      message: "We found your site icon. Upload a cleaner logo version below.",
+    };
+  }
+
+  // 10. Nothing
+  return {
+    url: null,
+    source: "none",
+    message: "We could not detect your logo automatically. Upload it here.",
+  };
 }
 
 function extractSiteName(html: string): string {
@@ -350,13 +441,15 @@ serve(async (req) => {
 
     const { palette: colors, roles: colorRoles } = extractColors(html, css);
     const fonts = extractFonts(html, css);
-    const logo = extractLogo(html, parsed.origin);
+    const logoResult = extractLogo(html, parsed.origin);
     const siteName = extractSiteName(html) || parsed.hostname;
 
     return new Response(
       JSON.stringify({
         siteName,
-        logo,
+        logo: logoResult.url,
+        logoSource: logoResult.source,
+        logoMessage: logoResult.message ?? null,
         colors,
         colorRoles,
         fonts,
