@@ -1138,8 +1138,17 @@ export default function Strategy() {
   }
 
   return (
-    <StrategyEditorProvider initial={strategy} userId={user!.id}>
-      <StrategyContent reportData={reportData} />
-    </StrategyEditorProvider>
+    <>
+      <StrategyEditorProvider initial={strategy} userId={user!.id}>
+        <StrategyContent reportData={reportData} />
+      </StrategyEditorProvider>
+      {showInterstitial && (
+        <StrategyEngineInterstitial
+          active
+          done={!!strategy}
+          onFadedOut={() => setInterstitialDismissed(true)}
+        />
+      )}
+    </>
   );
 }
