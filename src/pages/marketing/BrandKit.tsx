@@ -481,12 +481,10 @@ export default function BrandKit() {
       (async () => {
         try {
           const base64 = await blobToBase64(blob);
-          const { error } = await supabase.functions.invoke("send-brand-kit", {
+          const { error } = await supabase.functions.invoke("send-brand-kit-email", {
             body: {
-              first_name: firstName.trim(),
-              last_name: lastName.trim(),
               email: email.trim(),
-              website_url: website.trim(),
+              firstName: firstName.trim(),
               pdfBase64: base64,
             },
           });
