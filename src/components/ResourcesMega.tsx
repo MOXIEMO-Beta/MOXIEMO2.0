@@ -88,7 +88,16 @@ function ResourceLink({
     );
   }
   return (
-    <Link to={item.href!} className="block rounded-md px-3 py-2 transition-colors hover:bg-[#15171C]/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B5C]/60">
+    <Link
+      to={item.href!}
+      onClick={(e) => {
+        if (typeof window !== "undefined" && window.location.pathname === item.href) {
+          e.preventDefault();
+          window.location.reload();
+        }
+      }}
+      className="block rounded-md px-3 py-2 transition-colors hover:bg-[#15171C]/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF6B5C]/60"
+    >
       {inner}
     </Link>
   );

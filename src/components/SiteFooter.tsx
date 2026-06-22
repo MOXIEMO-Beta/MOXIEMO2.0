@@ -64,6 +64,12 @@ function FooterLink({ to, children, coral }: { to: string; children: React.React
       to={to}
       className="sf-link"
       style={{ ...fontBody, fontSize: 15, color: coral ? C.coral : C.link, textDecoration: "none" }}
+      onClick={(e) => {
+        if (typeof window !== "undefined" && window.location.pathname === to) {
+          e.preventDefault();
+          window.location.reload();
+        }
+      }}
     >
       {children}
     </Link>
