@@ -15,7 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
-import { RefineSectionDialog } from "@/components/strategy/RefineSectionDialog";
 import { RefineProvider, SectionPencil, setInPath, useRefine } from "@/components/strategy/RefineContext";
 import { downloadStrategyPdf } from "@/lib/strategyPdf";
 import { StrategyEngineInterstitial } from "@/components/StrategyEngineInterstitial";
