@@ -192,6 +192,40 @@ function OverviewTab() {
   const distribution = ef.distribution;
   const isService = strategy?.strategy_lane === "service";
 
+  const colPencil = (col: string, label: string, description: string) => (
+    <SectionPencil
+      target={() => ({
+        refineKey: col,
+        label,
+        description,
+        currentValue: Array.isArray(strategy?.[col]) ? (strategy[col] as any[]).join(", ") : (strategy?.[col] || ""),
+        buildPatch: (v) => {
+          const isArr = Array.isArray(strategy?.[col]);
+          return { [col]: isArr ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v };
+        },
+      })}
+    />
+  );
+  const efPencil = (path: (string | number)[], label: string, description: string, opts?: { darkBg?: boolean; arrayJoin?: boolean }) => (
+    <SectionPencil
+      className={opts?.darkBg ? "text-background/40 hover:text-background/80 hover:bg-background/10" : undefined}
+      target={() => {
+        const cur = path.reduce<any>((acc, k) => (acc == null ? acc : acc[k]), strategy?.enhanced_foundation || {});
+        const isArr = Array.isArray(cur);
+        return {
+          refineKey: `enhanced:${path.join(".")}`,
+          label,
+          description,
+          currentValue: isArr ? cur.join(", ") : (cur || ""),
+          buildPatch: (v) => {
+            const value = isArr || opts?.arrayJoin ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v;
+            return { enhanced_foundation: setInPath(strategy?.enhanced_foundation || {}, path, value) };
+          },
+        };
+      }}
+    />
+  );
+
   const breakdownFields: [string, string, string][] = [
     ["Who", "idealClient", "Who you serve"],
     ["Problem", "painPoint", "The pain you solve"],
