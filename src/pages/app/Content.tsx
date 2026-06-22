@@ -16,6 +16,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
 } from "@/components/ui/select";
 import {
   AlertDialog,
@@ -830,9 +831,41 @@ export default function Content() {
                 >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {PLATFORMS.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>{p.value}</SelectItem>
-                    ))}
+                    {(() => {
+                      const available = new Set(PLATFORMS.map((p) => p.value));
+                      const groups: { label: string; items: string[] }[] = [
+                        { label: "Social", items: ["LinkedIn Post", "Instagram Caption", "Facebook Post", "X / Twitter"] },
+                        { label: "Written", items: ["Newsletter Section", "Standalone Newsletter (full)", "Long-Form Article"] },
+                        { label: "Video & Audio", items: ["Short-Form Video Script", "Long-Form Video Script", "Podcast Script"] },
+                        { label: "Paid", items: ["Meta Ads", "Google Ads"] },
+                        { label: "Profile", items: ["Profile Bio"] },
+                      ];
+                      const grouped = new Set(groups.flatMap((g) => g.items));
+                      const leftover = PLATFORMS.map((p) => p.value).filter((v) => !grouped.has(v));
+                      if (leftover.length) groups.push({ label: "Other", items: leftover });
+                      return groups
+                        .map((g) => ({ ...g, items: g.items.filter((i) => available.has(i)) }))
+                        .filter((g) => g.items.length > 0)
+                        .map((g, gi) => (
+                          <SelectGroup
+                            key={g.label}
+                            className={
+                              gi > 0
+                                ? "border-t border-[rgba(21,23,28,0.10)] mt-1 pt-0"
+                                : ""
+                            }
+                          >
+                            <div
+                              className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.40)] select-none px-3 pt-2 pb-1"
+                            >
+                              {g.label}
+                            </div>
+                            {g.items.map((v) => (
+                              <SelectItem key={v} value={v}>{v}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                        ));
+                    })()}
                   </SelectContent>
                 </Select>
               </div>
