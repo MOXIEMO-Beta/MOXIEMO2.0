@@ -1123,14 +1123,17 @@ export default function Strategy() {
           </>
         )}
       </div>
-    );
-  }
+  ) : null;
 
   return (
     <>
-      <StrategyEditorProvider initial={strategy} userId={user!.id}>
-        <StrategyContent reportData={reportData} />
-      </StrategyEditorProvider>
+      {strategy ? (
+        <StrategyEditorProvider initial={strategy} userId={user!.id}>
+          <StrategyContent reportData={reportData} />
+        </StrategyEditorProvider>
+      ) : (
+        emptyOrFailedState
+      )}
       {showInterstitial && (
         <StrategyEngineInterstitial
           active
