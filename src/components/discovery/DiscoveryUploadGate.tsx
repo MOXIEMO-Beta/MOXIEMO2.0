@@ -363,6 +363,7 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
         <div id="prefill-continue" className="mt-4 flex flex-col sm:flex-row gap-3">
           <Button
             onClick={onContinue}
+            id="prefill-continue-button"
             className="h-12 px-6 rounded-xl text-[15px] font-medium"
             style={{ backgroundColor: "#FF6B5C", color: "white" }}
           >
@@ -394,8 +395,13 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
               </div>
               <button
                 onClick={() => {
-                  const el = document.getElementById("prefill-continue");
-                  if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+                  const el = document.getElementById("prefill-continue-button");
+                  if (!el) return;
+                  el.scrollIntoView({ behavior: "smooth", block: "center" });
+                  window.setTimeout(() => {
+                    el.classList.add("moxie-coral-pulse");
+                    window.setTimeout(() => el.classList.remove("moxie-coral-pulse"), 1000);
+                  }, 300);
                 }}
                 className="h-10 px-4 rounded-lg font-semibold whitespace-nowrap"
                 style={{ backgroundColor: "white", color: "#ff6b6b", fontSize: 14 }}
