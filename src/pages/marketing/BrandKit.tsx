@@ -98,12 +98,12 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 // Alpha is preserved so the silhouette stays intact.
 async function generateLogoVariants(
   src: string
-): Promise<{ grayscale?: string; reversed?: string }> {
+): Promise<{ color?: string; grayscale?: string; reversed?: string }> {
   try {
     const img = await loadImage(src);
     const w = img.naturalWidth || 512;
     const h = img.naturalHeight || 512;
-    const make = (mode: "gray" | "white") => {
+    const make = (mode: "color" | "gray" | "white") => {
       const canvas = document.createElement("canvas");
       canvas.width = w;
       canvas.height = h;
@@ -111,6 +111,11 @@ async function generateLogoVariants(
       if (!ctx) return undefined;
       ctx.clearRect(0, 0, w, h);
       ctx.drawImage(img, 0, 0, w, h);
+      if (mode === "color") {
+        // Rasterize the color logo to PNG so the PDF renderer (which cannot
+        // embed SVG data URLs) always receives an embeddable raster image.
+        return canvas.toDataURL("image/png");
+      }
       const id = ctx.getImageData(0, 0, w, h);
       const d = id.data;
       for (let i = 0; i < d.length; i += 4) {
@@ -131,7 +136,7 @@ async function generateLogoVariants(
       ctx.putImageData(id, 0, 0);
       return canvas.toDataURL("image/png");
     };
-    return { grayscale: make("gray"), reversed: make("white") };
+    return { color: make("color"), grayscale: make("gray"), reversed: make("white") };
   } catch {
     return {};
   }
@@ -285,14 +290,19 @@ export default function BrandKit() {
         const dataUrl = await urlToDataUrl(data.logo);
         resolvedColorLogo = dataUrl || data.logo;
       }
-      setLogoUrl(resolvedColorLogo);
 
-      // Auto-generate grayscale + reversed variants only when user did not provide.
-      if (resolvedColorLogo && resolvedColorLogo.startsWith("data:")) {
+      // Rasterize the color logo to PNG (and generate grayscale + reversed
+      // variants from the same canvas pass). The PDF renderer cannot embed
+      // SVG data URLs or fetch external URLs, so we must always feed it a
+      // PNG data URL — even for the PRIMARY mark.
+      let finalColorLogo = resolvedColorLogo;
+      if (resolvedColorLogo) {
         const variants = await generateLogoVariants(resolvedColorLogo);
+        if (variants.color) finalColorLogo = variants.color;
         if (!logoGrayscaleUrl && variants.grayscale) setLogoGrayscaleUrl(variants.grayscale);
         if (!logoReversedUrl && variants.reversed) setLogoReversedUrl(variants.reversed);
       }
+      setLogoUrl(finalColorLogo);
 
       setStep("review");
       scrollToTop();
@@ -334,10 +344,10 @@ export default function BrandKit() {
 
   async function handleReplaceLogo(file: File) {
     const data = await fileToDataUrl(file);
-    setLogoUrl(data);
     setLogoDataUrl(data);
-    // refresh auto-generated variants from the new color logo
+    // Rasterize through canvas so the PDF renderer always gets a PNG data URL.
     const variants = await generateLogoVariants(data);
+    setLogoUrl(variants.color || data);
     if (variants.grayscale) setLogoGrayscaleUrl(variants.grayscale);
     if (variants.reversed) setLogoReversedUrl(variants.reversed);
   }
@@ -382,11 +392,23 @@ export default function BrandKit() {
       // The PDF renderer cannot fetch external URLs (CORS / network-restricted),
       // so only pass logos that are already base64 data URLs.
       const pickEmbeddable = (s: string | undefined) =>
-        s && s.startsWith("data:") ? s : undefined;
+        s && s.startsWith("data:image/") && !s.startsWith("data:image/svg")
+          ? s
+          : undefined;
+      const primaryLogo =
+        pickEmbeddable(logoUrl) ||
+        pickEmbeddable(logoDataUrl) ||
+        pickEmbeddable(logoGrayscaleUrl); // last-ditch: at least show the mark
+      console.log(
+        "[brand-kit-pdf] logo being passed:",
+        primaryLogo
+          ? `${primaryLogo.slice(0, 30)}… (len=${primaryLogo.length})`
+          : "null/missing",
+      );
       const data: BrandKitData = {
         siteName: siteName || website,
         websiteUrl: website,
-        logo: pickEmbeddable(logoUrl) || pickEmbeddable(logoDataUrl),
+        logo: primaryLogo,
         logoGrayscale: pickEmbeddable(logoGrayscaleUrl),
         logoReversed: pickEmbeddable(logoReversedUrl),
         colors,
