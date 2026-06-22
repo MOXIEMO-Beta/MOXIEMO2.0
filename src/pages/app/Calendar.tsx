@@ -89,9 +89,17 @@ export default function CalendarPage() {
 
   return (
     <div className="px-6 lg:px-10 py-8 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="font-display text-4xl mb-2">Marketing Planner</h1>
-        <p className="text-muted-foreground">Plan campaigns, schedule content, and grow across every channel.</p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-4xl mb-2">Marketing Planner</h1>
+          <p className="text-muted-foreground">Plan campaigns, schedule content, and grow across every channel.</p>
+        </div>
+        <button
+          onClick={() => setTab("campaigns")}
+          className="shrink-0 inline-flex items-center gap-1 rounded-md px-4 py-2.5 text-sm font-semibold text-white bg-[#FF6B5C] hover:bg-[#ff5747] transition-colors"
+        >
+          + Create campaign
+        </button>
       </div>
 
       {/* Tab nav */}
