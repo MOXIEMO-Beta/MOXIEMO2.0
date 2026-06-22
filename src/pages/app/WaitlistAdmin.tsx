@@ -90,8 +90,8 @@ export default function WaitlistAdmin() {
     if (!inviteEmail) return;
     setInviting(true);
     try {
-      const { error } = await supabase.functions.invoke("send-invite", {
-        body: { email: inviteEmail.trim(), full_name: inviteName.trim() || undefined },
+      const { error } = await supabase.functions.invoke("admin-invite-user", {
+        body: { email: inviteEmail.trim() },
       });
       if (error) throw error;
       toast.success(`Invite sent to ${inviteEmail}.`);
