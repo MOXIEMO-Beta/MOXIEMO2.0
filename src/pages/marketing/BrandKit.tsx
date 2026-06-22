@@ -344,10 +344,10 @@ export default function BrandKit() {
 
   async function handleReplaceLogo(file: File) {
     const data = await fileToDataUrl(file);
-    setLogoUrl(data);
     setLogoDataUrl(data);
-    // refresh auto-generated variants from the new color logo
+    // Rasterize through canvas so the PDF renderer always gets a PNG data URL.
     const variants = await generateLogoVariants(data);
+    setLogoUrl(variants.color || data);
     if (variants.grayscale) setLogoGrayscaleUrl(variants.grayscale);
     if (variants.reversed) setLogoReversedUrl(variants.reversed);
   }
@@ -392,11 +392,23 @@ export default function BrandKit() {
       // The PDF renderer cannot fetch external URLs (CORS / network-restricted),
       // so only pass logos that are already base64 data URLs.
       const pickEmbeddable = (s: string | undefined) =>
-        s && s.startsWith("data:") ? s : undefined;
+        s && s.startsWith("data:image/") && !s.startsWith("data:image/svg")
+          ? s
+          : undefined;
+      const primaryLogo =
+        pickEmbeddable(logoUrl) ||
+        pickEmbeddable(logoDataUrl) ||
+        pickEmbeddable(logoGrayscaleUrl); // last-ditch: at least show the mark
+      console.log(
+        "[brand-kit-pdf] logo being passed:",
+        primaryLogo
+          ? `${primaryLogo.slice(0, 30)}… (len=${primaryLogo.length})`
+          : "null/missing",
+      );
       const data: BrandKitData = {
         siteName: siteName || website,
         websiteUrl: website,
-        logo: pickEmbeddable(logoUrl) || pickEmbeddable(logoDataUrl),
+        logo: primaryLogo,
         logoGrayscale: pickEmbeddable(logoGrayscaleUrl),
         logoReversed: pickEmbeddable(logoReversedUrl),
         colors,
