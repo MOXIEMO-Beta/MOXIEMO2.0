@@ -85,7 +85,7 @@ export default function WaitlistAdmin() {
   const [inviteName, setInviteName] = useState("");
   const [inviting, setInviting] = useState(false);
 
-  async function sendInvite(e: React.FormEvent) {
+  async function sendInvite(e: React.FormEvent, mode: "send" | "resend" = "send") {
     e.preventDefault();
     if (!inviteEmail) return;
     setInviting(true);
@@ -94,7 +94,11 @@ export default function WaitlistAdmin() {
         body: { email: inviteEmail.trim() },
       });
       if (error) throw error;
-      toast.success(`Invite sent to ${inviteEmail}.`);
+      toast.success(
+        mode === "resend"
+          ? `Fresh invite resent to ${inviteEmail}.`
+          : `Invite sent to ${inviteEmail}.`
+      );
       setInviteEmail("");
       setInviteName("");
     } catch (err: any) {
