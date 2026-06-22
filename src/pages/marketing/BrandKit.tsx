@@ -337,22 +337,28 @@ export default function BrandKit() {
         imagery,
         images: brandImages,
       };
-      const blob = await generateBrandKitPdf(data);
-      generatedPdfRef.current = blob;
-      const base64 = await blobToBase64(blob);
 
-      const { error } = await supabase.functions.invoke("send-brand-kit", {
-        body: {
+      // 1. Capture the lead (non-blocking — never let this prevent the download)
+      supabase
+        .from("brand_kit_leads")
+        .insert({
           first_name: firstName.trim(),
           last_name: lastName.trim(),
           email: email.trim(),
-          website_url: website.trim(),
-          pdfBase64: base64,
-        },
-      });
-      if (error) throw error;
+          website_url: website.trim() || null,
+          source: "brand_kit_tool",
+        })
+        .then(({ error }) => {
+          if (error) console.error("[brand-kit] lead insert failed:", error);
+        });
 
-      // trigger download
+      // 2. Generate the PDF
+      console.log("[brand-kit] generating PDF");
+      const blob = await generateBrandKitPdf(data);
+      console.log("[brand-kit] PDF generated, size:", blob.size);
+      generatedPdfRef.current = blob;
+
+      // 3. Trigger browser download immediately
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -362,12 +368,33 @@ export default function BrandKit() {
       a.remove();
       URL.revokeObjectURL(url);
 
+      // 4. Advance to the confirmation screen
       setStep("done");
+
+      // 5. Fire-and-forget email delivery in the background. A failure here
+      //    must never block or undo the in-browser download above.
+      (async () => {
+        try {
+          const base64 = await blobToBase64(blob);
+          const { error } = await supabase.functions.invoke("send-brand-kit", {
+            body: {
+              first_name: firstName.trim(),
+              last_name: lastName.trim(),
+              email: email.trim(),
+              website_url: website.trim(),
+              pdfBase64: base64,
+            },
+          });
+          if (error) throw error;
+        } catch (bgErr) {
+          console.error("[brand-kit] background email send failed:", bgErr);
+        }
+      })();
     } catch (err) {
       console.error(err);
       toast({
-        title: "Something blocked the send.",
-        description: "Try again in a moment.",
+        title: "We could not build your PDF.",
+        description: "Try again in a moment, or email hello@buildwithmoxiemo.com.",
       });
     } finally {
       setSending(false);
