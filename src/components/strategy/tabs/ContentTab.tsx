@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -37,6 +38,7 @@ function groupByWeek(items: any[]) {
 
 export function ContentTab() {
   const { strategy } = useStrategyEditor();
+  const navigate = useNavigate();
   const ef = (strategy?.enhanced_foundation || {}) as any;
   const themes: any[] = ef.quarterlyThemes || [];
   const calendar: any[] = ef.contentCalendar || [];
@@ -155,10 +157,20 @@ export function ContentTab() {
                       </div>
                       <div className="text-sm font-medium leading-snug mb-2">{item.topic}</div>
                       {item.theme && <div className="text-xs text-muted-foreground mb-2 truncate">{item.theme}</div>}
-                      <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className={`text-[10px] tracking-wider ${item.status === "draft_ready" ? "bg-accent-soft text-accent" : "bg-muted text-muted-foreground"} border-0`}>
-                          {item.status === "draft_ready" ? "Draft ready" : "Needs generation"}
-                        </Badge>
+                      <div className="flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const params = new URLSearchParams();
+                            if (item.topic) params.set("prompt", item.topic);
+                            if (item.platform) params.set("platform", item.platform);
+                            if (item.theme) params.set("pillar", item.theme);
+                            navigate(`/app/content?${params.toString()}`);
+                          }}
+                          className="text-xs font-medium text-accent hover:underline"
+                        >
+                          Draft content →
+                        </button>
                         {item.estimatedLength && <span className="text-[10px] text-muted-foreground">{item.estimatedLength}</span>}
                       </div>
                     </div>
