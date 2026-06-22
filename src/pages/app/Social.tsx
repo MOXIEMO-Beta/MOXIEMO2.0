@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { aiErrorMessage } from "@/lib/aiErrors";
 import {
@@ -52,6 +52,7 @@ type Strategy = {
   content_pillars: unknown;
   content_themes: unknown;
   voice_attributes: unknown;
+  enhanced_foundation?: any;
 };
 
 type PostIdea = { title: string; pillar: string; hook?: string };
@@ -339,6 +340,7 @@ function OverviewTab({
   onCreateFromIdea: (title: string) => void;
   onSwitchTab: (t: TabKey) => void;
 }) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [connections, setConnections] = useState<SocialConnection[]>([]);
   const [posts, setPosts] = useState<SocialPost[]>([]);
@@ -370,7 +372,7 @@ function OverviewTab({
         .order("created_at", { ascending: false }),
       supabase
         .from("strategies")
-        .select("ideal_client, pain_point, content_pillars, content_themes, voice_attributes")
+        .select("ideal_client, pain_point, content_pillars, content_themes, voice_attributes, enhanced_foundation")
         .eq("user_id", userId)
         .maybeSingle(),
     ]);
@@ -484,13 +486,38 @@ function OverviewTab({
     const scheduled = posts.filter((p) => p.status === "scheduled" && inWeek(p.scheduled_for)).length;
     const published = posts.filter((p) => p.status === "published" && inWeek(p.published_at)).length;
     const drafts = posts.filter((p) => p.status === "draft").length;
-    const thisWeekPosts = posts.filter(
-      (p) => inWeek(p.scheduled_for) || inWeek(p.published_at) || inWeek(p.created_at),
-    );
-    const aligned = thisWeekPosts.filter((p) => !!p.pillar).length;
-    const alignment = thisWeekPosts.length > 0 ? Math.round((aligned / thisWeekPosts.length) * 100) : null;
-    return { scheduled, published, drafts, alignment };
+    return { scheduled, published, drafts };
   }, [posts]);
+
+  /* This week's items from the strategy 30-day content calendar */
+  const weekStrategyItems = useMemo(() => {
+    const calendar: any[] = strategy?.enhanced_foundation?.contentCalendar ?? [];
+    if (!Array.isArray(calendar) || calendar.length === 0) return [];
+    const start = startOfWeek();
+    const end = endOfWeek();
+    return calendar.filter((it) => {
+      if (!it?.date) return false;
+      const d = new Date(it.date);
+      if (isNaN(d.getTime())) return false;
+      return d >= start && d < end;
+    });
+  }, [strategy]);
+
+  const goDraftFromCalendar = (item: any) => {
+    const params = new URLSearchParams();
+    if (item?.topic) params.set("prompt", item.topic);
+    if (item?.platform) params.set("platform", item.platform);
+    if (item?.theme) params.set("pillar", item.theme);
+    navigate(`/app/content?${params.toString()}`);
+  };
+
+  const goDraftFromIdea = (idea: PostIdea) => {
+    const params = new URLSearchParams();
+    if (idea?.title) params.set("prompt", idea.title);
+    params.set("platform", "linkedin");
+    if (idea?.pillar) params.set("pillar", idea.pillar);
+    navigate(`/app/content?${params.toString()}`);
+  };
 
   /* Idea generation — client-side fallback */
   const pillars = useMemo(() => asArray(strategy?.content_pillars), [strategy]);
@@ -499,12 +526,10 @@ function OverviewTab({
   const localIdeas: PostIdea[] = useMemo(() => {
     const source = pillars.length > 0 ? pillars : themes;
     if (source.length === 0) return [];
-    const idealClient = strategy?.ideal_client?.trim() || "founders";
-    const painPoint = strategy?.pain_point?.trim() || "scaling without burnout";
     const top = source.slice(0, 3);
     const templates = (pillar: string, i: number) =>
       [
-        `Why most ${idealClient} struggle with ${painPoint} (and what actually works)`,
+        `Why most founders get ${pillar} wrong (and what actually works)`,
         `The truth about ${pillar} that nobody talks about`,
         `${pillar}: here's what changed everything for my clients`,
       ][i];
@@ -647,19 +672,58 @@ function OverviewTab({
         </div>
       </section>
 
-      {/* SECTION 2 — This week */}
+      {/* SECTION 2 — This week from your strategy */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">This week</h2>
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-          <StatCard label="Posts scheduled" value={loading ? null : weekStats.scheduled} subtext="Mon – Sun" />
-          <StatCard label="Posts published" value={loading ? null : weekStats.published} subtext="Mon – Sun" />
-          <StatCard label="Drafts" value={loading ? null : weekStats.drafts} subtext="Total open drafts" />
-          <StatCard
-            label="Strategy alignment"
-            value={loading ? null : weekStats.alignment !== null ? `${weekStats.alignment}%` : "—"}
-            subtext={weekStats.alignment !== null ? "on-strategy" : "No posts yet"}
-          />
-        </div>
+        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          This week from your strategy
+        </h2>
+        {loading ? (
+          <Skeleton className="h-32 w-full" />
+        ) : weekStrategyItems.length === 0 ? (
+          <Card className="flex flex-col items-start gap-2 p-5">
+            <CalendarIcon className="h-5 w-5 text-accent" />
+            <p className="text-sm font-medium text-foreground">Nothing planned for this week.</p>
+            <p className="text-xs text-muted-foreground">View your 30-day content plan to get started.</p>
+            <Link to="/app/strategy" className="text-xs font-medium text-accent hover:underline">
+              Go to your plan →
+            </Link>
+          </Card>
+        ) : (
+          <Card className="divide-y divide-border p-0">
+            {weekStrategyItems.slice(0, 5).map((it: any, i: number) => {
+              const title = it.topic ?? "";
+              const truncated = title.length > 60 ? `${title.slice(0, 60).trimEnd()}…` : title;
+              return (
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  {it.platform && (
+                    <Badge className="shrink-0 bg-muted text-foreground hover:bg-muted">{it.platform}</Badge>
+                  )}
+                  <p className="min-w-0 flex-1 truncate text-sm text-foreground">{truncated}</p>
+                  {it.theme && (
+                    <span className="hidden shrink-0 text-xs text-muted-foreground md:inline">{it.theme}</span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => goDraftFromCalendar(it)}
+                    className="shrink-0 text-xs font-medium text-accent hover:underline"
+                  >
+                    Draft content →
+                  </button>
+                </div>
+              );
+            })}
+            {weekStrategyItems.length > 5 && (
+              <div className="px-4 py-3">
+                <Link to="/app/strategy" className="text-xs font-medium text-accent hover:underline">
+                  View full 30-day plan →
+                </Link>
+              </div>
+            )}
+          </Card>
+        )}
+        <p className="text-xs text-muted-foreground">
+          {loading ? "—" : `${weekStats.scheduled} scheduled · ${weekStats.published} published · ${weekStats.drafts} drafts`}
+        </p>
       </section>
 
       {/* SECTION 3 — Ideas */}
@@ -708,14 +772,13 @@ function OverviewTab({
             {ideasToShow.slice(0, aiIdeas ? 6 : 3).map((idea, i) => (
               <Card key={`${idea.title}-${i}`} className="flex flex-col gap-3 p-4">
                 <Badge className="w-fit bg-accent-soft text-accent hover:bg-accent-soft">{idea.pillar}</Badge>
-                <p className="text-sm font-semibold leading-snug text-foreground">{idea.title}</p>
-                {idea.hook && <p className="text-xs italic text-muted-foreground">"{idea.hook}"</p>}
+                <p className="line-clamp-2 text-sm font-semibold leading-snug text-foreground">{idea.title}</p>
                 <p className="text-xs text-muted-foreground">Recommended: LinkedIn</p>
                 <Button
                   variant="ghost"
                   size="sm"
                   className="mt-auto justify-between px-2 text-accent hover:bg-accent-soft hover:text-accent"
-                  onClick={() => onCreateFromIdea(idea.title)}
+                  onClick={() => goDraftFromIdea(idea)}
                 >
                   Create this post <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
