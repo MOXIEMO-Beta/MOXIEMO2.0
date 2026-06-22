@@ -709,6 +709,7 @@ export default function Content() {
               </button>
             )}
             <div>
+              <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 1</div>
               <label className="text-sm font-medium text-foreground mb-1 block">
                 {platform === "Profile Bio"
                   ? "Anything specific to include or emphasise? (optional)"
@@ -737,31 +738,19 @@ export default function Content() {
 
             {pillars.length > 0 && (
               <div>
+                <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 2</div>
                 <div className="text-xs text-muted-foreground mb-2">Anchor to a content pillar →</div>
-                <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
-                  {pillars.map((p) => {
-                    const active = activePillar === p;
-                    return (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setActivePillar(active ? null : p)}
-                        className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
-                          active
-                            ? "border-accent text-accent bg-accent-soft/40"
-                            : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    );
-                  })}
-                </div>
+                <PillarChips
+                  pillars={pillars}
+                  activePillar={activePillar}
+                  onToggle={(p) => setActivePillar(activePillar === p ? null : p)}
+                />
               </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 3</div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Platform</label>
                 <Select
                   value={platform}
@@ -780,6 +769,7 @@ export default function Content() {
                 </Select>
               </div>
               <div>
+                <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 4</div>
                 <label className="text-sm font-medium text-foreground mb-2 block">Content type</label>
                 <Select value={contentType} onValueChange={setContentType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
