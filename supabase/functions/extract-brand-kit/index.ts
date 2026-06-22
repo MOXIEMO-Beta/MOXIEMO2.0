@@ -444,10 +444,37 @@ serve(async (req) => {
     const logoResult = extractLogo(html, parsed.origin);
     const siteName = extractSiteName(html) || parsed.hostname;
 
+    // Convert logo URL to base64 data URL server-side so the PDF renderer
+    // (which cannot make CORS-restricted network fetches) can embed it.
+    let logoOut: string | null = logoResult.url;
+    if (logoResult.url && !logoResult.url.startsWith("data:")) {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8000);
+        const r = await fetch(logoResult.url, { signal: ctrl.signal });
+        clearTimeout(t);
+        if (r.ok) {
+          const buf = new Uint8Array(await r.arrayBuffer());
+          if (buf.byteLength > 0 && buf.byteLength < 5 * 1024 * 1024) {
+            const contentType = r.headers.get("content-type")?.split(";")[0]?.trim() || "image/png";
+            // chunked btoa to avoid call-stack overflow on large buffers
+            let bin = "";
+            const chunk = 0x8000;
+            for (let i = 0; i < buf.length; i += chunk) {
+              bin += String.fromCharCode(...buf.subarray(i, i + chunk));
+            }
+            logoOut = `data:${contentType};base64,${btoa(bin)}`;
+          }
+        }
+      } catch (err) {
+        console.warn("[extract-brand-kit] logo fetch failed; returning URL fallback", err);
+      }
+    }
+
     return new Response(
       JSON.stringify({
         siteName,
-        logo: logoResult.url,
+        logo: logoOut,
         logoSource: logoResult.source,
         logoMessage: logoResult.message ?? null,
         colors,
