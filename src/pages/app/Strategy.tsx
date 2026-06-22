@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EditableField } from "@/components/strategy/EditableField";
 import { EditableList } from "@/components/strategy/EditableList";
 import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
-import { RefineSectionDialog } from "@/components/strategy/RefineSectionDialog";
+import { RefineProvider, SectionPencil, setInPath, useRefine } from "@/components/strategy/RefineContext";
 import { downloadStrategyPdf } from "@/lib/strategyPdf";
 import { StrategyEngineInterstitial } from "@/components/StrategyEngineInterstitial";
 
@@ -191,6 +191,40 @@ function OverviewTab() {
   const distribution = ef.distribution;
   const isService = strategy?.strategy_lane === "service";
 
+  const colPencil = (col: string, label: string, description: string) => (
+    <SectionPencil
+      target={() => ({
+        refineKey: col,
+        label,
+        description,
+        currentValue: Array.isArray(strategy?.[col]) ? (strategy[col] as any[]).join(", ") : (strategy?.[col] || ""),
+        buildPatch: (v) => {
+          const isArr = Array.isArray(strategy?.[col]);
+          return { [col]: isArr ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v };
+        },
+      })}
+    />
+  );
+  const efPencil = (path: (string | number)[], label: string, description: string, opts?: { darkBg?: boolean; arrayJoin?: boolean }) => (
+    <SectionPencil
+      className={opts?.darkBg ? "text-background/40 hover:text-background/80 hover:bg-background/10" : undefined}
+      target={() => {
+        const cur = path.reduce<any>((acc, k) => (acc == null ? acc : acc[k]), strategy?.enhanced_foundation || {});
+        const isArr = Array.isArray(cur);
+        return {
+          refineKey: `enhanced:${path.join(".")}`,
+          label,
+          description,
+          currentValue: isArr ? cur.join(", ") : (cur || ""),
+          buildPatch: (v) => {
+            const value = isArr || opts?.arrayJoin ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v;
+            return { enhanced_foundation: setInPath(strategy?.enhanced_foundation || {}, path, value) };
+          },
+        };
+      }}
+    />
+  );
+
   const breakdownFields: [string, string, string][] = [
     ["Who", "idealClient", "Who you serve"],
     ["Problem", "painPoint", "The pain you solve"],
@@ -203,7 +237,8 @@ function OverviewTab() {
   return (
     <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
       {/* Positioning */}
-      <Card className="report-card p-8 bg-foreground text-background border-0">
+      <Card className="group relative report-card p-8 bg-foreground text-background border-0">
+        {colPencil("positioning_statement", "positioning statement", "Your one-line statement of who you serve and the shift you create.")}
         <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">
           {isService ? "Brand positioning" : "Positioning statement"}
         </div>
@@ -258,7 +293,8 @@ function OverviewTab() {
 
       {/* Brand archetype */}
       {(archetype || editing) && (
-        <Card className="report-card p-7 border-border shadow-soft">
+        <Card className="group relative report-card p-7 border-border shadow-soft">
+          {efPencil(["brandArchetype", "description"], "brand archetype", "Your dominant archetype and how it shows up in your brand.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Brand archetype</div>
           <div className="flex items-start gap-4 mb-5">
             <div className="text-5xl leading-none">
@@ -358,7 +394,8 @@ function OverviewTab() {
           { label: isService ? "Customer pain point" : "Pain point", key: "pain_point" },
           { label: isService ? "Customer outcome" : "Transformation", key: "transformation" },
         ].map((s) => (
-          <Card key={s.key} className="report-card p-5 border-border shadow-soft">
+          <Card key={s.key} className="group relative report-card p-5 border-border shadow-soft">
+            {colPencil(s.key, s.label.toLowerCase(), `Who you serve / what's painful / what shifts — the ${s.label.toLowerCase()} snapshot.`)}
             <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">{s.label}</div>
             <p className="text-sm leading-relaxed">
               <EditableField
@@ -439,7 +476,8 @@ function OverviewTab() {
 
       {/* Competitive positioning */}
       {(competitive || editing) && (
-        <Card className="report-card p-7 border-border shadow-soft">
+        <Card className="group relative report-card p-7 border-border shadow-soft">
+          {efPencil(["competitivePositioning", "yourPosition"], "competitive positioning", "Your unique market position and the gap you fill versus alternatives.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">
             {isService ? "Competitive positioning — your ownable gap" : "Competitive positioning"}
           </div>
@@ -487,7 +525,8 @@ function OverviewTab() {
 
       {/* Distribution (service strategies) */}
       {isService && (distribution || editing) && (
-        <Card className="report-card p-7 border-border shadow-soft">
+        <Card className="group relative report-card p-7 border-border shadow-soft">
+          {efPencil(["distribution", "doubleDownOn"], "distribution channels", "The channels already winning for you and where to double down.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Distribution channels</div>
           {(distribution?.doubleDownOn || editing) && (
             <div className="rounded-xl bg-accent-soft/40 p-5 mb-5">
@@ -555,13 +594,15 @@ function OverviewTab() {
 
       {/* Success + goal */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card p-6 border-border shadow-soft">
+          {colPencil("success_definition", "success metric", "How you'll measure traction — a number you can track weekly or monthly.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Success looks like</div>
           <p>
             <EditableField value={strategy.success_definition} onChange={(v) => setField("success_definition", v)} multiline placeholder="What success looks like" />
           </p>
         </Card>
-        <Card className="report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card p-6 border-border shadow-soft">
+          {colPencil("business_goal", "business goal", "Your primary revenue or client target for the next 90–180 days.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Business goal</div>
           <p>
             <EditableField value={strategy.business_goal} onChange={(v) => setField("business_goal", v)} multiline placeholder="Your primary business goal" />
@@ -662,10 +703,44 @@ function VoiceTab() {
   const examples = vg.voiceExamples || {};
   const never: any[] = vg.neverSoundLike || [];
 
+  const colPencil = (col: string, label: string, description: string) => (
+    <SectionPencil
+      target={() => ({
+        refineKey: col,
+        label,
+        description,
+        currentValue: Array.isArray(strategy?.[col]) ? (strategy[col] as any[]).join(", ") : (strategy?.[col] || ""),
+        buildPatch: (v) => {
+          const isArr = Array.isArray(strategy?.[col]);
+          return { [col]: isArr ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v };
+        },
+      })}
+    />
+  );
+  const efPencil = (path: (string | number)[], label: string, description: string) => (
+    <SectionPencil
+      target={() => {
+        const cur = path.reduce<any>((acc, k) => (acc == null ? acc : acc[k]), strategy?.enhanced_foundation || {});
+        const isArr = Array.isArray(cur);
+        return {
+          refineKey: `enhanced:${path.join(".")}`,
+          label,
+          description,
+          currentValue: isArr ? cur.join(", ") : (cur || ""),
+          buildPatch: (v) => {
+            const value = isArr ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v;
+            return { enhanced_foundation: setInPath(strategy?.enhanced_foundation || {}, path, value) };
+          },
+        };
+      }}
+    />
+  );
+
   return (
     <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
       {/* Voice attributes */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {colPencil("voice_attributes", "voice attributes", "The 2–3 traits that define how your brand sounds in writing.")}
         <div className="flex items-center justify-between mb-4">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Voice attributes</div>
           {editing && (
@@ -710,7 +785,8 @@ function VoiceTab() {
       </Card>
 
       {/* Sentence structure */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {efPencil(["voiceGuidelines", "sentenceStructure", "example"], "sentence structure", "How your sentences are shaped — rhythm, length, and a canonical example.")}
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Sentence structure</div>
         <div className="mb-5">
           <EditableBulletList
@@ -729,7 +805,8 @@ function VoiceTab() {
 
       {/* Vocabulary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card p-6 border-border shadow-soft">
+          {efPencil(["voiceGuidelines", "vocabulary", "use"], "words to use", "The vocabulary that should consistently show up in your writing.")}
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-accent mb-3"><Check className="h-3.5 w-3.5" /> Words to use</div>
           <EditableList
             items={vocab.use || []}
@@ -737,7 +814,8 @@ function VoiceTab() {
             chipClassName="bg-accent-soft text-accent"
           />
         </Card>
-        <Card className="report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card p-6 border-border shadow-soft">
+          {efPencil(["voiceGuidelines", "vocabulary", "avoid"], "words to avoid", "The vocabulary that should never appear — generic, jargon, or off-brand terms.")}
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3"><X className="h-3.5 w-3.5" /> Words to avoid</div>
           <EditableList
             items={vocab.avoid || []}
@@ -748,7 +826,8 @@ function VoiceTab() {
       </div>
 
       {/* Tone by platform */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {efPencil(["voiceGuidelines", "toneByPlatform", "linkedin", "tone"], "tone by platform", "How your voice shifts across LinkedIn, email, and podcast.")}
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Tone by platform</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {(["linkedin", "email", "podcast"] as const).map((p) => {
@@ -772,7 +851,8 @@ function VoiceTab() {
       </Card>
 
       {/* Voice examples */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {efPencil(["voiceGuidelines", "voiceExamples", "openingHook", "good"], "voice examples", "Concrete good/bad examples — hooks, teaching points, and CTAs in your voice.")}
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-5">Voice examples</div>
         <div className="space-y-5">
           {([
@@ -808,7 +888,8 @@ function VoiceTab() {
       </Card>
 
       {/* Never sound like */}
-      <Card className="report-card p-7 border-border shadow-soft">
+      <Card className="group relative report-card p-7 border-border shadow-soft">
+        {colPencil("anti_positioning", "what you'd never sound like", "Styles, phrases, or vibes your brand actively rejects.")}
         <div className="flex items-center justify-between mb-4">
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Never sound like</div>
           {editing && (
@@ -850,27 +931,102 @@ function VoiceTab() {
 function StrategyContent({ reportData }: { reportData?: any }) {
   const { strategy, applyServerPatch } = useStrategyEditor();
   const { user } = useAuth();
-  const [refineOpen, setRefineOpen] = useState(false);
-  const [refineKey, setRefineKey] = useState<string | null>(null);
-  const [refineLabel, setRefineLabel] = useState<string | undefined>();
   const [strengthDismissed, setStrengthDismissed] = useState(false);
 
   const score = strategy?.strength_score as number | null | undefined;
   const weak = (strategy?.weak_areas || []) as any[];
   const strong = (strategy?.strong_areas || []) as any[];
 
-  const openRefine = (area: { refineKey: string; label: string }) => {
-    setRefineKey(area.refineKey);
-    setRefineLabel(area.label);
-    setRefineOpen(true);
+  // Shared apply: writes a patch + recomputes strength score, then syncs local state.
+  const applyRefine = async ({ refineKey, patch }: { refineKey: string; newValue: string; patch: Record<string, any> }) => {
+    if (!user) return;
+
+    // Recompute strength score: bump the refined area to full points if present in
+    // weak/strong arrays. Sections without a tracked area leave the score untouched.
+    const curWeak = (strategy?.weak_areas || []) as any[];
+    const curStrong = (strategy?.strong_areas || []) as any[];
+    const bump = (arr: any[]) => arr.map((a) => (a?.refineKey === refineKey ? { ...a, points: a.max } : a));
+    const bumpedWeak = bump(curWeak);
+    const bumpedStrong = bump(curStrong);
+    const movers = bumpedWeak.filter((a) => a?.refineKey === refineKey && a.points >= a.max);
+    const remainingWeak = bumpedWeak.filter((a) => !(a?.refineKey === refineKey && a.points >= a.max));
+    const mergedStrong = [...bumpedStrong, ...movers];
+    const all = [...mergedStrong, ...remainingWeak];
+    const totalMax = all.reduce((s, a) => s + (Number(a?.max) || 0), 0);
+    const totalPts = all.reduce((s, a) => s + (Number(a?.points) || 0), 0);
+    const trackedInAreas = [...curWeak, ...curStrong].some((a) => a?.refineKey === refineKey);
+    const newScore =
+      trackedInAreas && totalMax > 0
+        ? Math.round((totalPts / totalMax) * 100)
+        : (strategy?.strength_score ?? null);
+
+    const fullPatch: Record<string, any> = {
+      ...patch,
+      weak_areas: remainingWeak,
+      strong_areas: mergedStrong,
+      strength_score: newScore,
+    };
+
+    const { error } = await supabase
+      .from("strategies")
+      .update(fullPatch as never)
+      .eq("user_id", user.id);
+    if (error) throw error;
+
+    applyServerPatch(fullPatch);
   };
 
-  const refineCurrentValue = (() => {
-    if (!refineKey) return "";
-    const v = strategy?.[refineKey];
-    if (Array.isArray(v)) return v.join(", ");
-    return v || "";
-  })();
+  const defaultContext = {
+    ideal_client: strategy?.ideal_client,
+    pain_point: strategy?.pain_point,
+    transformation: strategy?.transformation,
+    voice_attributes: strategy?.voice_attributes,
+    positioning_statement: strategy?.positioning_statement,
+  };
+
+  return (
+    <RefineProvider apply={applyRefine} defaultContext={defaultContext}>
+      <StrategyContentInner
+        reportData={reportData}
+        score={score ?? null}
+        weak={weak}
+        strong={strong}
+        strengthDismissed={strengthDismissed}
+        setStrengthDismissed={setStrengthDismissed}
+        strategy={strategy}
+      />
+    </RefineProvider>
+  );
+}
+
+function StrategyContentInner({
+  reportData,
+  score,
+  weak,
+  strong,
+  strengthDismissed,
+  setStrengthDismissed,
+  strategy,
+}: any) {
+  const { open: openRefineModal } = useRefine();
+
+  // Map a strength-card area onto the shared refine-open flow.
+  const handleStrengthRefine = (area: { refineKey: string; label: string }) => {
+    const colName = area.refineKey;
+    const cur = strategy?.[colName];
+    const currentValue = Array.isArray(cur) ? cur.join(", ") : (cur || "");
+    openRefineModal({
+      refineKey: colName,
+      label: area.label,
+      currentValue,
+      buildPatch: (v) => {
+        const next = Array.isArray(cur)
+          ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean)
+          : v;
+        return { [colName]: next };
+      },
+    });
+  };
 
   return (
     <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
@@ -881,7 +1037,7 @@ function StrategyContent({ reportData }: { reportData?: any }) {
           score={score ?? null}
           weakAreas={weak}
           strongAreas={strong}
-          onRefine={openRefine}
+          onRefine={handleStrengthRefine}
           onDismiss={() => setStrengthDismissed(true)}
         />
       )}
@@ -917,62 +1073,6 @@ function StrategyContent({ reportData }: { reportData?: any }) {
       </Tabs>
       <CompetitiveAndMessagingSections />
       </div>
-
-      <RefineSectionDialog
-        open={refineOpen}
-        onOpenChange={setRefineOpen}
-        sectionKey={refineKey}
-        sectionLabel={refineLabel}
-        currentValue={refineCurrentValue}
-        context={{
-          ideal_client: strategy?.ideal_client,
-          pain_point: strategy?.pain_point,
-          transformation: strategy?.transformation,
-          voice_attributes: strategy?.voice_attributes,
-          positioning_statement: strategy?.positioning_statement,
-        }}
-        onApply={async (newValue) => {
-          if (!refineKey || !user) return;
-          // voice_attributes is an array column — split commas back out.
-          const nextValue: any = refineKey === "voice_attributes"
-            ? newValue.split(/,|\n/).map((s) => s.trim()).filter(Boolean)
-            : newValue;
-
-          // Recompute strength: mark the refined area as full points, then
-          // recompute the overall score as the rounded sum(points)/sum(max).
-          const curWeak = (strategy?.weak_areas || []) as any[];
-          const curStrong = (strategy?.strong_areas || []) as any[];
-          const bump = (arr: any[]) =>
-            arr.map((a) => (a?.refineKey === refineKey ? { ...a, points: a.max } : a));
-          const bumpedWeak = bump(curWeak);
-          const bumpedStrong = bump(curStrong);
-          const movers = bumpedWeak.filter((a) => a?.refineKey === refineKey && a.points >= a.max);
-          const remainingWeak = bumpedWeak.filter((a) => !(a?.refineKey === refineKey && a.points >= a.max));
-          const mergedStrong = [...bumpedStrong, ...movers];
-          const all = [...mergedStrong, ...remainingWeak];
-          const totalMax = all.reduce((s, a) => s + (Number(a?.max) || 0), 0);
-          const totalPts = all.reduce((s, a) => s + (Number(a?.points) || 0), 0);
-          const newScore = totalMax > 0
-            ? Math.round((totalPts / totalMax) * 100)
-            : (strategy?.strength_score ?? null);
-
-          const patch: Record<string, any> = {
-            [refineKey]: nextValue,
-            weak_areas: remainingWeak,
-            strong_areas: mergedStrong,
-            strength_score: newScore,
-          };
-
-          const { error } = await supabase
-            .from("strategies")
-            .update(patch as never)
-            .eq("user_id", user.id);
-          if (error) throw error;
-
-          applyServerPatch(patch);
-        }}
-      />
-
     </div>
   );
 }
