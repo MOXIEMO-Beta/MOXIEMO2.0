@@ -384,8 +384,34 @@ export default function BrandKit() {
     );
   }, [firstName, lastName, email]);
 
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  function validateEmailStrict(raw: string): string | null {
+    const value = raw.trim();
+    if (!value) return "Enter your email address.";
+    if (/\s/.test(value)) return "Double-check your email address.";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value)) return "Double-check your email address.";
+    const domain = value.split("@")[1] ?? "";
+    const labels = domain.toLowerCase().split(".");
+    // Catch typos like foo@bar.com.com
+    if (labels.length >= 2 && labels[labels.length - 1] === labels[labels.length - 2]) {
+      return "Double-check your email address.";
+    }
+    const tld = labels[labels.length - 1];
+    if (!tld || tld.length < 2 || !/^[a-z]+$/.test(tld)) {
+      return "Double-check your email address.";
+    }
+    return null;
+  }
+
   async function handleCapture(e: React.FormEvent) {
     e.preventDefault();
+    const err = validateEmailStrict(email);
+    if (err) {
+      setEmailError(err);
+      return;
+    }
+    setEmailError(null);
     if (!canSend) return;
     setSending(true);
     try {
