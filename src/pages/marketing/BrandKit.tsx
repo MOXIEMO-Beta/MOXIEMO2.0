@@ -290,14 +290,19 @@ export default function BrandKit() {
         const dataUrl = await urlToDataUrl(data.logo);
         resolvedColorLogo = dataUrl || data.logo;
       }
-      setLogoUrl(resolvedColorLogo);
 
-      // Auto-generate grayscale + reversed variants only when user did not provide.
-      if (resolvedColorLogo && resolvedColorLogo.startsWith("data:")) {
+      // Rasterize the color logo to PNG (and generate grayscale + reversed
+      // variants from the same canvas pass). The PDF renderer cannot embed
+      // SVG data URLs or fetch external URLs, so we must always feed it a
+      // PNG data URL — even for the PRIMARY mark.
+      let finalColorLogo = resolvedColorLogo;
+      if (resolvedColorLogo) {
         const variants = await generateLogoVariants(resolvedColorLogo);
+        if (variants.color) finalColorLogo = variants.color;
         if (!logoGrayscaleUrl && variants.grayscale) setLogoGrayscaleUrl(variants.grayscale);
         if (!logoReversedUrl && variants.reversed) setLogoReversedUrl(variants.reversed);
       }
+      setLogoUrl(finalColorLogo);
 
       setStep("review");
       scrollToTop();
