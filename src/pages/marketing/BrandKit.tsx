@@ -168,6 +168,23 @@ export default function BrandKit() {
 
   const generatedPdfRef = useRef<Blob | null>(null);
 
+  // Safe in-page scroll. Never falls through to page-bottom when the target is missing.
+  function scrollToSection(id: string, opts?: { focus?: boolean }) {
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn(`[BrandKit] scroll target not found: #${id}`);
+      return;
+    }
+    const prefersReduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    el.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth", block: "center" });
+    if (opts?.focus) {
+      window.setTimeout(
+        () => (el as HTMLElement).focus({ preventScroll: true }),
+        prefersReduced ? 0 : 450,
+      );
+    }
+  }
+
   useEffect(() => {
     if (step !== "loading") return;
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
