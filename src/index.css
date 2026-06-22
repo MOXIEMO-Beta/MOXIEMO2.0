@@ -290,3 +290,15 @@
 .moxie-coral-pulse {
   animation: moxie-coral-pulse 1s ease-out;
 }
+
+/* Edit-mode override for fields rendered on dark-background sections (e.g. Brand Positioning).
+   Without this, the textarea inherits white text on a near-white background and becomes invisible. */
+.edit-mode-input,
+.edit-mode-input:focus {
+  color: #15171C !important;
+  background-color: #F7F5F1 !important;
+  -webkit-text-fill-color: #15171C !important;
+}
+.edit-mode-input::placeholder {
+  color: rgba(21, 23, 28, 0.5) !important;
+}
