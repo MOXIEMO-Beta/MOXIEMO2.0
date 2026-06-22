@@ -280,3 +280,13 @@
   max-width: 100% !important;
   overflow: hidden !important;
 }
+
+/* Transient coral glow used to draw attention to the prefill Continue button */
+@keyframes moxie-coral-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 107, 92, 0.55); }
+  40%  { box-shadow: 0 0 0 6px rgba(255, 107, 92, 0.40); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 107, 92, 0); }
+}
+.moxie-coral-pulse {
+  animation: moxie-coral-pulse 1s ease-out;
+}
