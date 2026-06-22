@@ -954,6 +954,13 @@ export default function Strategy() {
   const [session, setSession] = useState<{ id: string; messageCount: number; synthesis_status: string; synthesis_attempts: number; synthesis_last_error: string | null; lane: "lane1" | "lane2" | null } | null>(null);
   const autoRetryDoneRef = useRef(false);
   const triggeredRef = useRef(false);
+  // Tracks whether the dark interstitial has finished its fade-out after
+  // synthesis completes. Until then we keep rendering it on top so the
+  // user never sees a flash of the dashboard or any white state.
+  const [interstitialDismissed, setInterstitialDismissed] = useState(false);
+  // Whether we ever entered the building state — used to decide if we should
+  // run the fade-out on completion or render the dashboard immediately.
+  const sawBuildingRef = useRef(false);
 
   // Initial load
   useEffect(() => {
@@ -1061,31 +1068,34 @@ export default function Strategy() {
 
   if (loading) return <div className="p-10 text-muted-foreground">Loading…</div>;
 
+  const hasSession = session && session.messageCount > 0;
+  const status = session?.synthesis_status;
+  const isBuilding = !strategy && hasSession && (status === "pending" || status === "in_progress");
+  const isFailed = !strategy && hasSession && status === "failed";
+  if (isBuilding) sawBuildingRef.current = true;
+
+  // Render the dark interstitial whenever we're building, or while it's still
+  // fading out after strategy arrived. Sits above any underlying content.
+  const showInterstitial =
+    isBuilding || (sawBuildingRef.current && !!strategy && !interstitialDismissed);
+
   if (!strategy) {
-    const hasSession = session && session.messageCount > 0;
-    const status = session?.synthesis_status;
-    const isBuilding = hasSession && (status === "pending" || status === "in_progress");
-    const isFailed = hasSession && status === "failed";
-    // After auto-retry has been attempted, surface the manual retry control.
     const showManualRetry = isFailed && (autoRetryDoneRef.current || (session?.synthesis_attempts ?? 0) >= 2);
+
+    if (isBuilding) {
+      return (
+        <StrategyEngineInterstitial
+          active
+          done={false}
+          onFadedOut={() => setInterstitialDismissed(true)}
+        />
+      );
+    }
 
     return (
       <div className="px-6 lg:px-10 py-16 max-w-3xl mx-auto text-center">
         <div className="h-16 w-16 rounded-2xl bg-foreground mx-auto mb-6 flex items-center justify-center"><Compass className="h-7 w-7 text-accent" /></div>
-        {isBuilding ? (
-          <>
-            <h1 className="font-display text-4xl mb-3">Your strategy is being built</h1>
-            <p className="text-muted-foreground mb-8">
-              {status === "pending"
-                ? "Starting your strategy generation..."
-                : "This takes about 60–90 seconds. We're synthesizing your Discovery answers into your full marketing foundation."}
-            </p>
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin text-accent" />
-              <span>Working…</span>
-            </div>
-          </>
-        ) : isFailed && !showManualRetry ? (
+        {isFailed && !showManualRetry ? (
           <>
             <h1 className="font-display text-4xl mb-3">Strategy generation hit a snag</h1>
             <p className="text-muted-foreground mb-8">
