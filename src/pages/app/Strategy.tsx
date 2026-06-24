@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loader2, CheckCircle2, AlertCircle, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
@@ -1081,6 +1082,7 @@ function StrategyContentInner({
 
 export default function Strategy() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [strategy, setStrategy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { reportData, isLoading, error } = useReportData();
@@ -1094,6 +1096,14 @@ export default function Strategy() {
   // Whether we ever entered the building state — used to decide if we should
   // run the fade-out on completion or render the dashboard immediately.
   const sawBuildingRef = useRef(false);
+  // Captures the synthesis_status the *first* time we display the interstitial
+  // on this page mount. If we land directly on "in_progress" (user navigated
+  // away and came back), we render the reentry state instead of the live
+  // animation from 0%.
+  const [reentryMode, setReentryMode] = useState(false);
+  const reentryDecidedRef = useRef(false);
+  // Pending navigation captured by the in-app blocker modal.
+  const [pendingNav, setPendingNav] = useState<null | { type: "link"; href: string } | { type: "back" }>(null);
 
   // Initial load
   useEffect(() => {
@@ -1196,6 +1206,77 @@ export default function Strategy() {
     return () => window.clearTimeout(t);
   }, [session, strategy]);
 
+  // Detect reentry: if synthesis was already in_progress when we mounted
+  // (this session never triggered it), show the reentry interstitial state.
+  useEffect(() => {
+    if (reentryDecidedRef.current) return;
+    if (!session || strategy) return;
+    const s = session.synthesis_status;
+    if (s === "pending" || s === "in_progress") {
+      reentryDecidedRef.current = true;
+      if (s === "in_progress" && !triggeredRef.current) {
+        setReentryMode(true);
+      }
+    }
+  }, [session, strategy]);
+
+  // While the interstitial is visible, intercept internal link clicks and
+  // browser back so we can show the in-app "Stay here / Leave anyway" modal
+  // instead of an abrupt navigation. Synthesis keeps running server-side.
+  const _curStatus = session?.synthesis_status;
+  const interstitialVisible =
+    !strategy && !!session && session.messageCount > 0 && (_curStatus === "pending" || _curStatus === "in_progress");
+  useEffect(() => {
+    if (!interstitialVisible) return;
+    // Push a guard entry so the first Back press fires our popstate handler.
+    window.history.pushState({ moxieGuard: true }, "");
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const target = e.target as Element | null;
+      const anchor = target?.closest?.("a") as HTMLAnchorElement | null;
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href) return;
+      // Allow modal's own buttons (not anchors anyway), external links, and
+      // links targeting a new window.
+      if (anchor.target && anchor.target !== "" && anchor.target !== "_self") return;
+      if (/^(https?:)?\/\//i.test(href) && !href.startsWith(window.location.origin)) return;
+      if (href.startsWith("mailto:") || href.startsWith("tel:")) return;
+      // Same-page hash — let it through.
+      if (href.startsWith("#")) return;
+      // Already on this URL — ignore.
+      const normalized = href.startsWith("http") ? new URL(href).pathname + new URL(href).search : href;
+      if (normalized === window.location.pathname + window.location.search) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setPendingNav({ type: "link", href: normalized });
+    };
+    const onPopState = () => {
+      // Re-push the guard so the URL stays put while the modal is open.
+      window.history.pushState({ moxieGuard: true }, "");
+      setPendingNav({ type: "back" });
+    };
+    document.addEventListener("click", onClick, true);
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, [interstitialVisible]);
+
+  const confirmLeave = () => {
+    const nav = pendingNav;
+    setPendingNav(null);
+    if (!nav) return;
+    if (nav.type === "link") {
+      navigate(nav.href);
+    } else {
+      // Pop our guard entry and then go back one more.
+      window.history.go(-1);
+    }
+  };
+
   if (isLoading) return <p className="p-10 text-muted-foreground">Loading strategy...</p>;
   if (error) return <p className="p-10 text-destructive">Error: {error.message}</p>;
 
@@ -1271,8 +1352,80 @@ export default function Strategy() {
         <StrategyEngineInterstitial
           active
           done={!!strategy}
+          mode={reentryMode ? "reentry" : "live"}
           onFadedOut={() => setInterstitialDismissed(true)}
         />
+      )}
+      {pendingNav && (
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center px-6"
+          style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setPendingNav(null); }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="moxie-leave-title"
+            style={{
+              backgroundColor: "#1A1C20",
+              borderRadius: 12,
+              padding: 28,
+              maxWidth: 400,
+              width: "100%",
+            }}
+          >
+            <h2
+              id="moxie-leave-title"
+              style={{ color: "#fff", fontSize: 18, fontWeight: 700, lineHeight: 1.3, margin: 0 }}
+            >
+              Your strategy is being built
+            </h2>
+            <p
+              style={{
+                color: "rgba(255,255,255,0.65)",
+                fontSize: 14,
+                lineHeight: 1.6,
+                marginTop: 12,
+                marginBottom: 24,
+              }}
+            >
+              Processing continues in the background, but leaving now means you won't see live progress. You can return to this page at any time to check status.
+            </p>
+            <div className="flex items-center justify-end gap-4">
+              <button
+                type="button"
+                onClick={confirmLeave}
+                style={{
+                  background: "transparent",
+                  border: 0,
+                  color: "rgba(255,255,255,0.5)",
+                  fontSize: 14,
+                  cursor: "pointer",
+                  padding: "8px 4px",
+                }}
+              >
+                Leave anyway
+              </button>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setPendingNav(null)}
+                style={{
+                  backgroundColor: "#FF6B5C",
+                  color: "#fff",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  border: 0,
+                  borderRadius: 8,
+                  padding: "10px 18px",
+                  cursor: "pointer",
+                }}
+              >
+                Stay here
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );
