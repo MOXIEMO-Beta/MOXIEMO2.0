@@ -63,7 +63,6 @@ function SaveStatusIndicator() {
   const time = lastSavedAt ? lastSavedAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : null;
   if (status === "saving") return <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Saving…</span>;
   if (status === "dirty") return <span className="inline-flex items-center gap-1.5 text-xs text-accent"><AlertCircle className="h-3 w-3" /> Unsaved changes</span>;
-  if (status === "error") return <span className="inline-flex items-center gap-1.5 text-xs text-destructive"><AlertCircle className="h-3 w-3" /> Save failed — retry</span>;
   if (status === "saved" || (status === "idle" && time)) return <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="h-3 w-3 text-accent" /> Saved {time && `· ${time}`}</span>;
   return null;
 }
