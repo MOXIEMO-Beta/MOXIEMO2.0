@@ -1216,14 +1216,6 @@ export default function Strategy() {
   const isBuilding = !strategy && hasSession && (status === "pending" || status === "in_progress");
   const isFailed = !strategy && hasSession && status === "failed";
   if (isBuilding) sawBuildingRef.current = true;
-  // Decide reentry mode once, on first frame we show the interstitial.
-  if (isBuilding && !reentryDecidedRef.current) {
-    reentryDecidedRef.current = true;
-    if (status === "in_progress" && !triggeredRef.current) {
-      // We did not start synthesis this session — user is returning mid-build.
-      setReentryMode(true);
-    }
-  }
 
   // Render the dark interstitial whenever we're building, or while it's still
   // fading out after strategy arrived. Sits above any underlying content.
