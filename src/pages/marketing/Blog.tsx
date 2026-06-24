@@ -15,8 +15,14 @@ import article5 from "@/assets/blog/article-5-ai-slop.jpg";
 import article6 from "@/assets/blog/article-6-tool-stack.jpg";
 import article7 from "@/assets/blog/article-7-optimism.jpg";
 import article8 from "@/assets/blog/article-8-ai-everywhere.jpg";
+import article9 from "@/assets/blog/article-9-real-founder.jpg";
 
 const REAL_ARTICLES: Record<string, { image: string; href: string; date: string }> = {
+  "What Happens When a Real Founder Sits Down with Your Product": {
+    image: article9,
+    href: "/blog/what-happens-when-a-real-founder-sits-down-with-your-product",
+    date: "June 24, 2026",
+  },
   "AI is everywhere. Here is how you still stand out.": {
     image: article8,
     href: "/blog/ai-everywhere-how-you-stand-out",
@@ -71,6 +77,7 @@ const CATEGORIES = [
 ];
 
 const ARTICLES = [
+  { category: "Founder Mindset", title: "What Happens When a Real Founder Sits Down with Your Product", excerpt: "She would still pay for it. The features worked. And she still said it felt like work. That sentence is the most valuable thing anyone has said to me about this product.", read: "6 min read" },
   { category: "AI Marketing", title: "AI is everywhere. Here is how you still stand out.", excerpt: "AI is here to stay, and yes, the slop is real. That does not mean you have to blend in. A few honest strategies for staying original while using the same tools as everyone else.", read: "6 min read" },
   { category: "Founder Mindset", title: "The Case for Optimism: Why the Best Time to Build Is Right Now", excerpt: "Not the 'good vibes only' version. The kind of optimism that comes from looking clearly at what's in front of you and deciding the conditions are better than they've ever been.", read: "5 min read" },
   { category: "Strategy", title: "Why Your Marketing Isn't Working (It's Not the Tools)", excerpt: "Most founders aren't failing at marketing because they're using the wrong platforms. They're failing because they don't have a strategy for the tools to execute. The fix starts before you open LinkedIn.", read: "7 min read" },
