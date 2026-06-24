@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loader2, CheckCircle2, AlertCircle, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
