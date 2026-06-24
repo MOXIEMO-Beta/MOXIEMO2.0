@@ -1223,8 +1223,9 @@ export default function Strategy() {
   // While the interstitial is visible, intercept internal link clicks and
   // browser back so we can show the in-app "Stay here / Leave anyway" modal
   // instead of an abrupt navigation. Synthesis keeps running server-side.
+  const _curStatus = session?.synthesis_status;
   const interstitialVisible =
-    (!strategy && session && session.messageCount > 0 && (status === "pending" || status === "in_progress"));
+    !strategy && !!session && session.messageCount > 0 && (_curStatus === "pending" || _curStatus === "in_progress");
   useEffect(() => {
     if (!interstitialVisible) return;
     // Push a guard entry so the first Back press fires our popstate handler.
