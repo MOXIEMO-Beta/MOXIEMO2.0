@@ -15,6 +15,12 @@ type Props = {
   /** Time per task for tasks 1-5 (ms). Task 6 holds indeterminate until done. */
   perTaskMs?: number;
   onFadedOut?: () => void;
+  /**
+   * "live" = first-time generation animation (default).
+   * "reentry" = user returned mid-build: tasks 1-4 complete, task 5 pulsing,
+   * task 6 pending, no percentages, master bar parked at ~80%.
+   */
+  mode?: "live" | "reentry";
 };
 
 /**
@@ -23,7 +29,7 @@ type Props = {
  * - Task 6 ("Compiling your strategy") enters an indeterminate hold until `done`.
  * - Fades out over ~300ms once `done` is true, then calls `onFadedOut`.
  */
-export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onFadedOut }: Props) {
+export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onFadedOut, mode = "live" }: Props) {
   // Elapsed ms drives tasks 1-5; task 6 uses its own looping animation.
   const [elapsed, setElapsed] = useState(0);
   const [fading, setFading] = useState(false);
@@ -63,6 +69,8 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
 
   if (!active) return null;
 
+  const isReentry = mode === "reentry" && !done;
+
   // Tasks 1-5 each fill over perTaskMs (sequential). Task 6 is indeterminate.
   const sequentialCount = TASKS.length - 1; // 5
   const taskPcts: number[] = [];
@@ -97,6 +105,15 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
     const extra = elapsed - seqElapsed;
     masterPct = Math.round(85 + 10 * (1 - Math.exp(-extra / 30000)));
   }
+
+  // Re-entry overrides: tasks 1-4 complete, task 5 shimmer, task 6 pending,
+  // master bar parked at 80%, no per-task percentages.
+  const reentryTaskState = (i: number) => {
+    if (i <= 3) return { pct: 1, complete: true, active: false, shimmer: false };
+    if (i === 4) return { pct: 0.6, complete: false, active: true, shimmer: true };
+    return { pct: 0, complete: false, active: false, shimmer: false };
+  };
+  const displayMasterPct = isReentry ? 80 : masterPct;
 
   return (
     <div
@@ -153,17 +170,39 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
             maxWidth: "420px",
           }}
         >
-          Turning your answers into a year of content.
+          {isReentry ? "Still building your strategy..." : "Turning your answers into a year of content."}
         </h1>
+        {isReentry && (
+          <p
+            className="mt-3"
+            style={{
+              color: "rgba(255,255,255,0.65)",
+              fontSize: "14px",
+              lineHeight: 1.6,
+              maxWidth: "420px",
+            }}
+          >
+            This is taking a moment. We're almost there.
+          </p>
+        )}
 
         {/* Task list */}
         <ul className="mt-10 sm:mt-14 space-y-5">
           {TASKS.map((label, i) => {
-            const taskPct = allTaskPcts[i];
+            let taskPct = allTaskPcts[i];
             const isLast = i === TASKS.length - 1;
-            const complete = taskPct >= 1 && !(isLast && task6Indeterminate && !done);
-            const active = !complete && taskPct > 0;
-            const showIndeterminate = isLast && task6Indeterminate && !done;
+            let complete = taskPct >= 1 && !(isLast && task6Indeterminate && !done);
+            let active = !complete && taskPct > 0;
+            let showIndeterminate = isLast && task6Indeterminate && !done;
+            let shimmer = false;
+            if (isReentry) {
+              const r = reentryTaskState(i);
+              taskPct = r.pct;
+              complete = r.complete;
+              active = r.active;
+              showIndeterminate = false;
+              shimmer = r.shimmer;
+            }
             return (
               <li key={label} className="flex items-center gap-3 sm:gap-4">
                 <span
@@ -174,7 +213,7 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
                     width: 10,
                     backgroundColor: complete || active ? "#FF6B5C" : "rgba(255,255,255,0.12)",
                     boxShadow: complete ? "0 0 8px #FF6B5C" : "none",
-                    animation: showIndeterminate ? "moxie-pulse 1.6s ease-in-out infinite" : undefined,
+                    animation: showIndeterminate || shimmer ? "moxie-pulse 1.6s ease-in-out infinite" : undefined,
                   }}
                 />
                 <div className="flex-1 min-w-0">
@@ -182,7 +221,7 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
                     <span
                       className="truncate"
                       style={{
-                        color: complete ? "#fff" : "rgba(255,255,255,0.70)",
+                        color: complete ? "#fff" : (isReentry && i === 5 ? "rgba(255,255,255,0.40)" : "rgba(255,255,255,0.70)"),
                         fontSize: "14px",
                         fontWeight: 500,
                         letterSpacing: "-0.01em",
@@ -190,17 +229,19 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
                     >
                       {label}
                     </span>
-                    <span
-                      style={{
-                        fontFamily:
-                          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                        fontSize: "10px",
-                        color: "rgba(255,255,255,0.55)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {showIndeterminate ? "…" : `${Math.round(taskPct * 100)}%`}
-                    </span>
+                    {!isReentry && (
+                      <span
+                        style={{
+                          fontFamily:
+                            "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+                          fontSize: "10px",
+                          color: "rgba(255,255,255,0.55)",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {showIndeterminate ? "…" : `${Math.round(taskPct * 100)}%`}
+                      </span>
+                    )}
                   </div>
                   <div
                     className="mt-2 w-full overflow-hidden rounded-full"
@@ -212,6 +253,7 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
                         width: `${taskPct * 100}%`,
                         backgroundColor: "#FF6B5C",
                         transition: "width 200ms linear",
+                        animation: shimmer ? "moxie-pulse 2.4s ease-in-out infinite" : undefined,
                       }}
                     />
                   </div>
@@ -237,7 +279,7 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
           >
             MOXIEMO · Strategy Engine
           </span>
-          <span
+          {!isReentry && <span
             style={{
               fontFamily:
                 "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
@@ -246,7 +288,7 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
             }}
           >
             {masterPct}%
-          </span>
+          </span>}
         </div>
         <div
           className="w-full overflow-hidden"
@@ -255,9 +297,9 @@ export function StrategyEngineInterstitial({ active, done, perTaskMs = 4500, onF
           <div
             style={{
               height: "100%",
-              width: `${masterPct}%`,
+              width: `${displayMasterPct}%`,
               backgroundColor: "#FF6B5C",
-              transition: "width 200ms linear",
+              transition: isReentry ? "none" : "width 200ms linear",
             }}
           />
         </div>
