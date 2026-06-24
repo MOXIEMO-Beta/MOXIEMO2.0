@@ -1082,6 +1082,7 @@ function StrategyContentInner({
 
 export default function Strategy() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [strategy, setStrategy] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const { reportData, isLoading, error } = useReportData();
@@ -1095,6 +1096,14 @@ export default function Strategy() {
   // Whether we ever entered the building state — used to decide if we should
   // run the fade-out on completion or render the dashboard immediately.
   const sawBuildingRef = useRef(false);
+  // Captures the synthesis_status the *first* time we display the interstitial
+  // on this page mount. If we land directly on "in_progress" (user navigated
+  // away and came back), we render the reentry state instead of the live
+  // animation from 0%.
+  const [reentryMode, setReentryMode] = useState(false);
+  const reentryDecidedRef = useRef(false);
+  // Pending navigation captured by the in-app blocker modal.
+  const [pendingNav, setPendingNav] = useState<null | { type: "link"; href: string } | { type: "back" }>(null);
 
   // Initial load
   useEffect(() => {
@@ -1207,6 +1216,14 @@ export default function Strategy() {
   const isBuilding = !strategy && hasSession && (status === "pending" || status === "in_progress");
   const isFailed = !strategy && hasSession && status === "failed";
   if (isBuilding) sawBuildingRef.current = true;
+  // Decide reentry mode once, on first frame we show the interstitial.
+  if (isBuilding && !reentryDecidedRef.current) {
+    reentryDecidedRef.current = true;
+    if (status === "in_progress" && !triggeredRef.current) {
+      // We did not start synthesis this session — user is returning mid-build.
+      setReentryMode(true);
+    }
+  }
 
   // Render the dark interstitial whenever we're building, or while it's still
   // fading out after strategy arrived. Sits above any underlying content.
