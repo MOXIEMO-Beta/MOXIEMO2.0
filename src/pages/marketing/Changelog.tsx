@@ -4,11 +4,20 @@ import { Link } from "react-router-dom";
 
 type TagKind = "New Feature" | "Improvement" | "Bug Fix" | "Coming Soon" | "Brand Update";
 
+type Block =
+  | { type: "heading"; text: string }
+  | { type: "paragraph"; text: string }
+  | { type: "quote"; text: string }
+  | { type: "ticket"; code: string; title: string; body: string }
+  | { type: "divider" };
+
 interface Entry {
   date: string;
   tag: TagKind;
+  sprintTag?: string;
   headline: string;
-  body: string;
+  body?: string;
+  blocks?: Block[];
   closing?: string;
   links?: { label: string; href?: string }[];
 }
@@ -16,6 +25,48 @@ interface Entry {
 const DISCORD_URL = "https://discord.gg/wa9JFx7nha";
 
 const entries: Entry[] = [
+  {
+    date: "JUNE 23, 2026",
+    tag: "Improvement",
+    sprintTag: "Beta 1.0 — Sprint 06.23.26",
+    headline: "What we shipped after watching a real founder use the platform.",
+    blocks: [
+      { type: "paragraph", text: "What triggered this sprint: A 180-minute live beta session with a founding beta user. She is a technical founder and AI practitioner. She went through the full platform this week — onboarding, document upload, Discovery, strategy generation, content creation, campaign builder. We recorded everything. Then we got to work." },
+      { type: "paragraph", text: "The signal that drove every decision this sprint:" },
+      { type: "quote", text: "I feel like it's going to be work for me to use this tool." },
+      { type: "paragraph", text: "The platform delivered real value. The navigation to that value cost too much. Every update below addresses that directly." },
+      { type: "divider" },
+      { type: "heading", text: "What Shipped" },
+      { type: "ticket", code: "MOX-99", title: "Campaign creation: Generate Plan CTA", body: "The primary action inside the campaign builder was easy to miss. A first-time user could explore the screen without ever finding the trigger. We made the CTA unmissable and added a step indicator so the sequence is legible from the start." },
+      { type: "ticket", code: "MOX-100", title: "Content generator: adaptive placeholder text", body: "The content input showed the same placeholder copy regardless of what type of content you were creating. A founder writing a LinkedIn post and a founder writing a podcast script were looking at identical prompts. The placeholder now shifts with the content type." },
+      { type: "ticket", code: "MOX-101", title: "Content generator: minimum input nudge", body: "If a content idea came in under 40 characters, the platform would generate anyway. The output was thin. A prompt now appears before generation — not a block, just a nudge — so the user knows more context produces better output." },
+      { type: "ticket", code: "MOX-102", title: "Discovery: browser back button guard", body: "A user who hit the browser back button mid-Discovery lost their progress with no warning. That is an unfair outcome. A beforeunload guard now catches the back action and confirms the user wants to exit before anything is lost." },
+      { type: "ticket", code: "MOX-103", title: "Email deliverability audit", body: "The beta user's invite email did not arrive. She checked spam. It was not there either. This is an activation blocker that happens before any feature is used. We are running the sending domain through a spam score audit and implementing all recommended fixes. Target: 9/10 or above. Urgent." },
+      { type: "ticket", code: "MOX-104", title: "Post-strategy bridge screen", body: "After strategy generation completed, the platform went quiet. A real, tangible output existed and nothing told the user what to do with it. A bridge screen now presents three clear next steps so momentum carries forward instead of stalling." },
+      { type: "ticket", code: "MOX-105", title: "Incomplete strategy warning before content generation", body: "Users with partially completed strategies could enter the content generator and get thin output without understanding why. A warning now surfaces before generation if the strategy foundation has gaps, with a direct path to complete it." },
+      { type: "ticket", code: "MOX-106", title: "API failure state", body: "The Claude API experienced a disruption during the beta session. The platform showed nothing. A human-readable message now surfaces when the API is unavailable, with a clear explanation and a prompt to retry. No more silent failures." },
+      { type: "divider" },
+      { type: "heading", text: "What Landed Well" },
+      { type: "paragraph", text: "The feedback was not all friction. There were moments of genuine delight that confirm the core product works. We are protecting these." },
+      { type: "paragraph", text: "The document upload pre-fill — watching 15 out of 19 onboarding questions auto-complete from an uploaded document — earned an audible reaction. That experience stays exactly as it is." },
+      { type: "paragraph", text: "The strategy strength score was immediately credible. Visual, tangible, something a founder could point to. Unchanged." },
+      { type: "paragraph", text: "Post ideas generated from strategy removed a specific kind of anxiety: \"takes away having to think about what to write.\" We are building toward more of that." },
+      { type: "paragraph", text: "Campaign platform and cadence recommendations pulled directly from the user's own strategy. She noticed it. That is what makes MOXIEMO a system, not a tool." },
+      { type: "paragraph", text: "The user would pay $49 to $79 per month for what she experienced. Without hesitation." },
+      { type: "divider" },
+      { type: "heading", text: "What We Parked for Beta 2.0" },
+      { type: "paragraph", text: "Voice input for content generation. Thumbs-up/thumbs-down feedback loop for AI learning. Analytics informing content recommendations. A content calendar carousel. Autonomous publishing. These are on the roadmap. They are not going to slow down the current build." },
+      { type: "divider" },
+      { type: "heading", text: "What Is Next" },
+      { type: "paragraph", text: "MOX-73 — Resources mega-menu ships once Brand Audit Phase 4 gates clear." },
+      { type: "paragraph", text: "Brand Audit Phase 5 — Resend integration, nurture tag, Discover pre-fill." },
+      { type: "paragraph", text: "Beta 2.0 waitlist — Separate form and database from the founding flow. Untouched until the time is right." },
+      { type: "paragraph", text: "The build continues." },
+      { type: "divider" },
+      { type: "paragraph", text: "Questions or feedback? hello@buildwithmoxiemo.com" },
+    ],
+    closing: "— The MOXIEMO Team",
+  },
   {
     date: "JUNE 5, 2026",
     tag: "New Feature",
@@ -169,19 +220,70 @@ export default function Changelog() {
             {entries.map((e, i) => (
               <article key={i} className="pl-6 border-l-[3px] border-[#ff6b6b]">
                 <div className="flex items-start justify-between gap-4 mb-3">
-                  <span className="text-[13px] uppercase tracking-wider text-muted-foreground font-medium">
-                    {e.date}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[13px] uppercase tracking-wider text-muted-foreground font-medium">
+                      {e.date}
+                    </span>
+                    {e.sprintTag && (
+                      <span className="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wider bg-[#101116]/5 text-[#101116] border border-[#101116]/10">
+                        {e.sprintTag}
+                      </span>
+                    )}
+                  </div>
                   <TagPill tag={e.tag} />
                 </div>
                 <h2 className="text-[20px] font-bold text-foreground mb-3 leading-snug">
                   {e.headline}
                 </h2>
-                {e.body.split("\n\n").map((para, idx) => (
+                {e.body && e.body.split("\n\n").map((para, idx) => (
                   <p key={idx} className="text-[16px] text-muted-foreground leading-[1.8] mb-4 last:mb-0">
                     {para}
                   </p>
                 ))}
+                {e.blocks && e.blocks.map((b, idx) => {
+                  if (b.type === "paragraph") {
+                    return (
+                      <p key={idx} className="text-[16px] text-muted-foreground leading-[1.8] mb-4">
+                        {b.text}
+                      </p>
+                    );
+                  }
+                  if (b.type === "heading") {
+                    return (
+                      <h3 key={idx} className="text-[18px] font-bold text-foreground mt-2 mb-3">
+                        {b.text}
+                      </h3>
+                    );
+                  }
+                  if (b.type === "quote") {
+                    return (
+                      <blockquote key={idx} className="my-5 pl-5 border-l-[3px] border-[#ff6b6b] bg-[#ff6b6b]/5 py-3 pr-4 rounded-r-md text-[17px] italic text-foreground leading-relaxed">
+                        "{b.text}"
+                      </blockquote>
+                    );
+                  }
+                  if (b.type === "divider") {
+                    return <hr key={idx} className="my-6 border-t border-border" />;
+                  }
+                  if (b.type === "ticket") {
+                    return (
+                      <div key={idx} className="mb-5">
+                        <div className="flex flex-wrap items-baseline gap-2 mb-1.5">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-[#101116] text-white">
+                            {b.code}
+                          </span>
+                          <span className="text-[15px] font-semibold text-foreground">
+                            {b.title}
+                          </span>
+                        </div>
+                        <p className="text-[16px] text-muted-foreground leading-[1.8]">
+                          {b.body}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
                 {e.closing && (
                   <p className="mt-4 italic text-muted-foreground text-[15px]">{e.closing}</p>
                 )}
