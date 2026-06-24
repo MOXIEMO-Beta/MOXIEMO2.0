@@ -220,19 +220,70 @@ export default function Changelog() {
             {entries.map((e, i) => (
               <article key={i} className="pl-6 border-l-[3px] border-[#ff6b6b]">
                 <div className="flex items-start justify-between gap-4 mb-3">
-                  <span className="text-[13px] uppercase tracking-wider text-muted-foreground font-medium">
-                    {e.date}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[13px] uppercase tracking-wider text-muted-foreground font-medium">
+                      {e.date}
+                    </span>
+                    {e.sprintTag && (
+                      <span className="inline-flex w-fit items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wider bg-[#101116]/5 text-[#101116] border border-[#101116]/10">
+                        {e.sprintTag}
+                      </span>
+                    )}
+                  </div>
                   <TagPill tag={e.tag} />
                 </div>
                 <h2 className="text-[20px] font-bold text-foreground mb-3 leading-snug">
                   {e.headline}
                 </h2>
-                {e.body.split("\n\n").map((para, idx) => (
+                {e.body && e.body.split("\n\n").map((para, idx) => (
                   <p key={idx} className="text-[16px] text-muted-foreground leading-[1.8] mb-4 last:mb-0">
                     {para}
                   </p>
                 ))}
+                {e.blocks && e.blocks.map((b, idx) => {
+                  if (b.type === "paragraph") {
+                    return (
+                      <p key={idx} className="text-[16px] text-muted-foreground leading-[1.8] mb-4">
+                        {b.text}
+                      </p>
+                    );
+                  }
+                  if (b.type === "heading") {
+                    return (
+                      <h3 key={idx} className="text-[18px] font-bold text-foreground mt-2 mb-3">
+                        {b.text}
+                      </h3>
+                    );
+                  }
+                  if (b.type === "quote") {
+                    return (
+                      <blockquote key={idx} className="my-5 pl-5 border-l-[3px] border-[#ff6b6b] bg-[#ff6b6b]/5 py-3 pr-4 rounded-r-md text-[17px] italic text-foreground leading-relaxed">
+                        "{b.text}"
+                      </blockquote>
+                    );
+                  }
+                  if (b.type === "divider") {
+                    return <hr key={idx} className="my-6 border-t border-border" />;
+                  }
+                  if (b.type === "ticket") {
+                    return (
+                      <div key={idx} className="mb-5">
+                        <div className="flex flex-wrap items-baseline gap-2 mb-1.5">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-[#101116] text-white">
+                            {b.code}
+                          </span>
+                          <span className="text-[15px] font-semibold text-foreground">
+                            {b.title}
+                          </span>
+                        </div>
+                        <p className="text-[16px] text-muted-foreground leading-[1.8]">
+                          {b.body}
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
                 {e.closing && (
                   <p className="mt-4 italic text-muted-foreground text-[15px]">{e.closing}</p>
                 )}
