@@ -42,9 +42,13 @@ export function ContentTab() {
   const ef = (strategy?.enhanced_foundation || {}) as any;
   const themes: any[] = ef.quarterlyThemes || [];
   const calendar: any[] = ef.contentCalendar || [];
+  const pillarsRaw = strategy?.content_pillars;
+  const pillars: any[] = Array.isArray(pillarsRaw)
+    ? pillarsRaw.map((p: any) => (typeof p === "string" ? { name: p } : p))
+    : [];
   const [expanded, setExpanded] = useState<string | null>(themes[0]?.quarter || null);
 
-  if (!themes.length && !calendar.length) {
+  if (!themes.length && !calendar.length && pillars.length === 0) {
     return (
       <Card className="report-card p-10 border-dashed border-border bg-background text-center">
         <h3 className="font-display text-2xl mb-2">No content plan yet</h3>
@@ -57,6 +61,40 @@ export function ContentTab() {
 
   return (
     <div className="space-y-6 report-page">
+      {pillars.length > 0 && (
+        <div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#9A9896" }}>
+            Content pillars
+          </div>
+          <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(pillars.length, 5)}, minmax(0,1fr))` }}>
+            {pillars.slice(0, 5).map((p: any, i: number) => {
+              const dark = i === 0;
+              return (
+                <div
+                  key={i}
+                  className="p-4"
+                  style={{
+                    background: dark ? "#0E0F10" : "#FFFFFF",
+                    color: dark ? "#FFFFFF" : "#0E0F10",
+                    border: dark ? "1px solid #0E0F10" : "1px solid #ECEAE5",
+                    borderRadius: 14,
+                  }}
+                >
+                  <div className="text-[14px] font-semibold mb-1" style={{ color: dark ? "#FFFFFF" : "#0E0F10" }}>
+                    {p.name || p.title || `Pillar ${i + 1}`}
+                  </div>
+                  {(p.description || p.summary) && (
+                    <p className="text-[12px] leading-[1.55]" style={{ color: dark ? "rgba(255,255,255,0.7)" : "#6B6860" }}>
+                      {p.description || p.summary}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {themes.length > 0 && (
         <Card className="report-card p-7 border-border shadow-soft">
           <div className="flex items-center justify-between mb-5">

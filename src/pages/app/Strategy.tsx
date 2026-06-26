@@ -236,6 +236,76 @@ function OverviewTab() {
 
   return (
     <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
+      {/* Top band: Foundation Score + Brand Positioning quadrant */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Foundation score categories */}
+        <div
+          className="p-5"
+          style={{ background: "#FFFFFF", border: "1px solid #ECEAE5", borderRadius: 14 }}
+        >
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-4" style={{ color: "#9A9896" }}>
+            Foundation score
+          </div>
+          <ul className="space-y-3">
+            {([
+              { label: "Transformation", val: strategy?.transformation, full: 15 },
+              { label: "Ideal client", val: strategy?.ideal_client, full: 10 },
+              { label: "Pain point", val: strategy?.pain_point, full: 10 },
+              { label: "Voice attributes", val: (strategy?.voice_attributes?.length || (ef.voiceGuidelines?.attributes?.length)) ? "ok" : null, full: 10 },
+              { label: "Channel strategy", val: ef.channelStrategy?.primary, full: 10 },
+              { label: "Success metric", val: strategy?.success_definition, full: 15 },
+              { label: "Time capacity", val: strategy?.time_capacity, full: 5, partial: 2 },
+            ] as any[]).map((row) => {
+              const ok = !!row.val;
+              const score = ok ? row.full : (row.partial ?? 0);
+              const isPartial = ok && row.partial != null && row.partial < row.full;
+              const dotColor = !ok || isPartial ? "#D97706" : "#22C55E";
+              const scoreColor = !ok || isPartial ? "#D97706" : "#22C55E";
+              return (
+                <li key={row.label} className="flex items-center justify-between gap-3 text-[13px]">
+                  <span className="flex items-center gap-2.5">
+                    <span className="inline-block h-2 w-2 rounded-full" style={{ background: dotColor }} />
+                    <span style={{ color: "#0E0F10" }}>{row.label}</span>
+                  </span>
+                  <span className="text-[12px] font-semibold" style={{ color: scoreColor }}>
+                    {ok && !isPartial ? `${row.full}/${row.full}` : `${score}/${row.full}${isPartial ? " · needs work" : ""}`}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        {/* Brand positioning — dark 4-quadrant card */}
+        <div className="p-6" style={{ background: "#0E0F10", color: "#FFFFFF", borderRadius: 14 }}>
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#E85A46" }}>
+            Brand positioning
+          </div>
+          {strategy?.positioning_statement && (
+            <p className="text-[14px] leading-[1.55] mb-5" style={{ color: "#FFFFFF" }}>
+              {strategy.positioning_statement}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+            {([
+              { label: "Who", val: breakdown.idealClient || strategy?.ideal_client },
+              { label: "Problem", val: breakdown.painPoint || strategy?.pain_point },
+              { label: "Solution", val: breakdown.uniqueApproach || breakdown.method },
+              { label: "Why now", val: breakdown.transformation || strategy?.transformation },
+            ] as any[]).map((q) => (
+              <div key={q.label}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] mb-1.5" style={{ color: "#E85A46" }}>
+                  {q.label}
+                </div>
+                <p className="text-[12.5px] leading-[1.55]" style={{ color: q.val ? "#FFFFFF" : "rgba(255,255,255,0.4)" }}>
+                  {q.val || "—"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Positioning */}
       <Card className="group relative report-card p-8 bg-foreground text-background border-0">
         {colPencil("positioning_statement", "positioning statement", "Your one-line statement of who you serve and the shift you create.")}
@@ -808,7 +878,7 @@ function VoiceTab() {
 
       {/* Vocabulary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="group relative report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card words-use p-6 border-border shadow-soft">
           {efPencil(["voiceGuidelines", "vocabulary", "use"], "words to use", "The vocabulary that should consistently show up in your writing.")}
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-accent mb-3"><Check className="h-3.5 w-3.5" /> Words to use</div>
           <EditableList
@@ -817,7 +887,7 @@ function VoiceTab() {
             chipClassName="bg-accent-soft text-accent"
           />
         </Card>
-        <Card className="group relative report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card words-avoid p-6 border-border shadow-soft">
           {efPencil(["voiceGuidelines", "vocabulary", "avoid"], "words to avoid", "The vocabulary that should never appear — generic, jargon, or off-brand terms.")}
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3"><X className="h-3.5 w-3.5" /> Words to avoid</div>
           <EditableList
@@ -1032,7 +1102,7 @@ function StrategyContentInner({
   };
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
+    <div className="moxie-strategy-page px-6 lg:px-10 py-8 max-w-6xl mx-auto">
       <StrategyHeader />
       <div id="moxie-strategy-report">
       {!strengthDismissed && (
