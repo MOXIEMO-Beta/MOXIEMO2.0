@@ -731,6 +731,11 @@ export default function Content() {
           ))}
         </TabsList>
 
+        {/* CONTENT CALENDAR */}
+        <TabsContent value="calendar" className="space-y-6">
+          <ContentCalendarTab strategy={strategy} />
+        </TabsContent>
+
         {/* GENERATE */}
         <TabsContent value="generate" className="space-y-6">
           {!loading && (!strategy?.positioning_statement || !(Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes.length : strategy?.voice_attributes)) && (
