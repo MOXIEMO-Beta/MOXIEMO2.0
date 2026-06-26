@@ -165,6 +165,7 @@ export function ContentTab() {
                             if (item.topic) params.set("prompt", item.topic);
                             if (item.platform) params.set("platform", item.platform);
                             if (item.theme) params.set("pillar", item.theme);
+                            if (item.contentType) params.set("contentType", item.contentType);
                             navigate(`/app/content?${params.toString()}`);
                           }}
                           className="text-xs font-medium text-accent hover:underline"

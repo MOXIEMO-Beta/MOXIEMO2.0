@@ -1,55 +1,56 @@
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Clock, Repeat } from "lucide-react";
+import { Clock } from "lucide-react";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
 
-function WeekSection({ week, weekNumber, completion, onToggle, defaultOpen }: { week: any; weekNumber: number; completion: Record<string, boolean>; onToggle: (id: string, v: boolean) => void; defaultOpen?: boolean }) {
-  const [open, setOpen] = useState(!!defaultOpen);
+function WeekCard({ week, weekNumber, completion, onToggle, isFirst }: { week: any; weekNumber: number; completion: Record<string, boolean>; onToggle: (id: string, v: boolean) => void; isFirst?: boolean }) {
   if (!week?.tasks) return null;
   const tasks = week.tasks || [];
   const done = tasks.filter((t: any) => completion[t.id]).length;
-  const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <div className="rounded-xl border border-border overflow-hidden bg-background">
-        <CollapsibleTrigger className="w-full flex items-center gap-4 p-5 text-left hover:bg-muted/40 transition-colors">
-          <div className="font-display text-3xl text-accent w-12 shrink-0">{String(weekNumber).padStart(2, "0")}</div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Week {weekNumber}</div>
-            <h4 className="font-display text-xl tracking-[-0.01em] mb-2">{week.title}</h4>
-            <div className="flex items-center gap-3">
-              <Progress value={pct} className="h-1.5 flex-1 max-w-[200px]" />
-              <span className="text-xs text-muted-foreground">{done} / {tasks.length} · {pct}%</span>
-            </div>
-          </div>
-          <ChevronDown className={`h-5 w-5 text-muted-foreground shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="px-5 pb-5 pt-1 border-t border-border bg-muted/20">
-            <ul className="space-y-2 mt-3">
-              {tasks.map((t: any) => {
-                const checked = !!completion[t.id];
-                return (
-                  <li key={t.id} className={`flex items-start gap-3 p-3 rounded-lg bg-background border border-border transition-opacity ${checked ? "opacity-60" : ""}`}>
-                    <Checkbox checked={checked} onCheckedChange={(v) => onToggle(t.id, !!v)} className="mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm leading-snug ${checked ? "line-through text-muted-foreground" : ""}`}>{t.task}</p>
-                      {t.estimatedTime && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground mt-1"><Clock className="h-3 w-3" /> {t.estimatedTime}</span>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </CollapsibleContent>
+    <div
+      className="rounded-[14px] bg-white p-5"
+      style={{ border: isFirst ? "1px solid #E85A46" : "1px solid #ECEAE5" }}
+    >
+      <div className="flex items-center gap-3 mb-4">
+        <span
+          className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-[0.05em]"
+          style={{
+            background: isFirst ? "#E85A46" : "#F0EFEC",
+            color: isFirst ? "#FFFFFF" : "#0E0F10",
+          }}
+        >
+          Week {weekNumber}
+        </span>
+        <h4 className="text-[15px] font-semibold text-foreground flex-1">{week.title}</h4>
+        <span className="text-[12px] text-[#6B6860]">{done} / {tasks.length}</span>
       </div>
-    </Collapsible>
+      <ul className="space-y-2">
+        {tasks.map((t: any) => {
+          const checked = !!completion[t.id];
+          return (
+            <li
+              key={t.id}
+              className={`flex items-start gap-3 p-3 rounded-[10px] transition-opacity ${checked ? "opacity-60" : ""}`}
+              style={{ background: "#F7F5F1" }}
+            >
+              <Checkbox checked={checked} onCheckedChange={(v) => onToggle(t.id, !!v)} className="mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className={`text-[13px] leading-[1.5] text-foreground ${checked ? "line-through" : ""}`}>{t.task}</p>
+                {(t.section || t.estimatedTime) && (
+                  <div className="flex items-center gap-2 mt-1 text-[11px] text-[#6B6860]">
+                    {t.section && <span>{t.section}</span>}
+                    {t.estimatedTime && (
+                      <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {t.estimatedTime}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
 
@@ -64,18 +65,11 @@ export function ActionPlanTab() {
     setField("task_completion", next);
   };
 
-  const markAllWeek = (week: any) => {
-    if (!week?.tasks) return;
-    const next = { ...completion };
-    for (const t of week.tasks) next[t.id] = true;
-    setField("task_completion", next);
-  };
-
   if (!plan?.week1) {
     return (
-      <Card className="report-card p-10 border-dashed border-border bg-background text-center">
-        <h3 className="font-display text-2xl mb-2">No action plan yet</h3>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">Generate your execution plan to get a 4-week quick start guide and weekly routine.</p>
+      <Card className="p-10 text-center" style={{ border: "1px dashed #ECEAE5", borderRadius: 14, background: "#FFFFFF" }}>
+        <h3 className="text-[15px] font-semibold text-foreground mb-2">No action plan yet</h3>
+        <p className="text-[13px] text-[#6B6860] max-w-md mx-auto">Generate your execution plan to get a 4-week quick start guide and weekly routine.</p>
       </Card>
     );
   }
@@ -86,85 +80,59 @@ export function ActionPlanTab() {
   const overallPct = totalTasks ? Math.round((totalDone / totalTasks) * 100) : 0;
 
   return (
-    <div className="space-y-6 report-page" style={{ pageBreakAfter: "always" }}>
-      <Card className="report-card p-7 border-border shadow-soft bg-foreground text-background" style={{ overflow: 'hidden', width: '100%', boxSizing: 'border-box' }}>
-        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2" style={{ width: '100%', boxSizing: 'border-box' }}>Quick start</div>
-        <h3 className="font-display text-3xl tracking-[-0.02em] mb-4" style={{ width: '100%', boxSizing: 'border-box' }}>Your 4-week action plan</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', width: '100%', minWidth: 0, boxSizing: 'border-box' }}>
-          <div style={{ flex: 1, minWidth: 0, height: '8px', background: 'hsl(var(--background) / 0.15)', borderRadius: '4px', overflow: 'hidden' }}>
-            <div style={{ width: `${Math.min(100, overallPct)}%`, height: '100%', background: 'hsl(var(--accent))', borderRadius: '4px', maxWidth: '100%' }} />
+    <div className="space-y-7 report-page" style={{ pageBreakAfter: "always" }}>
+      {/* Dark header card */}
+      <div className="rounded-[14px] p-6" style={{ background: "#0E0F10", color: "#FFFFFF" }}>
+        <div className="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <div className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#E85A46] mb-2">Quick start</div>
+            <h3 className="text-[20px] font-bold tracking-[-0.3px]">Your 4-week action plan</h3>
           </div>
-          <span className="font-display text-2xl" style={{ flexShrink: 0 }}>{overallPct}%</span>
-        </div>
-        <div style={{ width: '100%', overflow: 'hidden', boxSizing: 'border-box', marginTop: '12px' }}>
-          <div style={{ display: 'flex', gap: '4px', width: '100%', minWidth: 0 }}>
-            {weeks.map((w, i) => {
-              const wTasks = w?.tasks || [];
-              const wDone = wTasks.filter((t: any) => completion[t.id]).length;
-              const active = wTasks.length > 0 && wDone === wTasks.length;
-              const started = wDone > 0;
-              return (
-                <div key={i} style={{
-                  flex: 1,
-                  minWidth: 0,
-                  height: '4px',
-                  background: active || started ? 'hsl(var(--accent))' : 'hsl(var(--background) / 0.15)',
-                  borderRadius: '2px',
-                }} />
-              );
-            })}
+          <div className="text-right">
+            <div className="text-[28px] font-bold leading-none" style={{ color: "#E85A46" }}>{overallPct}%</div>
+            <div className="text-[11px] uppercase tracking-[0.1em] opacity-60 mt-1">{totalDone} of {totalTasks} tasks complete</div>
           </div>
         </div>
-        <p className="text-sm text-background/70 mt-2" style={{ width: '100%', boxSizing: 'border-box' }}>{totalDone} of {totalTasks} tasks complete</p>
-      </Card>
+        <div style={{ height: 4, borderRadius: 2, background: "rgba(255,255,255,0.15)", overflow: "hidden" }}>
+          <div style={{ width: `${Math.min(100, overallPct)}%`, height: "100%", background: "#E85A46" }} />
+        </div>
+      </div>
 
-      <div className="space-y-3">
+      {/* 2x2 week grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {weeks.map((w, i) => (
-          <WeekSection key={i} week={w} weekNumber={i + 1} completion={completion} onToggle={setCompletion} defaultOpen />
+          <WeekCard key={i} week={w} weekNumber={i + 1} completion={completion} onToggle={setCompletion} isFirst={i === 0} />
         ))}
       </div>
 
-      <div className="flex justify-end">
-        <Button variant="outline" size="sm" className="rounded-lg" onClick={() => markAllWeek(plan.week1)}>
-          Mark all Week 1 done
-        </Button>
-      </div>
-
+      {/* Weekly routine */}
       {plan.ongoingRoutine && (
-        <Card className="report-card p-7 border-border shadow-soft bg-accent-soft/30">
-          <div className="flex items-start gap-3 mb-5">
-            <div className="h-10 w-10 rounded-lg bg-foreground flex items-center justify-center shrink-0">
-              <Repeat className="h-5 w-5 text-accent" />
-            </div>
-            <div>
-              <div className="text-xs uppercase tracking-[0.25em] text-accent mb-1">Ongoing</div>
-              <h3 className="font-display text-xl tracking-[-0.01em]">Your weekly routine</h3>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {(["daily", "weekly", "biweekly", "monthly"] as const).map((k) => {
+        <div className="rounded-[14px] bg-white p-6" style={{ border: "1px solid #ECEAE5" }}>
+          <h3 className="text-[15px] font-semibold text-foreground mb-4">Your ongoing weekly routine</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {(["daily", "weekly", "monthly"] as const).map((k) => {
               const r = plan.ongoingRoutine?.[k];
               if (!r?.task) return null;
+              const labelMap: Record<string, string> = { daily: "Daily", weekly: "Weekly", monthly: "Monthly" };
               return (
-                <div key={k} className="p-4 rounded-lg bg-background border border-border">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[10px] uppercase tracking-[0.25em] text-accent">{k}</span>
-                    {r.time && <span className="text-[10px] text-muted-foreground inline-flex items-center gap-1"><Clock className="h-3 w-3" /> {r.time}</span>}
+                <div key={k} className="p-4 rounded-[10px]" style={{ background: "#F7F5F1" }}>
+                  <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-2" style={{ color: "#E85A46" }}>
+                    {labelMap[k]}{r.time ? ` · ${r.time}` : ""}
                   </div>
-                  <p className="text-sm">{r.task}</p>
+                  <p className="text-[13px] leading-[1.6] text-foreground">{r.task}</p>
                 </div>
               );
             })}
           </div>
           {(plan.ongoingRoutine.totalTimePerWeek || plan.ongoingRoutine.comparison) && (
-            <div className="mt-5 pt-5 border-t border-border flex items-baseline justify-between">
+            <div className="mt-5 rounded-[10px] p-4 flex items-center justify-between" style={{ background: "#0E0F10", color: "#FFFFFF" }}>
               {plan.ongoingRoutine.totalTimePerWeek && (
-                <div><span className="text-xs uppercase tracking-[0.2em] text-muted-foreground mr-2">Total</span><span className="font-display text-2xl">{plan.ongoingRoutine.totalTimePerWeek}</span></div>
+                <div className="text-[13px]"><span className="font-bold" style={{ color: "#E85A46" }}>Total:</span> Approx. {plan.ongoingRoutine.totalTimePerWeek}</div>
               )}
-              {plan.ongoingRoutine.comparison && <p className="text-xs text-muted-foreground italic">{plan.ongoingRoutine.comparison}</p>}
+              {plan.ongoingRoutine.comparison && <p className="text-[12px] opacity-70">{plan.ongoingRoutine.comparison}</p>}
             </div>
           )}
-        </Card>
+        </div>
       )}
     </div>
   );

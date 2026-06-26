@@ -331,7 +331,8 @@ export default function Content() {
     const qpPrompt = searchParams.get("prompt");
     const qpPillar = searchParams.get("pillar");
     const qpTheme = searchParams.get("theme");
-    if (!qpPlatform && !qpCampaign && !qpCampaignId && !qpPrompt && !qpPillar && !qpTheme) return;
+    const qpContentType = searchParams.get("contentType");
+    if (!qpPlatform && !qpCampaign && !qpCampaignId && !qpPrompt && !qpPillar && !qpTheme && !qpContentType) return;
 
     // Map short platform slugs (linkedin/instagram/email/etc.) to dropdown values
     const PLATFORM_ALIASES: Record<string, string> = {
@@ -351,6 +352,9 @@ export default function Content() {
     }
     if (qpPrompt) {
       setTopic(qpPrompt);
+    }
+    if (qpContentType) {
+      setContentType(qpContentType);
     }
     if (qpPillar) {
       // Defer chip selection until pillars load; fuzzy match in a later effect.

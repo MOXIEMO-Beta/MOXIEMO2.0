@@ -129,11 +129,11 @@ function StrategyHeader() {
 
 
   return (
-    <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+    <div className="mb-7 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
       <div>
-        <div className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-accent px-3 py-1.5 rounded-full bg-accent-soft mb-3">Your strategy</div>
-        <h1 className="font-display text-5xl md:text-6xl tracking-[-0.03em] mb-3">Marketing foundation</h1>
-        <p className="text-muted-foreground max-w-2xl">This strategy powers every piece of content, email, and post MOXIEMO generates. Update it any time — your execution layer adapts automatically.</p>
+        <div className="inline-block text-[11px] font-bold uppercase tracking-[0.1em] text-accent mb-2">Your strategy</div>
+        <h1 className="text-[20px] font-bold tracking-[-0.3px] text-foreground mb-1.5" style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif' }}>Marketing foundation</h1>
+        <p className="text-[13px] text-foreground/80 max-w-2xl leading-[1.6]">This strategy powers every piece of content, email, and post MOXIEMO generates.</p>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <span className="uppercase tracking-[0.2em] text-[10px]">Prepared for</span>
@@ -1045,7 +1045,7 @@ function StrategyContentInner({
         />
       )}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="bg-foreground h-auto w-full mb-6 flex flex-wrap justify-start gap-1 rounded-[12px] p-[6px]">
+        <TabsList className="bg-transparent h-auto w-full mb-7 flex flex-wrap justify-start gap-6 rounded-none p-0 border-b border-[#ECEAE5]">
           {[
             { v: "overview", l: "Overview" },
             { v: "voice", l: "Voice & Brand" },
@@ -1057,7 +1057,7 @@ function StrategyContentInner({
             <TabsTrigger
               key={t.v}
               value={t.v}
-              className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
+              className="relative rounded-none px-0 pb-3 pt-1 text-[13px] font-medium text-[#6B6860] bg-transparent border-b-2 border-transparent transition-colors hover:text-foreground data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:border-[#E85A46] data-[state=active]:shadow-none data-[state=active]:bg-transparent"
             >
               {t.l}
             </TabsTrigger>
