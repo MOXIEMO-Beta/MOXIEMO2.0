@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronLeft, ChevronRight, X, Copy, Save, Calendar as CalendarIcon, Send, RefreshCw, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Copy, Save, Calendar as CalendarIcon, Send, RefreshCw } from "lucide-react";
 import { startOfWeek, addDays, sameDay, ymd } from "./helpers";
 import { cn } from "@/lib/utils";
 
