@@ -4,8 +4,7 @@ import { Clock } from "lucide-react";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
 
 function WeekCard({ week, weekNumber, completion, onToggle, isFirst }: { week: any; weekNumber: number; completion: Record<string, boolean>; onToggle: (id: string, v: boolean) => void; isFirst?: boolean }) {
-  if (!week?.tasks) return null;
-  const tasks = week.tasks || [];
+  const tasks = Array.isArray(week?.tasks) ? week.tasks : [];
   const done = tasks.filter((t: any) => completion[t.id]).length;
   return (
     <div
@@ -22,9 +21,12 @@ function WeekCard({ week, weekNumber, completion, onToggle, isFirst }: { week: a
         >
           Week {weekNumber}
         </span>
-        <h4 className="text-[15px] font-semibold text-foreground flex-1">{week.title}</h4>
-        <span className="text-[12px] text-[#6B6860]">{done} / {tasks.length}</span>
+        <h4 className="text-[15px] font-semibold text-foreground flex-1">{week?.title || `Week ${weekNumber}`}</h4>
+        {tasks.length > 0 && <span className="text-[12px] text-[#6B6860]">{done} / {tasks.length}</span>}
       </div>
+      {tasks.length === 0 ? (
+        <p className="text-[13px] text-[#6B6860] italic px-1 py-2">Tasks will appear after your strategy generates.</p>
+      ) : (
       <ul className="space-y-2">
         {tasks.map((t: any) => {
           const checked = !!completion[t.id];
@@ -50,6 +52,7 @@ function WeekCard({ week, weekNumber, completion, onToggle, isFirst }: { week: a
           );
         })}
       </ul>
+      )}
     </div>
   );
 }
