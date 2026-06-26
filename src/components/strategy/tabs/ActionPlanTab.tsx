@@ -3,6 +3,49 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Clock } from "lucide-react";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
 
+// Normalize a week into { title, tasks: [{ id, task, estimatedTime, section? }] }.
+// Newer strategies store each week as a markdown string like:
+//   "### Week 1: Foundation (The Seed)\n* **Task:** Do X. (Est: 1 hour)\n* **Task:** ..."
+// Older strategies already store an object with a `tasks` array.
+function normalizeWeek(raw: any, weekNumber: number): { title: string; tasks: any[] } {
+  if (!raw) return { title: `Week ${weekNumber}`, tasks: [] };
+  if (typeof raw === "object" && Array.isArray(raw.tasks)) {
+    return { title: raw.title || `Week ${weekNumber}`, tasks: raw.tasks };
+  }
+  if (typeof raw === "string") {
+    const lines = raw.split(/\r?\n/);
+    let title = `Week ${weekNumber}`;
+    const tasks: any[] = [];
+    let idx = 0;
+    for (const lineRaw of lines) {
+      const line = lineRaw.trim();
+      if (!line) continue;
+      const titleMatch = line.match(/^#+\s*Week\s*\d+\s*[:\-]?\s*(.*)$/i);
+      if (titleMatch) {
+        title = titleMatch[1].trim() || title;
+        continue;
+      }
+      const taskMatch = line.match(/^[\*\-]\s*(?:\*\*Task:\*\*|Task:)?\s*(.+)$/i);
+      if (taskMatch) {
+        let text = taskMatch[1].trim();
+        let estimatedTime: string | undefined;
+        const estMatch = text.match(/\(\s*Est(?:imated)?[:\.]?\s*([^)]+)\)\s*$/i);
+        if (estMatch) {
+          estimatedTime = estMatch[1].trim();
+          text = text.slice(0, estMatch.index).trim();
+        }
+        tasks.push({
+          id: `week-${weekNumber}-task-${idx++}`,
+          task: text,
+          estimatedTime,
+        });
+      }
+    }
+    return { title, tasks };
+  }
+  return { title: `Week ${weekNumber}`, tasks: [] };
+}
+
 function WeekCard({ week, weekNumber, completion, onToggle, isFirst }: { week: any; weekNumber: number; completion: Record<string, boolean>; onToggle: (id: string, v: boolean) => void; isFirst?: boolean }) {
   const tasks = Array.isArray(week?.tasks) ? week.tasks : [];
   const done = tasks.filter((t: any) => completion[t.id]).length;
@@ -60,7 +103,7 @@ function WeekCard({ week, weekNumber, completion, onToggle, isFirst }: { week: a
 export function ActionPlanTab() {
   const { strategy, setField } = useStrategyEditor();
   const ef = (strategy?.enhanced_foundation || {}) as any;
-  const plan = ef.actionPlan;
+  const plan = ef.actionPlan || ef.weeklyActionPlan || ef.actionItems || null;
   const completion = (strategy?.task_completion || {}) as Record<string, boolean>;
 
   const setCompletion = (id: string, v: boolean) => {
@@ -68,7 +111,13 @@ export function ActionPlanTab() {
     setField("task_completion", next);
   };
 
-  if (!plan?.week1) {
+  const rawWeeks = plan
+    ? [plan.week1, plan.week2, plan.week3, plan.week4]
+    : [null, null, null, null];
+  const weeks = rawWeeks.map((w, i) => normalizeWeek(w, i + 1));
+  const hasAnyTasks = weeks.some((w) => w.tasks.length > 0);
+
+  if (!plan || !hasAnyTasks) {
     return (
       <Card className="p-10 text-center" style={{ border: "1px dashed #ECEAE5", borderRadius: 14, background: "#FFFFFF" }}>
         <h3 className="text-[15px] font-semibold text-foreground mb-2">No action plan yet</h3>
@@ -77,9 +126,8 @@ export function ActionPlanTab() {
     );
   }
 
-  const weeks = [plan.week1, plan.week2, plan.week3, plan.week4];
-  const totalTasks = weeks.reduce((n, w) => n + (w?.tasks?.length || 0), 0);
-  const totalDone = weeks.reduce((n, w) => n + (w?.tasks?.filter((t: any) => completion[t.id]).length || 0), 0);
+  const totalTasks = weeks.reduce((n, w) => n + w.tasks.length, 0);
+  const totalDone = weeks.reduce((n, w) => n + w.tasks.filter((t: any) => completion[t.id]).length, 0);
   const overallPct = totalTasks ? Math.round((totalDone / totalTasks) * 100) : 0;
 
   return (
