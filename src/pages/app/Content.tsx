@@ -436,7 +436,7 @@ export default function Content() {
     ? `What would you like to write today, ${fname}?`
     : "What would you like to write today?";
 
-  const [tab, setTab] = useState<string>("generate");
+  const [tab, setTab] = useState<string>("calendar");
 
   async function runGeneration(opts: { topic: string; platform: string; contentType: string; pillar: string | null }) {
     const augmentedTopic = opts.pillar
@@ -707,6 +707,7 @@ export default function Content() {
           style={{ borderBottom: "1px solid #ECEAE5", gap: 8, marginTop: 16 }}
         >
           {[
+            { v: "calendar", label: "Content Calendar" },
             { v: "generate", label: "Generate" },
             { v: "queue", label: `Queue${queued.length > 0 ? ` (${queued.length})` : ""}` },
             { v: "drafts", label: `Drafts${drafts.length > 0 ? ` (${drafts.length})` : ""}` },
