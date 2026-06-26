@@ -1185,11 +1185,46 @@ function StatusBadge({ status }: { status: ContentItem["status"] }) {
   );
 }
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({
+  heading,
+  body,
+  ctaLabel,
+  onCta,
+}: {
+  heading: string;
+  body: string;
+  ctaLabel?: string;
+  onCta?: () => void;
+}) {
   return (
-    <Card className="p-10 border-dashed border-border bg-background text-center text-sm text-muted-foreground">
-      {message}
-    </Card>
+    <div
+      className="text-center"
+      style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 48, background: "#FFFFFF" }}
+    >
+      <div style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }}>{heading}</div>
+      <p style={{ fontSize: 13, color: "#9A9896", marginTop: 8, maxWidth: 460, marginLeft: "auto", marginRight: "auto" }}>
+        {body}
+      </p>
+      {ctaLabel && onCta && (
+        <button
+          type="button"
+          onClick={onCta}
+          className="hover:bg-[#FFF5F4] transition-colors"
+          style={{
+            marginTop: 20,
+            padding: "10px 18px",
+            borderRadius: 8,
+            border: "1px solid #FF6B5C",
+            color: "#FF6B5C",
+            fontSize: 13,
+            fontWeight: 600,
+            background: "transparent",
+          }}
+        >
+          {ctaLabel}
+        </button>
+      )}
+    </div>
   );
 }
 
