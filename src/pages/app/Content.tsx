@@ -793,7 +793,7 @@ export default function Content() {
               />
               {platform !== "Profile Bio" && (
                 <p style={{ fontSize: 11, color: "#9A9896", marginTop: 6 }}>
-                  More context = stronger output. Aim for 2-3 sentences.
+                  More context = stronger output. Aim for 2-3 sentences. The more specific and detailed your angle, the more MOXIEMO can match your voice.
                 </p>
               )}
             </div>
