@@ -983,7 +983,16 @@ function StrategyContentInner({
           onDismiss={() => setStrengthDismissed(true)}
         />
       )}
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs
+        defaultValue="overview"
+        className="w-full"
+        onValueChange={() => {
+          const y = window.scrollY;
+          // Restore scroll position synchronously after Radix's internal
+          // focus management runs, so switching tabs never jumps the page.
+          requestAnimationFrame(() => window.scrollTo(0, y));
+        }}
+      >
         <TabsList className="bg-transparent h-auto w-full mb-7 flex flex-wrap justify-start gap-6 rounded-none p-0 border-b border-[#ECEAE5]">
           {[
             { v: "overview", l: "Overview" },
