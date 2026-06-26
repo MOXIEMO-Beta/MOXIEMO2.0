@@ -98,6 +98,28 @@
 }
 .moxie-strategy-page .text-muted-foreground { color: #6B6860 !important; }
 
+/* Dark-background channel card (Primary): force readable light text for any
+   p / li / generic text inside any element with a bg-foreground* class.
+   Section eyebrows using .text-accent stay coral via the rule below. */
+.moxie-strategy-page .bg-foreground p,
+.moxie-strategy-page .bg-foreground li,
+.moxie-strategy-page .bg-foreground span,
+.moxie-strategy-page .bg-foreground div,
+.moxie-strategy-page [class*="bg-foreground"] p,
+.moxie-strategy-page [class*="bg-foreground"] li,
+.moxie-strategy-page [class*="bg-foreground"] span,
+.moxie-strategy-page [class*="bg-foreground"] div {
+  color: #F7F5F1;
+}
+.moxie-strategy-page .bg-foreground .text-muted-foreground,
+.moxie-strategy-page [class*="bg-foreground"] .text-muted-foreground {
+  color: rgba(247, 245, 241, 0.7) !important;
+}
+.moxie-strategy-page .bg-foreground .text-accent,
+.moxie-strategy-page [class*="bg-foreground"] .text-accent {
+  color: #E85A46 !important;
+}
+
 /* Micro labels — every "tracking-[0.25em]" / "tracking-[0.2em]" eyebrow */
 .moxie-strategy-page [class*="tracking-[0.25em]"],
 .moxie-strategy-page [class*="tracking-[0.2em]"] {
