@@ -1401,11 +1401,8 @@ function ChannelRow({ channel, text, tinted, divider }: { channel: string; text:
 }
 
 function CampaignDetail({ c, ctx, onChanged, setTab }: any) {
-  const linkedPosts = ctx.socialPosts.filter((p: any) => p.campaign_id === c.id);
-  const linkedEmails = ctx.emailSends.filter((e: any) => e.campaign_id === c.id);
-  const plan = (c.content_plan?.weeks ?? []) as any[];
-  const targets = c.content_plan?.targets ?? {};
-  const channels = c.channels ?? [];
+  const [localPlan, setLocalPlan] = useState<any>(c.plan ?? null);
+  const [generating, setGenerating] = useState(false);
 
   async function setStatus(status: string) {
     const { error } = await supabase.from("campaigns").update({ status }).eq("id", c.id);
@@ -1413,49 +1410,163 @@ function CampaignDetail({ c, ctx, onChanged, setTab }: any) {
     else { toast.success(`Marked as ${status}`); onChanged(); }
   }
 
+  async function generatePlan() {
+    setGenerating(true);
+    try {
+      const ef = (ctx?.strategy?.enhanced_foundation || {}) as any;
+      const voiceAttributes = Array.isArray(ef.voiceAttributes)
+        ? ef.voiceAttributes.join(", ")
+        : (ef.voiceAttributes || (Array.isArray(ctx?.strategy?.voice_attributes) ? ctx.strategy.voice_attributes.join(", ") : ""));
+      const { data, error } = await supabase.functions.invoke("generate-campaign-content-plan", {
+        body: {
+          campaignName: c.name,
+          campaignType: c.campaign_type,
+          campaignGoal: c.goals,
+          selectedPillars: Array.isArray(c.pillars) ? c.pillars : [],
+          startDate: c.start_date,
+          endDate: c.end_date,
+          voiceAttributes,
+        },
+      });
+      if (error) throw error;
+      if (data?.plan) {
+        await supabase.from("campaigns").update({ plan: data.plan }).eq("id", c.id);
+        setLocalPlan(data.plan);
+        onChanged?.();
+      }
+    } catch (e: any) {
+      toast.error("Could not generate plan. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  const plan = localPlan;
+  const dateLabel = `${c.start_date ? fmtShort(new Date(c.start_date)) : "—"} – ${c.end_date ? fmtShort(new Date(c.end_date)) : "—"}`;
+  const isArchived = !!c.archived;
+  const status = (c.status || "active") as string;
+  const statusLabel = isArchived ? "Archived" : (status.charAt(0).toUpperCase() + status.slice(1));
+  const statusColors = isArchived
+    ? { bg: "#F5F4F0", fg: "#6B6860" }
+    : status === "active"
+      ? { bg: "#F0FDF4", fg: "#16A34A" }
+      : status === "completed"
+        ? { bg: "#EFF6FF", fg: "#2563EB" }
+        : { bg: "#FEF3C7", fg: "#B45309" };
+
+  const platformColor = (p: string) => {
+    const v = (p || "").toLowerCase();
+    if (v.includes("linkedin")) return "#0A66C2";
+    if (v.includes("email")) return "#7C3AED";
+    if (v.includes("instagram")) return "#E1306C";
+    if (v.includes("facebook")) return "#1877F2";
+    return "#9A9896";
+  };
+
   return (
-    <div>
-      <SheetHeader>
-        <SheetTitle className="flex items-center gap-2">{c.name}</SheetTitle>
-      </SheetHeader>
-      <div className="text-xs text-muted-foreground mb-3">
-        {c.start_date ? fmtShort(new Date(c.start_date)) : "—"} – {c.end_date ? fmtShort(new Date(c.end_date)) : "—"} · {c.status}
+    <div style={{ fontFamily: "Space Grotesk, system-ui, sans-serif" }}>
+      {/* Header */}
+      <div style={{ padding: "20px 24px", borderBottom: "1px solid #ECEAE5", marginLeft: -24, marginRight: -24, marginTop: -24 }}>
+        <div style={{ fontSize: 18, fontWeight: 600, color: "#15171C" }}>{c.name}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+          <span style={{ fontSize: 12, color: "#9A9896" }}>{dateLabel}</span>
+          <span style={{ background: statusColors.bg, color: statusColors.fg, fontSize: 11, fontWeight: 600, borderRadius: 4, padding: "2px 8px" }}>
+            {statusLabel}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+          {c.status === "active" && (
+            <Button size="sm" variant="outline" onClick={() => setStatus("paused")}><Pause className="w-3 h-3" /> Pause</Button>
+          )}
+          {c.status !== "active" && c.status !== "completed" && (
+            <Button size="sm" onClick={() => setStatus("active")}>Activate</Button>
+          )}
+          <Button size="sm" variant="outline" onClick={() => setStatus("completed")}><CheckCircle2 className="w-3 h-3" /> Complete</Button>
+        </div>
       </div>
 
-      <div className="flex gap-2 mb-4">
-        {c.status !== "active" && <Button size="sm" onClick={() => setStatus("active")}>Activate</Button>}
-        {c.status === "active" && <Button size="sm" variant="outline" onClick={() => setStatus("paused")}><Pause className="w-3 h-3" /> Pause</Button>}
-        <Button size="sm" variant="outline" onClick={() => setStatus("completed")}><CheckCircle2 className="w-3 h-3" /> Complete</Button>
-      </div>
-
-      <div className="space-y-3 mb-5">
-        {channels.map((ch: string) => {
-          const target = (targets[ch] || 0) * (plan.length || 0);
-          let done = 0;
-          if (ch === "email") done = linkedEmails.filter((e: any) => e.status === "sent").length;
-          else done = linkedPosts.filter((p: any) => (p.platforms ?? []).includes(ch) && p.status === "published").length;
-          const pct = target > 0 ? Math.round((done / target) * 100) : 0;
-          return (
-            <div key={ch} className="text-xs">
-              <div className="flex justify-between mb-1"><span className="capitalize">{ch}</span><span>{done}/{target}</span></div>
-              <div className="h-1.5 bg-muted rounded-full overflow-hidden"><div className="h-full bg-accent" style={{ width: `${pct}%` }} /></div>
+      {/* Campaign summary */}
+      <div style={{ padding: "20px 24px", borderBottom: "1px solid #ECEAE5", marginLeft: -24, marginRight: -24 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "#9A9896", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 8 }}>
+          Campaign Summary
+        </div>
+        {plan?.campaignSummary ? (
+          <div style={{ fontSize: 14, color: "#15171C", lineHeight: 1.6 }}>{plan.campaignSummary}</div>
+        ) : (
+          <div style={{ fontSize: 13, color: "#9A9896" }}>
+            No plan generated yet.
+            <div style={{ marginTop: 10 }}>
+              <button
+                onClick={generatePlan}
+                disabled={generating}
+                style={{
+                  background: "#fff",
+                  color: "#E85A46",
+                  border: "1px solid #E85A46",
+                  borderRadius: 20,
+                  fontSize: 12,
+                  fontWeight: 500,
+                  padding: "6px 14px",
+                  cursor: generating ? "not-allowed" : "pointer",
+                  opacity: generating ? 0.7 : 1,
+                }}
+              >
+                {generating ? "Building your campaign plan…" : "Generate plan now →"}
+              </button>
             </div>
-          );
-        })}
+          </div>
+        )}
       </div>
 
-      <div className="font-medium text-sm mb-2">Week-by-week plan</div>
-      <div className="space-y-2 max-h-[300px] overflow-y-auto">
-        {plan.length === 0 && <div className="text-xs text-muted-foreground">No plan saved.</div>}
-        {plan.map((w: any, idx: number) => (
-          <div key={idx} className="border border-border rounded p-2 text-xs">
-            <div className="font-medium mb-1">Week {w.weekNumber} {w.theme ? `· ${w.theme}` : ""}</div>
-            {w.linkedin && <div><b>LinkedIn:</b> {w.linkedin}</div>}
-            {w.email && <div><b>Email:</b> {w.email}</div>}
-            {w.instagram && <div><b>Instagram:</b> {w.instagram}</div>}
+      {/* Week-by-week */}
+      {plan?.weeks?.length > 0 && (
+        <div style={{ padding: "20px 24px", marginLeft: -24, marginRight: -24 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#9A9896", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 16 }}>
+            Week-by-Week Plan
           </div>
-        ))}
-      </div>
+          {plan.weeks.map((w: any, i: number) => (
+            <div key={i} style={{ marginBottom: 20 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10, flexWrap: "wrap" }}>
+                <span style={{ background: "#F0EFEC", color: "#6B6860", fontSize: 10, fontWeight: 700, borderRadius: 4, padding: "3px 8px" }}>
+                  WEEK {w.weekNumber ?? i + 1}
+                </span>
+                {w.theme && <span style={{ fontSize: 14, fontWeight: 600, color: "#15171C" }}>{w.theme}</span>}
+                {w.focus && <span style={{ fontSize: 12, color: "#9A9896" }}>{w.focus}</span>}
+              </div>
+              {(w.tasks ?? []).map((t: any, j: number) => (
+                <div key={j} style={{ padding: "10px 14px", background: "#F7F5F1", borderRadius: 8, marginBottom: 6 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#9A9896" }}>{t.day}</span>
+                    {t.platform && (
+                      <span style={{ fontSize: 11, fontWeight: 500, color: "#9A9896", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        <span style={{ width: 6, height: 6, borderRadius: "50%", background: platformColor(t.platform) }} />
+                        {t.platform}
+                      </span>
+                    )}
+                  </div>
+                  {t.action && <div style={{ fontSize: 13, fontWeight: 500, color: "#15171C", marginTop: 3 }}>{t.action}</div>}
+                  {t.contentNote && <div style={{ fontSize: 12, color: "#9A9896", marginTop: 2, fontStyle: "italic" }}>{t.contentNote}</div>}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Success Metrics */}
+      {plan?.successMetrics?.length > 0 && (
+        <div style={{ padding: "0 24px 24px", marginLeft: -24, marginRight: -24 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#9A9896", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 10 }}>
+            Success Metrics
+          </div>
+          {plan.successMetrics.map((m: string, i: number) => (
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", marginTop: 6, flexShrink: 0 }} />
+              <span style={{ fontSize: 13, color: "#15171C" }}>{m}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
