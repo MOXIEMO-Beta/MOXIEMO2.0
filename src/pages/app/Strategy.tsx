@@ -235,140 +235,14 @@ function OverviewTab() {
   ];
 
   return (
-    <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
-      {/* Top band: Foundation Score + Brand Positioning quadrant */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Foundation score categories */}
-        <div
-          className="p-5"
-          style={{ background: "#FFFFFF", border: "1px solid #ECEAE5", borderRadius: 14 }}
-        >
-          <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-4" style={{ color: "#9A9896" }}>
-            Foundation score
-          </div>
-          <ul className="space-y-3">
-            {([
-              { label: "Transformation", val: strategy?.transformation, full: 15 },
-              { label: "Ideal client", val: strategy?.ideal_client, full: 10 },
-              { label: "Pain point", val: strategy?.pain_point, full: 10 },
-              { label: "Voice attributes", val: (strategy?.voice_attributes?.length || (ef.voiceGuidelines?.attributes?.length)) ? "ok" : null, full: 10 },
-              { label: "Channel strategy", val: ef.channelStrategy?.primary, full: 10 },
-              { label: "Success metric", val: strategy?.success_definition, full: 15 },
-              { label: "Time capacity", val: strategy?.time_capacity, full: 5, partial: 2 },
-            ] as any[]).map((row) => {
-              const ok = !!row.val;
-              const score = ok ? row.full : (row.partial ?? 0);
-              const isPartial = ok && row.partial != null && row.partial < row.full;
-              const dotColor = !ok || isPartial ? "#D97706" : "#22C55E";
-              const scoreColor = !ok || isPartial ? "#D97706" : "#22C55E";
-              return (
-                <li key={row.label} className="flex items-center justify-between gap-3 text-[13px]">
-                  <span className="flex items-center gap-2.5">
-                    <span className="inline-block h-2 w-2 rounded-full" style={{ background: dotColor }} />
-                    <span style={{ color: "#0E0F10" }}>{row.label}</span>
-                  </span>
-                  <span className="text-[12px] font-semibold" style={{ color: scoreColor }}>
-                    {ok && !isPartial ? `${row.full}/${row.full}` : `${score}/${row.full}${isPartial ? " · needs work" : ""}`}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-
-        {/* Brand positioning — dark 4-quadrant card */}
-        <div className="p-6" style={{ background: "#0E0F10", color: "#FFFFFF", borderRadius: 14 }}>
-          <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#E85A46" }}>
-            Brand positioning
-          </div>
-          {strategy?.positioning_statement && (
-            <p className="text-[14px] leading-[1.55] mb-5" style={{ color: "#FFFFFF" }}>
-              {strategy.positioning_statement}
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-            {([
-              { label: "Who", val: breakdown.idealClient || strategy?.ideal_client },
-              { label: "Problem", val: breakdown.painPoint || strategy?.pain_point },
-              { label: "Solution", val: breakdown.uniqueApproach || breakdown.method },
-              { label: "Why now", val: breakdown.transformation || strategy?.transformation },
-            ] as any[]).map((q) => (
-              <div key={q.label}>
-                <div className="text-[10px] font-bold uppercase tracking-[0.1em] mb-1.5" style={{ color: "#E85A46" }}>
-                  {q.label}
-                </div>
-                <p className="text-[12.5px] leading-[1.55]" style={{ color: q.val ? "#FFFFFF" : "rgba(255,255,255,0.4)" }}>
-                  {q.val || "—"}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Positioning */}
-      <Card className="group relative report-card p-8 bg-foreground text-background border-0">
-        {colPencil("positioning_statement", "positioning statement", "Your one-line statement of who you serve and the shift you create.")}
-        <div className="text-xs uppercase tracking-[0.25em] text-accent mb-4">
-          {isService ? "Brand positioning" : "Positioning statement"}
-        </div>
-        <div className="font-display text-2xl md:text-3xl leading-relaxed mb-6">
-          <EditableField
-            value={strategy.positioning_statement}
-            onChange={(v) => setField("positioning_statement", v)}
-            multiline
-            placeholder="Your positioning statement"
-            ariaLabel="Positioning statement"
-            className="edit-mode-input"
-          />
-        </div>
-
-        {(editing || Object.values(breakdown).some(Boolean)) && (
-          <div className="rounded-xl bg-background/5 border border-background/10 p-5">
-            <div className="text-[10px] uppercase tracking-[0.25em] text-background/60 mb-3">Breakdown</div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
-              {breakdownFields.map(([label, key, ph]) => (
-                <div key={key} className="flex gap-2">
-                  <span className="text-background/60 min-w-[110px]">• {label}:</span>
-                  <span className="flex-1">
-                    <EditableField
-                      value={breakdown[key]}
-                      onChange={(v) => setEnhanced(["positioningBreakdown", key], v)}
-                      placeholder={ph}
-                      className="edit-mode-input"
-                    />
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {(editing || Object.values(variations).some(Boolean)) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-            {([["Short", "short"], ["Tweet", "tweet"], ["Elevator", "elevator"]] as const).map(([label, key]) => (
-              <div key={key} className="rounded-lg bg-background/5 border border-background/10 p-3">
-                <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-1.5">{label}</div>
-                <div className="text-sm leading-relaxed text-background/90">
-                  <EditableField
-                    value={variations[key]}
-                    onChange={(v) => setEnhanced(["positioningVariations", key], v)}
-                    multiline
-                    placeholder={`${label} version`}
-                    className="edit-mode-input"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* Brand archetype */}
-      {(archetype || editing) && (
-        <Card className="group relative report-card p-7 border-border shadow-soft">
+    <div className="space-y-6 mt-0 report-page mx-auto" style={{ pageBreakAfter: "always", maxWidth: 1100 }}>
+      {/* Top band: Brand Archetype + Brand Positioning quadrant */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+        {/* Brand archetype card (left) */}
+        {(archetype || editing) ? (
+        <Card className="group relative report-card border-0 shadow-none" style={{ background: "#FFFFFF", border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
           {efPencil(["brandArchetype", "description"], "brand archetype", "Your dominant archetype and how it shows up in your brand.")}
-          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Brand archetype</div>
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-4" style={{ color: "#9A9896" }}>Brand archetype</div>
           <div className="flex items-start gap-4 mb-5">
             <div className="text-5xl leading-none">
               <EditableField
@@ -405,7 +279,7 @@ function OverviewTab() {
             />
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="p-4 rounded-lg bg-accent-soft/40">
               <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">Brands</div>
               <div className="text-sm">
@@ -442,44 +316,39 @@ function OverviewTab() {
               </p>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <EditableBulletList
-              label={isService ? "Why this fits your brand" : "Why this fits you"}
-              items={archetype?.whyThisFits || []}
-              onChange={(next) => setEnhanced(["brandArchetype", "whyThisFits"], next)}
-              bullet="•"
-            />
-            <EditableBulletList
-              label="How to use this"
-              items={archetype?.howToApply || []}
-              onChange={(next) => setEnhanced(["brandArchetype", "howToApply"], next)}
-              bullet={<Check className="h-4 w-4 text-accent shrink-0 mt-0.5" />}
-            />
-          </div>
         </Card>
-      )}
+        ) : <div />}
 
-      {/* Audience snapshot */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { label: isService ? "Ideal customer" : "Ideal client", key: "ideal_client" },
-          { label: isService ? "Customer pain point" : "Pain point", key: "pain_point" },
-          { label: isService ? "Customer outcome" : "Transformation", key: "transformation" },
-        ].map((s) => (
-          <Card key={s.key} className="group relative report-card p-5 border-border shadow-soft">
-            {colPencil(s.key, s.label.toLowerCase(), `Who you serve / what's painful / what shifts — the ${s.label.toLowerCase()} snapshot.`)}
-            <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">{s.label}</div>
-            <p className="text-sm leading-relaxed">
-              <EditableField
-                value={strategy[s.key]}
-                onChange={(v) => setField(s.key, v)}
-                multiline
-                placeholder={s.label}
-              />
+        {/* Brand positioning — dark card (right) */}
+        <div className="p-6" style={{ background: "#0E0F10", color: "#FFFFFF", borderRadius: 14 }}>
+          <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#E85A46" }}>
+            Brand positioning
+          </div>
+          {strategy?.positioning_statement && (
+            <p className="text-[14px] leading-[1.55] mb-5" style={{ color: "#FFFFFF" }}>
+              {strategy.positioning_statement}
             </p>
-          </Card>
-        ))}
+          )}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+            {([
+              { label: "Who", val: breakdown.idealClient || strategy?.ideal_client },
+              { label: "Problem", val: breakdown.painPoint || strategy?.pain_point },
+              { label: "Solution", val: breakdown.uniqueApproach || breakdown.method },
+              { label: "Result", val: breakdown.outcome },
+              { label: "Method", val: breakdown.method },
+              { label: "Transformation", val: breakdown.transformation || strategy?.transformation },
+            ] as any[]).map((q) => (
+              <div key={q.label}>
+                <div className="text-[10px] font-bold uppercase tracking-[0.1em] mb-1.5" style={{ color: "#E85A46" }}>
+                  {q.label}
+                </div>
+                <p className="text-[12.5px] leading-[1.55]" style={{ color: q.val ? "#FFFFFF" : "rgba(255,255,255,0.4)" }}>
+                  {q.val || "—"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Core values */}
