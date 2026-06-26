@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import ScheduleTab from "@/components/calendar/ScheduleTab";
+import CampaignCalendarTab from "@/components/calendar/CampaignCalendarTab";
 import CampaignsTab from "@/components/calendar/CampaignsTab";
 import IdeasTab from "@/components/calendar/IdeasTab";
 import StartCampaignTab, { CampaignWizardModal } from "@/components/calendar/StartCampaignTab";
@@ -11,7 +11,7 @@ import StartCampaignTab, { CampaignWizardModal } from "@/components/calendar/Sta
 const TABS = ["start", "schedule", "campaigns", "ideas"] as const;
 type TabKey = (typeof TABS)[number];
 const LABELS: Record<TabKey, string> = {
-  start: "Start a Campaign", schedule: "Content Schedule", campaigns: "Campaign Library", ideas: "Growth Ideas",
+  start: "Start a Campaign", schedule: "Campaign Calendar", campaigns: "Campaign Library", ideas: "Growth Ideas",
 };
 
 export default function CalendarPage() {
@@ -140,7 +140,7 @@ export default function CalendarPage() {
       </div>
 
       {tab === "start" && <StartCampaignTab ctx={ctx} />}
-      {tab === "schedule" && <ScheduleTab ctx={ctx} />}
+      {tab === "schedule" && <CampaignCalendarTab ctx={ctx} />}
       {tab === "campaigns" && <CampaignsTab ctx={ctx} />}
       {tab === "ideas" && <IdeasTab ctx={ctx} />}
 
