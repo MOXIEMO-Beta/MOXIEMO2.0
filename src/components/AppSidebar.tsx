@@ -278,6 +278,23 @@ if (typeof document !== "undefined" && !document.getElementById("moxie-app-nav-h
       background: rgba(255,255,255,0.38) !important;
       color: #1A2010 !important;
     }
+    .moxie-app-feedback-slot button {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 6px 4px !important;
+      height: auto !important;
+      width: auto !important;
+      justify-content: flex-start !important;
+      font-size: 12px !important;
+      color: rgba(0,0,0,0.45) !important;
+      font-weight: 400 !important;
+    }
+    .moxie-app-feedback-slot button:hover {
+      color: #1A2010 !important;
+    }
+    .moxie-app-feedback-slot button svg { display: none !important; }
+    .moxie-app-feedback-slot button span { font-size: 12px !important; }
   `;
   document.head.appendChild(s);
 }
