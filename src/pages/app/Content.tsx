@@ -1063,9 +1063,10 @@ export default function Content() {
             <Skeleton className="h-24 w-full" />
           ) : queued.length === 0 ? (
             <EmptyState
-              heading="Nothing queued yet"
-              body="Content you schedule will live here. Generate something to get started."
-              ctaLabel="Go to Generate →"
+              emoji="📬"
+              heading="Your queue is empty"
+              body="Add content to your queue to schedule it for publishing."
+              ctaLabel="Create content →"
               onCta={() => setTab("generate")}
             />
           ) : (
@@ -1097,9 +1098,10 @@ export default function Content() {
             <Skeleton className="h-24 w-full" />
           ) : drafts.length === 0 ? (
             <EmptyState
-              heading="No drafts saved yet"
-              body="When you save generated content, it lands here for editing and publishing."
-              ctaLabel="Generate your first draft →"
+              emoji="📝"
+              heading="No drafts yet"
+              body="Generate content and save it as a draft to continue editing later."
+              ctaLabel="Generate content →"
               onCta={() => setTab("generate")}
             />
           ) : (
@@ -1176,11 +1178,13 @@ function StatusBadge({ status }: { status: ContentItem["status"] }) {
 }
 
 function EmptyState({
+  emoji,
   heading,
   body,
   ctaLabel,
   onCta,
 }: {
+  emoji?: string;
   heading: string;
   body: string;
   ctaLabel?: string;
@@ -1189,9 +1193,12 @@ function EmptyState({
   return (
     <div
       className="text-center"
-      style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 48, background: "#FFFFFF" }}
+      style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 56, background: "#FFFFFF", maxWidth: 700, margin: "0 auto" }}
     >
-      <div style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }}>{heading}</div>
+      {emoji && (
+        <div style={{ fontSize: 32, marginBottom: 12, lineHeight: 1 }}>{emoji}</div>
+      )}
+      <div style={{ fontSize: 16, fontWeight: 600, color: "#0E0F10" }}>{heading}</div>
       <p style={{ fontSize: 13, color: "#9A9896", marginTop: 8, maxWidth: 460, marginLeft: "auto", marginRight: "auto" }}>
         {body}
       </p>
@@ -1199,16 +1206,17 @@ function EmptyState({
         <button
           type="button"
           onClick={onCta}
-          className="hover:bg-[#FFF5F4] transition-colors"
+          className="hover:opacity-90 transition-opacity"
           style={{
             marginTop: 20,
-            padding: "10px 18px",
+            padding: "11px 22px",
             borderRadius: 8,
-            border: "1px solid #E85A46",
-            color: "#E85A46",
-            fontSize: 13,
+            border: "none",
+            color: "#FFFFFF",
+            fontSize: 14,
             fontWeight: 600,
-            background: "transparent",
+            background: "#E85A46",
+            cursor: "pointer",
           }}
         >
           {ctaLabel}
