@@ -1032,7 +1032,7 @@ function StrategyContentInner({
   };
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
+    <div className="moxie-strategy-page px-6 lg:px-10 py-8 max-w-6xl mx-auto">
       <StrategyHeader />
       <div id="moxie-strategy-report">
       {!strengthDismissed && (
