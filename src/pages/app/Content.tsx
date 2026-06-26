@@ -208,61 +208,28 @@ function PillarChips({
   activePillar: string | null;
   onToggle: (p: string) => void;
 }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [expanded, setExpanded] = useState(false);
-  const [overflowing, setOverflowing] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const check = () => {
-      const rowHeight = 32; // approx chip height
-      setOverflowing(el.scrollHeight > rowHeight * 2 + 8);
-    };
-    check();
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [pillars]);
-
   return (
-    <div>
-      <div
-        ref={containerRef}
-        className="flex flex-wrap gap-2"
-        style={
-          expanded
-            ? undefined
-            : { maxHeight: "4.25rem", overflow: "hidden" }
-        }
-      >
-        {pillars.map((p) => {
-          const active = activePillar === p;
-          return (
-            <button
-              key={p}
-              type="button"
-              onClick={() => onToggle(p)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                active
-                  ? "border-accent text-accent bg-accent-soft/40"
-                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
-              }`}
-            >
-              {p}
-            </button>
-          );
-        })}
-      </div>
-      {overflowing && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-2 text-xs text-accent hover:underline"
-        >
-          {expanded ? "Show less" : "See all →"}
-        </button>
-      )}
+    <div className="flex flex-wrap gap-2">
+      {pillars.map((p) => {
+        const active = activePillar === p;
+        return (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onToggle(p)}
+            className="text-xs font-medium rounded-full border transition-colors"
+            style={{
+              padding: "6px 14px",
+              fontSize: 12,
+              background: active ? "#FF6B5C" : "#FFFFFF",
+              color: active ? "#FFFFFF" : "#FF6B5C",
+              borderColor: "#FF6B5C",
+            }}
+          >
+            {p}
+          </button>
+        );
+      })}
     </div>
   );
 }
