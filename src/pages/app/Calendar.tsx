@@ -3,21 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import PlanTab from "@/components/calendar/PlanTab";
 import ScheduleTab from "@/components/calendar/ScheduleTab";
 import CampaignsTab from "@/components/calendar/CampaignsTab";
 import IdeasTab from "@/components/calendar/IdeasTab";
+import StartCampaignTab from "@/components/calendar/StartCampaignTab";
 
-const TABS = ["plan", "schedule", "campaigns", "ideas"] as const;
+const TABS = ["start", "schedule", "campaigns", "ideas"] as const;
 type TabKey = (typeof TABS)[number];
 const LABELS: Record<TabKey, string> = {
-  plan: "Campaign Plan", schedule: "Content Schedule", campaigns: "Campaigns", ideas: "Growth Ideas",
+  start: "Start a Campaign", schedule: "Content Schedule", campaigns: "Campaign Library", ideas: "Growth Ideas",
 };
 
 export default function CalendarPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<TabKey>("plan");
+  const [tab, setTab] = useState<TabKey>("start");
   const [loading, setLoading] = useState(true);
 
   const [strategy, setStrategy] = useState<any>(null);
@@ -91,12 +91,17 @@ export default function CalendarPage() {
     <div className="px-6 lg:px-10 py-8 max-w-7xl mx-auto">
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl mb-2">Marketing Planner</h1>
-          <p className="text-muted-foreground">Plan campaigns, schedule content, and grow across every channel.</p>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: "#0E0F10", letterSpacing: "-0.3px", marginBottom: 6 }}>
+            Campaign Planner
+          </h1>
+          <p style={{ fontSize: 14, color: "#6B6860" }}>
+            Plan campaigns, schedule content, and grow across every channel.
+          </p>
         </div>
         <button
           onClick={() => setTab("campaigns")}
-          className="shrink-0 inline-flex items-center gap-1 rounded-md px-4 py-2.5 text-sm font-semibold text-white bg-[#FF6B5C] hover:bg-[#ff5747] transition-colors"
+          className="shrink-0 inline-flex items-center gap-1 text-white transition-colors"
+          style={{ background: "#E85A46", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600 }}
         >
           + Create campaign
         </button>
@@ -121,7 +126,7 @@ export default function CalendarPage() {
         </div>
       </div>
 
-      {tab === "plan" && <PlanTab ctx={ctx} />}
+      {tab === "start" && <StartCampaignTab ctx={ctx} />}
       {tab === "schedule" && <ScheduleTab ctx={ctx} />}
       {tab === "campaigns" && <CampaignsTab ctx={ctx} />}
       {tab === "ideas" && <IdeasTab ctx={ctx} />}
