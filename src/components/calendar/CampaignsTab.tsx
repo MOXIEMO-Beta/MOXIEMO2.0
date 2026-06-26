@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -269,7 +269,13 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {visibleCampaigns.map((c: any) => (
-            <CampaignLibraryCard key={c.id} c={c} onOpen={() => setOpenDetail(c)} onChanged={() => void refresh()} />
+            <CampaignLibraryCard
+              key={c.id}
+              c={c}
+              onOpen={() => setOpenDetail(c)}
+              onChanged={() => void refresh()}
+              openCampaign={openCampaign}
+            />
           ))}
         </div>
       )}
@@ -292,8 +298,7 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
   );
 }
 
-function CampaignLibraryCard({ c, onOpen, onChanged }: { c: any; onOpen: () => void; onChanged: () => void }) {
-  const { openCampaign } = (useCalendarLibraryCtx() as any) || {};
+function CampaignLibraryCard({ c, onOpen, onChanged, openCampaign }: { c: any; onOpen: () => void; onChanged: () => void; openCampaign?: (seed?: string) => void }) {
   const color = c.color || "#E85A46";
   const pillars: string[] = Array.isArray(c.pillars) ? c.pillars : [];
   const [menuOpen, setMenuOpen] = useState(false);
@@ -487,9 +492,7 @@ function MenuRow({ children, onClick, danger }: { children: React.ReactNode; onC
   );
 }
 
-// Lightweight context hook to access openCampaign without prop-drilling
-const CalendarLibraryCtx = (typeof window !== "undefined" ? ((window as any).__moxiemoCalCtx ||= {}) : {}) as { current?: any };
-function useCalendarLibraryCtx() { return CalendarLibraryCtx.current; }
+
 
 function CampaignCard({ c, ctx, onOpen, onChanged }: any) {
   const counts = campaignSlotCounts(c);
