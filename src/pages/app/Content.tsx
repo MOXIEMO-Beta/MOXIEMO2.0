@@ -1052,20 +1052,7 @@ export default function Content() {
                 </div>
               </Card>
             </div>
-          ) : (
-            <div
-              className="flex flex-col items-center justify-center text-center"
-              style={{ border: "1.5px dashed #ECEAE5", borderRadius: 14, padding: 40, minHeight: 320 }}
-            >
-              <Sparkles style={{ width: 32, height: 32, color: "#ECEAE5" }} />
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#15171C", marginTop: 16 }}>
-                Your content will appear here
-              </div>
-              <p style={{ fontSize: 13, color: "#9A9896", marginTop: 6, maxWidth: 320 }}>
-                Fill in the idea, pick a pillar and platform, then hit generate.
-              </p>
-            </div>
-          )}
+          ) : null}
           </div>
           </div>
         </TabsContent>
