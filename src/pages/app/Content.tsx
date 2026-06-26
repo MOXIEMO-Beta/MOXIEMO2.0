@@ -435,6 +435,8 @@ export default function Content() {
     ? `What would you like to write today, ${fname}?`
     : "What would you like to write today?";
 
+  const [tab, setTab] = useState<string>("generate");
+
   async function runGeneration(opts: { topic: string; platform: string; contentType: string; pillar: string | null }) {
     const augmentedTopic = opts.pillar
       ? `${opts.topic}\n\n[Angle this through my content pillar: ${opts.pillar}]`
@@ -688,42 +690,43 @@ export default function Content() {
   const nearLimit = limit !== null && charCount >= limit * 0.85;
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="font-display text-4xl md:text-5xl tracking-tight mb-3 leading-[1.1]">
-          {greeting}
+    <div className="px-6 lg:px-10 py-6 max-w-6xl mx-auto">
+      <div className="mb-5">
+        <h1 style={{ fontSize: 22, fontWeight: 600, color: "#15171C", lineHeight: 1.2, margin: 0 }}>
+          Content
         </h1>
-        <p className="text-base text-muted-foreground">
+        <p style={{ fontSize: 13, color: "#9A9896", marginTop: 4 }}>
           Your strategy is loaded. Just bring the idea.
         </p>
       </div>
 
-      <Tabs defaultValue="generate" className="w-full">
-        <TabsList className="bg-foreground h-auto w-fit mb-6 flex flex-wrap justify-start gap-1 rounded-[12px] p-[6px]">
-          <TabsTrigger
-            value="generate"
-            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
-          >
-            Generate
-          </TabsTrigger>
-          <TabsTrigger
-            value="queue"
-            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
-          >
-            Queue {queued.length > 0 && <span className="ml-2 text-xs text-muted-foreground">({queued.length})</span>}
-          </TabsTrigger>
-          <TabsTrigger
-            value="drafts"
-            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
-          >
-            Drafts {drafts.length > 0 && <span className="ml-2 text-xs text-muted-foreground">({drafts.length})</span>}
-          </TabsTrigger>
-          <TabsTrigger
-            value="repurpose"
-            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
-          >
-            Repurpose
-          </TabsTrigger>
+      <Tabs value={tab} onValueChange={setTab} className="w-full">
+        <TabsList
+          className="bg-transparent p-0 h-auto w-full rounded-none flex justify-start mb-6"
+          style={{ borderBottom: "1px solid #ECEAE5", gap: 32 }}
+        >
+          {[
+            { v: "generate", label: "Generate" },
+            { v: "queue", label: `Queue${queued.length > 0 ? ` (${queued.length})` : ""}` },
+            { v: "drafts", label: `Drafts${drafts.length > 0 ? ` (${drafts.length})` : ""}` },
+            { v: "repurpose", label: "Repurpose" },
+          ].map((t) => (
+            <TabsTrigger
+              key={t.v}
+              value={t.v}
+              className="rounded-none bg-transparent shadow-none data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0"
+              style={{
+                padding: "12px 0",
+                marginBottom: -1,
+                fontSize: 14,
+                fontWeight: 500,
+                color: tab === t.v ? "#15171C" : "#9A9896",
+                borderBottom: tab === t.v ? "2px solid #FF6B5C" : "2px solid transparent",
+              }}
+            >
+              {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         {/* GENERATE */}
