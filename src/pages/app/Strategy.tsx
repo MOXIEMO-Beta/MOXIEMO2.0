@@ -235,7 +235,7 @@ function OverviewTab() {
   ];
 
   return (
-    <div className="space-y-6 mt-0 report-page mx-auto" style={{ pageBreakAfter: "always", maxWidth: 1100 }}>
+    <div className="space-y-6 mt-0 report-page mx-auto" style={{ pageBreakAfter: "always" }}>
       {/* Top band: Brand Archetype + Brand Positioning quadrant */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {/* Brand archetype card (left) */}
@@ -971,7 +971,7 @@ function StrategyContentInner({
   };
 
   return (
-    <div className="moxie-strategy-page px-6 lg:px-10 py-8 max-w-[1100px] mx-auto">
+    <div className="moxie-strategy-page px-6 lg:px-10 py-8 mx-auto" style={{ width: "100%", maxWidth: 948 }}>
       <StrategyHeader />
       <div id="moxie-strategy-report">
       {!strengthDismissed && (
