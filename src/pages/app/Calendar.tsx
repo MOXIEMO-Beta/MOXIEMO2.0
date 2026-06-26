@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import ScheduleTab from "@/components/calendar/ScheduleTab";
 import CampaignsTab from "@/components/calendar/CampaignsTab";
 import IdeasTab from "@/components/calendar/IdeasTab";
-import StartCampaignTab from "@/components/calendar/StartCampaignTab";
+import StartCampaignTab, { CampaignWizardModal } from "@/components/calendar/StartCampaignTab";
 
 const TABS = ["start", "schedule", "campaigns", "ideas"] as const;
 type TabKey = (typeof TABS)[number];
@@ -33,6 +33,18 @@ export default function CalendarPage() {
   // Sub-state to allow Plan -> Schedule navigation with a date filter
   const [scheduleAnchor, setScheduleAnchor] = useState<Date | null>(null);
   const [campaignSeed, setCampaignSeed] = useState<any>(null);
+
+  // Global 3-step campaign wizard
+  const [campaignWizardOpen, setCampaignWizardOpen] = useState(false);
+  const [campaignWizardSeed, setCampaignWizardSeed] = useState<string>("");
+  const openCampaign = useCallback((seedTitle?: string) => {
+    setCampaignWizardSeed(seedTitle ?? "");
+    setCampaignWizardOpen(true);
+  }, []);
+  const closeCampaign = useCallback(() => {
+    setCampaignWizardOpen(false);
+    setCampaignWizardSeed("");
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!user) return;
@@ -85,7 +97,8 @@ export default function CalendarPage() {
     user, navigate,
     setTab, setScheduleAnchor, setCampaignSeed,
     scheduleAnchor, campaignSeed,
-  }), [strategy, socialPosts, contentItems, emailSends, campaigns, activeCampaigns, activeExecutionItems, socialConnections, subscribers, ideas, loading, refresh, user, navigate, scheduleAnchor, campaignSeed]);
+    openCampaign,
+  }), [strategy, socialPosts, contentItems, emailSends, campaigns, activeCampaigns, activeExecutionItems, socialConnections, subscribers, ideas, loading, refresh, user, navigate, scheduleAnchor, campaignSeed, openCampaign]);
 
   return (
     <div className="px-6 lg:px-10 py-8 max-w-7xl mx-auto">
@@ -99,7 +112,7 @@ export default function CalendarPage() {
           </p>
         </div>
         <button
-          onClick={() => setTab("campaigns")}
+          onClick={() => openCampaign()}
           className="shrink-0 inline-flex items-center gap-1 text-white transition-colors"
           style={{ background: "#E85A46", borderRadius: 8, padding: "10px 18px", fontSize: 13, fontWeight: 600 }}
         >
@@ -130,6 +143,20 @@ export default function CalendarPage() {
       {tab === "schedule" && <ScheduleTab ctx={ctx} />}
       {tab === "campaigns" && <CampaignsTab ctx={ctx} />}
       {tab === "ideas" && <IdeasTab ctx={ctx} />}
+
+      {campaignWizardOpen && (
+        <CampaignWizardModal
+          strategy={strategy}
+          seedTitle={campaignWizardSeed}
+          user={user}
+          onClose={closeCampaign}
+          onCreated={() => {
+            closeCampaign();
+            setTab("campaigns");
+            void refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
