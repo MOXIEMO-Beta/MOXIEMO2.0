@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import PlanTab from "@/components/calendar/PlanTab";
 import ScheduleTab from "@/components/calendar/ScheduleTab";
 import CampaignsTab from "@/components/calendar/CampaignsTab";
 import IdeasTab from "@/components/calendar/IdeasTab";
