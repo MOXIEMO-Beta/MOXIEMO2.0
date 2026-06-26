@@ -741,7 +741,13 @@ export default function Content() {
               </Link>
             </Card>
           )}
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(340px,40%)_1fr] gap-6 items-start">
+          <div
+            className={
+              generated && lockedMeta
+                ? "grid grid-cols-1 lg:grid-cols-[minmax(340px,40%)_1fr] gap-6 items-start"
+                : "max-w-[780px] mx-auto"
+            }
+          >
           <Card
             ref={generateFormRef}
             className="space-y-5 shadow-none"
@@ -757,7 +763,7 @@ export default function Content() {
               </button>
             )}
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#E85A46" }} className="uppercase mb-1">STEP 1</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9A9896" }} className="uppercase mb-1">STEP 1 — WHAT'S THE IDEA?</div>
               <label className="block mb-1" style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }}>
                 {platform === "Profile Bio"
                   ? "Anything specific to include or emphasise? (optional)"
@@ -787,8 +793,7 @@ export default function Content() {
 
             {pillars.length > 0 && (
               <div style={{ borderTop: "1px solid #ECEAE5", paddingTop: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#E85A46" }} className="uppercase mb-1">STEP 2</div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#15171C", marginBottom: 10 }}>Anchor to a content pillar →</div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9A9896" }} className="uppercase mb-2">STEP 2 — ANCHOR TO A CONTENT PILLAR →</div>
                 <PillarChips
                   pillars={pillars}
                   activePillar={activePillar}
@@ -799,8 +804,7 @@ export default function Content() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ borderTop: "1px solid #ECEAE5", paddingTop: 16 }}>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#E85A46" }} className="uppercase mb-1">STEP 3</div>
-                <label className="block mb-2" style={{ fontSize: 13, fontWeight: 600, color: "#15171C" }}>Platform</label>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9A9896" }} className="uppercase mb-2">STEP 3 — PLATFORM</div>
                 <Select
                   value={platform}
                   onValueChange={(v) => {
@@ -850,8 +854,7 @@ export default function Content() {
                 </Select>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#E85A46" }} className="uppercase mb-1">STEP 4</div>
-                <label className="block mb-2" style={{ fontSize: 13, fontWeight: 600, color: "#15171C" }}>Content type</label>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9A9896" }} className="uppercase mb-2">STEP 4 — CONTENT TYPE</div>
                 <Select value={contentType} onValueChange={setContentType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
