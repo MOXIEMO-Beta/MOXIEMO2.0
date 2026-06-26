@@ -339,6 +339,7 @@ export type Database = {
           name: string
           notes: string | null
           pillars: string[] | null
+          plan: Json | null
           start_date: string | null
           status: string | null
           theme: string | null
@@ -358,6 +359,7 @@ export type Database = {
           name: string
           notes?: string | null
           pillars?: string[] | null
+          plan?: Json | null
           start_date?: string | null
           status?: string | null
           theme?: string | null
@@ -377,6 +379,7 @@ export type Database = {
           name?: string
           notes?: string | null
           pillars?: string[] | null
+          plan?: Json | null
           start_date?: string | null
           status?: string | null
           theme?: string | null
