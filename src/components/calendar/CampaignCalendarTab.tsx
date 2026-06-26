@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Copy, Save, Calendar as CalendarIcon, Send, RefreshCw, Check } from "lucide-react";
 import { startOfWeek, addDays, sameDay, ymd } from "./helpers";
 import { cn } from "@/lib/utils";
 
-const DAY_OFFSETS: Record<string, number> = {
-  monday: 0, tuesday: 1, wednesday: 2, thursday: 3,
-  friday: 4, saturday: 5, sunday: 6,
+// Day-of-week index: Sun=0, Mon=1, ..., Sat=6
+const TASK_DAY_DOW: Record<string, number> = {
+  sunday: 0, monday: 1, tuesday: 2, wednesday: 3,
+  thursday: 4, friday: 5, saturday: 6,
 };
 
 function platformKey(p: string | undefined | null): string {
@@ -20,12 +20,30 @@ function platformKey(p: string | undefined | null): string {
   return "default";
 }
 
-const PLATFORM_STYLE: Record<string, { bg: string; color: string; label: string }> = {
-  linkedin: { bg: "#E8F0FB", color: "#0A66C2", label: "LinkedIn" },
-  email:    { bg: "#FEF1EE", color: "#E85A46", label: "Email" },
-  instagram:{ bg: "#FCE7F3", color: "#C13584", label: "Instagram" },
-  facebook: { bg: "#EFF6FF", color: "#1877F2", label: "Facebook" },
-  default:  { bg: "#F0EFEC", color: "#6B6860", label: "Content" },
+const PLATFORM_STYLE: Record<string, { color: string; label: string }> = {
+  linkedin: { color: "#0A66C2", label: "LinkedIn" },
+  email:    { color: "#E85A46", label: "Email" },
+  instagram:{ color: "#C13584", label: "Instagram" },
+  facebook: { color: "#1877F2", label: "Facebook" },
+  default:  { color: "#9A9896", label: "Content" },
+};
+
+// Map platform key to the contentType / platform value the generate-content
+// edge function expects.
+const PLATFORM_TO_CT: Record<string, { platform: string; contentType: string }> = {
+  linkedin:  { platform: "LinkedIn Post",       contentType: "LinkedIn Post" },
+  email:     { platform: "Newsletter Section",  contentType: "Newsletter Section" },
+  instagram: { platform: "Instagram Caption",   contentType: "Instagram Caption" },
+  facebook:  { platform: "Facebook Post",       contentType: "Facebook Post" },
+  default:   { platform: "LinkedIn Post",       contentType: "LinkedIn Post" },
+};
+
+const PLATFORM_LENGTH_HINT: Record<string, string> = {
+  linkedin:  "Targeting 150–200 words — optimal for LinkedIn reach and saves",
+  instagram: "Targeting 125 char hook + 300 char body — hook must land before 'more' cutoff",
+  email:     "Targeting 200–350 words — one topic, one CTA, scannable",
+  facebook:  "Targeting 40–80 words — concise posts get 3× the reach on Facebook",
+  default:   "Targeting optimal length for this platform",
 };
 
 type TaskItem = {
@@ -38,15 +56,22 @@ type TaskItem = {
   campaignId: string;
   campaignName: string;
   campaignColor: string;
+  campaignGoal: string;
+  campaignPillars: string[];
+  savedContent: string | null;
+  savedAt: string | null;
+  scheduledAt: string | null;
+  status: string | null;
 };
 
 export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
-  const { setTab, navigate } = ctx;
+  const { setTab, strategy } = ctx;
   const { user } = useAuth();
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [hiddenIds, setHiddenIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [openTask, setOpenTask] = useState<TaskItem | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -55,7 +80,7 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
       setLoading(true);
       const { data } = await supabase
         .from("campaigns")
-        .select("id, name, color, start_date, status, plan")
+        .select("id, name, color, start_date, status, plan, goals, pillars")
         .eq("user_id", user.id)
         .in("status", ["active", "paused"]);
       if (!cancel) {
@@ -71,13 +96,16 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
     for (const c of campaigns) {
       if (!c.start_date || !c.plan) continue;
       const weeks = Array.isArray(c.plan?.weeks) ? c.plan.weeks : [];
-      const startWeekMonday = startOfWeek(new Date(c.start_date));
+      const startDate = new Date(c.start_date + "T00:00:00");
       weeks.forEach((wk: any, wIdx: number) => {
-        const weekMonday = addDays(startWeekMonday, wIdx * 7);
+        const weekBase = addDays(startDate, wIdx * 7);
+        const baseDow = weekBase.getDay(); // 0=Sun..6=Sat
         const tasks = Array.isArray(wk?.tasks) ? wk.tasks : [];
         tasks.forEach((t: any) => {
-          const off = DAY_OFFSETS[(t?.day || "").toLowerCase()] ?? 0;
-          const d = addDays(weekMonday, off);
+          const taskDow = TASK_DAY_DOW[(t?.day || "").toLowerCase()] ?? baseDow;
+          let off = taskDow - baseDow;
+          if (off < 0) off += 7;
+          const d = addDays(weekBase, off);
           out.push({
             date: ymd(d),
             day: t?.day ?? "",
@@ -88,6 +116,12 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
             campaignId: c.id,
             campaignName: c.name,
             campaignColor: c.color || "#E85A46",
+            campaignGoal: c.goals ?? "",
+            campaignPillars: Array.isArray(c.pillars) ? c.pillars : [],
+            savedContent: t?.savedContent ?? null,
+            savedAt: t?.savedAt ?? null,
+            scheduledAt: t?.scheduledAt ?? null,
+            status: t?.status ?? null,
           });
         });
       });
@@ -124,6 +158,33 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
       if (n.has(id)) n.delete(id); else n.add(id);
       return n;
     });
+  }
+
+  // Apply a task update (returned by the modal) back into local campaign state
+  // so the chip re-renders immediately without refetch.
+  function applyTaskUpdate(updated: TaskItem) {
+    setCampaigns((prev) =>
+      prev.map((c) => {
+        if (c.id !== updated.campaignId) return c;
+        const plan = c.plan ?? {};
+        const weeks = Array.isArray(plan.weeks) ? plan.weeks : [];
+        const newWeeks = weeks.map((wk: any) => {
+          const wkNum = wk?.weekNumber ?? 0;
+          if (wkNum !== updated.weekNumber) return wk;
+          const tasks = Array.isArray(wk.tasks) ? wk.tasks : [];
+          return {
+            ...wk,
+            tasks: tasks.map((t: any) =>
+              (t?.day || "").toLowerCase() === updated.day.toLowerCase()
+                ? { ...t, savedContent: updated.savedContent, savedAt: updated.savedAt, scheduledAt: updated.scheduledAt, status: updated.status }
+                : t
+            ),
+          };
+        });
+        return { ...c, plan: { ...plan, weeks: newWeeks } };
+      })
+    );
+    setOpenTask((cur) => (cur && cur.campaignId === updated.campaignId && cur.weekNumber === updated.weekNumber && cur.day === updated.day ? updated : cur));
   }
 
   return (
@@ -224,37 +285,50 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
                 <div className="flex-1">
                   {shown.map((t, i) => {
                     const style = PLATFORM_STYLE[platformKey(t.platform)];
-                    const txt = t.action.length > 40 ? t.action.slice(0, 40) + "…" : t.action;
+                    const hasSaved = !!t.savedContent;
+                    const isScheduled = !!t.scheduledAt;
+                    const bg = isScheduled ? "#EFF6FF" : hasSaved ? "#F0FDF4" : "#F7F5F1";
                     return (
-                      <Popover key={i}>
-                        <PopoverTrigger asChild>
-                          <button
-                            type="button"
-                            style={{
-                              backgroundColor: style.bg,
-                              color: style.color,
-                              marginBottom: 2,
-                              borderRadius: 4,
-                              padding: "2px 6px",
-                              fontSize: 11,
-                              fontWeight: 500,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              cursor: "pointer",
-                              width: "100%",
-                              textAlign: "left",
-                              display: "block",
-                            }}
-                            title={t.action}
-                          >
-                            {txt}
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-3" align="start">
-                          <TaskDetail task={t} date={d} navigate={navigate} />
-                        </PopoverContent>
-                      </Popover>
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setOpenTask(t)}
+                        title={t.action}
+                        style={{
+                          background: bg,
+                          border: "none",
+                          borderRadius: 4,
+                          padding: "2px 6px",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          fontSize: 11,
+                          fontWeight: 500,
+                          color: "#15171C",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: "100%",
+                          cursor: "pointer",
+                          marginBottom: 2,
+                          width: "100%",
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 6, height: 6, borderRadius: "50%",
+                            background: style.color, flexShrink: 0, display: "inline-block",
+                          }}
+                        />
+                        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, textAlign: "left" }}>
+                          {t.action}
+                        </span>
+                        {isScheduled ? (
+                          <CalendarIcon style={{ width: 11, height: 11, color: "#2563EB", flexShrink: 0 }} />
+                        ) : hasSaved ? (
+                          <span style={{ color: "#16A34A", fontSize: 11, flexShrink: 0 }}>✓</span>
+                        ) : null}
+                      </button>
                     );
                   })}
                   {overflow > 0 && (
@@ -289,43 +363,331 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
           </div>
         )}
       </div>
+
+      {openTask && (
+        <TaskGenerationModal
+          task={openTask}
+          strategy={strategy}
+          onClose={() => setOpenTask(null)}
+          onUpdate={applyTaskUpdate}
+        />
+      )}
     </div>
   );
 }
 
-function TaskDetail({ task, date, navigate }: { task: TaskItem; date: Date; navigate: any }) {
-  const style = PLATFORM_STYLE[platformKey(task.platform)];
-  const dateLabel = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+function formatSavedAt(iso: string | null): string {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  } catch { return ""; }
+}
+
+function wordCount(s: string) {
+  return (s.trim().match(/\S+/g) ?? []).length;
+}
+
+function TaskGenerationModal({
+  task, strategy, onClose, onUpdate,
+}: {
+  task: TaskItem;
+  strategy: any;
+  onClose: () => void;
+  onUpdate: (t: TaskItem) => void;
+}) {
+  const pKey = platformKey(task.platform);
+  const style = PLATFORM_STYLE[pKey];
+  const lengthHint = PLATFORM_LENGTH_HINT[pKey];
+  const ct = PLATFORM_TO_CT[pKey];
+
+  const [content, setContent] = useState<string>(task.savedContent ?? "");
+  const [savedAt, setSavedAt] = useState<string | null>(task.savedAt);
+  const [scheduledAt, setScheduledAt] = useState<string | null>(task.scheduledAt);
+  const [generating, setGenerating] = useState<boolean>(!task.savedContent);
+  const [regenerating, setRegenerating] = useState(false);
+
+  const [copyLabel, setCopyLabel] = useState("Copy");
+  const [saveLabel, setSaveLabel] = useState("Save post");
+  const [saveErr, setSaveErr] = useState(false);
+  const [publishLabel, setPublishLabel] = useState("Publish now");
+
+  const [schedOpen, setSchedOpen] = useState(false);
+  const [schedDate, setSchedDate] = useState<string>(task.date);
+  const [schedTime, setSchedTime] = useState<string>("09:00");
+  const [schedConfirmed, setSchedConfirmed] = useState<string | null>(null);
+
+  const taskDateLabel = (() => {
+    try { return new Date(task.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
+    catch { return task.date; }
+  })();
+
+  async function callGenerate(): Promise<string | null> {
+    const { data, error } = await supabase.functions.invoke("generate-content", {
+      body: {
+        topic: task.action,
+        platform: ct.platform,
+        contentType: ct.contentType,
+        strategy: strategy ?? {},
+        campaign: {
+          name: task.campaignName,
+          goals: task.campaignGoal,
+        },
+        slot: { scheduled_date: task.date, pillar: task.campaignPillars?.[0] ?? null },
+        calendarContext: {
+          title: task.action,
+          pillar: task.campaignPillars?.[0] ?? null,
+          date: task.date,
+        },
+      },
+    });
+    if (error || (data as any)?.error) {
+      console.error("generate-content error", error, data);
+      return null;
+    }
+    return (data as any)?.body ?? null;
+  }
+
+  // Initial auto-generate when no saved content.
+  useEffect(() => {
+    if (task.savedContent) return;
+    let cancel = false;
+    (async () => {
+      const body = await callGenerate();
+      if (cancel) return;
+      setContent(body ?? "Generation failed. Click Regenerate to try again.");
+      setGenerating(false);
+    })();
+    return () => { cancel = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function persistPlan(updates: { savedContent?: string | null; savedAt?: string | null; scheduledAt?: string | null; status?: string | null }) {
+    // Read current plan, patch the right task, write back.
+    const { data: row, error: e1 } = await supabase
+      .from("campaigns").select("plan").eq("id", task.campaignId).maybeSingle();
+    if (e1 || !row) throw e1 ?? new Error("Campaign not found");
+    const plan = (row as any).plan ?? {};
+    const weeks = Array.isArray(plan.weeks) ? plan.weeks : [];
+    const newWeeks = weeks.map((wk: any) => {
+      if ((wk?.weekNumber ?? 0) !== task.weekNumber) return wk;
+      const tasks = Array.isArray(wk.tasks) ? wk.tasks : [];
+      return {
+        ...wk,
+        tasks: tasks.map((t: any) =>
+          (t?.day || "").toLowerCase() === task.day.toLowerCase()
+            ? { ...t, ...updates }
+            : t
+        ),
+      };
+    });
+    const { error: e2 } = await supabase
+      .from("campaigns").update({ plan: { ...plan, weeks: newWeeks } })
+      .eq("id", task.campaignId);
+    if (e2) throw e2;
+  }
+
+  async function handleSave() {
+    setSaveErr(false);
+    const now = new Date().toISOString();
+    try {
+      await persistPlan({ savedContent: content, savedAt: now, status: "draft" });
+      setSavedAt(now);
+      setSaveLabel("Saved ✓");
+      onUpdate({ ...task, savedContent: content, savedAt: now, status: "draft" });
+      setTimeout(() => setSaveLabel("Save post"), 1500);
+    } catch {
+      setSaveErr(true);
+      setSaveLabel("Failed — retry");
+      setTimeout(() => { setSaveLabel("Save post"); setSaveErr(false); }, 2000);
+    }
+  }
+
+  async function handleConfirmSchedule() {
+    const iso = new Date(`${schedDate}T${schedTime}:00`).toISOString();
+    try {
+      await persistPlan({ savedContent: content, savedAt: savedAt ?? new Date().toISOString(), scheduledAt: iso, status: "scheduled" });
+      setScheduledAt(iso);
+      setSchedConfirmed(new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }));
+      onUpdate({ ...task, savedContent: content, savedAt: savedAt ?? new Date().toISOString(), scheduledAt: iso, status: "scheduled" });
+      setTimeout(() => { setSchedConfirmed(null); setSchedOpen(false); }, 2000);
+    } catch {
+      setSchedConfirmed("Failed — try again");
+      setTimeout(() => setSchedConfirmed(null), 2000);
+    }
+  }
+
+  async function handlePublish() {
+    try {
+      await persistPlan({ savedContent: content, savedAt: new Date().toISOString(), status: "published" });
+      onUpdate({ ...task, savedContent: content, savedAt: new Date().toISOString(), status: "published" });
+    } catch { /* visual-only confirmation per spec */ }
+    setPublishLabel("Published!");
+    setTimeout(() => { setPublishLabel("Publish now"); onClose(); }, 2000);
+  }
+
+  async function handleRegenerate() {
+    setRegenerating(true);
+    setContent("");
+    const body = await callGenerate();
+    setContent(body ?? "Generation failed. Click Regenerate to try again.");
+    setRegenerating(false);
+  }
+
+  async function handleCopy() {
+    try { await navigator.clipboard.writeText(content); } catch { /* ignore */ }
+    setCopyLabel("Copied!");
+    setTimeout(() => setCopyLabel("Copy"), 1500);
+  }
+
+  const showSpinner = generating || regenerating;
+
   return (
-    <div className="space-y-2">
-      <div style={{ fontSize: 11, color: "#9A9896" }}>
-        {task.day} · {dateLabel}
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: style.color }} />
-        <span style={{ fontSize: 12, color: style.color, fontWeight: 600 }}>{style.label}</span>
-      </div>
-      <div style={{ fontSize: 14, fontWeight: 600, color: "#0E0F10", lineHeight: 1.35 }}>
-        {task.action}
-      </div>
-      {task.contentNote && (
-        <div style={{ fontSize: 13, color: "#9A9896", fontStyle: "italic" }}>
-          {task.contentNote}
-        </div>
-      )}
-      <div style={{ fontSize: 11, color: "#9A9896" }}>{task.campaignName}</div>
-      <button
-        type="button"
-        onClick={() => {
-          const params = new URLSearchParams();
-          params.set("tab", "generate");
-          params.set("prompt", task.action);
-          navigate(`/app/content?${params.toString()}`);
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed", inset: 0, background: "rgba(14,15,16,0.48)",
+        zIndex: 60, display: "flex", alignItems: "center", justifyContent: "center", padding: 16,
+      }}
+    >
+      <style>{`@keyframes mox-spin { to { transform: rotate(360deg); } }`}</style>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff", borderRadius: 14, width: 520, maxWidth: "94vw",
+          border: "0.5px solid #ECEAE5", overflow: "hidden",
         }}
-        style={{ color: "#E85A46", fontSize: 13, fontWeight: 600 }}
       >
-        Generate content →
-      </button>
+        {/* Header */}
+        <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #ECEAE5", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5, color: style.color, fontSize: 11, fontWeight: 500 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: style.color, display: "inline-block" }} />
+              {style.label}
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 500, color: "#15171C", lineHeight: 1.4, marginBottom: 2 }}>
+              {task.action}
+            </div>
+            <div style={{ fontSize: 11, color: "#9A9896" }}>
+              {task.campaignName} · {taskDateLabel}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: "#9A9896", cursor: "pointer", padding: 0, marginLeft: 12 }}>
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Content area */}
+        <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #ECEAE5", maxHeight: 220, overflowY: "auto" }}>
+          {showSpinner ? (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "44px 20px" }}>
+              <div style={{ width: 32, height: 32, border: "2.5px solid #ECEAE5", borderTopColor: "#E85A46", borderRadius: "50%", animation: "mox-spin 0.8s linear infinite" }} />
+              <div style={{ fontSize: 13, color: "#9A9896" }}>
+                {regenerating ? "Generating new version…" : "Generating with your strategy and voice…"}
+              </div>
+              <div style={{ fontSize: 11, color: "#9A9896", textAlign: "center" }}>{lengthHint}</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#9A9896" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", display: "inline-block" }} />
+                  Generated
+                </div>
+                <div style={{ fontSize: 11, color: "#9A9896" }}>{wordCount(content)} words</div>
+              </div>
+              <div style={{ fontSize: 13, color: "#15171C", lineHeight: 1.65, whiteSpace: "pre-line" }}>
+                {content}
+              </div>
+              {task.savedContent && savedAt && (
+                <div style={{ fontSize: 11, color: "#9A9896", fontStyle: "italic", marginTop: 8 }}>
+                  Saved {formatSavedAt(savedAt)}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Context strip */}
+        <div style={{ padding: "8px 20px", background: "#F7F5F1", borderBottom: "0.5px solid #ECEAE5", fontSize: 11, color: "#9A9896" }}>
+          {task.campaignName} · {style.label}
+          {task.campaignPillars?.length ? ` · ${task.campaignPillars.join(", ")}` : ""}
+        </div>
+
+        {/* Actions */}
+        <div style={{ padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", gap: 8 }}>
+            <OutlinePill onClick={handleCopy} icon={<Copy size={12} />} label={copyLabel} />
+            <OutlinePill onClick={handleSave} icon={<Save size={12} />} label={saveLabel} danger={saveErr} disabled={showSpinner || !content} />
+            <OutlinePill onClick={() => setSchedOpen((v) => !v)} icon={<CalendarIcon size={12} />} label="Schedule" disabled={showSpinner || !content} />
+          </div>
+
+          {schedOpen && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: 10, background: "#F7F5F1", borderRadius: 8 }}>
+              {schedConfirmed ? (
+                <div style={{ fontSize: 12, color: "#15171C" }}>Scheduled for {schedConfirmed}</div>
+              ) : (
+                <>
+                  <input type="date" value={schedDate} onChange={(e) => setSchedDate(e.target.value)}
+                    style={{ fontSize: 12, padding: "6px 8px", border: "1px solid #ECEAE5", borderRadius: 6, background: "#fff" }} />
+                  <input type="time" value={schedTime} onChange={(e) => setSchedTime(e.target.value)}
+                    style={{ fontSize: 12, padding: "6px 8px", border: "1px solid #ECEAE5", borderRadius: 6, background: "#fff" }} />
+                  <button type="button" onClick={handleConfirmSchedule}
+                    style={{ background: "#E85A46", color: "#fff", borderRadius: 20, fontSize: 12, fontWeight: 500, padding: "8px 16px", border: "none", cursor: "pointer" }}>
+                    Confirm schedule
+                  </button>
+                  <button type="button" onClick={() => setSchedOpen(false)}
+                    style={{ background: "none", border: "none", fontSize: 12, color: "#9A9896", cursor: "pointer" }}>
+                    Cancel
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
+          {!schedOpen && (
+            <button type="button" onClick={handlePublish} disabled={showSpinner || !content}
+              style={{ background: "#E85A46", color: "#fff", borderRadius: 20, fontSize: 13, fontWeight: 500, padding: 11, border: "none", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (showSpinner || !content) ? 0.6 : 1 }}>
+              <Send size={14} />
+              {publishLabel}
+            </button>
+          )}
+
+          <button type="button" onClick={handleRegenerate} disabled={showSpinner}
+            style={{ background: "none", border: "none", fontSize: 11, color: "#9A9896", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, width: "100%" }}>
+            <RefreshCw size={12} /> Regenerate
+          </button>
+        </div>
+      </div>
     </div>
+  );
+}
+
+function OutlinePill({ onClick, icon, label, danger, disabled }: { onClick: () => void; icon: React.ReactNode; label: string; danger?: boolean; disabled?: boolean; }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        flex: 1,
+        border: `1px solid ${danger ? "#DC2626" : "#E85A46"}`,
+        borderRadius: 20,
+        background: "transparent",
+        color: danger ? "#DC2626" : "#15171C",
+        fontSize: 12,
+        fontWeight: 500,
+        padding: "8px 10px",
+        cursor: disabled ? "not-allowed" : "pointer",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 5,
+        opacity: disabled ? 0.5 : 1,
+      }}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
