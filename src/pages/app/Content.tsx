@@ -691,19 +691,19 @@ export default function Content() {
 
   return (
     <div className="px-6 lg:px-10 py-6 max-w-6xl mx-auto">
-      <div className="mb-5">
-        <h1 style={{ fontSize: 22, fontWeight: 600, color: "#15171C", lineHeight: 1.2, margin: 0 }}>
-          Content
+      <div className="mb-2">
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: "#0E0F10", lineHeight: 1.2, letterSpacing: "-0.3px", margin: 0 }}>
+          {greeting}
         </h1>
-        <p style={{ fontSize: 13, color: "#9A9896", marginTop: 4 }}>
-          Your strategy is loaded. Just bring the idea.
+        <p style={{ fontSize: 14, color: "#6B6860", marginTop: 6 }}>
+          Bring the idea. MOXIEMO shapes it into content that sounds like you.
         </p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList
           className="bg-transparent p-0 h-auto w-full rounded-none flex justify-start mb-6"
-          style={{ borderBottom: "1px solid #ECEAE5", gap: 32 }}
+          style={{ borderBottom: "1px solid #ECEAE5", gap: 8, marginTop: 16 }}
         >
           {[
             { v: "generate", label: "Generate" },
@@ -716,11 +716,11 @@ export default function Content() {
               value={t.v}
               className="rounded-none bg-transparent shadow-none data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0"
               style={{
-                padding: "12px 0",
+                padding: "10px 16px",
                 marginBottom: -1,
-                fontSize: 14,
-                fontWeight: 500,
-                color: tab === t.v ? "#15171C" : "#9A9896",
+                fontSize: 13,
+                fontWeight: tab === t.v ? 600 : 400,
+                color: tab === t.v ? "#0E0F10" : "#7A7875",
                 borderBottom: tab === t.v ? "2px solid #E85A46" : "2px solid transparent",
               }}
             >
