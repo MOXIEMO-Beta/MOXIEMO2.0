@@ -39,7 +39,7 @@ export default function AppLayout() {
         >
           <div className="flex items-center gap-2.5" style={{ color: "#0E0F10" }}>
             <Icon className="h-4 w-4" />
-            <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: "-0.01em" }}>
+            <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.3px", color: "#0E0F10" }}>
               {current.title}
             </span>
           </div>
