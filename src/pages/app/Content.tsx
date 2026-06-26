@@ -2089,19 +2089,19 @@ function RepurposeTab({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl md:text-3xl tracking-tight mb-2 leading-tight">
+        <h2 style={{ fontSize: 18, fontWeight: 600, color: "#15171C", margin: 0 }}>
           Turn one piece of content into many.
         </h2>
-        <p className="text-sm text-muted-foreground max-w-2xl">
+        <p style={{ fontSize: 13, color: "#9A9896", marginTop: 6, maxWidth: 640 }}>
           Upload a podcast transcript, webinar recording, or long-form article. MOXIEMO extracts the best moments and turns them into content across every platform.
         </p>
       </div>
 
       {/* Step 1 — Upload */}
-      <Card className="p-6 border-border shadow-soft space-y-3">
+      <Card className="shadow-none space-y-3" style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
         <div>
-          <div className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Step 1</div>
-          <label className="text-sm font-medium text-foreground block">Upload your transcript</label>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 1</div>
+          <label style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }} className="block">Upload your transcript</label>
         </div>
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -2114,9 +2114,13 @@ function RepurposeTab({
           onClick={() => !file && inputRef.current?.click()}
           role="button"
           tabIndex={0}
-          className={`cursor-pointer rounded-xl px-6 py-8 text-center transition-colors ${
-            dragOver ? "border-accent bg-accent-soft/30" : "border-border bg-muted/20 hover:bg-muted/40"
-          } border-2 border-dashed`}
+          className="cursor-pointer text-center transition-colors"
+          style={{
+            border: "1.5px dashed #ECEAE5",
+            borderRadius: 14,
+            padding: 32,
+            background: dragOver ? "#FFF5F4" : "transparent",
+          }}
         >
           <input
             ref={inputRef}
@@ -2174,11 +2178,11 @@ function RepurposeTab({
 
       {/* Pillar selector (optional) */}
       {repurposePillars.length > 0 && (
-        <Card className="p-6 border-border shadow-soft space-y-3">
-          <div className="text-xs font-medium uppercase tracking-wider text-accent">
-            Anchor to a content pillar (optional)
+        <Card className="shadow-none space-y-3" style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase">
+            ANCHOR TO A CONTENT PILLAR (OPTIONAL)
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+          <div className="flex flex-wrap gap-2">
             {repurposePillars.map((p) => {
               const active = activePillar === p;
               return (
@@ -2186,29 +2190,32 @@ function RepurposeTab({
                   key={p}
                   type="button"
                   onClick={() => setActivePillar(active ? null : p)}
-                  className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
-                    active
-                      ? "border-accent bg-accent text-accent-foreground"
-                      : "border-border text-foreground hover:border-foreground/30"
-                  }`}
+                  className="font-medium rounded-full border transition-colors"
+                  style={{
+                    padding: "6px 14px",
+                    fontSize: 12,
+                    background: active ? "#FF6B5C" : "#FFFFFF",
+                    color: active ? "#FFFFFF" : "#FF6B5C",
+                    borderColor: "#FF6B5C",
+                  }}
                 >
                   {p}
                 </button>
               );
             })}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p style={{ fontSize: 11, color: "#9A9896" }}>
             When selected, MOXIEMO frames extracted insights through this pillar and your brand positioning.
           </p>
         </Card>
       )}
 
       {/* Step 2 — Select */}
-      <Card className="p-6 border-border shadow-soft space-y-3">
+      <Card className="shadow-none space-y-3" style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Step 2</div>
-            <label className="text-sm font-medium text-foreground block">Select the type of content you want to generate</label>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 2</div>
+            <label style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }} className="block">Select the type of content you want to generate</label>
           </div>
           <button
             type="button"
@@ -2224,17 +2231,22 @@ function RepurposeTab({
             return (
               <label
                 key={label}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors text-sm ${
-                  checked
-                    ? "border-accent bg-accent-soft/30 text-foreground"
-                    : "border-border bg-background text-foreground hover:border-foreground/30"
-                }`}
+                className="flex items-center gap-2.5 cursor-pointer transition-colors"
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: `1px solid ${checked ? "#FF6B5C" : "#ECEAE5"}`,
+                  background: checked ? "#FFF5F4" : "#FFFFFF",
+                  color: "#15171C",
+                  fontSize: 13,
+                }}
               >
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => toggleSelect(label)}
                   className="h-4 w-4 accent-accent shrink-0"
+                  style={{ accentColor: "#FF6B5C" }}
                 />
                 <span>{label}</span>
               </label>
@@ -2248,7 +2260,8 @@ function RepurposeTab({
         <Button
           onClick={handleGenerate}
           disabled={generating || extracting || !transcript || selected.size === 0}
-          className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg w-full sm:w-auto"
+          className="hover:opacity-90 w-full"
+          style={{ background: "#FF6B5C", color: "#FFFFFF", height: 44, borderRadius: 8, fontSize: 14, fontWeight: 600 }}
         >
           {generating ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Repurposing...</>
