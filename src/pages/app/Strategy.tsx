@@ -279,34 +279,34 @@ function OverviewTab() {
             />
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="p-4 rounded-lg bg-accent-soft/40">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">Brands</div>
-              <div className="text-sm">
+          <div style={{ display: "flex", flexDirection: "column", gap: 0, marginTop: 20 }}>
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 16, padding: "14px 0" }}>
+              <div className="text-accent" style={{ minWidth: 140, flexShrink: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Brands</div>
+              <div className="text-sm" style={{ flex: 1 }}>
                 <EditableList
                   items={archetype?.exampleBrands || []}
                   onChange={(next) => setEnhanced(["brandArchetype", "exampleBrands"], next)}
                   renderItem={(it, i) => (
-                    <p key={i} className="mb-2 last:mb-0">{it}</p>
+                    <p key={i} className="mb-1 last:mb-0">{it}</p>
                   )}
                 />
               </div>
             </div>
-            <div className="p-4 rounded-lg bg-accent-soft/40">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">Values</div>
-              <div className="text-sm">
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 16, padding: "14px 0", borderTop: "1px solid rgba(0,0,0,0.08)" }}>
+              <div className="text-accent" style={{ minWidth: 140, flexShrink: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Values</div>
+              <div className="text-sm" style={{ flex: 1 }}>
                 <EditableList
                   items={archetype?.coreValues || []}
                   onChange={(next) => setEnhanced(["brandArchetype", "coreValues"], next)}
                   renderItem={(it, i) => (
-                    <p key={i} className="mb-2 last:mb-0">{it}</p>
+                    <p key={i} className="mb-1 last:mb-0">{it}</p>
                   )}
                 />
               </div>
             </div>
-            <div className="p-4 rounded-lg bg-accent-soft/40">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">Content approach</div>
-              <p className="text-sm">
+            <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 16, padding: "14px 0", borderTop: "1px solid rgba(0,0,0,0.08)" }}>
+              <div className="text-accent" style={{ minWidth: 140, flexShrink: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Content approach</div>
+              <p className="text-sm" style={{ flex: 1, margin: 0 }}>
                 <EditableField
                   value={archetype?.contentApproach}
                   onChange={(v) => setEnhanced(["brandArchetype", "contentApproach"], v)}
