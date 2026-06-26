@@ -293,8 +293,59 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
 }
 
 function CampaignLibraryCard({ c, onOpen, onChanged }: { c: any; onOpen: () => void; onChanged: () => void }) {
+  const { openCampaign } = (useCalendarLibraryCtx() as any) || {};
   const color = c.color || "#E85A46";
   const pillars: string[] = Array.isArray(c.pillars) ? c.pillars : [];
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onDoc = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+        setConfirmDelete(false);
+      }
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [menuOpen]);
+
+  async function archiveCampaign() {
+    setMenuOpen(false);
+    const { error } = await supabase.from("campaigns").update({ status: "archived", archived: true }).eq("id", c.id);
+    if (error) { toast.error(error.message); return; }
+    onChanged();
+    let undone = false;
+    toast("Campaign archived.", {
+      duration: 4000,
+      action: {
+        label: "Undo",
+        onClick: async () => {
+          undone = true;
+          const { error: e2 } = await supabase
+            .from("campaigns")
+            .update({ status: c.status || "active", archived: false })
+            .eq("id", c.id);
+          if (e2) { toast.error(e2.message); return; }
+          onChanged();
+        },
+      },
+    });
+    void undone;
+  }
+
+  async function deleteCampaign() {
+    await supabase.from("campaign_execution_items").delete().eq("campaign_id", c.id);
+    const { error } = await supabase.from("campaigns").delete().eq("id", c.id);
+    if (error) { toast.error(error.message); return; }
+    setConfirmDelete(false);
+    setMenuOpen(false);
+    onChanged();
+    toast("Campaign deleted.");
+  }
+
   const fmtDate = (d: any) => {
     if (!d) return "";
     try {
@@ -326,6 +377,7 @@ function CampaignLibraryCard({ c, onOpen, onChanged }: { c: any; onOpen: () => v
         display: "flex",
         alignItems: "flex-start",
         gap: 16,
+        position: "relative",
       }}
     >
       <div style={{ width: 28, height: 28, borderRadius: "50%", background: color, flexShrink: 0, marginTop: 2 }} />
@@ -350,7 +402,7 @@ function CampaignLibraryCard({ c, onOpen, onChanged }: { c: any; onOpen: () => v
           </span>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0, position: "relative" }} ref={menuRef}>
         <button
           type="button"
           onClick={onOpen}
@@ -361,14 +413,83 @@ function CampaignLibraryCard({ c, onOpen, onChanged }: { c: any; onOpen: () => v
         <button
           type="button"
           aria-label="More"
+          onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); setConfirmDelete(false); }}
           style={{ background: "transparent", border: "none", color: "#9A9896", cursor: "pointer", padding: 4, lineHeight: 1 }}
         >
           <MoreHorizontal className="w-4 h-4" />
         </button>
+        {menuOpen && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% + 6px)",
+              right: 0,
+              background: "#fff",
+              border: "1px solid #ECEAE5",
+              borderRadius: 10,
+              boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+              minWidth: 200,
+              zIndex: 20,
+              overflow: "hidden",
+            }}
+          >
+            {!confirmDelete ? (
+              <>
+                <MenuRow onClick={() => { setMenuOpen(false); openCampaign?.(c.name); }}>Edit campaign</MenuRow>
+                <div style={{ height: 1, background: "#ECEAE5" }} />
+                <MenuRow onClick={archiveCampaign}>Archive campaign</MenuRow>
+                <MenuRow danger onClick={() => setConfirmDelete(true)}>Delete campaign</MenuRow>
+              </>
+            ) : (
+              <div style={{ padding: 14 }}>
+                <div style={{ fontSize: 13, color: "#15171C", marginBottom: 10 }}>
+                  Delete this campaign? This cannot be undone.
+                </div>
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    style={{ background: "#F0EFEC", color: "#15171C", border: "none", borderRadius: 6, fontSize: 12, padding: "6px 12px", cursor: "pointer" }}
+                  >Cancel</button>
+                  <button
+                    type="button"
+                    onClick={deleteCampaign}
+                    style={{ background: "#DC2626", color: "#fff", border: "none", borderRadius: 6, fontSize: 12, padding: "6px 12px", cursor: "pointer" }}
+                  >Delete</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+function MenuRow({ children, onClick, danger }: { children: React.ReactNode; onClick: () => void; danger?: boolean }) {
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      role="button"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      onClick={onClick}
+      style={{
+        padding: "10px 16px",
+        fontSize: 13,
+        color: danger ? "#DC2626" : "#15171C",
+        background: hover ? (danger ? "#FEF2F2" : "#F7F5F1") : "#fff",
+        cursor: "pointer",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Lightweight context hook to access openCampaign without prop-drilling
+const CalendarLibraryCtx = (typeof window !== "undefined" ? ((window as any).__moxiemoCalCtx ||= {}) : {}) as { current?: any };
+function useCalendarLibraryCtx() { return CalendarLibraryCtx.current; }
 
 function CampaignCard({ c, ctx, onOpen, onChanged }: any) {
   const counts = campaignSlotCounts(c);
