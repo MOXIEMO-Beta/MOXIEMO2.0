@@ -367,22 +367,54 @@ export function CampaignWizardModal({
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("campaigns").insert({
-      user_id: user.id,
-      name: finalName,
-      campaign_type: goalLabel,
-      color,
-      pillars,
-      start_date: startDate,
-      end_date: endDate,
-      goals: finalGoal,
-      status: "active",
-    });
-    setSaving(false);
-    if (error) {
+    const { data: inserted, error } = await supabase
+      .from("campaigns")
+      .insert({
+        user_id: user.id,
+        name: finalName,
+        campaign_type: goalLabel,
+        color,
+        pillars,
+        start_date: startDate,
+        end_date: endDate,
+        goals: finalGoal,
+        status: "active",
+      })
+      .select("id")
+      .single();
+    if (error || !inserted) {
+      setSaving(false);
       setSaveError("Something went wrong saving your campaign. Please try again.");
       return;
     }
+
+    // Generate plan content
+    const ef = (strategy?.enhanced_foundation || {}) as any;
+    const voiceAttributes = Array.isArray(ef.voiceAttributes)
+      ? ef.voiceAttributes.join(", ")
+      : (ef.voiceAttributes || (Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes.join(", ") : ""));
+
+    try {
+      const { data: gen, error: genErr } = await supabase.functions.invoke("generate-campaign-content-plan", {
+        body: {
+          campaignName: finalName,
+          campaignType: goalLabel,
+          campaignGoal: finalGoal,
+          selectedPillars: pillars,
+          startDate,
+          endDate,
+          voiceAttributes,
+        },
+      });
+      if (genErr) throw genErr;
+      if (gen?.plan) {
+        await supabase.from("campaigns").update({ plan: gen.plan }).eq("id", inserted.id);
+      }
+    } catch (e) {
+      console.error("plan generation failed", e);
+      // Save still succeeded; surface a soft warning but proceed.
+    }
+    setSaving(false);
     onCreated?.();
   };
 
@@ -739,8 +771,25 @@ export function CampaignWizardModal({
                   boxShadow: "0 4px 14px rgba(232,90,70,0.35)",
                 }}
               >
-                {saving ? "Saving…" : "✦ Generate My Campaign Plan →"}
+                {saving ? (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 10, justifyContent: "center" }}>
+                    <span
+                      style={{
+                        width: 14,
+                        height: 14,
+                        border: "2px solid rgba(255,255,255,0.4)",
+                        borderTopColor: "#fff",
+                        borderRadius: "50%",
+                        animation: "moxiemo-spin 0.8s linear infinite",
+                      }}
+                    />
+                    Building your campaign plan…
+                  </span>
+                ) : (
+                  "✦ Generate My Campaign Plan →"
+                )}
               </button>
+              <style>{`@keyframes moxiemo-spin{to{transform:rotate(360deg)}}`}</style>
               <div style={{ fontSize: 12, color: PLACEHOLDER, textAlign: "center", marginTop: 8 }}>
                 MOXIEMO will build your 30-day content roadmap based on your goals and strategy.
               </div>
