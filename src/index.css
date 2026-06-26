@@ -5,6 +5,13 @@
 /* MOXIEMO Design System — warm cream + ink + coral. Inspired by monday.com cleanness. */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+/* App shell (post-redesign) — scoped font + tokens for /app pages only. */
+.moxie-app-shell,
+.moxie-app-shell * {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+}
 
 @layer base {
   :root {
