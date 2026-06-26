@@ -338,6 +338,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          pillars: string[] | null
           start_date: string | null
           status: string | null
           theme: string | null
@@ -356,6 +357,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          pillars?: string[] | null
           start_date?: string | null
           status?: string | null
           theme?: string | null
@@ -374,6 +376,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          pillars?: string[] | null
           start_date?: string | null
           status?: string | null
           theme?: string | null
