@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const CORAL = "#E85A46";
 const INK = "#15171C";
@@ -63,15 +64,9 @@ function businessGoalFrom(strategy: any): string {
 }
 
 export default function StartCampaignTab({ ctx }: { ctx: any }) {
-  const { strategy } = ctx;
+  const { strategy, openCampaign } = ctx;
   const [prompt, setPrompt] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [seedTitle, setSeedTitle] = useState<string>("");
-
-  const openModal = (title?: string) => {
-    if (title) setSeedTitle(title);
-    setModalOpen(true);
-  };
+  const openModal = (title?: string) => openCampaign?.(title);
 
   const onChip = (t: Template) => {
     setPrompt(t.prompt);
@@ -304,17 +299,6 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
           })}
         </div>
       </div>
-
-      {modalOpen && (
-        <CampaignWizardModal
-          strategy={strategy}
-          seedTitle={seedTitle}
-          onClose={() => {
-            setModalOpen(false);
-            setSeedTitle("");
-          }}
-        />
-      )}
 
       <style>{`.moxiemo-template-chip:hover{border-color:${CORAL} !important}`}</style>
     </div>
