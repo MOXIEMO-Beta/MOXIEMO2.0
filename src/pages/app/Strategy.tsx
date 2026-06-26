@@ -1045,7 +1045,7 @@ function StrategyContentInner({
         />
       )}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="bg-foreground h-auto w-full mb-6 flex flex-wrap justify-start gap-1 rounded-[12px] p-[6px]">
+        <TabsList className="bg-transparent h-auto w-full mb-7 flex flex-wrap justify-start gap-6 rounded-none p-0 border-b border-[#ECEAE5]">
           {[
             { v: "overview", l: "Overview" },
             { v: "voice", l: "Voice & Brand" },
@@ -1057,7 +1057,7 @@ function StrategyContentInner({
             <TabsTrigger
               key={t.v}
               value={t.v}
-              className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
+              className="relative rounded-none px-0 pb-3 pt-1 text-[13px] font-medium text-[#6B6860] bg-transparent border-b-2 border-transparent transition-colors hover:text-foreground data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:border-[#E85A46] data-[state=active]:shadow-none data-[state=active]:bg-transparent"
             >
               {t.l}
             </TabsTrigger>
