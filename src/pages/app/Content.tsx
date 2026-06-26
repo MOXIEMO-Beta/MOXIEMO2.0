@@ -59,6 +59,7 @@ import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
 import RichTextEditor from "@/components/email/RichTextEditor";
 import LibraryAssetsDrawer from "@/components/social/LibraryAssetsDrawer";
+import ContentCalendarTab from "@/components/content/ContentCalendarTab";
 
 type ContentItem = {
   id: string;
@@ -371,7 +372,7 @@ export default function Content() {
         supabase
           .from("strategies")
           .select(
-            "positioning_statement, ideal_client, pain_point, transformation, voice_attributes, anti_positioning, methodology, primary_channel, content_pillars",
+            "positioning_statement, ideal_client, pain_point, transformation, voice_attributes, anti_positioning, methodology, primary_channel, content_pillars, enhanced_foundation",
           )
           .eq("user_id", user.id)
           .maybeSingle(),
@@ -435,7 +436,7 @@ export default function Content() {
     ? `What would you like to write today, ${fname}?`
     : "What would you like to write today?";
 
-  const [tab, setTab] = useState<string>("generate");
+  const [tab, setTab] = useState<string>("calendar");
 
   async function runGeneration(opts: { topic: string; platform: string; contentType: string; pillar: string | null }) {
     const augmentedTopic = opts.pillar
@@ -706,6 +707,7 @@ export default function Content() {
           style={{ borderBottom: "1px solid #ECEAE5", gap: 8, marginTop: 16 }}
         >
           {[
+            { v: "calendar", label: "Content Calendar" },
             { v: "generate", label: "Generate" },
             { v: "queue", label: `Queue${queued.length > 0 ? ` (${queued.length})` : ""}` },
             { v: "drafts", label: `Drafts${drafts.length > 0 ? ` (${drafts.length})` : ""}` },
@@ -728,6 +730,11 @@ export default function Content() {
             </TabsTrigger>
           ))}
         </TabsList>
+
+        {/* CONTENT CALENDAR */}
+        <TabsContent value="calendar" className="space-y-6">
+          <ContentCalendarTab strategy={strategy} />
+        </TabsContent>
 
         {/* GENERATE */}
         <TabsContent value="generate" className="space-y-6">
