@@ -15,7 +15,6 @@ import { NavLink, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlan } from "@/hooks/usePlan";
 import { GENERATION_LIMIT, PLAN_LABEL } from "@/lib/planConfig";
-import { FeedbackButton } from "./FeedbackButton";
 import wordmark from "@/assets/moxiemo-wordmark.png";
 
 export type AppNavItem = {
@@ -246,7 +245,20 @@ export function AppSidebar() {
           gap: 6,
         }}
       >
-        <FeedbackButton />
+        <a
+          href="mailto:hello@buildwithmoxie.co?subject=MOXIEMO%20feedback"
+          style={{
+            background: "transparent",
+            border: "none",
+            padding: "6px 4px",
+            textAlign: "left",
+            fontSize: 12,
+            color: "rgba(0,0,0,0.45)",
+            textDecoration: "none",
+          }}
+        >
+          Send feedback
+        </a>
         <button
           type="button"
           onClick={() => supabase.auth.signOut()}
