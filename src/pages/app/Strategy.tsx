@@ -971,7 +971,7 @@ function StrategyContentInner({
   };
 
   return (
-    <div className="moxie-strategy-page px-6 lg:px-10 py-8 max-w-6xl mx-auto">
+    <div className="moxie-strategy-page px-6 lg:px-10 py-8 max-w-[1100px] mx-auto">
       <StrategyHeader />
       <div id="moxie-strategy-report">
       {!strengthDismissed && (
@@ -1006,14 +1006,16 @@ function StrategyContentInner({
           <div id="strategy-export-overview"><OverviewTab /></div>
         </TabsContent>
         <TabsContent value="voice" className="mt-0 data-[state=inactive]:hidden" forceMount>
-          <div id="strategy-export-voice"><VoiceTab /></div>
+          <div id="strategy-export-voice">
+            <VoiceTab />
+            <CompetitiveAndMessagingSections />
+          </div>
         </TabsContent>
         <TabsContent value="content" className="mt-0"><ContentTab /></TabsContent>
         <TabsContent value="channels" className="mt-0"><ChannelsTab /></TabsContent>
         <TabsContent value="metrics" className="mt-0"><MetricsTab /></TabsContent>
         <TabsContent value="action" className="mt-0"><ActionPlanTab /></TabsContent>
       </Tabs>
-      <CompetitiveAndMessagingSections />
       </div>
     </div>
   );
