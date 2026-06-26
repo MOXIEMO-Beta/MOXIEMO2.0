@@ -16,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlan } from "@/hooks/usePlan";
 import { GENERATION_LIMIT, PLAN_LABEL } from "@/lib/planConfig";
 import wordmark from "@/assets/moxiemo-wordmark.png";
+import { FeedbackButton } from "./FeedbackButton";
 
 export type AppNavItem = {
   title: string;
@@ -245,20 +246,9 @@ export function AppSidebar() {
           gap: 6,
         }}
       >
-        <a
-          href="mailto:hello@buildwithmoxie.co?subject=MOXIEMO%20feedback"
-          style={{
-            background: "transparent",
-            border: "none",
-            padding: "6px 4px",
-            textAlign: "left",
-            fontSize: 12,
-            color: "rgba(0,0,0,0.45)",
-            textDecoration: "none",
-          }}
-        >
-          Send feedback
-        </a>
+        <div className="moxie-app-feedback-slot">
+          <FeedbackButton />
+        </div>
         <button
           type="button"
           onClick={() => supabase.auth.signOut()}
