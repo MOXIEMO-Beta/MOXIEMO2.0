@@ -206,7 +206,7 @@ const META_CMO = "Paid Meta campaigns perform best when you test 2-3 creative va
 const GOOGLE_CMO = "Search campaigns work best with tightly grouped ad sets per keyword theme. Start with 3 headlines and 2 descriptions per ad group and let Google optimize.";
 
 export default function CampaignsTab({ ctx }: { ctx: any }) {
-  const { allCampaigns, campaigns: activeCampaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab } = ctx;
+  const { allCampaigns, campaigns: activeCampaigns, strategy, refresh, user, campaignSeed, setCampaignSeed, setTab, openCampaign } = ctx;
   const sourceCampaigns = allCampaigns ?? activeCampaigns ?? [];
   const [openNew, setOpenNew] = useState(false);
   const [openDetail, setOpenDetail] = useState<any>(null);
@@ -226,17 +226,18 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
         <div>
           <h2 className="font-display text-2xl">Campaigns</h2>
           <p className="text-sm text-muted-foreground">Organize your marketing by initiative.</p>
+          <p style={{ fontSize: 13, color: "#9A9896", marginTop: 4, marginBottom: 0, maxWidth: 640 }}>
+            Your campaign history lives here. Every campaign you plan with MOXIEMO — active, completed, or archived — is stored here for reference and reactivation.
+          </p>
         </div>
         <div className="flex items-center gap-4 flex-wrap">
           <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
             <Switch checked={showArchived} onCheckedChange={setShowArchived} />
             Show archived{archivedCount > 0 ? ` (${archivedCount})` : ""}
           </label>
-          <Button onClick={() => { setCampaignSeed(null); setOpenNew(true); }}>
-            <Plus className="w-4 h-4" /> New campaign
-          </Button>
         </div>
       </div>
+      <div style={{ height: 20 }} />
 
       {visibleCampaigns.length === 0 ? (
         <Card className="p-10 border-dashed border-border text-center max-w-2xl mx-auto">
@@ -251,12 +252,12 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
           </p>
           {!showArchived && (
             <>
-              <Button onClick={() => setOpenNew(true)}><Plus className="w-4 h-4" /> Create your first campaign</Button>
+              <Button onClick={() => openCampaign?.()}><Plus className="w-4 h-4" /> Create your first campaign</Button>
               <div className="mt-6">
                 <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Or start from a template</div>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {TEMPLATES.map(t => (
-                    <Button key={t.id} variant="outline" size="sm" onClick={() => { setCampaignSeed({ ...t, name: t.name }); setOpenNew(true); }}>
+                    <Button key={t.id} variant="outline" size="sm" onClick={() => openCampaign?.(t.name)}>
                       {t.name}
                     </Button>
                   ))}
@@ -266,9 +267,9 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
           )}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {visibleCampaigns.map((c: any) => (
-            <CampaignCard key={c.id} c={c} ctx={ctx} onOpen={() => setOpenDetail(c)} onChanged={() => void refresh()} />
+            <CampaignLibraryCard key={c.id} c={c} onOpen={() => setOpenDetail(c)} onChanged={() => void refresh()} />
           ))}
         </div>
       )}
@@ -287,6 +288,84 @@ export default function CampaignsTab({ ctx }: { ctx: any }) {
           {openDetail && <CampaignDetail c={openDetail} ctx={ctx} onChanged={() => { void refresh(); setOpenDetail(null); }} setTab={setTab} />}
         </SheetContent>
       </Sheet>
+    </div>
+  );
+}
+
+function CampaignLibraryCard({ c, onOpen, onChanged }: { c: any; onOpen: () => void; onChanged: () => void }) {
+  const color = c.color || "#E85A46";
+  const pillars: string[] = Array.isArray(c.pillars) ? c.pillars : [];
+  const fmtDate = (d: any) => {
+    if (!d) return "";
+    try {
+      const dt = new Date(d);
+      return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    } catch { return ""; }
+  };
+  const dateRange = c.start_date || c.end_date
+    ? `${fmtDate(c.start_date)}${c.start_date && c.end_date ? " – " : ""}${fmtDate(c.end_date)}`
+    : "";
+  const status = (c.status || "active") as string;
+  const isArchived = !!c.archived;
+  const statusLabel = isArchived ? "Archived" : (status.charAt(0).toUpperCase() + status.slice(1));
+  const statusColors = isArchived
+    ? { bg: "#F5F4F0", fg: "#6B6860" }
+    : status === "active"
+      ? { bg: "#F0FDF4", fg: "#16A34A" }
+      : status === "completed"
+        ? { bg: "#EFF6FF", fg: "#2563EB" }
+        : { bg: "#FEF3C7", fg: "#B45309" };
+
+  return (
+    <div
+      style={{
+        background: "#fff",
+        border: "1px solid #ECEAE5",
+        borderRadius: 14,
+        padding: "20px 24px",
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 16,
+      }}
+    >
+      <div style={{ width: 28, height: 28, borderRadius: "50%", background: color, flexShrink: 0, marginTop: 2 }} />
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }}>{c.name}</div>
+        {c.campaign_type && (
+          <div style={{ fontSize: 12, color: "#9A9896", marginTop: 2 }}>{c.campaign_type}</div>
+        )}
+        {dateRange && (
+          <div style={{ fontSize: 12, color: "#9A9896" }}>{dateRange}</div>
+        )}
+        {pillars.length > 0 && (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+            {pillars.map((p) => (
+              <span key={p} style={{ background: "#F0EFEC", borderRadius: 20, padding: "3px 10px", fontSize: 11, color: "#6B6860" }}>{p}</span>
+            ))}
+          </div>
+        )}
+        <div style={{ marginTop: 8 }}>
+          <span style={{ background: statusColors.bg, color: statusColors.fg, fontSize: 11, fontWeight: 600, borderRadius: 4, padding: "2px 8px" }}>
+            {statusLabel}
+          </span>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+        <button
+          type="button"
+          onClick={onOpen}
+          style={{ border: "1px solid #ECEAE5", borderRadius: 8, fontSize: 12, padding: "6px 14px", color: "#15171C", background: "#fff", cursor: "pointer" }}
+        >
+          View
+        </button>
+        <button
+          type="button"
+          aria-label="More"
+          style={{ background: "transparent", border: "none", color: "#9A9896", cursor: "pointer", padding: 4, lineHeight: 1 }}
+        >
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }

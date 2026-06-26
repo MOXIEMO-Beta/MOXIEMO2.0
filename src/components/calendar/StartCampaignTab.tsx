@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const CORAL = "#E85A46";
 const INK = "#15171C";
@@ -63,15 +64,9 @@ function businessGoalFrom(strategy: any): string {
 }
 
 export default function StartCampaignTab({ ctx }: { ctx: any }) {
-  const { strategy } = ctx;
+  const { strategy, openCampaign } = ctx;
   const [prompt, setPrompt] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-  const [seedTitle, setSeedTitle] = useState<string>("");
-
-  const openModal = (title?: string) => {
-    if (title) setSeedTitle(title);
-    setModalOpen(true);
-  };
+  const openModal = (title?: string) => openCampaign?.(title);
 
   const onChip = (t: Template) => {
     setPrompt(t.prompt);
@@ -305,17 +300,6 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
         </div>
       </div>
 
-      {modalOpen && (
-        <CampaignWizardModal
-          strategy={strategy}
-          seedTitle={seedTitle}
-          onClose={() => {
-            setModalOpen(false);
-            setSeedTitle("");
-          }}
-        />
-      )}
-
       <style>{`.moxiemo-template-chip:hover{border-color:${CORAL} !important}`}</style>
     </div>
   );
@@ -334,14 +318,18 @@ const GOAL_OPTIONS = [
 
 const COLORS = ["#E85A46", "#0E0F10", "#0A66C2", "#D97706", "#7C3AED", "#0F766E", "#DC2626", "#16A34A"];
 
-function CampaignWizardModal({
+export function CampaignWizardModal({
   strategy,
   seedTitle,
+  user,
   onClose,
+  onCreated,
 }: {
   strategy: any;
   seedTitle: string;
+  user?: any;
   onClose: () => void;
+  onCreated?: () => void;
 }) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedGoals, setSelectedGoals] = useState<string[]>(["lead", "sales"]);
@@ -364,6 +352,39 @@ function CampaignWizardModal({
   const [customGoal, setCustomGoal] = useState("");
 
   const businessGoal = businessGoalFrom(strategy);
+
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  const handleGenerate = async () => {
+    setSaveError(null);
+    const firstGoalId = selectedGoals[0];
+    const goalLabel = GOAL_OPTIONS.find((g) => g.id === firstGoalId)?.title ?? type;
+    const finalName = (name || "").trim() || `${goalLabel} Campaign`;
+    const finalGoal = (customGoal || "").trim() || businessGoal;
+    if (!user?.id) {
+      setSaveError("Something went wrong saving your campaign. Please try again.");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("campaigns").insert({
+      user_id: user.id,
+      name: finalName,
+      campaign_type: goalLabel,
+      color,
+      pillars,
+      start_date: startDate,
+      end_date: endDate,
+      goals: finalGoal,
+      status: "active",
+    });
+    setSaving(false);
+    if (error) {
+      setSaveError("Something went wrong saving your campaign. Please try again.");
+      return;
+    }
+    onCreated?.();
+  };
 
   const toggleGoal = (id: string) =>
     setSelectedGoals((p) => (p.includes(id) ? p.filter((g) => g !== id) : [...p, id]));
@@ -694,8 +715,14 @@ function CampaignWizardModal({
               ))}
 
               <div style={{ flex: 1, minHeight: 16 }} />
+              {saveError && (
+                <div style={{ fontSize: 12, color: "#DC2626", background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "8px 12px", marginBottom: 8 }}>
+                  {saveError}
+                </div>
+              )}
               <button
-                onClick={onClose}
+                onClick={handleGenerate}
+                disabled={saving}
                 style={{
                   marginTop: "auto",
                   width: "100%",
@@ -707,11 +734,12 @@ function CampaignWizardModal({
                   fontSize: 15,
                   fontWeight: 700,
                   textAlign: "center",
-                  cursor: "pointer",
+                  cursor: saving ? "not-allowed" : "pointer",
+                  opacity: saving ? 0.7 : 1,
                   boxShadow: "0 4px 14px rgba(232,90,70,0.35)",
                 }}
               >
-                ✦ Generate My Campaign Plan →
+                {saving ? "Saving…" : "✦ Generate My Campaign Plan →"}
               </button>
               <div style={{ fontSize: 12, color: PLACEHOLDER, textAlign: "center", marginTop: 8 }}>
                 MOXIEMO will build your 30-day content roadmap based on your goals and strategy.
