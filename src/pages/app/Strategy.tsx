@@ -129,8 +129,8 @@ function StrategyHeader() {
 
 
   return (
-    <div className="mb-7 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-      <div>
+    <div className="mb-7 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+      <div className="flex-1 min-w-0">
         <div className="inline-block text-[11px] font-bold uppercase tracking-[0.1em] text-accent mb-2">Your strategy</div>
         <h1 className="text-[20px] font-bold tracking-[-0.3px] text-foreground mb-1.5" style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif' }}>Marketing foundation</h1>
         <p className="text-[13px] text-foreground/80 max-w-2xl leading-[1.6]">This strategy powers every piece of content, email, and post MOXIEMO generates.</p>
@@ -154,7 +154,7 @@ function StrategyHeader() {
         </div>
         <div className="mt-3"><SaveStatusIndicator /></div>
       </div>
-      <div className="flex gap-2 flex-wrap items-center">
+      <div className="flex flex-row flex-nowrap items-center gap-2 shrink-0 whitespace-nowrap">
         <Button onClick={handleGenerate} size="sm" disabled={generating || !strategy} className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg">
           {generating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-2 h-3.5 w-3.5" />}
           {hasExecutionPlan ? "Regenerate plan" : "Generate execution plan"}
