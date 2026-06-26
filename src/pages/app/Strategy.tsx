@@ -878,7 +878,7 @@ function VoiceTab() {
 
       {/* Vocabulary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="group relative report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card words-use p-6 border-border shadow-soft">
           {efPencil(["voiceGuidelines", "vocabulary", "use"], "words to use", "The vocabulary that should consistently show up in your writing.")}
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-accent mb-3"><Check className="h-3.5 w-3.5" /> Words to use</div>
           <EditableList
@@ -887,7 +887,7 @@ function VoiceTab() {
             chipClassName="bg-accent-soft text-accent"
           />
         </Card>
-        <Card className="group relative report-card p-6 border-border shadow-soft">
+        <Card className="group relative report-card words-avoid p-6 border-border shadow-soft">
           {efPencil(["voiceGuidelines", "vocabulary", "avoid"], "words to avoid", "The vocabulary that should never appear — generic, jargon, or off-brand terms.")}
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3"><X className="h-3.5 w-3.5" /> Words to avoid</div>
           <EditableList
