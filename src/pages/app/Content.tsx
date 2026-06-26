@@ -221,9 +221,9 @@ function PillarChips({
             style={{
               padding: "6px 14px",
               fontSize: 12,
-              background: active ? "#FF6B5C" : "#FFFFFF",
-              color: active ? "#FFFFFF" : "#FF6B5C",
-              borderColor: "#FF6B5C",
+              background: active ? "#E85A46" : "#FFFFFF",
+              color: active ? "#FFFFFF" : "#E85A46",
+              borderColor: "#E85A46",
             }}
           >
             {p}
@@ -691,19 +691,19 @@ export default function Content() {
 
   return (
     <div className="px-6 lg:px-10 py-6 max-w-6xl mx-auto">
-      <div className="mb-5">
-        <h1 style={{ fontSize: 22, fontWeight: 600, color: "#15171C", lineHeight: 1.2, margin: 0 }}>
-          Content
+      <div className="mb-2">
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: "#0E0F10", lineHeight: 1.2, letterSpacing: "-0.3px", margin: 0 }}>
+          {greeting}
         </h1>
-        <p style={{ fontSize: 13, color: "#9A9896", marginTop: 4 }}>
-          Your strategy is loaded. Just bring the idea.
+        <p style={{ fontSize: 14, color: "#6B6860", marginTop: 6 }}>
+          Bring the idea. MOXIEMO shapes it into content that sounds like you.
         </p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="w-full">
         <TabsList
           className="bg-transparent p-0 h-auto w-full rounded-none flex justify-start mb-6"
-          style={{ borderBottom: "1px solid #ECEAE5", gap: 32 }}
+          style={{ borderBottom: "1px solid #ECEAE5", gap: 8, marginTop: 16 }}
         >
           {[
             { v: "generate", label: "Generate" },
@@ -716,12 +716,12 @@ export default function Content() {
               value={t.v}
               className="rounded-none bg-transparent shadow-none data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0"
               style={{
-                padding: "12px 0",
+                padding: "10px 16px",
                 marginBottom: -1,
-                fontSize: 14,
-                fontWeight: 500,
-                color: tab === t.v ? "#15171C" : "#9A9896",
-                borderBottom: tab === t.v ? "2px solid #FF6B5C" : "2px solid transparent",
+                fontSize: 13,
+                fontWeight: tab === t.v ? 600 : 400,
+                color: tab === t.v ? "#0E0F10" : "#7A7875",
+                borderBottom: tab === t.v ? "2px solid #E85A46" : "2px solid transparent",
               }}
             >
               {t.label}
@@ -741,7 +741,13 @@ export default function Content() {
               </Link>
             </Card>
           )}
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(340px,40%)_1fr] gap-6 items-start">
+          <div
+            className={
+              generated && lockedMeta
+                ? "grid grid-cols-1 lg:grid-cols-[minmax(340px,40%)_1fr] gap-6 items-start"
+                : "max-w-[780px] mx-auto"
+            }
+          >
           <Card
             ref={generateFormRef}
             className="space-y-5 shadow-none"
@@ -757,7 +763,7 @@ export default function Content() {
               </button>
             )}
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 1</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9A9896" }} className="uppercase mb-1">STEP 1 — WHAT'S THE IDEA?</div>
               <label className="block mb-1" style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }}>
                 {platform === "Profile Bio"
                   ? "Anything specific to include or emphasise? (optional)"
@@ -787,8 +793,7 @@ export default function Content() {
 
             {pillars.length > 0 && (
               <div style={{ borderTop: "1px solid #ECEAE5", paddingTop: 16 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 2</div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "#15171C", marginBottom: 10 }}>Anchor to a content pillar →</div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9A9896" }} className="uppercase mb-2">STEP 2 — ANCHOR TO A CONTENT PILLAR →</div>
                 <PillarChips
                   pillars={pillars}
                   activePillar={activePillar}
@@ -799,8 +804,7 @@ export default function Content() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ borderTop: "1px solid #ECEAE5", paddingTop: 16 }}>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 3</div>
-                <label className="block mb-2" style={{ fontSize: 13, fontWeight: 600, color: "#15171C" }}>Platform</label>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9A9896" }} className="uppercase mb-2">STEP 3 — PLATFORM</div>
                 <Select
                   value={platform}
                   onValueChange={(v) => {
@@ -850,8 +854,7 @@ export default function Content() {
                 </Select>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 4</div>
-                <label className="block mb-2" style={{ fontSize: 13, fontWeight: 600, color: "#15171C" }}>Content type</label>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", color: "#9A9896" }} className="uppercase mb-2">STEP 4 — CONTENT TYPE</div>
                 <Select value={contentType} onValueChange={setContentType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -867,7 +870,7 @@ export default function Content() {
               onClick={handleGenerate}
               disabled={generating}
               className="hover:opacity-90 w-full"
-              style={{ background: "#FF6B5C", color: "#FFFFFF", height: 44, borderRadius: 8, fontSize: 14, fontWeight: 600, marginTop: 4 }}
+              style={{ background: "#E85A46", color: "#FFFFFF", height: 44, borderRadius: 8, fontSize: 14, fontWeight: 600, marginTop: 4 }}
             >
               {generating ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> MOXIEMO is writing{".".repeat(dotCount)}</>
@@ -1049,20 +1052,7 @@ export default function Content() {
                 </div>
               </Card>
             </div>
-          ) : (
-            <div
-              className="flex flex-col items-center justify-center text-center"
-              style={{ border: "1.5px dashed #ECEAE5", borderRadius: 14, padding: 40, minHeight: 320 }}
-            >
-              <Sparkles style={{ width: 32, height: 32, color: "#ECEAE5" }} />
-              <div style={{ fontSize: 15, fontWeight: 600, color: "#15171C", marginTop: 16 }}>
-                Your content will appear here
-              </div>
-              <p style={{ fontSize: 13, color: "#9A9896", marginTop: 6, maxWidth: 320 }}>
-                Fill in the idea, pick a pillar and platform, then hit generate.
-              </p>
-            </div>
-          )}
+          ) : null}
           </div>
           </div>
         </TabsContent>
@@ -1073,9 +1063,10 @@ export default function Content() {
             <Skeleton className="h-24 w-full" />
           ) : queued.length === 0 ? (
             <EmptyState
-              heading="Nothing queued yet"
-              body="Content you schedule will live here. Generate something to get started."
-              ctaLabel="Go to Generate →"
+              emoji="📬"
+              heading="Your queue is empty"
+              body="Add content to your queue to schedule it for publishing."
+              ctaLabel="Create content →"
               onCta={() => setTab("generate")}
             />
           ) : (
@@ -1107,9 +1098,10 @@ export default function Content() {
             <Skeleton className="h-24 w-full" />
           ) : drafts.length === 0 ? (
             <EmptyState
-              heading="No drafts saved yet"
-              body="When you save generated content, it lands here for editing and publishing."
-              ctaLabel="Generate your first draft →"
+              emoji="📝"
+              heading="No drafts yet"
+              body="Generate content and save it as a draft to continue editing later."
+              ctaLabel="Generate content →"
               onCta={() => setTab("generate")}
             />
           ) : (
@@ -1186,11 +1178,13 @@ function StatusBadge({ status }: { status: ContentItem["status"] }) {
 }
 
 function EmptyState({
+  emoji,
   heading,
   body,
   ctaLabel,
   onCta,
 }: {
+  emoji?: string;
   heading: string;
   body: string;
   ctaLabel?: string;
@@ -1199,9 +1193,12 @@ function EmptyState({
   return (
     <div
       className="text-center"
-      style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 48, background: "#FFFFFF" }}
+      style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 56, background: "#FFFFFF", maxWidth: 700, margin: "0 auto" }}
     >
-      <div style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }}>{heading}</div>
+      {emoji && (
+        <div style={{ fontSize: 32, marginBottom: 12, lineHeight: 1 }}>{emoji}</div>
+      )}
+      <div style={{ fontSize: 16, fontWeight: 600, color: "#0E0F10" }}>{heading}</div>
       <p style={{ fontSize: 13, color: "#9A9896", marginTop: 8, maxWidth: 460, marginLeft: "auto", marginRight: "auto" }}>
         {body}
       </p>
@@ -1209,16 +1206,17 @@ function EmptyState({
         <button
           type="button"
           onClick={onCta}
-          className="hover:bg-[#FFF5F4] transition-colors"
+          className="hover:opacity-90 transition-opacity"
           style={{
             marginTop: 20,
-            padding: "10px 18px",
+            padding: "11px 22px",
             borderRadius: 8,
-            border: "1px solid #FF6B5C",
-            color: "#FF6B5C",
-            fontSize: 13,
+            border: "none",
+            color: "#FFFFFF",
+            fontSize: 14,
             fontWeight: 600,
-            background: "transparent",
+            background: "#E85A46",
+            cursor: "pointer",
           }}
         >
           {ctaLabel}
@@ -2100,7 +2098,7 @@ function RepurposeTab({
       {/* Step 1 — Upload */}
       <Card className="shadow-none space-y-3" style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
         <div>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 1</div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#E85A46" }} className="uppercase mb-1">STEP 1</div>
           <label style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }} className="block">Upload your transcript</label>
         </div>
         <div
@@ -2179,7 +2177,7 @@ function RepurposeTab({
       {/* Pillar selector (optional) */}
       {repurposePillars.length > 0 && (
         <Card className="shadow-none space-y-3" style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase">
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#E85A46" }} className="uppercase">
             ANCHOR TO A CONTENT PILLAR (OPTIONAL)
           </div>
           <div className="flex flex-wrap gap-2">
@@ -2194,9 +2192,9 @@ function RepurposeTab({
                   style={{
                     padding: "6px 14px",
                     fontSize: 12,
-                    background: active ? "#FF6B5C" : "#FFFFFF",
-                    color: active ? "#FFFFFF" : "#FF6B5C",
-                    borderColor: "#FF6B5C",
+                    background: active ? "#E85A46" : "#FFFFFF",
+                    color: active ? "#FFFFFF" : "#E85A46",
+                    borderColor: "#E85A46",
                   }}
                 >
                   {p}
@@ -2214,7 +2212,7 @@ function RepurposeTab({
       <Card className="shadow-none space-y-3" style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 2</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#E85A46" }} className="uppercase mb-1">STEP 2</div>
             <label style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }} className="block">Select the type of content you want to generate</label>
           </div>
           <button
@@ -2235,7 +2233,7 @@ function RepurposeTab({
                 style={{
                   padding: "10px 12px",
                   borderRadius: 8,
-                  border: `1px solid ${checked ? "#FF6B5C" : "#ECEAE5"}`,
+                  border: `1px solid ${checked ? "#E85A46" : "#ECEAE5"}`,
                   background: checked ? "#FFF5F4" : "#FFFFFF",
                   color: "#15171C",
                   fontSize: 13,
@@ -2246,7 +2244,7 @@ function RepurposeTab({
                   checked={checked}
                   onChange={() => toggleSelect(label)}
                   className="h-4 w-4 accent-accent shrink-0"
-                  style={{ accentColor: "#FF6B5C" }}
+                  style={{ accentColor: "#E85A46" }}
                 />
                 <span>{label}</span>
               </label>
@@ -2261,7 +2259,7 @@ function RepurposeTab({
           onClick={handleGenerate}
           disabled={generating || extracting || !transcript || selected.size === 0}
           className="hover:opacity-90 w-full"
-          style={{ background: "#FF6B5C", color: "#FFFFFF", height: 44, borderRadius: 8, fontSize: 14, fontWeight: 600 }}
+          style={{ background: "#E85A46", color: "#FFFFFF", height: 44, borderRadius: 8, fontSize: 14, fontWeight: 600 }}
         >
           {generating ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Repurposing...</>
