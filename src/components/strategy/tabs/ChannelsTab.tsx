@@ -22,8 +22,8 @@ function ChannelSection({ channel, level, defaultOpen }: { channel: any; level: 
             {Array.isArray(channel.rationale) && (
               <ul className="space-y-1">
                 {channel.rationale.slice(0, 3).map((r: string, i: number) => (
-                  <li key={i} className={`text-sm flex gap-2 ${level === "PRIMARY" ? "text-background/80" : "text-muted-foreground"}`}>
-                    <span className="text-accent mt-1">•</span><span>{r}</span>
+                  <li key={i} className={`text-sm flex gap-2 ${level === "PRIMARY" ? "" : "text-muted-foreground"}`} style={level === "PRIMARY" ? { color: "#F7F5F1" } : undefined}>
+                    <span className={level === "PRIMARY" ? "mt-1" : "text-accent mt-1"} style={level === "PRIMARY" ? { color: "#F7F5F1" } : undefined}>•</span><span>{r}</span>
                   </li>
                 ))}
               </ul>
@@ -32,7 +32,7 @@ function ChannelSection({ channel, level, defaultOpen }: { channel: any; level: 
           <ChevronDown className={`h-5 w-5 shrink-0 mt-1 transition-transform ${open ? "rotate-180" : ""} ${level === "PRIMARY" ? "text-background/60" : "text-muted-foreground"}`} />
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className={`px-6 pb-6 pt-1 border-t space-y-5 ${level === "PRIMARY" ? "border-background/10 bg-foreground/95" : "border-border bg-muted/20"}`}>
+          <div className={`px-6 pb-6 pt-1 border-t space-y-5 ${level === "PRIMARY" ? "border-background/10 bg-foreground/95 [&>*+*]:border-t [&>*+*]:border-white/10 [&>*+*]:pt-5" : "border-border bg-muted/20"}`}>
             {channel.contentStrategy && (
               <div>
                 <div className={`text-[10px] uppercase tracking-[0.25em] mb-2 ${level === "PRIMARY" ? "text-accent" : "text-accent"}`}>Content strategy</div>
