@@ -15,6 +15,55 @@ You write in the founder's voice — never generic marketing speak. Every piece 
 - Sound like the founder, using their voice attributes — never the anti-positioning language
 - Follow the platform-specific rules exactly`;
 
+const PLATFORM_LENGTH_RULES: Record<string, { instruction: string; wordTarget: string; charTarget: string }> = {
+  'LinkedIn Post': {
+    instruction: 'Write 150–200 words exactly. Use short paragraphs of 1–3 lines. Use line breaks between paragraphs. Use → bullet format for lists. End with one question or call-to-action. Do not exceed 200 words.',
+    wordTarget: '150–200 words',
+    charTarget: '900–1,200 characters',
+  },
+  'Instagram Caption': {
+    instruction: 'Write a hook of maximum 125 characters for the first line (this appears before "more" is clicked). Then a line break. Then body copy of 100–200 additional characters. Total caption 300–500 characters. Use line breaks generously. End with 3–5 relevant hashtags on a new line.',
+    wordTarget: '60–80 words',
+    charTarget: '300–500 characters total',
+  },
+  'Newsletter Section': {
+    instruction: 'Write 200–350 words. One clear topic. Use short paragraphs. One CTA at the end. Scannable — reader should be able to skim headers or first sentences and understand the point.',
+    wordTarget: '200–350 words',
+    charTarget: '1,200–2,100 characters',
+  },
+  'Standalone Newsletter (full)': {
+    instruction: 'Write 400–600 words. Include: subject line suggestion, opening hook, 2–3 body sections, one CTA, sign-off in the founder voice.',
+    wordTarget: '400–600 words',
+    charTarget: '2,400–3,600 characters',
+  },
+  'Facebook Post': {
+    instruction: 'Write 40–80 words only. Conversational tone. No bullet lists. End with one question. Facebook penalizes long posts — be concise.',
+    wordTarget: '40–80 words',
+    charTarget: '240–480 characters',
+  },
+  'X / Twitter': {
+    instruction: 'Write exactly 240–260 characters including spaces. One sharp idea, one strong hook. No hashtags unless the topic is trending.',
+    wordTarget: '~50 words',
+    charTarget: '240–260 characters',
+  },
+  'Short-Form Video Script': {
+    instruction: 'Write a spoken script of 60–90 seconds when read aloud (approximately 150–180 words). Format as: HOOK (first 3 seconds), BODY (main point), CTA (last 5 seconds). Label each section.',
+    wordTarget: '150–180 words spoken',
+    charTarget: '900–1,100 characters',
+  },
+};
+
+function lengthPrepend(platform: string): string {
+  const rule = PLATFORM_LENGTH_RULES[platform];
+  if (!rule) return "";
+  return `PLATFORM: ${platform}
+LENGTH RULE: ${rule.instruction}
+WORD TARGET: ${rule.wordTarget}
+You must follow this length rule precisely. Do not write more or less than specified. Length adherence is as important as voice and strategy alignment.
+
+`;
+}
+
 function buildPrompt(opts: {
   topic: string;
   platform: string;
@@ -22,6 +71,7 @@ function buildPrompt(opts: {
   strategy: any;
   campaign?: any;
   slot?: { scheduled_date?: string | null; pillar?: string | null };
+  calendarContext?: { title?: string; pillar?: string; date?: string | null } | null;
 }) {
   const s = opts.strategy ?? {};
   const voice = Array.isArray(s.voice_attributes)
@@ -301,7 +351,15 @@ Active channels: ${Array.isArray(c.channels) ? c.channels.join(", ") : "(not set
     : `CAMPAIGN CONTEXT:
 (No specific campaign — treat this as a standalone post that still maps to a content pillar.)`;
 
-  return `ABOUT THIS FOUNDER:
+  const calBlock = opts.calendarContext && opts.calendarContext.title
+    ? `TOPIC: ${opts.calendarContext.title}
+PILLAR: ${opts.calendarContext.pillar ?? "(not set)"}
+Use the topic as the subject of this post. Do not invent a different topic. Stay on the pillar theme.
+
+`
+    : "";
+
+  return `${lengthPrepend(opts.platform)}${calBlock}ABOUT THIS FOUNDER:
 Positioning: ${s.positioning_statement ?? "(not set)"}
 Ideal client: ${s.ideal_client ?? "(not set)"}
 Their pain point: ${s.pain_point ?? "(not set)"}
@@ -340,7 +398,7 @@ Return only the content itself — no preamble, no explanation, no "here's your 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { topic, platform, contentType, strategy, campaign, slot, mode, text, existing, instruction } = await req.json();
+    const { topic, platform, contentType, strategy, campaign, slot, calendarContext, mode, text, existing, instruction } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
@@ -435,7 +493,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot });
+    const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot, calendarContext });
 
     const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)", "Long-Form Video Script", "Podcast Script"].includes(platform);
     const isBioAbout = platform === "Profile Bio" && contentType === "LinkedIn About Section";
