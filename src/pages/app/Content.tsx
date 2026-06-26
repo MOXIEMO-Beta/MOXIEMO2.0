@@ -1072,7 +1072,12 @@ export default function Content() {
           {loading ? (
             <Skeleton className="h-24 w-full" />
           ) : queued.length === 0 ? (
-            <EmptyState message="No posts in your queue yet. Generate one to get started." />
+            <EmptyState
+              heading="Nothing queued yet"
+              body="Content you schedule will live here. Generate something to get started."
+              ctaLabel="Go to Generate →"
+              onCta={() => setTab("generate")}
+            />
           ) : (
             queued.map((it) => (
               <Card key={it.id} className="p-5 border-border shadow-soft">
@@ -1101,7 +1106,12 @@ export default function Content() {
           {loading ? (
             <Skeleton className="h-24 w-full" />
           ) : drafts.length === 0 ? (
-            <EmptyState message="No drafts yet. Saved drafts will appear here." />
+            <EmptyState
+              heading="No drafts saved yet"
+              body="When you save generated content, it lands here for editing and publishing."
+              ctaLabel="Generate your first draft →"
+              onCta={() => setTab("generate")}
+            />
           ) : (
             drafts.map((it) => (
               <Card key={it.id} className="p-5 border-border shadow-soft">
