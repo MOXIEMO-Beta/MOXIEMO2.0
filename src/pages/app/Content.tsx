@@ -741,7 +741,12 @@ export default function Content() {
               </Link>
             </Card>
           )}
-          <Card ref={generateFormRef} className="p-6 border-border shadow-soft space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(340px,40%)_1fr] gap-6 items-start">
+          <Card
+            ref={generateFormRef}
+            className="space-y-5 shadow-none"
+            style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24, background: "#FFFFFF" }}
+          >
             {campaignBriefBanner && (
               <button
                 type="button"
@@ -752,17 +757,12 @@ export default function Content() {
               </button>
             )}
             <div>
-              <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 1</div>
-              <label className="text-sm font-medium text-foreground mb-1 block">
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 1</div>
+              <label className="block mb-1" style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }}>
                 {platform === "Profile Bio"
                   ? "Anything specific to include or emphasise? (optional)"
                   : "What's the idea?"}
               </label>
-              {platform !== "Profile Bio" && (
-                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                  A take from an article you read, something a client said, a hot opinion, a story — bring anything. MOXIEMO will shape it into content that sounds like you.
-                </p>
-              )}
               <Textarea
                 value={topic}
                 onChange={(e) => {
@@ -772,17 +772,23 @@ export default function Content() {
                 placeholder={
                   platform === "Profile Bio"
                     ? "e.g. I just launched a new offer, I want to highlight my podcast, I'm pivoting my focus to X"
-                    : "e.g. I just read that 80% of small businesses overpay in taxes because their expenses aren't categorized in real time — I want to write about this from my POV..."
+                    : "A take from an article you read, a client story, a hot opinion — bring anything. MOXIEMO shapes it into content that sounds like you."
                 }
                 rows={4}
-                className="resize-y min-h-[100px]"
+                className="resize-y"
+                style={{ minHeight: 100, border: "1px solid #ECEAE5", borderRadius: 8, padding: 12, fontSize: 13 }}
               />
+              {platform !== "Profile Bio" && (
+                <p style={{ fontSize: 11, color: "#9A9896", marginTop: 6 }}>
+                  More context = stronger output. Aim for 2-3 sentences.
+                </p>
+              )}
             </div>
 
             {pillars.length > 0 && (
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 2</div>
-                <div className="text-xs text-muted-foreground mb-2">Anchor to a content pillar →</div>
+              <div style={{ borderTop: "1px solid #ECEAE5", paddingTop: 16 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 2</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "#15171C", marginBottom: 10 }}>Anchor to a content pillar →</div>
                 <PillarChips
                   pillars={pillars}
                   activePillar={activePillar}
@@ -791,10 +797,10 @@ export default function Content() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ borderTop: "1px solid #ECEAE5", paddingTop: 16 }}>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 3</div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Platform</label>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 3</div>
+                <label className="block mb-2" style={{ fontSize: 13, fontWeight: 600, color: "#15171C" }}>Platform</label>
                 <Select
                   value={platform}
                   onValueChange={(v) => {
@@ -844,8 +850,8 @@ export default function Content() {
                 </Select>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 4</div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Content type</label>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 4</div>
+                <label className="block mb-2" style={{ fontSize: 13, fontWeight: 600, color: "#15171C" }}>Content type</label>
                 <Select value={contentType} onValueChange={setContentType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -860,7 +866,8 @@ export default function Content() {
             <Button
               onClick={handleGenerate}
               disabled={generating}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg"
+              className="hover:opacity-90 w-full"
+              style={{ background: "#FF6B5C", color: "#FFFFFF", height: 44, borderRadius: 8, fontSize: 14, fontWeight: 600, marginTop: 4 }}
             >
               {generating ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> MOXIEMO is writing{".".repeat(dotCount)}</>
@@ -870,7 +877,8 @@ export default function Content() {
             </Button>
           </Card>
 
-          {generated && lockedMeta && (
+          <div>
+          {generated && lockedMeta ? (
             <div ref={outputRef} className="space-y-3 animate-in slide-in-from-bottom-4 fade-in duration-300">
               {(campaignContext?.name || activePillar) && (
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
@@ -883,7 +891,7 @@ export default function Content() {
                 </div>
               )}
 
-              <Card className="border-border shadow-soft overflow-hidden">
+              <Card className="overflow-hidden shadow-none" style={{ border: "1px solid #ECEAE5", borderRadius: 14 }}>
                 {/* Top bar */}
                 <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/30">
                   <div className="flex items-center gap-2 min-w-0">
@@ -1041,7 +1049,22 @@ export default function Content() {
                 </div>
               </Card>
             </div>
+          ) : (
+            <div
+              className="flex flex-col items-center justify-center text-center"
+              style={{ border: "1.5px dashed #ECEAE5", borderRadius: 14, padding: 40, minHeight: 320 }}
+            >
+              <Sparkles style={{ width: 32, height: 32, color: "#ECEAE5" }} />
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#15171C", marginTop: 16 }}>
+                Your content will appear here
+              </div>
+              <p style={{ fontSize: 13, color: "#9A9896", marginTop: 6, maxWidth: 320 }}>
+                Fill in the idea, pick a pillar and platform, then hit generate.
+              </p>
+            </div>
           )}
+          </div>
+          </div>
         </TabsContent>
 
         {/* QUEUE */}
