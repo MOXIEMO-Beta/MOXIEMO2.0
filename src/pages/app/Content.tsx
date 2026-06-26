@@ -59,6 +59,7 @@ import { toast } from "sonner";
 import { Link, useSearchParams } from "react-router-dom";
 import RichTextEditor from "@/components/email/RichTextEditor";
 import LibraryAssetsDrawer from "@/components/social/LibraryAssetsDrawer";
+import ContentCalendarTab from "@/components/content/ContentCalendarTab";
 
 type ContentItem = {
   id: string;
@@ -371,7 +372,7 @@ export default function Content() {
         supabase
           .from("strategies")
           .select(
-            "positioning_statement, ideal_client, pain_point, transformation, voice_attributes, anti_positioning, methodology, primary_channel, content_pillars",
+            "positioning_statement, ideal_client, pain_point, transformation, voice_attributes, anti_positioning, methodology, primary_channel, content_pillars, enhanced_foundation",
           )
           .eq("user_id", user.id)
           .maybeSingle(),
