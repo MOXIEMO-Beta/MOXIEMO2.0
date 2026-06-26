@@ -15,7 +15,7 @@ import { NavLink, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { usePlan } from "@/hooks/usePlan";
 import { GENERATION_LIMIT, PLAN_LABEL } from "@/lib/planConfig";
-import wordmark from "@/assets/moxiemo-wordmark.png";
+import logoAsset from "@/assets/moxiemo-logo-sage.png.asset.json";
 import { FeedbackButton } from "./FeedbackButton";
 
 export type AppNavItem = {
@@ -148,32 +148,13 @@ export function AppSidebar() {
         zIndex: 40,
       }}
     >
-      {/* Logo card */}
-      <div style={{ padding: "16px 14px 12px" }}>
-        <div
-          style={{
-            background: "#FFFFFF",
-            borderRadius: 8,
-            padding: "7px 10px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-start",
-          }}
-        >
-          <img src={wordmark} alt="MOXIEMO" style={{ height: 26, width: "auto", display: "block" }} />
-        </div>
-        <div
-          style={{
-            marginTop: 8,
-            fontSize: 9,
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            color: "#3A3835",
-            paddingLeft: 2,
-          }}
-        >
-          One Platform. Confident Marketing.
-        </div>
+      {/* Logo */}
+      <div style={{ padding: "18px 16px 14px" }}>
+        <img
+          src={logoAsset.url}
+          alt="MOXIEMO — One Platform. Confident Marketing."
+          style={{ width: "100%", height: "auto", display: "block" }}
+        />
       </div>
 
       {/* Nav */}
@@ -186,7 +167,7 @@ export function AppSidebar() {
                 textTransform: "uppercase",
                 letterSpacing: "0.1em",
                 color: "rgba(0,0,0,0.38)",
-                fontWeight: 600,
+                fontWeight: 700,
                 padding: "0 10px 6px",
               }}
             >
