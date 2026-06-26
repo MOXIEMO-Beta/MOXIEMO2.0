@@ -208,61 +208,28 @@ function PillarChips({
   activePillar: string | null;
   onToggle: (p: string) => void;
 }) {
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const [expanded, setExpanded] = useState(false);
-  const [overflowing, setOverflowing] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const check = () => {
-      const rowHeight = 32; // approx chip height
-      setOverflowing(el.scrollHeight > rowHeight * 2 + 8);
-    };
-    check();
-    const ro = new ResizeObserver(check);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [pillars]);
-
   return (
-    <div>
-      <div
-        ref={containerRef}
-        className="flex flex-wrap gap-2"
-        style={
-          expanded
-            ? undefined
-            : { maxHeight: "4.25rem", overflow: "hidden" }
-        }
-      >
-        {pillars.map((p) => {
-          const active = activePillar === p;
-          return (
-            <button
-              key={p}
-              type="button"
-              onClick={() => onToggle(p)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                active
-                  ? "border-accent text-accent bg-accent-soft/40"
-                  : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30"
-              }`}
-            >
-              {p}
-            </button>
-          );
-        })}
-      </div>
-      {overflowing && (
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="mt-2 text-xs text-accent hover:underline"
-        >
-          {expanded ? "Show less" : "See all →"}
-        </button>
-      )}
+    <div className="flex flex-wrap gap-2">
+      {pillars.map((p) => {
+        const active = activePillar === p;
+        return (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onToggle(p)}
+            className="text-xs font-medium rounded-full border transition-colors"
+            style={{
+              padding: "6px 14px",
+              fontSize: 12,
+              background: active ? "#FF6B5C" : "#FFFFFF",
+              color: active ? "#FFFFFF" : "#FF6B5C",
+              borderColor: "#FF6B5C",
+            }}
+          >
+            {p}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -467,6 +434,8 @@ export default function Content() {
   const greeting = fname
     ? `What would you like to write today, ${fname}?`
     : "What would you like to write today?";
+
+  const [tab, setTab] = useState<string>("generate");
 
   async function runGeneration(opts: { topic: string; platform: string; contentType: string; pillar: string | null }) {
     const augmentedTopic = opts.pillar
@@ -721,42 +690,43 @@ export default function Content() {
   const nearLimit = limit !== null && charCount >= limit * 0.85;
 
   return (
-    <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
-      <div className="mb-8">
-        <h1 className="font-display text-4xl md:text-5xl tracking-tight mb-3 leading-[1.1]">
-          {greeting}
+    <div className="px-6 lg:px-10 py-6 max-w-6xl mx-auto">
+      <div className="mb-5">
+        <h1 style={{ fontSize: 22, fontWeight: 600, color: "#15171C", lineHeight: 1.2, margin: 0 }}>
+          Content
         </h1>
-        <p className="text-base text-muted-foreground">
+        <p style={{ fontSize: 13, color: "#9A9896", marginTop: 4 }}>
           Your strategy is loaded. Just bring the idea.
         </p>
       </div>
 
-      <Tabs defaultValue="generate" className="w-full">
-        <TabsList className="bg-foreground h-auto w-fit mb-6 flex flex-wrap justify-start gap-1 rounded-[12px] p-[6px]">
-          <TabsTrigger
-            value="generate"
-            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
-          >
-            Generate
-          </TabsTrigger>
-          <TabsTrigger
-            value="queue"
-            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
-          >
-            Queue {queued.length > 0 && <span className="ml-2 text-xs text-muted-foreground">({queued.length})</span>}
-          </TabsTrigger>
-          <TabsTrigger
-            value="drafts"
-            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
-          >
-            Drafts {drafts.length > 0 && <span className="ml-2 text-xs text-muted-foreground">({drafts.length})</span>}
-          </TabsTrigger>
-          <TabsTrigger
-            value="repurpose"
-            className="rounded-[8px] px-4 py-2 font-medium text-white/55 bg-transparent transition-colors duration-150 ease-in-out hover:text-white/85 data-[state=active]:bg-white data-[state=active]:text-[#1a1a1a] data-[state=active]:font-semibold data-[state=active]:shadow-none"
-          >
-            Repurpose
-          </TabsTrigger>
+      <Tabs value={tab} onValueChange={setTab} className="w-full">
+        <TabsList
+          className="bg-transparent p-0 h-auto w-full rounded-none flex justify-start mb-6"
+          style={{ borderBottom: "1px solid #ECEAE5", gap: 32 }}
+        >
+          {[
+            { v: "generate", label: "Generate" },
+            { v: "queue", label: `Queue${queued.length > 0 ? ` (${queued.length})` : ""}` },
+            { v: "drafts", label: `Drafts${drafts.length > 0 ? ` (${drafts.length})` : ""}` },
+            { v: "repurpose", label: "Repurpose" },
+          ].map((t) => (
+            <TabsTrigger
+              key={t.v}
+              value={t.v}
+              className="rounded-none bg-transparent shadow-none data-[state=active]:bg-transparent data-[state=active]:shadow-none px-0"
+              style={{
+                padding: "12px 0",
+                marginBottom: -1,
+                fontSize: 14,
+                fontWeight: 500,
+                color: tab === t.v ? "#15171C" : "#9A9896",
+                borderBottom: tab === t.v ? "2px solid #FF6B5C" : "2px solid transparent",
+              }}
+            >
+              {t.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         {/* GENERATE */}
@@ -771,7 +741,12 @@ export default function Content() {
               </Link>
             </Card>
           )}
-          <Card ref={generateFormRef} className="p-6 border-border shadow-soft space-y-5">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(340px,40%)_1fr] gap-6 items-start">
+          <Card
+            ref={generateFormRef}
+            className="space-y-5 shadow-none"
+            style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24, background: "#FFFFFF" }}
+          >
             {campaignBriefBanner && (
               <button
                 type="button"
@@ -782,17 +757,12 @@ export default function Content() {
               </button>
             )}
             <div>
-              <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 1</div>
-              <label className="text-sm font-medium text-foreground mb-1 block">
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 1</div>
+              <label className="block mb-1" style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }}>
                 {platform === "Profile Bio"
                   ? "Anything specific to include or emphasise? (optional)"
                   : "What's the idea?"}
               </label>
-              {platform !== "Profile Bio" && (
-                <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
-                  A take from an article you read, something a client said, a hot opinion, a story — bring anything. MOXIEMO will shape it into content that sounds like you.
-                </p>
-              )}
               <Textarea
                 value={topic}
                 onChange={(e) => {
@@ -802,17 +772,23 @@ export default function Content() {
                 placeholder={
                   platform === "Profile Bio"
                     ? "e.g. I just launched a new offer, I want to highlight my podcast, I'm pivoting my focus to X"
-                    : "e.g. I just read that 80% of small businesses overpay in taxes because their expenses aren't categorized in real time — I want to write about this from my POV..."
+                    : "A take from an article you read, a client story, a hot opinion — bring anything. MOXIEMO shapes it into content that sounds like you."
                 }
                 rows={4}
-                className="resize-y min-h-[100px]"
+                className="resize-y"
+                style={{ minHeight: 100, border: "1px solid #ECEAE5", borderRadius: 8, padding: 12, fontSize: 13 }}
               />
+              {platform !== "Profile Bio" && (
+                <p style={{ fontSize: 11, color: "#9A9896", marginTop: 6 }}>
+                  More context = stronger output. Aim for 2-3 sentences.
+                </p>
+              )}
             </div>
 
             {pillars.length > 0 && (
-              <div>
-                <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 2</div>
-                <div className="text-xs text-muted-foreground mb-2">Anchor to a content pillar →</div>
+              <div style={{ borderTop: "1px solid #ECEAE5", paddingTop: 16 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 2</div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: "#15171C", marginBottom: 10 }}>Anchor to a content pillar →</div>
                 <PillarChips
                   pillars={pillars}
                   activePillar={activePillar}
@@ -821,10 +797,10 @@ export default function Content() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4" style={{ borderTop: "1px solid #ECEAE5", paddingTop: 16 }}>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 3</div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Platform</label>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 3</div>
+                <label className="block mb-2" style={{ fontSize: 13, fontWeight: 600, color: "#15171C" }}>Platform</label>
                 <Select
                   value={platform}
                   onValueChange={(v) => {
@@ -874,8 +850,8 @@ export default function Content() {
                 </Select>
               </div>
               <div>
-                <div className="text-[10px] uppercase tracking-[0.08em] text-[rgba(21,23,28,0.45)] mb-1">STEP 4</div>
-                <label className="text-sm font-medium text-foreground mb-2 block">Content type</label>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 4</div>
+                <label className="block mb-2" style={{ fontSize: 13, fontWeight: 600, color: "#15171C" }}>Content type</label>
                 <Select value={contentType} onValueChange={setContentType}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -890,7 +866,8 @@ export default function Content() {
             <Button
               onClick={handleGenerate}
               disabled={generating}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg"
+              className="hover:opacity-90 w-full"
+              style={{ background: "#FF6B5C", color: "#FFFFFF", height: 44, borderRadius: 8, fontSize: 14, fontWeight: 600, marginTop: 4 }}
             >
               {generating ? (
                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> MOXIEMO is writing{".".repeat(dotCount)}</>
@@ -900,7 +877,8 @@ export default function Content() {
             </Button>
           </Card>
 
-          {generated && lockedMeta && (
+          <div>
+          {generated && lockedMeta ? (
             <div ref={outputRef} className="space-y-3 animate-in slide-in-from-bottom-4 fade-in duration-300">
               {(campaignContext?.name || activePillar) && (
                 <div className="text-[11px] text-muted-foreground flex items-center gap-1.5 flex-wrap">
@@ -913,7 +891,7 @@ export default function Content() {
                 </div>
               )}
 
-              <Card className="border-border shadow-soft overflow-hidden">
+              <Card className="overflow-hidden shadow-none" style={{ border: "1px solid #ECEAE5", borderRadius: 14 }}>
                 {/* Top bar */}
                 <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/30">
                   <div className="flex items-center gap-2 min-w-0">
@@ -1071,7 +1049,22 @@ export default function Content() {
                 </div>
               </Card>
             </div>
+          ) : (
+            <div
+              className="flex flex-col items-center justify-center text-center"
+              style={{ border: "1.5px dashed #ECEAE5", borderRadius: 14, padding: 40, minHeight: 320 }}
+            >
+              <Sparkles style={{ width: 32, height: 32, color: "#ECEAE5" }} />
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#15171C", marginTop: 16 }}>
+                Your content will appear here
+              </div>
+              <p style={{ fontSize: 13, color: "#9A9896", marginTop: 6, maxWidth: 320 }}>
+                Fill in the idea, pick a pillar and platform, then hit generate.
+              </p>
+            </div>
           )}
+          </div>
+          </div>
         </TabsContent>
 
         {/* QUEUE */}
@@ -1079,7 +1072,12 @@ export default function Content() {
           {loading ? (
             <Skeleton className="h-24 w-full" />
           ) : queued.length === 0 ? (
-            <EmptyState message="No posts in your queue yet. Generate one to get started." />
+            <EmptyState
+              heading="Nothing queued yet"
+              body="Content you schedule will live here. Generate something to get started."
+              ctaLabel="Go to Generate →"
+              onCta={() => setTab("generate")}
+            />
           ) : (
             queued.map((it) => (
               <Card key={it.id} className="p-5 border-border shadow-soft">
@@ -1108,7 +1106,12 @@ export default function Content() {
           {loading ? (
             <Skeleton className="h-24 w-full" />
           ) : drafts.length === 0 ? (
-            <EmptyState message="No drafts yet. Saved drafts will appear here." />
+            <EmptyState
+              heading="No drafts saved yet"
+              body="When you save generated content, it lands here for editing and publishing."
+              ctaLabel="Generate your first draft →"
+              onCta={() => setTab("generate")}
+            />
           ) : (
             drafts.map((it) => (
               <Card key={it.id} className="p-5 border-border shadow-soft">
@@ -1182,11 +1185,46 @@ function StatusBadge({ status }: { status: ContentItem["status"] }) {
   );
 }
 
-function EmptyState({ message }: { message: string }) {
+function EmptyState({
+  heading,
+  body,
+  ctaLabel,
+  onCta,
+}: {
+  heading: string;
+  body: string;
+  ctaLabel?: string;
+  onCta?: () => void;
+}) {
   return (
-    <Card className="p-10 border-dashed border-border bg-background text-center text-sm text-muted-foreground">
-      {message}
-    </Card>
+    <div
+      className="text-center"
+      style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 48, background: "#FFFFFF" }}
+    >
+      <div style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }}>{heading}</div>
+      <p style={{ fontSize: 13, color: "#9A9896", marginTop: 8, maxWidth: 460, marginLeft: "auto", marginRight: "auto" }}>
+        {body}
+      </p>
+      {ctaLabel && onCta && (
+        <button
+          type="button"
+          onClick={onCta}
+          className="hover:bg-[#FFF5F4] transition-colors"
+          style={{
+            marginTop: 20,
+            padding: "10px 18px",
+            borderRadius: 8,
+            border: "1px solid #FF6B5C",
+            color: "#FF6B5C",
+            fontSize: 13,
+            fontWeight: 600,
+            background: "transparent",
+          }}
+        >
+          {ctaLabel}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -2051,19 +2089,19 @@ function RepurposeTab({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="font-display text-2xl md:text-3xl tracking-tight mb-2 leading-tight">
+        <h2 style={{ fontSize: 18, fontWeight: 600, color: "#15171C", margin: 0 }}>
           Turn one piece of content into many.
         </h2>
-        <p className="text-sm text-muted-foreground max-w-2xl">
+        <p style={{ fontSize: 13, color: "#9A9896", marginTop: 6, maxWidth: 640 }}>
           Upload a podcast transcript, webinar recording, or long-form article. MOXIEMO extracts the best moments and turns them into content across every platform.
         </p>
       </div>
 
       {/* Step 1 — Upload */}
-      <Card className="p-6 border-border shadow-soft space-y-3">
+      <Card className="shadow-none space-y-3" style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
         <div>
-          <div className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Step 1</div>
-          <label className="text-sm font-medium text-foreground block">Upload your transcript</label>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 1</div>
+          <label style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }} className="block">Upload your transcript</label>
         </div>
         <div
           onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
@@ -2076,9 +2114,13 @@ function RepurposeTab({
           onClick={() => !file && inputRef.current?.click()}
           role="button"
           tabIndex={0}
-          className={`cursor-pointer rounded-xl px-6 py-8 text-center transition-colors ${
-            dragOver ? "border-accent bg-accent-soft/30" : "border-border bg-muted/20 hover:bg-muted/40"
-          } border-2 border-dashed`}
+          className="cursor-pointer text-center transition-colors"
+          style={{
+            border: "1.5px dashed #ECEAE5",
+            borderRadius: 14,
+            padding: 32,
+            background: dragOver ? "#FFF5F4" : "transparent",
+          }}
         >
           <input
             ref={inputRef}
@@ -2136,11 +2178,11 @@ function RepurposeTab({
 
       {/* Pillar selector (optional) */}
       {repurposePillars.length > 0 && (
-        <Card className="p-6 border-border shadow-soft space-y-3">
-          <div className="text-xs font-medium uppercase tracking-wider text-accent">
-            Anchor to a content pillar (optional)
+        <Card className="shadow-none space-y-3" style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase">
+            ANCHOR TO A CONTENT PILLAR (OPTIONAL)
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-thin">
+          <div className="flex flex-wrap gap-2">
             {repurposePillars.map((p) => {
               const active = activePillar === p;
               return (
@@ -2148,29 +2190,32 @@ function RepurposeTab({
                   key={p}
                   type="button"
                   onClick={() => setActivePillar(active ? null : p)}
-                  className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors whitespace-nowrap ${
-                    active
-                      ? "border-accent bg-accent text-accent-foreground"
-                      : "border-border text-foreground hover:border-foreground/30"
-                  }`}
+                  className="font-medium rounded-full border transition-colors"
+                  style={{
+                    padding: "6px 14px",
+                    fontSize: 12,
+                    background: active ? "#FF6B5C" : "#FFFFFF",
+                    color: active ? "#FFFFFF" : "#FF6B5C",
+                    borderColor: "#FF6B5C",
+                  }}
                 >
                   {p}
                 </button>
               );
             })}
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p style={{ fontSize: 11, color: "#9A9896" }}>
             When selected, MOXIEMO frames extracted insights through this pillar and your brand positioning.
           </p>
         </Card>
       )}
 
       {/* Step 2 — Select */}
-      <Card className="p-6 border-border shadow-soft space-y-3">
+      <Card className="shadow-none space-y-3" style={{ border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-xs font-medium uppercase tracking-wider text-accent mb-1">Step 2</div>
-            <label className="text-sm font-medium text-foreground block">Select the type of content you want to generate</label>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", color: "#FF6B5C" }} className="uppercase mb-1">STEP 2</div>
+            <label style={{ fontSize: 15, fontWeight: 600, color: "#15171C" }} className="block">Select the type of content you want to generate</label>
           </div>
           <button
             type="button"
@@ -2186,17 +2231,22 @@ function RepurposeTab({
             return (
               <label
                 key={label}
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors text-sm ${
-                  checked
-                    ? "border-accent bg-accent-soft/30 text-foreground"
-                    : "border-border bg-background text-foreground hover:border-foreground/30"
-                }`}
+                className="flex items-center gap-2.5 cursor-pointer transition-colors"
+                style={{
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  border: `1px solid ${checked ? "#FF6B5C" : "#ECEAE5"}`,
+                  background: checked ? "#FFF5F4" : "#FFFFFF",
+                  color: "#15171C",
+                  fontSize: 13,
+                }}
               >
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => toggleSelect(label)}
                   className="h-4 w-4 accent-accent shrink-0"
+                  style={{ accentColor: "#FF6B5C" }}
                 />
                 <span>{label}</span>
               </label>
@@ -2210,7 +2260,8 @@ function RepurposeTab({
         <Button
           onClick={handleGenerate}
           disabled={generating || extracting || !transcript || selected.size === 0}
-          className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg w-full sm:w-auto"
+          className="hover:opacity-90 w-full"
+          style={{ background: "#FF6B5C", color: "#FFFFFF", height: 44, borderRadius: 8, fontSize: 14, fontWeight: 600 }}
         >
           {generating ? (
             <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Repurposing...</>
