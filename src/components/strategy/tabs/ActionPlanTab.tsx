@@ -3,6 +3,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Clock } from "lucide-react";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
 
+// Strip simple markdown emphasis (**bold**, *italic*) from a string so task
+// text renders cleanly without literal asterisks.
+function stripMarkdown(text: string): string {
+  if (!text) return text;
+  return text
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/(^|[^*])\*(?!\s)([^*]+?)\*(?!\*)/g, "$1$2");
+}
+
 // Normalize a week into { title, tasks: [{ id, task, estimatedTime, section? }] }.
 // Newer strategies store each week as a markdown string like:
 //   "### Week 1: Foundation (The Seed)\n* **Task:** Do X. (Est: 1 hour)\n* **Task:** ..."
@@ -81,7 +90,7 @@ function WeekCard({ week, weekNumber, completion, onToggle, isFirst }: { week: a
             >
               <Checkbox checked={checked} onCheckedChange={(v) => onToggle(t.id, !!v)} className="mt-0.5" />
               <div className="flex-1 min-w-0">
-                <p className={`text-[13px] leading-[1.5] text-foreground ${checked ? "line-through" : ""}`}>{t.task}</p>
+                <p className={`text-[13px] leading-[1.5] text-foreground ${checked ? "line-through" : ""}`}>{stripMarkdown(String(t.task ?? ""))}</p>
                 {(t.section || t.estimatedTime) && (
                   <div className="flex items-center gap-2 mt-1 text-[11px] text-[#6B6860]">
                     {t.section && <span>{t.section}</span>}
