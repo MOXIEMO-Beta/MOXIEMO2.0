@@ -129,11 +129,11 @@ function StrategyHeader() {
 
 
   return (
-    <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+    <div className="mb-7 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
       <div>
-        <div className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-accent px-3 py-1.5 rounded-full bg-accent-soft mb-3">Your strategy</div>
-        <h1 className="font-display text-5xl md:text-6xl tracking-[-0.03em] mb-3">Marketing foundation</h1>
-        <p className="text-muted-foreground max-w-2xl">This strategy powers every piece of content, email, and post MOXIEMO generates. Update it any time — your execution layer adapts automatically.</p>
+        <div className="inline-block text-[11px] font-bold uppercase tracking-[0.1em] text-accent mb-2">Your strategy</div>
+        <h1 className="text-[20px] font-bold tracking-[-0.3px] text-foreground mb-1.5" style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif' }}>Marketing foundation</h1>
+        <p className="text-[13px] text-foreground/80 max-w-2xl leading-[1.6]">This strategy powers every piece of content, email, and post MOXIEMO generates.</p>
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
             <span className="uppercase tracking-[0.2em] text-[10px]">Prepared for</span>
