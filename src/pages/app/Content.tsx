@@ -752,7 +752,7 @@ export default function Content() {
             className={
               generated && lockedMeta
                 ? "grid grid-cols-1 lg:grid-cols-[minmax(340px,40%)_1fr] gap-6 items-start"
-                : "max-w-[780px] mx-auto"
+                : "w-full"
             }
           >
           <Card
