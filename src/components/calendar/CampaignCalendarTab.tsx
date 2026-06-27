@@ -450,10 +450,11 @@ function wordCount(s: string) {
 }
 
 function TaskGenerationModal({
-  task, strategy, onClose, onUpdate,
+  task, strategy, socialConnections, onClose, onUpdate,
 }: {
   task: TaskItem;
   strategy: any;
+  socialConnections: any[];
   onClose: () => void;
   onUpdate: (t: TaskItem) => void;
 }) {
@@ -461,6 +462,17 @@ function TaskGenerationModal({
   const style = PLATFORM_STYLE[pKey];
   const lengthHint = PLATFORM_LENGTH_HINT[pKey];
   const ct = PLATFORM_TO_CT[pKey];
+  const category = contentCategoryFor(task.platform);
+  const navigate = useNavigate();
+
+  const isPlatformConnected = (() => {
+    if (category !== "social") return true;
+    const want = pKey;
+    return (socialConnections ?? []).some((c: any) => {
+      const p = (c?.platform || c?.provider || "").toLowerCase();
+      return p === want || p.includes(want);
+    });
+  })();
 
   const [content, setContent] = useState<string>(task.savedContent ?? "");
   const [savedAt, setSavedAt] = useState<string | null>(task.savedAt);
@@ -469,9 +481,10 @@ function TaskGenerationModal({
   const [regenerating, setRegenerating] = useState(false);
 
   const [copyLabel, setCopyLabel] = useState("Copy");
-  const [saveLabel, setSaveLabel] = useState("Save post");
+  const [saveLabel, setSaveLabel] = useState("Save");
   const [saveErr, setSaveErr] = useState(false);
   const [publishLabel, setPublishLabel] = useState("Publish now");
+  const [publishNote, setPublishNote] = useState<string | null>(null);
 
   const [schedOpen, setSchedOpen] = useState(false);
   const [schedDate, setSchedDate] = useState<string>(task.date);
@@ -556,11 +569,11 @@ function TaskGenerationModal({
       setSavedAt(now);
       setSaveLabel("Saved ✓");
       onUpdate({ ...task, savedContent: content, savedAt: now, status: "draft" });
-      setTimeout(() => setSaveLabel("Save post"), 1500);
+      setTimeout(() => setSaveLabel("Save"), 1500);
     } catch {
       setSaveErr(true);
       setSaveLabel("Failed — retry");
-      setTimeout(() => { setSaveLabel("Save post"); setSaveErr(false); }, 2000);
+      setTimeout(() => { setSaveLabel("Save"); setSaveErr(false); }, 2000);
     }
   }
 
@@ -579,12 +592,21 @@ function TaskGenerationModal({
   }
 
   async function handlePublish() {
+    if (category === "social" && !isPlatformConnected) {
+      setPublishNote(`Connect your ${style.label} account first →`);
+      return;
+    }
     try {
       await persistPlan({ savedContent: content, savedAt: new Date().toISOString(), status: "published" });
       onUpdate({ ...task, savedContent: content, savedAt: new Date().toISOString(), status: "published" });
     } catch { /* visual-only confirmation per spec */ }
     setPublishLabel("Published!");
     setTimeout(() => { setPublishLabel("Publish now"); onClose(); }, 2000);
+  }
+
+  function handleOpenInEmail() {
+    try { sessionStorage.setItem("email_prefill_body", content); } catch { /* ignore */ }
+    navigate(`/app/email?prefill=1`);
   }
 
   async function handleRegenerate() {
@@ -623,7 +645,7 @@ function TaskGenerationModal({
         <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #ECEAE5", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5, color: style.color, fontSize: 11, fontWeight: 500 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: style.color, display: "inline-block" }} />
+              <PlatformIcon platform={task.platform} size={14} />
               {style.label}
             </div>
             <div style={{ fontSize: 14, fontWeight: 500, color: "#15171C", lineHeight: 1.4, marginBottom: 2 }}>
@@ -670,9 +692,12 @@ function TaskGenerationModal({
         </div>
 
         {/* Context strip */}
-        <div style={{ padding: "8px 20px", background: "#F7F5F1", borderBottom: "0.5px solid #ECEAE5", fontSize: 11, color: "#9A9896" }}>
-          {task.campaignName} · {style.label}
-          {task.campaignPillars?.length ? ` · ${task.campaignPillars.join(", ")}` : ""}
+        <div style={{ padding: "8px 20px", background: "#F7F5F1", borderBottom: "0.5px solid #ECEAE5", fontSize: 11, color: "#9A9896", display: "flex", alignItems: "center", gap: 6 }}>
+          <PlatformIcon platform={task.platform} size={14} />
+          <span>
+            {task.campaignName} · {style.label}
+            {task.campaignPillars?.length ? ` · ${task.campaignPillars.join(", ")}` : ""}
+          </span>
         </div>
 
         {/* Actions */}
@@ -680,10 +705,12 @@ function TaskGenerationModal({
           <div style={{ display: "flex", gap: 8 }}>
             <OutlinePill onClick={handleCopy} icon={<Copy size={12} />} label={copyLabel} />
             <OutlinePill onClick={handleSave} icon={<Save size={12} />} label={saveLabel} danger={saveErr} disabled={showSpinner || !content} />
-            <OutlinePill onClick={() => setSchedOpen((v) => !v)} icon={<CalendarIcon size={12} />} label="Schedule" disabled={showSpinner || !content} />
+            {category === "social" && (
+              <OutlinePill onClick={() => setSchedOpen((v) => !v)} icon={<CalendarIcon size={12} />} label="Schedule" disabled={showSpinner || !content} />
+            )}
           </div>
 
-          {schedOpen && (
+          {category === "social" && schedOpen && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: 10, background: "#F7F5F1", borderRadius: 8 }}>
               {schedConfirmed ? (
                 <div style={{ fontSize: 12, color: "#15171C" }}>Scheduled for {schedConfirmed}</div>
@@ -706,12 +733,44 @@ function TaskGenerationModal({
             </div>
           )}
 
-          {!schedOpen && (
-            <button type="button" onClick={handlePublish} disabled={showSpinner || !content}
-              style={{ background: "#E85A46", color: "#fff", borderRadius: 20, fontSize: 13, fontWeight: 500, padding: 11, border: "none", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (showSpinner || !content) ? 0.6 : 1 }}>
-              <Send size={14} />
-              {publishLabel}
-            </button>
+          {category === "social" && !schedOpen && (
+            <>
+              <button type="button" onClick={handlePublish} disabled={showSpinner || !content}
+                style={{ background: "#E85A46", color: "#fff", borderRadius: 20, fontSize: 13, fontWeight: 500, padding: 11, border: "none", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (showSpinner || !content) ? 0.6 : 1 }}>
+                <Send size={14} />
+                {publishLabel}
+              </button>
+              {!isPlatformConnected && !publishNote && (
+                <div style={{ fontSize: 11, color: "#9A9896", textAlign: "center", marginTop: -4 }}>
+                  Connect {style.label} in Social settings to publish directly.
+                </div>
+              )}
+              {publishNote && (
+                <button type="button" onClick={() => navigate("/app/social")}
+                  style={{ background: "none", border: "none", fontSize: 11, color: "#E85A46", cursor: "pointer", textAlign: "center", marginTop: -4 }}>
+                  {publishNote}
+                </button>
+              )}
+            </>
+          )}
+
+          {category === "email" && (
+            <>
+              <button type="button" onClick={handleOpenInEmail} disabled={showSpinner || !content}
+                style={{ background: "#E85A46", color: "#fff", borderRadius: 20, fontSize: 13, fontWeight: 500, padding: 11, border: "none", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (showSpinner || !content) ? 0.6 : 1 }}>
+                <Mail size={14} />
+                Open in Email →
+              </button>
+              <div style={{ fontSize: 11, color: "#9A9896", textAlign: "center", marginTop: 2 }}>
+                This will open in Email where you can add subscribers, set your subject line, and send.
+              </div>
+            </>
+          )}
+
+          {category === "doc" && (
+            <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "10px 14px", marginTop: 0, fontSize: 11, color: "#9A9896", lineHeight: 1.5, textAlign: "center" }}>
+              This content type is a script or document. Copy it or save it here — use it in your recording, design tool, or wherever it's needed.
+            </div>
           )}
 
           <button type="button" onClick={handleRegenerate} disabled={showSpinner}
