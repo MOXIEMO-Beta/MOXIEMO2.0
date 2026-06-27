@@ -130,7 +130,7 @@ type TaskItem = {
 };
 
 export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
-  const { setTab, strategy } = ctx;
+  const { setTab, strategy, socialConnections } = ctx;
   const { user } = useAuth();
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -428,6 +428,7 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
         <TaskGenerationModal
           task={openTask}
           strategy={strategy}
+          socialConnections={socialConnections ?? []}
           onClose={() => setOpenTask(null)}
           onUpdate={applyTaskUpdate}
         />
