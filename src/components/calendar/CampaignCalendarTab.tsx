@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronLeft, ChevronRight, X, Copy, Save, Calendar as CalendarIcon, Send, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight, X, Copy, Save, Calendar as CalendarIcon, Send, RefreshCw, Mail } from "lucide-react";
 import { startOfWeek, addDays, sameDay, ymd } from "./helpers";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,18 @@ function platformKey(p: string | undefined | null): string {
   if (s.includes("email") || s.includes("newsletter")) return "email";
   if (s.includes("instagram")) return "instagram";
   if (s.includes("facebook")) return "facebook";
+  if (s.includes("twitter") || s === "x" || s.startsWith("x/") || s.startsWith("x ")) return "x";
   return "default";
+}
+
+// Content category for action-set selection.
+type ContentCategory = "social" | "email" | "doc";
+function contentCategoryFor(platform: string | undefined | null): ContentCategory {
+  const s = (platform || "").toLowerCase();
+  if (/linkedin|instagram|facebook|twitter|^x$|x\/|x /.test(s)) return "social";
+  if (/email|newsletter/.test(s)) return "email";
+  if (/script|show notes|blog|article|podcast/.test(s)) return "doc";
+  return "social";
 }
 
 const PLATFORM_STYLE: Record<string, { color: string; label: string }> = {
@@ -25,8 +37,61 @@ const PLATFORM_STYLE: Record<string, { color: string; label: string }> = {
   email:    { color: "#E85A46", label: "Email" },
   instagram:{ color: "#C13584", label: "Instagram" },
   facebook: { color: "#1877F2", label: "Facebook" },
+  x:        { color: "#15171C", label: "X" },
   default:  { color: "#9A9896", label: "Content" },
 };
+
+/** Inline SVG platform icons. Sizes: 14 default, 12 for calendar chips. */
+function PlatformIcon({ platform, size = 14 }: { platform: string | undefined | null; size?: number }) {
+  const k = platformKey(platform);
+  const w = size, h = size;
+  if (k === "linkedin") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="#0A66C2" style={{ flexShrink: 0, display: "block" }}>
+        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+      </svg>
+    );
+  }
+  if (k === "instagram") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="none" stroke="#C13584" strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0, display: "block" }}>
+        <rect x="2" y="2" width="20" height="20" rx="5" />
+        <circle cx="12" cy="12" r="5" />
+        <circle cx="17.5" cy="6.5" r="0.8" fill="#C13584" stroke="none" />
+      </svg>
+    );
+  }
+  if (k === "email") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="none" stroke="#E85A46" strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0, display: "block" }}>
+        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <polyline points="2,4 12,13 22,4" />
+      </svg>
+    );
+  }
+  if (k === "facebook") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="#1877F2" style={{ flexShrink: 0, display: "block" }}>
+        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+      </svg>
+    );
+  }
+  if (k === "x") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="none" stroke="#15171C" strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0, display: "block" }}>
+        <path d="M4 4l16 16M4 20L20 4" />
+      </svg>
+    );
+  }
+  return (
+    <svg width={w} height={h} viewBox="0 0 24 24" fill="none" stroke="#9A9896" strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0, display: "block" }}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14,2 14,8 20,8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="12" y2="17" />
+    </svg>
+  );
+}
 
 // Map platform key to the contentType / platform value the generate-content
 // edge function expects.
