@@ -474,6 +474,10 @@ function TaskGenerationModal({
   })();
 
   const [content, setContent] = useState<string>(task.savedContent ?? "");
+  const [originalContent, setOriginalContent] = useState<string>(task.savedContent ?? "");
+  const [hasFocused, setHasFocused] = useState<boolean>(false);
+  const [pulseSave, setPulseSave] = useState<boolean>(false);
+  const [regenConfirm, setRegenConfirm] = useState<boolean>(false);
   const [savedAt, setSavedAt] = useState<string | null>(task.savedAt);
   const [scheduledAt, setScheduledAt] = useState<string | null>(task.scheduledAt);
   const [generating, setGenerating] = useState<boolean>(!task.savedContent);
@@ -528,7 +532,9 @@ function TaskGenerationModal({
     (async () => {
       const body = await callGenerate();
       if (cancel) return;
-      setContent(body ?? "Generation failed. Click Regenerate to try again.");
+      const out = body ?? "Generation failed. Click Regenerate to try again.";
+      setContent(out);
+      setOriginalContent(out);
       setGenerating(false);
     })();
     return () => { cancel = true; };
@@ -567,6 +573,7 @@ function TaskGenerationModal({
       await persistPlan({ savedContent: content, savedAt: now, status: "draft" });
       setSavedAt(now);
       setSaveLabel("Saved ✓");
+      setOriginalContent(content);
       onUpdate({ ...task, savedContent: content, savedAt: now, status: "draft" });
       setTimeout(() => setSaveLabel("Save"), 1500);
     } catch {
@@ -609,11 +616,23 @@ function TaskGenerationModal({
   }
 
   async function handleRegenerate() {
+    setRegenConfirm(false);
     setRegenerating(true);
     setContent("");
     const body = await callGenerate();
-    setContent(body ?? "Generation failed. Click Regenerate to try again.");
+    const out = body ?? "Generation failed. Click Regenerate to try again.";
+    setContent(out);
+    setOriginalContent(out);
+    setHasFocused(false);
     setRegenerating(false);
+  }
+
+  function onRegenerateClick() {
+    if (content !== originalContent) {
+      setRegenConfirm(true);
+    } else {
+      void handleRegenerate();
+    }
   }
 
   async function handleCopy() {
@@ -623,6 +642,16 @@ function TaskGenerationModal({
   }
 
   const showSpinner = generating || regenerating;
+  const isDirty = !showSpinner && content !== originalContent;
+
+  // Pulse the save button once when edits first appear.
+  useEffect(() => {
+    if (isDirty) {
+      setPulseSave(true);
+      const t = setTimeout(() => setPulseSave(false), 220);
+      return () => clearTimeout(t);
+    }
+  }, [isDirty]);
 
   return (
     <div
@@ -633,6 +662,7 @@ function TaskGenerationModal({
       }}
     >
       <style>{`@keyframes mox-spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`@keyframes mox-pulse { 0%{transform:scale(1)} 50%{transform:scale(1.03)} 100%{transform:scale(1)} }`}</style>
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
@@ -672,15 +702,50 @@ function TaskGenerationModal({
           ) : (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: "#9A9896" }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22C55E", display: "inline-block" }} />
-                  Generated
+                <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: isDirty ? "#D97706" : "#9A9896" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: isDirty ? "#D97706" : "#22C55E", display: "inline-block" }} />
+                  {isDirty ? "Unsaved" : "Generated"}
                 </div>
-                <div style={{ fontSize: 11, color: "#9A9896" }}>{wordCount(content)} words</div>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+                  <div style={{ fontSize: 11, color: "#9A9896" }}>{wordCount(content)} words</div>
+                  {!hasFocused && content && (
+                    <div style={{ fontSize: 11, color: "#9A9896", fontStyle: "italic" }}>Click to edit</div>
+                  )}
+                </div>
               </div>
-              <div style={{ fontSize: 13, color: "#15171C", lineHeight: 1.65, whiteSpace: "pre-line" }}>
-                {content}
-              </div>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                onFocus={() => setHasFocused(true)}
+                style={{
+                  width: "100%",
+                  minHeight: 120,
+                  maxHeight: 200,
+                  overflowY: "auto",
+                  fontSize: 13,
+                  color: "#15171C",
+                  lineHeight: 1.65,
+                  whiteSpace: "pre-wrap",
+                  border: "1.5px solid transparent",
+                  borderRadius: 8,
+                  padding: "8px 10px",
+                  outline: "none",
+                  background: "transparent",
+                  resize: "none",
+                  fontFamily: '"Space Grotesk", system-ui, sans-serif',
+                  cursor: "text",
+                  display: "block",
+                  boxSizing: "border-box",
+                }}
+                onFocusCapture={(e) => {
+                  (e.currentTarget as HTMLTextAreaElement).style.borderColor = "#E85A46";
+                  (e.currentTarget as HTMLTextAreaElement).style.background = "#FAFAF8";
+                }}
+                onBlurCapture={(e) => {
+                  (e.currentTarget as HTMLTextAreaElement).style.borderColor = "transparent";
+                  (e.currentTarget as HTMLTextAreaElement).style.background = "transparent";
+                }}
+              />
               {task.savedContent && savedAt && (
                 <div style={{ fontSize: 11, color: "#9A9896", fontStyle: "italic", marginTop: 8 }}>
                   Saved {formatSavedAt(savedAt)}
@@ -703,7 +768,9 @@ function TaskGenerationModal({
         <div style={{ padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", gap: 8 }}>
             <OutlinePill onClick={handleCopy} icon={<Copy size={12} />} label={copyLabel} />
-            <OutlinePill onClick={handleSave} icon={<Save size={12} />} label={saveLabel} danger={saveErr} disabled={showSpinner || !content} />
+            <div style={{ flex: 1, display: "flex", animation: pulseSave ? "mox-pulse 0.22s ease-out" : undefined }}>
+              <OutlinePill onClick={handleSave} icon={<Save size={12} />} label={saveLabel} danger={saveErr} disabled={showSpinner || !content} />
+            </div>
             {category === "social" && (
               <OutlinePill onClick={() => setSchedOpen((v) => !v)} icon={<CalendarIcon size={12} />} label="Schedule" disabled={showSpinner || !content} />
             )}
@@ -772,10 +839,24 @@ function TaskGenerationModal({
             </div>
           )}
 
-          <button type="button" onClick={handleRegenerate} disabled={showSpinner}
-            style={{ background: "none", border: "none", fontSize: 11, color: "#9A9896", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, width: "100%" }}>
-            <RefreshCw size={12} /> Regenerate
-          </button>
+          {regenConfirm ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, width: "100%" }}>
+              <span style={{ fontSize: 11, color: "#9A9896" }}>Regenerate and lose edits?</span>
+              <button type="button" onClick={handleRegenerate}
+                style={{ background: "none", border: "none", fontSize: 11, color: "#E85A46", cursor: "pointer", padding: 0 }}>
+                Yes, regenerate
+              </button>
+              <button type="button" onClick={() => setRegenConfirm(false)}
+                style={{ background: "none", border: "none", fontSize: 11, color: "#9A9896", cursor: "pointer", padding: 0 }}>
+                Keep editing
+              </button>
+            </div>
+          ) : (
+            <button type="button" onClick={onRegenerateClick} disabled={showSpinner}
+              style={{ background: "none", border: "none", fontSize: 11, color: "#9A9896", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4, width: "100%" }}>
+              <RefreshCw size={12} /> Regenerate
+            </button>
+          )}
         </div>
       </div>
     </div>
