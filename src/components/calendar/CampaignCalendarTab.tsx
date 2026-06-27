@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronLeft, ChevronRight, X, Copy, Save, Calendar as CalendarIcon, Send, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ChevronLeft, ChevronRight, X, Copy, Save, Calendar as CalendarIcon, Send, RefreshCw, Mail } from "lucide-react";
 import { startOfWeek, addDays, sameDay, ymd } from "./helpers";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +18,18 @@ function platformKey(p: string | undefined | null): string {
   if (s.includes("email") || s.includes("newsletter")) return "email";
   if (s.includes("instagram")) return "instagram";
   if (s.includes("facebook")) return "facebook";
+  if (s.includes("twitter") || s === "x" || s.startsWith("x/") || s.startsWith("x ")) return "x";
   return "default";
+}
+
+// Content category for action-set selection.
+type ContentCategory = "social" | "email" | "doc";
+function contentCategoryFor(platform: string | undefined | null): ContentCategory {
+  const s = (platform || "").toLowerCase();
+  if (/linkedin|instagram|facebook|twitter|^x$|x\/|x /.test(s)) return "social";
+  if (/email|newsletter/.test(s)) return "email";
+  if (/script|show notes|blog|article|podcast/.test(s)) return "doc";
+  return "social";
 }
 
 const PLATFORM_STYLE: Record<string, { color: string; label: string }> = {
@@ -25,8 +37,61 @@ const PLATFORM_STYLE: Record<string, { color: string; label: string }> = {
   email:    { color: "#E85A46", label: "Email" },
   instagram:{ color: "#C13584", label: "Instagram" },
   facebook: { color: "#1877F2", label: "Facebook" },
+  x:        { color: "#15171C", label: "X" },
   default:  { color: "#9A9896", label: "Content" },
 };
+
+/** Inline SVG platform icons. Sizes: 14 default, 12 for calendar chips. */
+function PlatformIcon({ platform, size = 14 }: { platform: string | undefined | null; size?: number }) {
+  const k = platformKey(platform);
+  const w = size, h = size;
+  if (k === "linkedin") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="#0A66C2" style={{ flexShrink: 0, display: "block" }}>
+        <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" />
+      </svg>
+    );
+  }
+  if (k === "instagram") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="none" stroke="#C13584" strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0, display: "block" }}>
+        <rect x="2" y="2" width="20" height="20" rx="5" />
+        <circle cx="12" cy="12" r="5" />
+        <circle cx="17.5" cy="6.5" r="0.8" fill="#C13584" stroke="none" />
+      </svg>
+    );
+  }
+  if (k === "email") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="none" stroke="#E85A46" strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0, display: "block" }}>
+        <rect x="2" y="4" width="20" height="16" rx="2" />
+        <polyline points="2,4 12,13 22,4" />
+      </svg>
+    );
+  }
+  if (k === "facebook") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="#1877F2" style={{ flexShrink: 0, display: "block" }}>
+        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+      </svg>
+    );
+  }
+  if (k === "x") {
+    return (
+      <svg width={w} height={h} viewBox="0 0 24 24" fill="none" stroke="#15171C" strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0, display: "block" }}>
+        <path d="M4 4l16 16M4 20L20 4" />
+      </svg>
+    );
+  }
+  return (
+    <svg width={w} height={h} viewBox="0 0 24 24" fill="none" stroke="#9A9896" strokeWidth="1.8" strokeLinecap="round" style={{ flexShrink: 0, display: "block" }}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14,2 14,8 20,8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="12" y2="17" />
+    </svg>
+  );
+}
 
 // Map platform key to the contentType / platform value the generate-content
 // edge function expects.
@@ -65,7 +130,7 @@ type TaskItem = {
 };
 
 export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
-  const { setTab, strategy } = ctx;
+  const { setTab, strategy, socialConnections } = ctx;
   const { user } = useAuth();
   const [anchor, setAnchor] = useState<Date>(new Date());
   const [campaigns, setCampaigns] = useState<any[]>([]);
@@ -284,7 +349,6 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
                 </div>
                 <div className="flex-1">
                   {shown.map((t, i) => {
-                    const style = PLATFORM_STYLE[platformKey(t.platform)];
                     const hasSaved = !!t.savedContent;
                     const isScheduled = !!t.scheduledAt;
                     const bg = isScheduled ? "#EFF6FF" : hasSaved ? "#F0FDF4" : "#F7F5F1";
@@ -314,12 +378,7 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
                           width: "100%",
                         }}
                       >
-                        <span
-                          style={{
-                            width: 6, height: 6, borderRadius: "50%",
-                            background: style.color, flexShrink: 0, display: "inline-block",
-                          }}
-                        />
+                        <PlatformIcon platform={t.platform} size={12} />
                         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, textAlign: "left" }}>
                           {t.action}
                         </span>
@@ -368,6 +427,7 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
         <TaskGenerationModal
           task={openTask}
           strategy={strategy}
+          socialConnections={socialConnections ?? []}
           onClose={() => setOpenTask(null)}
           onUpdate={applyTaskUpdate}
         />
@@ -389,10 +449,11 @@ function wordCount(s: string) {
 }
 
 function TaskGenerationModal({
-  task, strategy, onClose, onUpdate,
+  task, strategy, socialConnections, onClose, onUpdate,
 }: {
   task: TaskItem;
   strategy: any;
+  socialConnections: any[];
   onClose: () => void;
   onUpdate: (t: TaskItem) => void;
 }) {
@@ -400,6 +461,17 @@ function TaskGenerationModal({
   const style = PLATFORM_STYLE[pKey];
   const lengthHint = PLATFORM_LENGTH_HINT[pKey];
   const ct = PLATFORM_TO_CT[pKey];
+  const category = contentCategoryFor(task.platform);
+  const navigate = useNavigate();
+
+  const isPlatformConnected = (() => {
+    if (category !== "social") return true;
+    const want = pKey;
+    return (socialConnections ?? []).some((c: any) => {
+      const p = (c?.platform || c?.provider || "").toLowerCase();
+      return p === want || p.includes(want);
+    });
+  })();
 
   const [content, setContent] = useState<string>(task.savedContent ?? "");
   const [savedAt, setSavedAt] = useState<string | null>(task.savedAt);
@@ -408,9 +480,10 @@ function TaskGenerationModal({
   const [regenerating, setRegenerating] = useState(false);
 
   const [copyLabel, setCopyLabel] = useState("Copy");
-  const [saveLabel, setSaveLabel] = useState("Save post");
+  const [saveLabel, setSaveLabel] = useState("Save");
   const [saveErr, setSaveErr] = useState(false);
   const [publishLabel, setPublishLabel] = useState("Publish now");
+  const [publishNote, setPublishNote] = useState<string | null>(null);
 
   const [schedOpen, setSchedOpen] = useState(false);
   const [schedDate, setSchedDate] = useState<string>(task.date);
@@ -495,11 +568,11 @@ function TaskGenerationModal({
       setSavedAt(now);
       setSaveLabel("Saved ✓");
       onUpdate({ ...task, savedContent: content, savedAt: now, status: "draft" });
-      setTimeout(() => setSaveLabel("Save post"), 1500);
+      setTimeout(() => setSaveLabel("Save"), 1500);
     } catch {
       setSaveErr(true);
       setSaveLabel("Failed — retry");
-      setTimeout(() => { setSaveLabel("Save post"); setSaveErr(false); }, 2000);
+      setTimeout(() => { setSaveLabel("Save"); setSaveErr(false); }, 2000);
     }
   }
 
@@ -518,12 +591,21 @@ function TaskGenerationModal({
   }
 
   async function handlePublish() {
+    if (category === "social" && !isPlatformConnected) {
+      setPublishNote(`Connect your ${style.label} account first →`);
+      return;
+    }
     try {
       await persistPlan({ savedContent: content, savedAt: new Date().toISOString(), status: "published" });
       onUpdate({ ...task, savedContent: content, savedAt: new Date().toISOString(), status: "published" });
     } catch { /* visual-only confirmation per spec */ }
     setPublishLabel("Published!");
     setTimeout(() => { setPublishLabel("Publish now"); onClose(); }, 2000);
+  }
+
+  function handleOpenInEmail() {
+    try { sessionStorage.setItem("email_prefill_body", content); } catch { /* ignore */ }
+    navigate(`/app/email?prefill=1`);
   }
 
   async function handleRegenerate() {
@@ -562,7 +644,7 @@ function TaskGenerationModal({
         <div style={{ padding: "16px 20px", borderBottom: "0.5px solid #ECEAE5", display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 5, color: style.color, fontSize: 11, fontWeight: 500 }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: style.color, display: "inline-block" }} />
+              <PlatformIcon platform={task.platform} size={14} />
               {style.label}
             </div>
             <div style={{ fontSize: 14, fontWeight: 500, color: "#15171C", lineHeight: 1.4, marginBottom: 2 }}>
@@ -609,9 +691,12 @@ function TaskGenerationModal({
         </div>
 
         {/* Context strip */}
-        <div style={{ padding: "8px 20px", background: "#F7F5F1", borderBottom: "0.5px solid #ECEAE5", fontSize: 11, color: "#9A9896" }}>
-          {task.campaignName} · {style.label}
-          {task.campaignPillars?.length ? ` · ${task.campaignPillars.join(", ")}` : ""}
+        <div style={{ padding: "8px 20px", background: "#F7F5F1", borderBottom: "0.5px solid #ECEAE5", fontSize: 11, color: "#9A9896", display: "flex", alignItems: "center", gap: 6 }}>
+          <PlatformIcon platform={task.platform} size={14} />
+          <span>
+            {task.campaignName} · {style.label}
+            {task.campaignPillars?.length ? ` · ${task.campaignPillars.join(", ")}` : ""}
+          </span>
         </div>
 
         {/* Actions */}
@@ -619,10 +704,12 @@ function TaskGenerationModal({
           <div style={{ display: "flex", gap: 8 }}>
             <OutlinePill onClick={handleCopy} icon={<Copy size={12} />} label={copyLabel} />
             <OutlinePill onClick={handleSave} icon={<Save size={12} />} label={saveLabel} danger={saveErr} disabled={showSpinner || !content} />
-            <OutlinePill onClick={() => setSchedOpen((v) => !v)} icon={<CalendarIcon size={12} />} label="Schedule" disabled={showSpinner || !content} />
+            {category === "social" && (
+              <OutlinePill onClick={() => setSchedOpen((v) => !v)} icon={<CalendarIcon size={12} />} label="Schedule" disabled={showSpinner || !content} />
+            )}
           </div>
 
-          {schedOpen && (
+          {category === "social" && schedOpen && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: 10, background: "#F7F5F1", borderRadius: 8 }}>
               {schedConfirmed ? (
                 <div style={{ fontSize: 12, color: "#15171C" }}>Scheduled for {schedConfirmed}</div>
@@ -645,12 +732,44 @@ function TaskGenerationModal({
             </div>
           )}
 
-          {!schedOpen && (
-            <button type="button" onClick={handlePublish} disabled={showSpinner || !content}
-              style={{ background: "#E85A46", color: "#fff", borderRadius: 20, fontSize: 13, fontWeight: 500, padding: 11, border: "none", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (showSpinner || !content) ? 0.6 : 1 }}>
-              <Send size={14} />
-              {publishLabel}
-            </button>
+          {category === "social" && !schedOpen && (
+            <>
+              <button type="button" onClick={handlePublish} disabled={showSpinner || !content}
+                style={{ background: "#E85A46", color: "#fff", borderRadius: 20, fontSize: 13, fontWeight: 500, padding: 11, border: "none", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (showSpinner || !content) ? 0.6 : 1 }}>
+                <Send size={14} />
+                {publishLabel}
+              </button>
+              {!isPlatformConnected && !publishNote && (
+                <div style={{ fontSize: 11, color: "#9A9896", textAlign: "center", marginTop: -4 }}>
+                  Connect {style.label} in Social settings to publish directly.
+                </div>
+              )}
+              {publishNote && (
+                <button type="button" onClick={() => navigate("/app/social")}
+                  style={{ background: "none", border: "none", fontSize: 11, color: "#E85A46", cursor: "pointer", textAlign: "center", marginTop: -4 }}>
+                  {publishNote}
+                </button>
+              )}
+            </>
+          )}
+
+          {category === "email" && (
+            <>
+              <button type="button" onClick={handleOpenInEmail} disabled={showSpinner || !content}
+                style={{ background: "#E85A46", color: "#fff", borderRadius: 20, fontSize: 13, fontWeight: 500, padding: 11, border: "none", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (showSpinner || !content) ? 0.6 : 1 }}>
+                <Mail size={14} />
+                Open in Email →
+              </button>
+              <div style={{ fontSize: 11, color: "#9A9896", textAlign: "center", marginTop: 2 }}>
+                This will open in Email where you can add subscribers, set your subject line, and send.
+              </div>
+            </>
+          )}
+
+          {category === "doc" && (
+            <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "10px 14px", marginTop: 0, fontSize: 11, color: "#9A9896", lineHeight: 1.5, textAlign: "center" }}>
+              This content type is a script or document. Copy it or save it here — use it in your recording, design tool, or wherever it's needed.
+            </div>
           )}
 
           <button type="button" onClick={handleRegenerate} disabled={showSpinner}
