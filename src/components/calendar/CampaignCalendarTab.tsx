@@ -349,7 +349,6 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
                 </div>
                 <div className="flex-1">
                   {shown.map((t, i) => {
-                    const style = PLATFORM_STYLE[platformKey(t.platform)];
                     const hasSaved = !!t.savedContent;
                     const isScheduled = !!t.scheduledAt;
                     const bg = isScheduled ? "#EFF6FF" : hasSaved ? "#F0FDF4" : "#F7F5F1";
