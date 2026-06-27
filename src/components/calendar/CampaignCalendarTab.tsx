@@ -379,12 +379,7 @@ export default function CampaignCalendarTab({ ctx }: { ctx: any }) {
                           width: "100%",
                         }}
                       >
-                        <span
-                          style={{
-                            width: 6, height: 6, borderRadius: "50%",
-                            background: style.color, flexShrink: 0, display: "inline-block",
-                          }}
-                        />
+                        <PlatformIcon platform={t.platform} size={12} />
                         <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, textAlign: "left" }}>
                           {t.action}
                         </span>
