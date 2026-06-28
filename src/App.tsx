@@ -50,6 +50,7 @@ import ComingSoon from "./pages/app/ComingSoon.tsx";
 import Goals from "./pages/app/Goals.tsx";
 import Social from "./pages/app/Social.tsx";
 import Email from "./pages/app/Email.tsx";
+import BrandHub from "./pages/app/BrandHub.tsx";
 import WaitlistAdmin from "./pages/app/WaitlistAdmin.tsx";
 import Onboarding from "./pages/onboarding/Onboarding.tsx";
 import { AuthProvider } from "./hooks/useAuth.tsx";
@@ -125,6 +126,7 @@ const App = () => (
               <Route path="goals" element={<ErrorBoundary><Goals /></ErrorBoundary>} />
               <Route path="email" element={<ErrorBoundary><Email /></ErrorBoundary>} />
               <Route path="social" element={<ErrorBoundary><Social /></ErrorBoundary>} />
+              <Route path="brand-hub" element={<ErrorBoundary><BrandHub /></ErrorBoundary>} />
               <Route path="admin/waitlist" element={<ErrorBoundary><WaitlistAdmin /></ErrorBoundary>} />
             </Route>
               <Route path="*" element={<NotFound />} />

@@ -815,6 +815,10 @@ export type Database = {
         Row: {
           beta_code_used: string | null
           brand_assets: Json | null
+          brand_colors: Json | null
+          brand_fonts: Json | null
+          brand_hub_visited: boolean
+          brand_logo_url: string | null
           business_name: string | null
           created_at: string
           email: string | null
@@ -836,6 +840,10 @@ export type Database = {
         Insert: {
           beta_code_used?: string | null
           brand_assets?: Json | null
+          brand_colors?: Json | null
+          brand_fonts?: Json | null
+          brand_hub_visited?: boolean
+          brand_logo_url?: string | null
           business_name?: string | null
           created_at?: string
           email?: string | null
@@ -857,6 +865,10 @@ export type Database = {
         Update: {
           beta_code_used?: string | null
           brand_assets?: Json | null
+          brand_colors?: Json | null
+          brand_fonts?: Json | null
+          brand_hub_visited?: boolean
+          brand_logo_url?: string | null
           business_name?: string | null
           created_at?: string
           email?: string | null
