@@ -6,7 +6,6 @@ import {
   BarChart3,
   Settings,
   Sparkles,
-  Mail,
   Share2,
   Target,
   ShieldCheck,
