@@ -9,6 +9,7 @@ import {
   Mail,
   Share2,
   Target,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { NavLink, Link } from "react-router-dom";
@@ -32,8 +33,8 @@ const workspace: AppNavItem[] = [
 const execute: AppNavItem[] = [
   { title: "Content", url: "/app/content", icon: FileText },
   { title: "Campaign Planner", url: "/app/calendar", icon: CalendarDays },
-  { title: "Email", url: "/app/email", icon: Mail },
   { title: "Social", url: "/app/social", icon: Share2 },
+  { title: "Brand Hub", url: "/app/brand-hub", icon: ShieldCheck },
 ];
 const analyze: AppNavItem[] = [
   { title: "Analytics", url: "/app/analytics", icon: BarChart3 },
