@@ -802,9 +802,17 @@ function ComposeBlock({
                 style={{ background: "#F0EFEC", border: "0.5px solid #ECEAE5", borderRadius: 10, height: 78 }} />
             ))
           ) : angles.length === 0 ? (
-            <div className="col-span-3 text-[12px]" style={{ color: "#9A9896" }}>
-              No suggestions yet. Click "Refresh suggestions" below.
-            </div>
+            [0,1,2].map((i) => (
+              <div key={i}
+                style={{
+                  background: "#fff", border: "0.5px solid #ECEAE5",
+                  borderRadius: 10, padding: "10px 14px", height: 78,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  textAlign: "center", color: "#9A9896", fontSize: 12,
+                }}>
+                Click "Refresh suggestions" to load ideas from your strategy.
+              </div>
+            ))
           ) : (
             angles.map((a, i) => (
               <button key={i} onClick={() => { setText(a.angle); setPillarUsed(a.pillar); setPhase("idea"); }}
