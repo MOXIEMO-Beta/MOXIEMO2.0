@@ -363,6 +363,7 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   const [selected, setSelected] = useState<string | null>(null);
   const [brandColors, setBrandColors] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [signed, setSigned] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
@@ -370,9 +371,15 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         supabase.from("social_media_assets").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("profiles").select("brand_colors").eq("id", userId).maybeSingle(),
       ]);
-      setAssets((a ?? []) as any);
+      const list = (a ?? []) as any[];
+      setAssets(list as any);
       const bc = (prof as any)?.brand_colors;
       setBrandColors(Array.isArray(bc) ? bc : []);
+      // sign all image URLs
+      const pairs = await Promise.all(
+        list.filter((x) => x.media_type !== "video").map(async (x) => [x.id, await signAssetUrl(x)] as [string, string])
+      );
+      setSigned(Object.fromEntries(pairs));
     })();
   }, [userId]);
 
@@ -385,10 +392,14 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       const { data: { publicUrl } } = supabase.storage.from("social-assets").getPublicUrl(path);
       const mediaType = file.type.startsWith("video") ? "video" : "image";
       const { data, error } = await supabase.from("social_media_assets").insert({
-        user_id: userId, url: publicUrl, filename: file.name, media_type: mediaType, size_bytes: file.size,
+        user_id: userId, url: publicUrl, filename: path, media_type: mediaType, size_bytes: file.size,
       }).select().single();
       if (error) throw error;
       setAssets((arr) => [data as any, ...arr]);
+      if (mediaType === "image") {
+        const url = await signAssetUrl(data as any);
+        setSigned((s) => ({ ...s, [(data as any).id]: url }));
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "Upload failed");
     } finally { setUploading(false); }
@@ -397,9 +408,12 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   async function attach() {
     const asset = assets.find((a) => a.id === selected);
     if (!asset) return;
-    const { error } = await supabase.from("social_posts").update({ media_urls: [asset.url] }).eq("id", postId);
+    // Persist the storage path; we'll sign at render time
+    const path = storagePathOf(asset) ?? asset.url;
+    const { error } = await supabase.from("social_posts").update({ media_urls: [path] }).eq("id", postId);
     if (error) { toast.error(error.message); return; }
-    onAttached(asset.url);
+    const display = await signAssetUrl(asset);
+    onAttached(display || path);
     toast.success("Attached to post");
     onClose();
   }
@@ -464,8 +478,15 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
                 }}>
                 {a.media_type === "video" ? (
                   <div className="w-full h-full flex items-center justify-center"><Video size={20} color="#9A9896" /></div>
+                ) : signed[a.id] ? (
+                  <img
+                    src={signed[a.id]}
+                    alt={a.filename ?? ""}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  />
                 ) : (
-                  <img src={a.url} alt="" className="w-full h-full object-cover" />
+                  <div className="w-full h-full flex items-center justify-center"><ImageIcon size={20} color="#9A9896" /></div>
                 )}
                 {sel && (
                   <div className="absolute top-1 right-1 flex items-center justify-center"
