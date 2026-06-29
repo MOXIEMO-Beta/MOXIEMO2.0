@@ -796,7 +796,7 @@ function SimpleMediaUploader({ userId, onClose }: { userId: string; onClose: () 
       const { data: { publicUrl } } = supabase.storage.from("social-assets").getPublicUrl(path);
       const mediaType = file.type.startsWith("video") ? "video" : "image";
       const { error } = await supabase.from("social_media_assets").insert({
-        user_id: userId, url: publicUrl, filename: file.name, media_type: mediaType, size_bytes: file.size,
+        user_id: userId, url: publicUrl, filename: path, media_type: mediaType, size_bytes: file.size,
       });
       if (error) throw error;
       toast.success("Uploaded to media library");
