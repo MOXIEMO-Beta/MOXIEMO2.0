@@ -177,7 +177,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       return;
     }
     try {
-      const { error } = await supabase.functions.invoke("publish-social-post", { body: { postId: post.id } });
+      const { error } = await invokeWithAuth("publish-social-post", { postId: post.id });
       if (error) throw error;
       toast.success("Published!");
       setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
@@ -587,7 +587,7 @@ function ComposeBlock({
         // Background generate
         setLoadingAngles(true);
         try {
-          const { data: gen } = await supabase.functions.invoke("generate-pillar-angles", { body: {} });
+          const { data: gen } = await invokeWithAuth("generate-pillar-angles", {});
           const a = (gen as any)?.angles?.angles ?? [];
           if (!cancelled) setAngles(Array.isArray(a) ? a.slice(0, 3) : []);
         } catch {
@@ -604,7 +604,7 @@ function ComposeBlock({
     setLoadingAngles(true);
     try {
       await supabase.from("pillar_feed_cache").delete().eq("user_id", userId);
-      const { data: gen } = await supabase.functions.invoke("generate-pillar-angles", { body: { refresh: true } });
+      const { data: gen } = await invokeWithAuth("generate-pillar-angles", { refresh: true });
       const a = (gen as any)?.angles?.angles ?? [];
       setAngles(Array.isArray(a) ? a.slice(0, 3) : []);
       toast.success("Suggestions refreshed");
@@ -643,14 +643,12 @@ function ComposeBlock({
     setIdea(topic);
     setPhase("generating");
     try {
-      const { data, error } = await supabase.functions.invoke("generate-social-post", {
-        body: {
-          topic,
-          platforms: [platform],
-          postFormat: "Text post",
-          toneOverride: null,
-          strategy: strategy ?? {},
-        },
+      const { data, error } = await invokeWithAuth("generate-social-post", {
+        topic,
+        platforms: [platform],
+        postFormat: "Text post",
+        toneOverride: null,
+        strategy: strategy ?? {},
       });
       if (error) throw error;
       const posts = (data as any)?.posts ?? {};
