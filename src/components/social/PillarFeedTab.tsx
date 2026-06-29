@@ -81,7 +81,12 @@ export default function PillarFeedTab({ userId }: { userId: string | null }) {
 
   async function loadAngles(force: boolean) {
     try {
-      const { data, error } = await supabase.functions.invoke("generate-pillar-angles", { body: { refresh: force } });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("Not signed in");
+      const { data, error } = await supabase.functions.invoke("generate-pillar-angles", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: { refresh: force },
+      });
       if (error) throw error;
       const arr = (data?.angles?.angles ?? data?.angles ?? []) as { pillar: string; angle: string }[];
       const map: Record<string, string> = {};

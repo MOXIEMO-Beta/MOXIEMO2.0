@@ -8,6 +8,17 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+async function invokeWithAuth<T = any>(name: string, body: any = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Not signed in");
+  }
+  return supabase.functions.invoke<T>(name, {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body,
+  });
+}
+
 type Platform = "linkedin" | "instagram" | "facebook" | "x";
 
 type SocialPost = {
@@ -166,7 +177,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       return;
     }
     try {
-      const { error } = await supabase.functions.invoke("publish-social-post", { body: { postId: post.id } });
+      const { error } = await invokeWithAuth("publish-social-post", { postId: post.id });
       if (error) throw error;
       toast.success("Published!");
       setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
@@ -576,7 +587,7 @@ function ComposeBlock({
         // Background generate
         setLoadingAngles(true);
         try {
-          const { data: gen } = await supabase.functions.invoke("generate-pillar-angles", { body: {} });
+          const { data: gen } = await invokeWithAuth("generate-pillar-angles", {});
           const a = (gen as any)?.angles?.angles ?? [];
           if (!cancelled) setAngles(Array.isArray(a) ? a.slice(0, 3) : []);
         } catch {
@@ -593,7 +604,7 @@ function ComposeBlock({
     setLoadingAngles(true);
     try {
       await supabase.from("pillar_feed_cache").delete().eq("user_id", userId);
-      const { data: gen } = await supabase.functions.invoke("generate-pillar-angles", { body: { refresh: true } });
+      const { data: gen } = await invokeWithAuth("generate-pillar-angles", { refresh: true });
       const a = (gen as any)?.angles?.angles ?? [];
       setAngles(Array.isArray(a) ? a.slice(0, 3) : []);
       toast.success("Suggestions refreshed");
@@ -632,14 +643,12 @@ function ComposeBlock({
     setIdea(topic);
     setPhase("generating");
     try {
-      const { data, error } = await supabase.functions.invoke("generate-social-post", {
-        body: {
-          topic,
-          platforms: [platform],
-          postFormat: "Text post",
-          toneOverride: null,
-          strategy: strategy ?? {},
-        },
+      const { data, error } = await invokeWithAuth("generate-social-post", {
+        topic,
+        platforms: [platform],
+        postFormat: "Text post",
+        toneOverride: null,
+        strategy: strategy ?? {},
       });
       if (error) throw error;
       const posts = (data as any)?.posts ?? {};
@@ -793,9 +802,17 @@ function ComposeBlock({
                 style={{ background: "#F0EFEC", border: "0.5px solid #ECEAE5", borderRadius: 10, height: 78 }} />
             ))
           ) : angles.length === 0 ? (
-            <div className="col-span-3 text-[12px]" style={{ color: "#9A9896" }}>
-              No suggestions yet. Click "Refresh suggestions" below.
-            </div>
+            [0,1,2].map((i) => (
+              <div key={i}
+                style={{
+                  background: "#fff", border: "0.5px solid #ECEAE5",
+                  borderRadius: 10, padding: "10px 14px", height: 78,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  textAlign: "center", color: "#9A9896", fontSize: 12,
+                }}>
+                Click "Refresh suggestions" to load ideas from your strategy.
+              </div>
+            ))
           ) : (
             angles.map((a, i) => (
               <button key={i} onClick={() => { setText(a.angle); setPillarUsed(a.pillar); setPhase("idea"); }}
