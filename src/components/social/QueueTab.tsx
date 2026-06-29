@@ -879,3 +879,134 @@ function SimpleMediaUploader({ userId, onClose }: { userId: string; onClose: () 
     </label>
   );
 }
+
+/* ---------------- Inline edit panel ---------------- */
+function EditPostPanel({
+  post, userId, onClose, onSaved,
+}: {
+  post: SocialPost;
+  userId: string;
+  onClose: () => void;
+  onSaved: (p: SocialPost) => void;
+}) {
+  const initialPlatform = primaryPlatform(post);
+  const initialText = (post.content_by_platform ?? {})[initialPlatform] ?? Object.values(post.content_by_platform ?? {})[0] ?? "";
+  const initialMedia = Array.isArray(post.media_urls) && post.media_urls.length > 0 ? (post.media_urls[0] as string) : null;
+
+  const [platform, setPlatform] = useState<Platform>(initialPlatform);
+  const [text, setText] = useState<string>(String(initialText));
+  const [mediaPath, setMediaPath] = useState<string | null>(initialMedia);
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const limit = CHAR_LIMITS[platform];
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!mediaPath) { setThumbUrl(null); return; }
+      const url = await signAssetUrl({ url: mediaPath, filename: null });
+      if (!cancelled) setThumbUrl(url);
+    })();
+    return () => { cancelled = true; };
+  }, [mediaPath]);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const cbp = { ...(post.content_by_platform ?? {}), [platform]: text };
+      const { data, error } = await supabase.from("social_posts").update({
+        platforms: [platform],
+        content_by_platform: cbp,
+        media_urls: mediaPath ? [mediaPath] : [],
+      }).eq("id", post.id)
+        .select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at")
+        .single();
+      if (error) throw error;
+      onSaved(data as any);
+      toast.success("Post updated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Save failed");
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div style={{ background: "#F7F5F1", border: "0.5px solid #ECEAE5", borderRadius: 10, padding: 16, marginTop: 8, marginBottom: 8 }}>
+      <div className="flex flex-wrap gap-1.5" style={{ marginBottom: 10 }}>
+        {(["linkedin","instagram","facebook","x"] as Platform[]).map((p) => {
+          const meta = PLATFORM_META[p];
+          const Icon = meta.Icon;
+          const active = platform === p;
+          const a = PILL_ACTIVE[p];
+          return (
+            <button key={p} onClick={() => setPlatform(p)} className="flex items-center gap-1.5"
+              style={{
+                borderRadius: 20, padding: "4px 10px", fontSize: 11, fontWeight: 500, cursor: "pointer",
+                border: active ? `1px solid ${a.border}` : "0.5px solid #ECEAE5",
+                background: active ? a.bg : "#fff",
+                color: active ? a.color : "#6B6860",
+              }}><Icon size={12} /> {meta.label}</button>
+          );
+        })}
+      </div>
+
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        style={{
+          background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 8, padding: 12,
+          fontSize: 13, color: "#0E0F10", lineHeight: 1.6, width: "100%", minHeight: 96, resize: "vertical",
+          outline: "none", fontFamily: "Space Grotesk, sans-serif",
+        }}
+      />
+
+      {mediaPath && (
+        <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ position: "relative", width: 52, height: 52, borderRadius: 6, border: "0.5px solid #ECEAE5", overflow: "hidden", background: "#F0EFEC" }}>
+            {thumbUrl ? (
+              <img src={thumbUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} color="#9A9896" /></div>
+            )}
+          </div>
+          <button onClick={() => setMediaPath(null)} title="Remove image"
+            style={{ border: "0.5px solid #ECEAE5", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff" }}>
+            <X size={12} color="#6B6860" />
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between" style={{ marginTop: 10 }}>
+        <div className="flex items-center gap-3">
+          <span style={{ fontSize: 11, color: text.length > limit ? "#E85A46" : "#9A9896" }}>{text.length} / {limit}</span>
+          <button onClick={() => setShowLibrary((v) => !v)} className="flex items-center gap-1.5"
+            style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 12px", fontSize: 12, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
+            <ImageIcon size={12} /> {mediaPath ? "Change image" : "Add image"}
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onClose}
+            style={{ border: "0.5px solid #ECEAE5", color: "#6B6860", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 500, background: "transparent", cursor: "pointer" }}>
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            style={{ background: "#E85A46", color: "#fff", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+            Save changes
+          </button>
+        </div>
+      </div>
+
+      {showLibrary && (
+        <div style={{ marginTop: 12 }}>
+          <MediaPanel
+            userId={userId}
+            postId={post.id}
+            onClose={() => setShowLibrary(false)}
+            onAttached={(url) => { setMediaPath(url); setShowLibrary(false); }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
