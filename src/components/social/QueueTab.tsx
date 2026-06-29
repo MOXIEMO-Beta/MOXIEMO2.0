@@ -8,6 +8,17 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+async function invokeWithAuth<T = any>(name: string, body: any = {}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    throw new Error("Not signed in");
+  }
+  return supabase.functions.invoke<T>(name, {
+    headers: { Authorization: `Bearer ${session.access_token}` },
+    body,
+  });
+}
+
 type Platform = "linkedin" | "instagram" | "facebook" | "x";
 
 type SocialPost = {
