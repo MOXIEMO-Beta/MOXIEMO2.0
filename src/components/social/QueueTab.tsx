@@ -549,6 +549,16 @@ function ComposeBlock({
   const [angles, setAngles] = useState<CachedAngle[] | null>(null);
   const [loadingAngles, setLoadingAngles] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
+  const [phase, setPhase] = useState<"idea" | "generating" | "generated">("idea");
+  const [idea, setIdea] = useState("");
+  const [pillarUsed, setPillarUsed] = useState<string | null>(null);
+  const [strategy, setStrategy] = useState<Record<string, any> | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from("strategies").select("*").eq("user_id", userId).maybeSingle()
+      .then(({ data }) => setStrategy((data as any) ?? {}));
+  }, [userId]);
 
   const limit = CHAR_LIMITS[platform];
 
@@ -601,22 +611,45 @@ function ComposeBlock({
         platforms: [platform],
         content_by_platform: { [platform]: text.trim() } as any,
         status: "draft",
+        pillar: pillarUsed,
         sort_order: 0,
       }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
       if (error) throw error;
       onSaved(data as any);
       setText("");
+      setIdea("");
+      setPillarUsed(null);
+      setPhase("idea");
       toast.success("Saved to queue");
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save");
     } finally { setSaving(false); }
   }
 
-  function generateWithAI() {
-    const q = new URLSearchParams();
-    q.set("platform", platform);
-    if (text.trim()) q.set("idea", text.trim());
-    navigate(`/app/content?${q.toString()}`);
+  async function runGenerate(useIdea?: string) {
+    const topic = (useIdea ?? text).trim();
+    if (!topic) return;
+    setIdea(topic);
+    setPhase("generating");
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-social-post", {
+        body: {
+          topic,
+          platforms: [platform],
+          postFormat: "Text post",
+          toneOverride: null,
+          strategy: strategy ?? {},
+        },
+      });
+      if (error) throw error;
+      const posts = (data as any)?.posts ?? {};
+      const generated = posts[platform] || Object.values(posts).find((v: any) => v) || "";
+      setText(String(generated));
+      setPhase("generated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Generation failed");
+      setPhase("idea");
+    }
   }
 
   const isPanel = variant === "panel";
@@ -675,9 +708,23 @@ function ComposeBlock({
           style={{
             width: "100%", minHeight: isPanel ? 52 : 64, background: "transparent",
             border: "none", outline: "none", fontSize: 13, color: "#0E0F10",
+            borderLeft: phase === "generated" ? "3px solid #E85A46" : "none",
+            paddingLeft: phase === "generated" ? 12 : 0,
+            background: phase === "generated" ? "#fff" : "transparent",
             lineHeight: 1.6, resize: "vertical", fontFamily: "Space Grotesk, sans-serif",
           }}
+          disabled={phase === "generating"}
         />
+        {phase === "generating" && (
+          <div className="flex items-center justify-center gap-2" style={{ padding: "10px 0", color: "#9A9896", fontSize: 12 }}>
+            <Loader2 size={14} color="#E85A46" className="animate-spin" /> Generating your post...
+          </div>
+        )}
+        {phase === "generated" && pillarUsed && (
+          <div style={{ fontSize: 10, color: "#9A9896", marginTop: 6 }}>
+            {PLATFORM_META[platform].label} · {pillarUsed}
+          </div>
+        )}
 
         <div className="flex items-center justify-between"
           style={{ marginTop: 10, paddingTop: 10, borderTop: "0.5px solid #ECEAE5" }}>
@@ -688,26 +735,42 @@ function ComposeBlock({
                 fontSize: 12, fontWeight: 500, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
               <ImageIcon size={12} /> Add image
             </button>
-            <button onClick={generateWithAI}
-              className="flex items-center gap-1.5"
-              style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 12px",
-                fontSize: 12, fontWeight: 500, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
-              <Sparkles size={12} /> Generate with AI
-            </button>
+            {phase === "generated" && (
+              <button onClick={() => runGenerate(idea)}
+                className="flex items-center gap-1.5"
+                style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 12px",
+                  fontSize: 12, fontWeight: 500, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
+                <RotateCcw size={12} /> Regenerate
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <span style={{ fontSize: 11, color: text.length > limit ? "#E85A46" : "#9A9896" }}>
               {text.length} / {limit}
             </span>
-            <button onClick={save} disabled={saving || !text.trim()}
-              className="flex items-center gap-1 font-semibold"
-              style={{
-                background: "#E85A46", color: "#fff", border: "none",
-                borderRadius: 20, padding: "5px 14px", fontSize: 12, cursor: "pointer",
-                opacity: !text.trim() || saving ? 0.5 : 1,
-              }}>
-              <CalendarPlus size={12} /> Save to queue
-            </button>
+            {phase === "generated" ? (
+              <button onClick={save} disabled={saving || !text.trim()}
+                className="flex items-center gap-1 font-semibold"
+                style={{
+                  background: "#E85A46", color: "#fff", border: "none",
+                  borderRadius: 20, padding: "5px 14px", fontSize: 12, cursor: (!text.trim() || saving) ? "not-allowed" : "pointer",
+                  opacity: !text.trim() || saving ? 0.45 : 1,
+                }}>
+                <CalendarPlus size={12} /> Save to queue
+              </button>
+            ) : (
+              <button onClick={() => runGenerate()} disabled={!text.trim() || phase === "generating"}
+                className="flex items-center gap-1.5 font-semibold"
+                style={{
+                  background: "#E85A46", color: "#fff", border: "none",
+                  borderRadius: 20, padding: "5px 18px", fontSize: 13, fontWeight: 600,
+                  cursor: !text.trim() ? "not-allowed" : "pointer",
+                  boxShadow: "0 4px 14px rgba(232,90,70,0.25)",
+                  opacity: !text.trim() || phase === "generating" ? 0.45 : 1,
+                }}>
+                <Sparkles size={14} /> Generate post →
+              </button>
+            )}
           </div>
         </div>
 
@@ -736,7 +799,7 @@ function ComposeBlock({
             </div>
           ) : (
             angles.map((a, i) => (
-              <button key={i} onClick={() => setText(a.angle)}
+              <button key={i} onClick={() => { setText(a.angle); setPillarUsed(a.pillar); setPhase("idea"); }}
                 className="text-left transition"
                 style={{
                   background: "#fff", border: "0.5px solid #ECEAE5",
