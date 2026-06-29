@@ -1,0 +1,435 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
+  Trash2, CloudUpload, Check, Video, Inbox,
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+
+type Platform = "linkedin" | "instagram" | "facebook" | "x";
+
+type SocialPost = {
+  id: string;
+  user_id: string;
+  platforms: string[] | null;
+  content_by_platform: Record<string, string> | null;
+  pillar: string | null;
+  status: string;
+  scheduled_for: string | null;
+  published_at: string | null;
+  media_urls: any;
+  sort_order: number | null;
+  created_at: string;
+};
+
+type Asset = {
+  id: string;
+  url: string;
+  filename: string | null;
+  media_type: "image" | "video" | null;
+  created_at: string;
+};
+
+const PLATFORM_META: Record<Platform, { bg: string; color: string; Icon: any; label: string }> = {
+  linkedin:  { bg: "#E8F1FB", color: "#0A66C2", Icon: Linkedin,  label: "LinkedIn" },
+  instagram: { bg: "#FCE8F5", color: "#C13584", Icon: Instagram, label: "Instagram" },
+  facebook:  { bg: "#E8F0FD", color: "#1877F2", Icon: Facebook,  label: "Facebook" },
+  x:         { bg: "#F0EFEC", color: "#0E0F10", Icon: Twitter,   label: "X" },
+};
+
+function primaryPlatform(p: SocialPost): Platform {
+  const arr = p.platforms ?? [];
+  const first = (arr[0] ?? "linkedin").toLowerCase();
+  if (first === "twitter") return "x";
+  if (["linkedin","instagram","facebook","x"].includes(first)) return first as Platform;
+  return "linkedin";
+}
+function previewText(p: SocialPost): string {
+  const plat = primaryPlatform(p);
+  const cbp = p.content_by_platform ?? {};
+  const txt = cbp[plat] || Object.values(cbp)[0] || "";
+  return String(txt).slice(0, 100);
+}
+function fmtDate(iso: string | null): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+function toLocalInputValue(iso: string | null): string {
+  const d = iso ? new Date(iso) : new Date();
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().slice(0, 16);
+}
+
+export default function QueueTab({ userId }: { userId: string | null }) {
+  const navigate = useNavigate();
+  const [posts, setPosts] = useState<SocialPost[]>([]);
+  const [filter, setFilter] = useState<"all" | Platform>("all");
+  const [loading, setLoading] = useState(true);
+  const [connections, setConnections] = useState<Set<string>>(new Set());
+  const [openMediaFor, setOpenMediaFor] = useState<string | null>(null);
+  const [showPublishBanner, setShowPublishBanner] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    setLoading(true);
+    (async () => {
+      const [{ data: rows }, { data: conns }] = await Promise.all([
+        supabase
+          .from("social_posts")
+          .select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at")
+          .eq("user_id", userId)
+          .order("sort_order", { ascending: true })
+          .order("scheduled_for", { ascending: true, nullsFirst: false })
+          .order("created_at", { ascending: false }),
+        supabase.from("social_connections").select("platform").eq("user_id", userId),
+      ]);
+      setPosts((rows ?? []) as any);
+      setConnections(new Set(((conns ?? []) as any[]).map((c) => c.platform)));
+      setLoading(false);
+    })();
+  }, [userId]);
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return posts;
+    return posts.filter((p) => primaryPlatform(p) === filter);
+  }, [posts, filter]);
+
+  async function handleDateChange(post: SocialPost, value: string) {
+    if (!value) return;
+    const iso = new Date(value).toISOString();
+    const nextStatus = post.status === "draft" ? "scheduled" : post.status;
+    setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, scheduled_for: iso, status: nextStatus } : p)));
+    const { error } = await supabase
+      .from("social_posts")
+      .update({ scheduled_for: iso, status: nextStatus })
+      .eq("id", post.id);
+    if (error) toast.error(error.message);
+    else toast.success("Schedule updated");
+  }
+
+  async function handleDelete(post: SocialPost) {
+    if (!confirm("Delete this post?")) return;
+    const prev = posts;
+    setPosts((arr) => arr.filter((p) => p.id !== post.id));
+    const { error } = await supabase.from("social_posts").delete().eq("id", post.id);
+    if (error) { setPosts(prev); toast.error(error.message); }
+    else toast.success("Post deleted");
+  }
+
+  async function handlePublish(post: SocialPost) {
+    const plat = primaryPlatform(post);
+    if (!connections.has(plat)) {
+      setShowPublishBanner(true);
+      return;
+    }
+    try {
+      const { error } = await supabase.functions.invoke("publish-social-post", { body: { postId: post.id } });
+      if (error) throw error;
+      toast.success("Published!");
+      setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
+    } catch (e: any) {
+      toast.error(e?.message ?? "Publish failed");
+    }
+  }
+
+  function onDragStart(id: string) { setDragId(id); }
+  function onDragOver(e: React.DragEvent) { e.preventDefault(); }
+  async function onDropOn(target: SocialPost) {
+    if (!dragId || dragId === target.id) return;
+    const src = posts.find((p) => p.id === dragId);
+    if (!src) return;
+    const without = posts.filter((p) => p.id !== dragId);
+    const idx = without.findIndex((p) => p.id === target.id);
+    const next = [...without.slice(0, idx), src, ...without.slice(idx)];
+    setPosts(next);
+    setDragId(null);
+    // persist sort_order
+    const updates = next.map((p, i) => supabase.from("social_posts").update({ sort_order: i }).eq("id", p.id));
+    await Promise.all(updates);
+  }
+
+  return (
+    <div className="space-y-4">
+      {showPublishBanner && (
+        <div className="rounded-lg px-3.5 py-2.5 text-[12px] flex items-center justify-between"
+          style={{ background: "#FEF3C7", border: "0.5px solid #FBBF24", color: "#854F0B" }}>
+          <span>Connect a platform in Settings to publish posts directly from MOXIEMO.</span>
+          <button className="text-[12px] font-medium" style={{ color: "#E85A46" }}
+            onClick={() => navigate("/app/settings#integrations")}>Go to Settings →</button>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center gap-2">
+          {(["all", "linkedin", "instagram", "facebook", "x"] as const).map((p) => {
+            const active = filter === p;
+            const label = p === "all" ? "All platforms" : PLATFORM_META[p as Platform].label;
+            return (
+              <button key={p} onClick={() => setFilter(p)}
+                className="text-[12px] font-medium transition"
+                style={{
+                  borderRadius: 20, padding: "5px 14px",
+                  border: active ? "1px solid #E85A46" : "0.5px solid #ECEAE5",
+                  color: active ? "#E85A46" : "#6B6860",
+                  background: "transparent",
+                }}>{label}</button>
+            );
+          })}
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[12px]" style={{ color: "#9A9896" }}>{filtered.length} posts in queue</span>
+          <button onClick={() => navigate("/app/content?from=social-queue")}
+            className="text-[12px] font-medium"
+            style={{ border: "0.5px solid #ECEAE5", borderRadius: 8, height: 32, padding: "0 14px", color: "#0E0F10" }}>
+            Add post
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-[12px]" style={{ color: "#9A9896" }}>Loading…</div>
+      ) : filtered.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <Inbox size={28} color="#9A9896" />
+          <div className="mt-3 text-[13px] font-medium" style={{ color: "#0E0F10" }}>No posts in your queue yet.</div>
+          <div className="mt-1 text-[12px]" style={{ color: "#9A9896" }}>Generate content from the Content page and it will appear here.</div>
+          <button onClick={() => navigate("/app/content?from=social-queue")}
+            className="mt-4 text-[12px] font-semibold" style={{ color: "#E85A46" }}>Go to Content →</button>
+        </div>
+      ) : (
+        <div>
+          {filtered.map((post) => {
+            const plat = primaryPlatform(post);
+            const meta = PLATFORM_META[plat];
+            const Icon = meta.Icon;
+            const isConnected = connections.has(plat);
+            const isOpen = openMediaFor === post.id;
+            const hasMedia = Array.isArray(post.media_urls) ? post.media_urls.length > 0 : false;
+            const thumb = hasMedia ? (post.media_urls as any[])[0] : null;
+            const status = (post.status || "draft").toLowerCase();
+            return (
+              <div key={post.id}>
+                <div
+                  className="group flex items-center gap-2.5 mb-2"
+                  style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "14px 16px" }}
+                  draggable
+                  onDragStart={() => onDragStart(post.id)}
+                  onDragOver={onDragOver}
+                  onDrop={() => onDropOn(post)}
+                >
+                  <GripVertical size={16} color="#9A9896" style={{ cursor: "grab", flexShrink: 0 }} />
+                  <div className="flex items-center justify-center flex-shrink-0"
+                    style={{ width: 28, height: 28, borderRadius: 7, background: meta.bg }}>
+                    <Icon size={15} color={meta.color} />
+                  </div>
+                  {thumb && (
+                    <img src={thumb} alt="" className="flex-shrink-0"
+                      style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover", border: "0.5px solid #ECEAE5" }} />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] truncate" style={{ color: "#0E0F10" }}>
+                      {previewText(post) || <span style={{ color: "#9A9896" }}>(empty)</span>}
+                    </div>
+                    {post.pillar && <div className="text-[11px]" style={{ color: "#9A9896" }}>{post.pillar}</div>}
+                  </div>
+                  <label className="text-[12px] whitespace-nowrap cursor-pointer" style={{ color: "#6B6860" }}>
+                    {fmtDate(post.scheduled_for)}
+                    <input type="datetime-local" defaultValue={toLocalInputValue(post.scheduled_for)}
+                      className="sr-only" onChange={(e) => handleDateChange(post, e.target.value)} />
+                  </label>
+                  <span className="text-[10px] font-semibold whitespace-nowrap"
+                    style={{
+                      borderRadius: 4, padding: "2px 8px",
+                      background: status === "scheduled" ? "#E6F1FB" : status === "published" ? "#EAF3DE" : "#F0EFEC",
+                      color: status === "scheduled" ? "#185FA5" : status === "published" ? "#3B6D11" : "#6B6860",
+                      border: status === "draft" ? "0.5px solid #ECEAE5" : "none",
+                    }}>
+                    {status[0].toUpperCase() + status.slice(1)}
+                  </span>
+                  <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
+                    <button title="Edit" onClick={() => navigate(`/app/content?postId=${post.id}`)}>
+                      <Pencil size={13} color="#6B6860" /></button>
+                    <button title="Media library" onClick={() => setOpenMediaFor(isOpen ? null : post.id)}>
+                      <ImageIcon size={13} color="#6B6860" /></button>
+                    <button title="Delete" onClick={() => handleDelete(post)}>
+                      <Trash2 size={13} color="#6B6860" /></button>
+                  </div>
+                  {isConnected && (
+                    <button onClick={() => handlePublish(post)}
+                      className="font-semibold"
+                      style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 26, padding: "0 10px", fontSize: 11 }}>
+                      Publish now
+                    </button>
+                  )}
+                  {!isConnected && (
+                    <button onClick={() => setShowPublishBanner(true)}
+                      className="font-semibold opacity-60"
+                      style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 26, padding: "0 10px", fontSize: 11 }}>
+                      Publish now
+                    </button>
+                  )}
+                </div>
+                {isOpen && (
+                  <MediaPanel userId={userId!} postId={post.id}
+                    onClose={() => setOpenMediaFor(null)}
+                    onAttached={(url) => {
+                      setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, media_urls: [url] } : p)));
+                    }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- Media library panel ---------------- */
+function MediaPanel({ userId, postId, onClose, onAttached }: {
+  userId: string; postId: string; onClose: () => void; onAttached: (url: string) => void;
+}) {
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [tab, setTab] = useState<"all" | "images" | "videos" | "colors">("all");
+  const [selected, setSelected] = useState<string | null>(null);
+  const [brandColors, setBrandColors] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const [{ data: a }, { data: prof }] = await Promise.all([
+        supabase.from("social_media_assets").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
+        supabase.from("profiles").select("brand_colors").eq("id", userId).maybeSingle(),
+      ]);
+      setAssets((a ?? []) as any);
+      const bc = (prof as any)?.brand_colors;
+      setBrandColors(Array.isArray(bc) ? bc : []);
+    })();
+  }, [userId]);
+
+  async function handleUpload(file: File) {
+    setUploading(true);
+    try {
+      const path = `${userId}/${Date.now()}-${file.name}`;
+      const { error: upErr } = await supabase.storage.from("social-assets").upload(path, file);
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from("social-assets").getPublicUrl(path);
+      const mediaType = file.type.startsWith("video") ? "video" : "image";
+      const { data, error } = await supabase.from("social_media_assets").insert({
+        user_id: userId, url: publicUrl, filename: file.name, media_type: mediaType, size_bytes: file.size,
+      }).select().single();
+      if (error) throw error;
+      setAssets((arr) => [data as any, ...arr]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed");
+    } finally { setUploading(false); }
+  }
+
+  async function attach() {
+    const asset = assets.find((a) => a.id === selected);
+    if (!asset) return;
+    const { error } = await supabase.from("social_posts").update({ media_urls: [asset.url] }).eq("id", postId);
+    if (error) { toast.error(error.message); return; }
+    onAttached(asset.url);
+    toast.success("Attached to post");
+    onClose();
+  }
+
+  const visible = useMemo(() => {
+    if (tab === "images") return assets.filter((a) => a.media_type === "image");
+    if (tab === "videos") return assets.filter((a) => a.media_type === "video");
+    return assets;
+  }, [assets, tab]);
+
+  return (
+    <div style={{ background: "#F7F5F1", border: "0.5px solid #ECEAE5", borderRadius: 10, padding: 16, marginTop: 8, marginBottom: 8 }}>
+      <label
+        className="block text-center cursor-pointer"
+        style={{ border: "0.5px dashed #ECEAE5", borderRadius: 8, padding: 20, background: "#fff" }}>
+        <input type="file" className="hidden" accept="image/*,video/*"
+          onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+        <CloudUpload size={22} color="#9A9896" className="mx-auto" />
+        <div className="text-[12px] mt-1" style={{ color: "#9A9896" }}>
+          {uploading ? "Uploading…" : "Drag and drop or click to upload"}
+        </div>
+        <div className="text-[11px]" style={{ color: "#9A9896" }}>PNG, JPG, GIF, MP4</div>
+      </label>
+
+      <div className="flex gap-2 mt-3">
+        {(["all","images","videos","colors"] as const).map((t) => {
+          const labels: any = { all: "All", images: "Images", videos: "Videos", colors: "Brand Colors" };
+          const active = tab === t;
+          return (
+            <button key={t} onClick={() => setTab(t)} className="text-[12px] font-medium"
+              style={{
+                borderRadius: 20, padding: "4px 12px",
+                border: active ? "1px solid #E85A46" : "0.5px solid #ECEAE5",
+                color: active ? "#E85A46" : "#6B6860",
+              }}>{labels[t]}</button>
+          );
+        })}
+      </div>
+
+      {tab === "colors" ? (
+        <div className="flex flex-wrap gap-3 mt-3">
+          {brandColors.length === 0 ? (
+            <div className="text-[12px]" style={{ color: "#9A9896" }}>No brand colors saved yet.</div>
+          ) : brandColors.map((c) => (
+            <div key={c} className="flex flex-col items-center gap-1">
+              <div style={{ width: 32, height: 32, borderRadius: "50%", background: c, border: "0.5px solid #ECEAE5" }} />
+              <div className="text-[11px]" style={{ color: "#6B6860" }}>{c}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-5 gap-2 mt-3">
+          {visible.map((a) => {
+            const sel = selected === a.id;
+            return (
+              <button key={a.id} onClick={() => setSelected(sel ? null : a.id)}
+                className="relative overflow-hidden"
+                style={{
+                  aspectRatio: "1", borderRadius: 8,
+                  border: sel ? "2px solid #E85A46" : "0.5px solid #ECEAE5",
+                  background: "#F0EFEC",
+                }}>
+                {a.media_type === "video" ? (
+                  <div className="w-full h-full flex items-center justify-center"><Video size={20} color="#9A9896" /></div>
+                ) : (
+                  <img src={a.url} alt="" className="w-full h-full object-cover" />
+                )}
+                {sel && (
+                  <div className="absolute top-1 right-1 flex items-center justify-center"
+                    style={{ width: 16, height: 16, borderRadius: "50%", background: "#E85A46", border: "1.5px solid #fff" }}>
+                    <Check size={10} color="#fff" />
+                  </div>
+                )}
+              </button>
+            );
+          })}
+          {visible.length === 0 && (
+            <div className="col-span-5 text-[12px] text-center py-4" style={{ color: "#9A9896" }}>No assets yet.</div>
+          )}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between mt-3.5 pt-3" style={{ borderTop: "0.5px solid #ECEAE5" }}>
+        <span className="text-[12px]" style={{ color: "#9A9896" }}>{selected ? "1 selected" : "0 selected"}</span>
+        <div className="flex gap-2">
+          <button onClick={onClose} className="text-[12px]"
+            style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 14px", color: "#6B6860" }}>Cancel</button>
+          <button onClick={attach} disabled={!selected || tab === "colors"} className="text-[12px] font-semibold"
+            style={{
+              background: "#E85A46", color: "#fff",
+              borderRadius: 20, padding: "5px 14px",
+              opacity: !selected || tab === "colors" ? 0.5 : 1,
+            }}>Attach to post</button>
+        </div>
+      </div>
+    </div>
+  );
+}
