@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowRight, Shield, Linkedin, Facebook, Instagram, Mail, Calendar as CalIcon, Lightbulb, Megaphone, Sparkles, FileText } from "lucide-react";
 
+type SocialConn = { id: string; platform: string; profile_name: string | null };
+
 type HistoryRow = {
   id: string;
   platform: string | null;
@@ -43,6 +45,8 @@ export default function Settings() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [campaignNames, setCampaignNames] = useState<Record<string, string>>({});
+  const [connections, setConnections] = useState<SocialConn[]>([]);
+  const [connecting, setConnecting] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -86,6 +90,40 @@ export default function Settings() {
     if (error) toast.error(error.message); else toast.success("Saved.");
   }
 
+  // Load social connections + integrations scroll
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("social_connections").select("id, platform, profile_name").eq("user_id", user.id)
+      .then(({ data }) => setConnections((data ?? []) as any));
+    if (typeof window !== "undefined" && window.location.hash === "#integrations") {
+      setTimeout(() => document.getElementById("integrations")?.scrollIntoView({ behavior: "smooth" }), 200);
+    }
+  }, [user]);
+
+  const linkedin = connections.find((c) => c.platform === "linkedin");
+
+  async function connectLinkedIn() {
+    if (!user) return;
+    setConnecting("linkedin");
+    try {
+      const { data, error } = await supabase.functions.invoke("social-oauth-start", { body: { platform: "linkedin" } });
+      if (error) throw error;
+      const url = (data as any)?.url ?? (data as any)?.authUrl;
+      if (url) window.location.href = url;
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not start connection");
+    } finally { setConnecting(null); }
+  }
+
+  async function disconnectLinkedIn() {
+    if (!user || !linkedin) return;
+    const { error } = await supabase.from("social_connections").delete().eq("id", linkedin.id);
+    if (error) { toast.error(error.message); return; }
+    setConnections((arr) => arr.filter((c) => c.id !== linkedin.id));
+    toast.success("Disconnected");
+  }
+
   return (
     <div className="px-6 lg:px-10 py-8 max-w-3xl mx-auto">
       <h1 className="font-display text-4xl mb-8">Settings</h1>
@@ -106,6 +144,63 @@ export default function Settings() {
           {saving ? "Saving…" : "Save changes"}
         </Button>
       </Card>
+
+      <div id="integrations" className="mt-10">
+        <div className="text-xs uppercase tracking-[0.2em] font-semibold text-muted-foreground mb-2">Integrations</div>
+        <p className="text-[13px] mb-3" style={{ color: "#6B6860" }}>
+          Connect your social platforms to schedule and publish posts directly from MOXIEMO.
+        </p>
+        <div className="flex items-center justify-between" style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center" style={{ width: 32, height: 32, background: "#E8F1FB", borderRadius: 8 }}>
+              <Linkedin size={18} color="#0A66C2" />
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>LinkedIn</div>
+              {linkedin ? (
+                <div className="text-[12px]" style={{ color: "#6B6860" }}>{linkedin.profile_name || "Connected account"}</div>
+              ) : (
+                <div className="text-[12px]" style={{ color: "#9A9896" }}>Not connected</div>
+              )}
+            </div>
+          </div>
+          {linkedin ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold" style={{ background: "#EAF3DE", color: "#3B6D11", borderRadius: 4, padding: "2px 8px" }}>Connected</span>
+              <button onClick={disconnectLinkedIn} className="text-[12px]" style={{ border: "0.5px solid #ECEAE5", borderRadius: 6, height: 28, padding: "0 12px", color: "#6B6860" }}>Disconnect</button>
+            </div>
+          ) : (
+            <button onClick={connectLinkedIn} disabled={connecting === "linkedin"} className="text-[12px] font-semibold"
+              style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 32, padding: "0 14px", boxShadow: "0 4px 14px rgba(232,90,70,0.25)" }}>
+              {connecting === "linkedin" ? "Connecting…" : "Connect LinkedIn"}
+            </button>
+          )}
+        </div>
+        <div className="flex items-center justify-between" style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center" style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #833AB4, #FD1D1D, #FCB045)" }}>
+              <Instagram size={18} color="#fff" />
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>Instagram</div>
+              <div className="text-[11px]" style={{ color: "#9A9896" }}>Available after Meta business verification</div>
+            </div>
+          </div>
+          <span className="text-[10px] font-semibold" style={{ background: "#FEF3C7", color: "#854F0B", borderRadius: 4, padding: "2px 8px" }}>Pending verification</span>
+        </div>
+        <div className="flex items-center justify-between" style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center" style={{ width: 32, height: 32, background: "#E8F0FD", borderRadius: 8 }}>
+              <Facebook size={18} color="#1877F2" />
+            </div>
+            <div>
+              <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>Facebook</div>
+              <div className="text-[11px]" style={{ color: "#9A9896" }}>Available after Meta business verification</div>
+            </div>
+          </div>
+          <span className="text-[10px] font-semibold" style={{ background: "#FEF3C7", color: "#854F0B", borderRadius: 4, padding: "2px 8px" }}>Pending verification</span>
+        </div>
+      </div>
 
       {isAdmin && (
         <div className="mt-10">

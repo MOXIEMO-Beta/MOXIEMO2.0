@@ -811,6 +811,27 @@ export type Database = {
         }
         Relationships: []
       }
+      pillar_feed_cache: {
+        Row: {
+          angles_json: Json
+          generated_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          angles_json: Json
+          generated_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          angles_json?: Json
+          generated_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           beta_code_used: string | null
@@ -1017,6 +1038,36 @@ export type Database = {
         }
         Relationships: []
       }
+      social_media_assets: {
+        Row: {
+          created_at: string
+          filename: string | null
+          id: string
+          media_type: string | null
+          size_bytes: number | null
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filename?: string | null
+          id?: string
+          media_type?: string | null
+          size_bytes?: number | null
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          filename?: string | null
+          id?: string
+          media_type?: string | null
+          size_bytes?: number | null
+          url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       social_posts: {
         Row: {
           campaign_id: string | null
@@ -1033,6 +1084,7 @@ export type Database = {
           platforms: string[]
           published_at: string | null
           scheduled_for: string | null
+          sort_order: number
           status: string
           topic: string | null
           updated_at: string
@@ -1053,6 +1105,7 @@ export type Database = {
           platforms?: string[]
           published_at?: string | null
           scheduled_for?: string | null
+          sort_order?: number
           status?: string
           topic?: string | null
           updated_at?: string
@@ -1073,6 +1126,7 @@ export type Database = {
           platforms?: string[]
           published_at?: string | null
           scheduled_for?: string | null
+          sort_order?: number
           status?: string
           topic?: string | null
           updated_at?: string
