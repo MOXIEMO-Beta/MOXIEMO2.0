@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
   Trash2, CloudUpload, Check, Video, Sparkles, CalendarPlus, Lightbulb, CalendarDays, RefreshCw,
+  RotateCcw, X, Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,6 +31,21 @@ type Asset = {
   media_type: "image" | "video" | null;
   created_at: string;
 };
+
+// Resolve a signed URL for a stored asset. We persist the storage path in
+// `filename`; fall back to parsing the path out of legacy `url` values.
+function storagePathOf(a: Pick<Asset, "url" | "filename">): string | null {
+  if (a.filename && a.filename.includes("/")) return a.filename;
+  const m = a.url?.match(/social-assets\/(.+)$/);
+  if (m) return m[1];
+  return a.filename ?? null;
+}
+async function signAssetUrl(a: Pick<Asset, "url" | "filename">): Promise<string> {
+  const path = storagePathOf(a);
+  if (!path) return a.url ?? "";
+  const { data } = await supabase.storage.from("social-assets").createSignedUrl(path, 60 * 60);
+  return data?.signedUrl ?? a.url ?? "";
+}
 
 const PLATFORM_META: Record<Platform, { bg: string; color: string; Icon: any; label: string }> = {
   linkedin:  { bg: "#E8F1FB", color: "#0A66C2", Icon: Linkedin,  label: "LinkedIn" },
@@ -73,6 +89,8 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   const [showPublishBanner, setShowPublishBanner] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!userId) return;
@@ -93,6 +111,26 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       setLoading(false);
     })();
   }, [userId]);
+
+  // Resolve signed URLs for post thumbnails (private bucket)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const entries: Array<[string, string]> = [];
+      for (const p of posts) {
+        const arr = Array.isArray(p.media_urls) ? (p.media_urls as any[]) : [];
+        const first = arr[0];
+        if (!first || typeof first !== "string") continue;
+        if (thumbUrls[p.id]) continue;
+        const url = await signAssetUrl({ url: first, filename: null });
+        if (url) entries.push([p.id, url]);
+      }
+      if (!cancelled && entries.length) {
+        setThumbUrls((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [posts]);
 
   const filtered = useMemo(() => {
     if (filter === "all") return posts;
@@ -243,7 +281,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     <Icon size={15} color={meta.color} />
                   </div>
                   {thumb && (
-                    <img src={thumb} alt="" className="flex-shrink-0"
+                    <img src={thumbUrls[post.id] ?? thumb} alt="" className="flex-shrink-0"
                       style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover", border: "0.5px solid #ECEAE5" }} />
                   )}
                   <div className="flex-1 min-w-0">
@@ -267,8 +305,8 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     {status[0].toUpperCase() + status.slice(1)}
                   </span>
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
-                    <button title="Edit" onClick={() => navigate(`/app/content?postId=${post.id}`)}>
-                      <Pencil size={13} color="#6B6860" /></button>
+                    <button title="Edit" onClick={() => setEditingId(editingId === post.id ? null : post.id)}>
+                      <Pencil size={13} color={editingId === post.id ? "#E85A46" : "#6B6860"} /></button>
                     <button title="Media library" onClick={() => setOpenMediaFor(isOpen ? null : post.id)}>
                       <ImageIcon size={13} color="#6B6860" /></button>
                     <button title="Delete" onClick={() => handleDelete(post)}>
@@ -296,6 +334,17 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                       setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, media_urls: [url] } : p)));
                     }} />
                 )}
+                {editingId === post.id && (
+                  <EditPostPanel
+                    post={post}
+                    userId={userId!}
+                    onClose={() => setEditingId(null)}
+                    onSaved={(updated) => {
+                      setPosts((arr) => arr.map((p) => (p.id === updated.id ? updated : p)));
+                      setEditingId(null);
+                    }}
+                  />
+                )}
               </div>
             );
           })}
@@ -314,6 +363,7 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   const [selected, setSelected] = useState<string | null>(null);
   const [brandColors, setBrandColors] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [signed, setSigned] = useState<Record<string, string>>({});
 
   useEffect(() => {
     (async () => {
@@ -321,9 +371,15 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         supabase.from("social_media_assets").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
         supabase.from("profiles").select("brand_colors").eq("id", userId).maybeSingle(),
       ]);
-      setAssets((a ?? []) as any);
+      const list = (a ?? []) as any[];
+      setAssets(list as any);
       const bc = (prof as any)?.brand_colors;
       setBrandColors(Array.isArray(bc) ? bc : []);
+      // sign all image URLs
+      const pairs = await Promise.all(
+        list.filter((x) => x.media_type !== "video").map(async (x) => [x.id, await signAssetUrl(x)] as [string, string])
+      );
+      setSigned(Object.fromEntries(pairs));
     })();
   }, [userId]);
 
@@ -336,10 +392,14 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       const { data: { publicUrl } } = supabase.storage.from("social-assets").getPublicUrl(path);
       const mediaType = file.type.startsWith("video") ? "video" : "image";
       const { data, error } = await supabase.from("social_media_assets").insert({
-        user_id: userId, url: publicUrl, filename: file.name, media_type: mediaType, size_bytes: file.size,
+        user_id: userId, url: publicUrl, filename: path, media_type: mediaType, size_bytes: file.size,
       }).select().single();
       if (error) throw error;
       setAssets((arr) => [data as any, ...arr]);
+      if (mediaType === "image") {
+        const url = await signAssetUrl(data as any);
+        setSigned((s) => ({ ...s, [(data as any).id]: url }));
+      }
     } catch (e: any) {
       toast.error(e?.message ?? "Upload failed");
     } finally { setUploading(false); }
@@ -348,9 +408,12 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   async function attach() {
     const asset = assets.find((a) => a.id === selected);
     if (!asset) return;
-    const { error } = await supabase.from("social_posts").update({ media_urls: [asset.url] }).eq("id", postId);
+    // Persist the storage path; we'll sign at render time
+    const path = storagePathOf(asset) ?? asset.url;
+    const { error } = await supabase.from("social_posts").update({ media_urls: [path] }).eq("id", postId);
     if (error) { toast.error(error.message); return; }
-    onAttached(asset.url);
+    const display = await signAssetUrl(asset);
+    onAttached(display || path);
     toast.success("Attached to post");
     onClose();
   }
@@ -415,8 +478,15 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
                 }}>
                 {a.media_type === "video" ? (
                   <div className="w-full h-full flex items-center justify-center"><Video size={20} color="#9A9896" /></div>
+                ) : signed[a.id] ? (
+                  <img
+                    src={signed[a.id]}
+                    alt={a.filename ?? ""}
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  />
                 ) : (
-                  <img src={a.url} alt="" className="w-full h-full object-cover" />
+                  <div className="w-full h-full flex items-center justify-center"><ImageIcon size={20} color="#9A9896" /></div>
                 )}
                 {sel && (
                   <div className="absolute top-1 right-1 flex items-center justify-center"
@@ -479,6 +549,16 @@ function ComposeBlock({
   const [angles, setAngles] = useState<CachedAngle[] | null>(null);
   const [loadingAngles, setLoadingAngles] = useState(false);
   const [showMedia, setShowMedia] = useState(false);
+  const [phase, setPhase] = useState<"idea" | "generating" | "generated">("idea");
+  const [idea, setIdea] = useState("");
+  const [pillarUsed, setPillarUsed] = useState<string | null>(null);
+  const [strategy, setStrategy] = useState<Record<string, any> | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from("strategies").select("*").eq("user_id", userId).maybeSingle()
+      .then(({ data }) => setStrategy((data as any) ?? {}));
+  }, [userId]);
 
   const limit = CHAR_LIMITS[platform];
 
@@ -531,22 +611,45 @@ function ComposeBlock({
         platforms: [platform],
         content_by_platform: { [platform]: text.trim() } as any,
         status: "draft",
+        pillar: pillarUsed,
         sort_order: 0,
       }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
       if (error) throw error;
       onSaved(data as any);
       setText("");
+      setIdea("");
+      setPillarUsed(null);
+      setPhase("idea");
       toast.success("Saved to queue");
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save");
     } finally { setSaving(false); }
   }
 
-  function generateWithAI() {
-    const q = new URLSearchParams();
-    q.set("platform", platform);
-    if (text.trim()) q.set("idea", text.trim());
-    navigate(`/app/content?${q.toString()}`);
+  async function runGenerate(useIdea?: string) {
+    const topic = (useIdea ?? text).trim();
+    if (!topic) return;
+    setIdea(topic);
+    setPhase("generating");
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-social-post", {
+        body: {
+          topic,
+          platforms: [platform],
+          postFormat: "Text post",
+          toneOverride: null,
+          strategy: strategy ?? {},
+        },
+      });
+      if (error) throw error;
+      const posts = (data as any)?.posts ?? {};
+      const generated = posts[platform] || Object.values(posts).find((v: any) => v) || "";
+      setText(String(generated));
+      setPhase("generated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Generation failed");
+      setPhase("idea");
+    }
   }
 
   const isPanel = variant === "panel";
@@ -605,9 +708,22 @@ function ComposeBlock({
           style={{
             width: "100%", minHeight: isPanel ? 52 : 64, background: "transparent",
             border: "none", outline: "none", fontSize: 13, color: "#0E0F10",
+            borderLeft: phase === "generated" ? "3px solid #E85A46" : "none",
+            paddingLeft: phase === "generated" ? 12 : 0,
             lineHeight: 1.6, resize: "vertical", fontFamily: "Space Grotesk, sans-serif",
           }}
+          disabled={phase === "generating"}
         />
+        {phase === "generating" && (
+          <div className="flex items-center justify-center gap-2" style={{ padding: "10px 0", color: "#9A9896", fontSize: 12 }}>
+            <Loader2 size={14} color="#E85A46" className="animate-spin" /> Generating your post...
+          </div>
+        )}
+        {phase === "generated" && pillarUsed && (
+          <div style={{ fontSize: 10, color: "#9A9896", marginTop: 6 }}>
+            {PLATFORM_META[platform].label} · {pillarUsed}
+          </div>
+        )}
 
         <div className="flex items-center justify-between"
           style={{ marginTop: 10, paddingTop: 10, borderTop: "0.5px solid #ECEAE5" }}>
@@ -618,26 +734,42 @@ function ComposeBlock({
                 fontSize: 12, fontWeight: 500, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
               <ImageIcon size={12} /> Add image
             </button>
-            <button onClick={generateWithAI}
-              className="flex items-center gap-1.5"
-              style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 12px",
-                fontSize: 12, fontWeight: 500, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
-              <Sparkles size={12} /> Generate with AI
-            </button>
+            {phase === "generated" && (
+              <button onClick={() => runGenerate(idea)}
+                className="flex items-center gap-1.5"
+                style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 12px",
+                  fontSize: 12, fontWeight: 500, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
+                <RotateCcw size={12} /> Regenerate
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <span style={{ fontSize: 11, color: text.length > limit ? "#E85A46" : "#9A9896" }}>
               {text.length} / {limit}
             </span>
-            <button onClick={save} disabled={saving || !text.trim()}
-              className="flex items-center gap-1 font-semibold"
-              style={{
-                background: "#E85A46", color: "#fff", border: "none",
-                borderRadius: 20, padding: "5px 14px", fontSize: 12, cursor: "pointer",
-                opacity: !text.trim() || saving ? 0.5 : 1,
-              }}>
-              <CalendarPlus size={12} /> Save to queue
-            </button>
+            {phase === "generated" ? (
+              <button onClick={save} disabled={saving || !text.trim()}
+                className="flex items-center gap-1 font-semibold"
+                style={{
+                  background: "#E85A46", color: "#fff", border: "none",
+                  borderRadius: 20, padding: "5px 14px", fontSize: 12, cursor: (!text.trim() || saving) ? "not-allowed" : "pointer",
+                  opacity: !text.trim() || saving ? 0.45 : 1,
+                }}>
+                <CalendarPlus size={12} /> Save to queue
+              </button>
+            ) : (
+              <button onClick={() => runGenerate()} disabled={!text.trim() || phase === "generating"}
+                className="flex items-center gap-1.5 font-semibold"
+                style={{
+                  background: "#E85A46", color: "#fff", border: "none",
+                  borderRadius: 20, padding: "5px 18px", fontSize: 13, fontWeight: 600,
+                  cursor: !text.trim() ? "not-allowed" : "pointer",
+                  boxShadow: "0 4px 14px rgba(232,90,70,0.25)",
+                  opacity: !text.trim() || phase === "generating" ? 0.45 : 1,
+                }}>
+                <Sparkles size={14} /> Generate post →
+              </button>
+            )}
           </div>
         </div>
 
@@ -666,7 +798,7 @@ function ComposeBlock({
             </div>
           ) : (
             angles.map((a, i) => (
-              <button key={i} onClick={() => setText(a.angle)}
+              <button key={i} onClick={() => { setText(a.angle); setPillarUsed(a.pillar); setPhase("idea"); }}
                 className="text-left transition"
                 style={{
                   background: "#fff", border: "0.5px solid #ECEAE5",
@@ -726,7 +858,7 @@ function SimpleMediaUploader({ userId, onClose }: { userId: string; onClose: () 
       const { data: { publicUrl } } = supabase.storage.from("social-assets").getPublicUrl(path);
       const mediaType = file.type.startsWith("video") ? "video" : "image";
       const { error } = await supabase.from("social_media_assets").insert({
-        user_id: userId, url: publicUrl, filename: file.name, media_type: mediaType, size_bytes: file.size,
+        user_id: userId, url: publicUrl, filename: path, media_type: mediaType, size_bytes: file.size,
       });
       if (error) throw error;
       toast.success("Uploaded to media library");
@@ -745,5 +877,136 @@ function SimpleMediaUploader({ userId, onClose }: { userId: string; onClose: () 
         {uploading ? "Uploading…" : "Drag and drop or click to upload"}
       </div>
     </label>
+  );
+}
+
+/* ---------------- Inline edit panel ---------------- */
+function EditPostPanel({
+  post, userId, onClose, onSaved,
+}: {
+  post: SocialPost;
+  userId: string;
+  onClose: () => void;
+  onSaved: (p: SocialPost) => void;
+}) {
+  const initialPlatform = primaryPlatform(post);
+  const initialText = (post.content_by_platform ?? {})[initialPlatform] ?? Object.values(post.content_by_platform ?? {})[0] ?? "";
+  const initialMedia = Array.isArray(post.media_urls) && post.media_urls.length > 0 ? (post.media_urls[0] as string) : null;
+
+  const [platform, setPlatform] = useState<Platform>(initialPlatform);
+  const [text, setText] = useState<string>(String(initialText));
+  const [mediaPath, setMediaPath] = useState<string | null>(initialMedia);
+  const [thumbUrl, setThumbUrl] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
+  const limit = CHAR_LIMITS[platform];
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!mediaPath) { setThumbUrl(null); return; }
+      const url = await signAssetUrl({ url: mediaPath, filename: null });
+      if (!cancelled) setThumbUrl(url);
+    })();
+    return () => { cancelled = true; };
+  }, [mediaPath]);
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      const cbp = { ...(post.content_by_platform ?? {}), [platform]: text };
+      const { data, error } = await supabase.from("social_posts").update({
+        platforms: [platform],
+        content_by_platform: cbp,
+        media_urls: mediaPath ? [mediaPath] : [],
+      }).eq("id", post.id)
+        .select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at")
+        .single();
+      if (error) throw error;
+      onSaved(data as any);
+      toast.success("Post updated");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Save failed");
+    } finally { setSaving(false); }
+  }
+
+  return (
+    <div style={{ background: "#F7F5F1", border: "0.5px solid #ECEAE5", borderRadius: 10, padding: 16, marginTop: 8, marginBottom: 8 }}>
+      <div className="flex flex-wrap gap-1.5" style={{ marginBottom: 10 }}>
+        {(["linkedin","instagram","facebook","x"] as Platform[]).map((p) => {
+          const meta = PLATFORM_META[p];
+          const Icon = meta.Icon;
+          const active = platform === p;
+          const a = PILL_ACTIVE[p];
+          return (
+            <button key={p} onClick={() => setPlatform(p)} className="flex items-center gap-1.5"
+              style={{
+                borderRadius: 20, padding: "4px 10px", fontSize: 11, fontWeight: 500, cursor: "pointer",
+                border: active ? `1px solid ${a.border}` : "0.5px solid #ECEAE5",
+                background: active ? a.bg : "#fff",
+                color: active ? a.color : "#6B6860",
+              }}><Icon size={12} /> {meta.label}</button>
+          );
+        })}
+      </div>
+
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        style={{
+          background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 8, padding: 12,
+          fontSize: 13, color: "#0E0F10", lineHeight: 1.6, width: "100%", minHeight: 96, resize: "vertical",
+          outline: "none", fontFamily: "Space Grotesk, sans-serif",
+        }}
+      />
+
+      {mediaPath && (
+        <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ position: "relative", width: 52, height: 52, borderRadius: 6, border: "0.5px solid #ECEAE5", overflow: "hidden", background: "#F0EFEC" }}>
+            {thumbUrl ? (
+              <img src={thumbUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center"><ImageIcon size={16} color="#9A9896" /></div>
+            )}
+          </div>
+          <button onClick={() => setMediaPath(null)} title="Remove image"
+            style={{ border: "0.5px solid #ECEAE5", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", background: "#fff" }}>
+            <X size={12} color="#6B6860" />
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between" style={{ marginTop: 10 }}>
+        <div className="flex items-center gap-3">
+          <span style={{ fontSize: 11, color: text.length > limit ? "#E85A46" : "#9A9896" }}>{text.length} / {limit}</span>
+          <button onClick={() => setShowLibrary((v) => !v)} className="flex items-center gap-1.5"
+            style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 12px", fontSize: 12, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
+            <ImageIcon size={12} /> {mediaPath ? "Change image" : "Add image"}
+          </button>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={onClose}
+            style={{ border: "0.5px solid #ECEAE5", color: "#6B6860", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 500, background: "transparent", cursor: "pointer" }}>
+            Cancel
+          </button>
+          <button onClick={handleSave} disabled={saving}
+            style={{ background: "#E85A46", color: "#fff", borderRadius: 20, padding: "5px 14px", fontSize: 12, fontWeight: 600, border: "none", cursor: "pointer", opacity: saving ? 0.6 : 1 }}>
+            Save changes
+          </button>
+        </div>
+      </div>
+
+      {showLibrary && (
+        <div style={{ marginTop: 12 }}>
+          <MediaPanel
+            userId={userId}
+            postId={post.id}
+            onClose={() => setShowLibrary(false)}
+            onAttached={(url) => { setMediaPath(url); setShowLibrary(false); }}
+          />
+        </div>
+      )}
+    </div>
   );
 }
