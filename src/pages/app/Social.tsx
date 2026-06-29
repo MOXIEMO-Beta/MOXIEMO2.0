@@ -43,7 +43,7 @@ export default function Social() {
         })}
       </div>
 
-      {tab === "queue" && <QueueTab userId={user?.id ?? null} />}
+      {tab === "queue" && <QueueTab userId={user?.id ?? null} onChangeTab={(t) => changeTab(t as TabKey)} />}
       {tab === "calendar" && (
         <CalendarTabWrapper
           userId={user?.id ?? null}
