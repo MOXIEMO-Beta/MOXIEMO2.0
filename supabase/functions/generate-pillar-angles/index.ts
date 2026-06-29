@@ -94,11 +94,16 @@ Deno.serve(async (req) => {
       { onConflict: "user_id" },
     );
 
-    await supabase.rpc("consume_generation", {
-      p_platform: "pillar_feed",
-      p_campaign_id: null,
-      p_preview: "Pillar Feed angles refresh",
-    }).catch(() => {});
+    try {
+      const { error: consumeError } = await supabase.rpc("consume_generation", {
+        p_platform: "pillar_feed",
+        p_campaign_id: null,
+        p_preview: "Pillar Feed angles refresh",
+      });
+      if (consumeError) console.warn("consume_generation failed:", consumeError.message);
+    } catch (e) {
+      console.warn("consume_generation threw:", e);
+    }
 
     return new Response(JSON.stringify({ angles: parsed, cached: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
