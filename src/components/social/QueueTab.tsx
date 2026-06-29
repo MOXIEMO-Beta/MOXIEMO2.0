@@ -710,7 +710,6 @@ function ComposeBlock({
             border: "none", outline: "none", fontSize: 13, color: "#0E0F10",
             borderLeft: phase === "generated" ? "3px solid #E85A46" : "none",
             paddingLeft: phase === "generated" ? 12 : 0,
-            background: phase === "generated" ? "#fff" : "transparent",
             lineHeight: 1.6, resize: "vertical", fontFamily: "Space Grotesk, sans-serif",
           }}
           disabled={phase === "generating"}
