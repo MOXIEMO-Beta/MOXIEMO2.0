@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
-  Trash2, CloudUpload, Check, Video, Inbox,
+  Trash2, CloudUpload, Check, Video, Sparkles, CalendarPlus, Lightbulb, CalendarDays, RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -63,7 +63,7 @@ function toLocalInputValue(iso: string | null): string {
   return local.toISOString().slice(0, 16);
 }
 
-export default function QueueTab({ userId }: { userId: string | null }) {
+export default function QueueTab({ userId, onChangeTab }: { userId: string | null; onChangeTab?: (t: string) => void }) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [filter, setFilter] = useState<"all" | Platform>("all");
@@ -72,6 +72,7 @@ export default function QueueTab({ userId }: { userId: string | null }) {
   const [openMediaFor, setOpenMediaFor] = useState<string | null>(null);
   const [showPublishBanner, setShowPublishBanner] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [composeOpen, setComposeOpen] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -182,26 +183,41 @@ export default function QueueTab({ userId }: { userId: string | null }) {
         </div>
         <div className="flex items-center gap-3">
           <span className="text-[12px]" style={{ color: "#9A9896" }}>{filtered.length} posts in queue</span>
-          <button onClick={() => navigate("/app/content?from=social-queue")}
-            className="text-[12px] font-medium"
-            style={{ border: "0.5px solid #ECEAE5", borderRadius: 8, height: 32, padding: "0 14px", color: "#0E0F10" }}>
-            Add post
-          </button>
+          {posts.length > 0 && (
+            <button onClick={() => setComposeOpen((v) => !v)}
+              className="text-[12px] font-medium"
+              style={{
+                border: composeOpen ? "1px solid #E85A46" : "0.5px solid #ECEAE5",
+                borderRadius: 8, height: 32, padding: "0 14px",
+                color: composeOpen ? "#E85A46" : "#0E0F10",
+                background: "transparent",
+              }}>
+              Add post
+            </button>
+          )}
         </div>
       </div>
 
       {loading ? (
         <div className="text-[12px]" style={{ color: "#9A9896" }}>Loading…</div>
-      ) : filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <Inbox size={28} color="#9A9896" />
-          <div className="mt-3 text-[13px] font-medium" style={{ color: "#0E0F10" }}>No posts in your queue yet.</div>
-          <div className="mt-1 text-[12px]" style={{ color: "#9A9896" }}>Generate content from the Content page and it will appear here.</div>
-          <button onClick={() => navigate("/app/content?from=social-queue")}
-            className="mt-4 text-[12px] font-semibold" style={{ color: "#E85A46" }}>Go to Content →</button>
-        </div>
+      ) : posts.length === 0 ? (
+        <ComposeBlock
+          userId={userId!}
+          variant="empty"
+          onSaved={(p) => setPosts((arr) => [p, ...arr])}
+          onChangeTab={onChangeTab}
+        />
       ) : (
         <div>
+          {composeOpen && (
+            <ComposeBlock
+              userId={userId!}
+              variant="panel"
+              onSaved={(p) => setPosts((arr) => [p, ...arr])}
+              onCollapse={() => setComposeOpen(false)}
+              onChangeTab={onChangeTab}
+            />
+          )}
           {filtered.map((post) => {
             const plat = primaryPlatform(post);
             const meta = PLATFORM_META[plat];
