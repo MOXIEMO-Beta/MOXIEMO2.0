@@ -761,6 +761,37 @@ export default function Analytics() {
       </Card>
 
       {/* SECTION 5 — Goals */}
+      {/* Social performance stub */}
+      <Card className="p-6 border-border shadow-soft mb-6">
+        <div className="mb-3">
+          <h2 className="text-[16px] font-bold" style={{ color: "#0E0F10" }}>Social performance</h2>
+          <p className="text-[13px]" style={{ color: "#6B6860" }}>
+            Connect your platforms in Settings to track performance here.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: "Posts published" },
+            { label: "Total impressions" },
+            { label: "Avg. engagement rate" },
+            { label: "Profile reach" },
+          ].map((m) => (
+            <div key={m.label} style={{ background: "#F0EFEC", borderRadius: "var(--radius)", padding: "1rem" }}>
+              <div className="text-[12px] font-medium" style={{ color: "#9A9896" }}>{m.label}</div>
+              <div className="text-[24px] font-medium mt-1" style={{ color: "#0E0F10" }}>—</div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-center mt-2" style={{ color: "#9A9896" }}>
+          Performance data appears here automatically when your platforms are connected.
+        </p>
+        <div className="text-center mt-2">
+          <button onClick={() => navigate("/app/settings#integrations")} className="text-[12px] font-semibold" style={{ color: "#E85A46" }}>
+            Connect platforms →
+          </button>
+        </div>
+      </Card>
+
       <Card className="p-6 border-border shadow-soft mb-10">
         <div className="mb-4">
           <h2 className="font-display text-2xl">Weekly goals progress</h2>
