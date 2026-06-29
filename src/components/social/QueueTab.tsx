@@ -449,3 +449,301 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
     </div>
   );
 }
+
+/* ---------------- Compose block (empty state + Add Post panel) ---------------- */
+const CHAR_LIMITS: Record<Platform, number> = {
+  linkedin: 3000, instagram: 2200, facebook: 63206, x: 280,
+};
+const PILL_ACTIVE: Record<Platform, { bg: string; border: string; color: string }> = {
+  linkedin:  { bg: "#E8F1FB", border: "#0A66C2", color: "#0A66C2" },
+  instagram: { bg: "#FCE8F5", border: "#C13584", color: "#C13584" },
+  facebook:  { bg: "#E8F0FD", border: "#1877F2", color: "#1877F2" },
+  x:         { bg: "#F0EFEC", border: "#0E0F10", color: "#0E0F10" },
+};
+
+type CachedAngle = { pillar: string; angle: string };
+
+function ComposeBlock({
+  userId, variant, onSaved, onCollapse, onChangeTab,
+}: {
+  userId: string;
+  variant: "empty" | "panel";
+  onSaved: (post: SocialPost) => void;
+  onCollapse?: () => void;
+  onChangeTab?: (t: string) => void;
+}) {
+  const navigate = useNavigate();
+  const [platform, setPlatform] = useState<Platform>("linkedin");
+  const [text, setText] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [angles, setAngles] = useState<CachedAngle[] | null>(null);
+  const [loadingAngles, setLoadingAngles] = useState(false);
+  const [showMedia, setShowMedia] = useState(false);
+
+  const limit = CHAR_LIMITS[platform];
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("pillar_feed_cache").select("angles_json").eq("user_id", userId).maybeSingle();
+      const arr = ((data as any)?.angles_json?.angles ?? []) as CachedAngle[];
+      if (cancelled) return;
+      if (Array.isArray(arr) && arr.length > 0) {
+        setAngles(arr.slice(0, 3));
+      } else {
+        // Background generate
+        setLoadingAngles(true);
+        try {
+          const { data: gen } = await supabase.functions.invoke("generate-pillar-angles", { body: {} });
+          const a = (gen as any)?.angles?.angles ?? [];
+          if (!cancelled) setAngles(Array.isArray(a) ? a.slice(0, 3) : []);
+        } catch {
+          if (!cancelled) setAngles([]);
+        } finally {
+          if (!cancelled) setLoadingAngles(false);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [userId]);
+
+  async function refreshAngles() {
+    setLoadingAngles(true);
+    try {
+      await supabase.from("pillar_feed_cache").delete().eq("user_id", userId);
+      const { data: gen } = await supabase.functions.invoke("generate-pillar-angles", { body: { refresh: true } });
+      const a = (gen as any)?.angles?.angles ?? [];
+      setAngles(Array.isArray(a) ? a.slice(0, 3) : []);
+      toast.success("Suggestions refreshed");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Refresh failed");
+    } finally { setLoadingAngles(false); }
+  }
+
+  async function save() {
+    if (!text.trim()) return;
+    setSaving(true);
+    try {
+      const { data, error } = await supabase.from("social_posts").insert({
+        user_id: userId,
+        platforms: [platform],
+        content_by_platform: { [platform]: text.trim() } as any,
+        status: "draft",
+        sort_order: 0,
+      }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
+      if (error) throw error;
+      onSaved(data as any);
+      setText("");
+      toast.success("Saved to queue");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not save");
+    } finally { setSaving(false); }
+  }
+
+  function generateWithAI() {
+    const q = new URLSearchParams();
+    q.set("platform", platform);
+    if (text.trim()) q.set("idea", text.trim());
+    navigate(`/app/content?${q.toString()}`);
+  }
+
+  const isPanel = variant === "panel";
+
+  return (
+    <div style={{
+      background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 14,
+      padding: isPanel ? "20px 24px" : "28px 32px",
+      marginBottom: isPanel ? 14 : 0,
+    }}>
+      {isPanel ? (
+        <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+          <div className="text-[13px] font-semibold" style={{ color: "#0E0F10" }}>New post</div>
+          <button onClick={onCollapse} className="text-[11px]" style={{ color: "#E85A46" }}>Collapse</button>
+        </div>
+      ) : (
+        <div>
+          <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>What would you like to post?</div>
+          <div className="text-[12px]" style={{ color: "#6B6860", marginTop: 4 }}>
+            Write something now, or pick a suggestion from your strategy below.
+          </div>
+        </div>
+      )}
+
+      {/* Compose area */}
+      <div style={{
+        background: "#F7F5F1", border: "0.5px solid #ECEAE5", borderRadius: 10,
+        padding: "14px 16px", marginTop: isPanel ? 0 : 16,
+      }}>
+        <div className="flex flex-wrap gap-1.5" style={{ marginBottom: 10 }}>
+          {(["linkedin","instagram","facebook","x"] as Platform[]).map((p) => {
+            const meta = PLATFORM_META[p];
+            const Icon = meta.Icon;
+            const active = platform === p;
+            const a = PILL_ACTIVE[p];
+            return (
+              <button key={p} onClick={() => setPlatform(p)}
+                className="flex items-center gap-1.5"
+                style={{
+                  borderRadius: 20, padding: "4px 10px", fontSize: 11, fontWeight: 500,
+                  cursor: "pointer",
+                  border: active ? `1px solid ${a.border}` : "0.5px solid #ECEAE5",
+                  background: active ? a.bg : "#fff",
+                  color: active ? a.color : "#6B6860",
+                }}>
+                <Icon size={12} /> {meta.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="What's on your mind? Write your post here, or click a suggestion below to get started..."
+          style={{
+            width: "100%", minHeight: isPanel ? 52 : 64, background: "transparent",
+            border: "none", outline: "none", fontSize: 13, color: "#0E0F10",
+            lineHeight: 1.6, resize: "vertical", fontFamily: "Space Grotesk, sans-serif",
+          }}
+        />
+
+        <div className="flex items-center justify-between"
+          style={{ marginTop: 10, paddingTop: 10, borderTop: "0.5px solid #ECEAE5" }}>
+          <div className="flex gap-2">
+            <button onClick={() => setShowMedia((v) => !v)}
+              className="flex items-center gap-1.5"
+              style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 12px",
+                fontSize: 12, fontWeight: 500, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
+              <ImageIcon size={12} /> Add image
+            </button>
+            <button onClick={generateWithAI}
+              className="flex items-center gap-1.5"
+              style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 12px",
+                fontSize: 12, fontWeight: 500, color: "#6B6860", background: "transparent", cursor: "pointer" }}>
+              <Sparkles size={12} /> Generate with AI
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: 11, color: text.length > limit ? "#E85A46" : "#9A9896" }}>
+              {text.length} / {limit}
+            </span>
+            <button onClick={save} disabled={saving || !text.trim()}
+              className="flex items-center gap-1 font-semibold"
+              style={{
+                background: "#E85A46", color: "#fff", border: "none",
+                borderRadius: 20, padding: "5px 14px", fontSize: 12, cursor: "pointer",
+                opacity: !text.trim() || saving ? 0.5 : 1,
+              }}>
+              <CalendarPlus size={12} /> Save to queue
+            </button>
+          </div>
+        </div>
+
+        {showMedia && (
+          <div style={{ marginTop: 12 }}>
+            <SimpleMediaUploader userId={userId} onClose={() => setShowMedia(false)} />
+          </div>
+        )}
+      </div>
+
+      {/* Suggestions */}
+      <div style={{ marginTop: 16 }}>
+        <div style={{
+          fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+          color: "#9A9896", letterSpacing: "0.08em", marginBottom: 10,
+        }}>Suggested from your strategy</div>
+        <div className="grid grid-cols-3 gap-2">
+          {angles === null || loadingAngles ? (
+            [0,1,2].map((i) => (
+              <div key={i} className="animate-pulse"
+                style={{ background: "#F0EFEC", border: "0.5px solid #ECEAE5", borderRadius: 10, height: 78 }} />
+            ))
+          ) : angles.length === 0 ? (
+            <div className="col-span-3 text-[12px]" style={{ color: "#9A9896" }}>
+              No suggestions yet. Click "Refresh suggestions" below.
+            </div>
+          ) : (
+            angles.map((a, i) => (
+              <button key={i} onClick={() => setText(a.angle)}
+                className="text-left transition"
+                style={{
+                  background: "#fff", border: "0.5px solid #ECEAE5",
+                  borderRadius: 10, padding: "10px 14px", cursor: "pointer",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#E85A46")}
+                onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ECEAE5")}>
+                <div style={{
+                  fontSize: 9, fontWeight: 700, textTransform: "uppercase",
+                  color: "#E85A46", letterSpacing: "0.08em", marginBottom: 4,
+                }}>{a.pillar}</div>
+                <div style={{ fontSize: 12, color: "#0E0F10", lineHeight: 1.45 }}>{a.angle}</div>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Or divider + quick actions */}
+      <div className="flex items-center gap-2.5" style={{ margin: "14px 0" }}>
+        <div style={{ flex: 1, height: 0.5, background: "#ECEAE5" }} />
+        <span style={{ fontSize: 11, color: "#9A9896" }}>or start from</span>
+        <div style={{ flex: 1, height: 0.5, background: "#ECEAE5" }} />
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button onClick={() => onChangeTab?.("pillar")}
+          className="flex items-center gap-1.5"
+          style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 8,
+            padding: "8px 12px", fontSize: 12, color: "#6B6860", cursor: "pointer" }}>
+          <Lightbulb size={13} /> Browse Pillar Feed for angles
+        </button>
+        <button onClick={() => onChangeTab?.("calendar")}
+          className="flex items-center gap-1.5"
+          style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 8,
+            padding: "8px 12px", fontSize: 12, color: "#6B6860", cursor: "pointer" }}>
+          <CalendarDays size={13} /> See what's scheduled this month
+        </button>
+        <button onClick={refreshAngles}
+          className="flex items-center gap-1.5"
+          style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 8,
+            padding: "8px 12px", fontSize: 12, color: "#6B6860", cursor: "pointer" }}>
+          <RefreshCw size={13} /> Refresh suggestions
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SimpleMediaUploader({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const [uploading, setUploading] = useState(false);
+  async function handleUpload(file: File) {
+    setUploading(true);
+    try {
+      const path = `${userId}/${Date.now()}-${file.name}`;
+      const { error: upErr } = await supabase.storage.from("social-assets").upload(path, file);
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = supabase.storage.from("social-assets").getPublicUrl(path);
+      const mediaType = file.type.startsWith("video") ? "video" : "image";
+      const { error } = await supabase.from("social_media_assets").insert({
+        user_id: userId, url: publicUrl, filename: file.name, media_type: mediaType, size_bytes: file.size,
+      });
+      if (error) throw error;
+      toast.success("Uploaded to media library");
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Upload failed");
+    } finally { setUploading(false); }
+  }
+  return (
+    <label className="block text-center cursor-pointer"
+      style={{ border: "0.5px dashed #ECEAE5", borderRadius: 8, padding: 16, background: "#fff" }}>
+      <input type="file" className="hidden" accept="image/*,video/*"
+        onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+      <CloudUpload size={20} color="#9A9896" className="mx-auto" />
+      <div className="text-[12px] mt-1" style={{ color: "#9A9896" }}>
+        {uploading ? "Uploading…" : "Drag and drop or click to upload"}
+      </div>
+    </label>
+  );
+}
