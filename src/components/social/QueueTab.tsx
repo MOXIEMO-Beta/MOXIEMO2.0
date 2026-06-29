@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import {
   GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
   Trash2, CloudUpload, Check, Video, Sparkles, CalendarPlus, Lightbulb, CalendarDays, RefreshCw,
+  RotateCcw, X, Loader2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,6 +31,21 @@ type Asset = {
   media_type: "image" | "video" | null;
   created_at: string;
 };
+
+// Resolve a signed URL for a stored asset. We persist the storage path in
+// `filename`; fall back to parsing the path out of legacy `url` values.
+function storagePathOf(a: Pick<Asset, "url" | "filename">): string | null {
+  if (a.filename && a.filename.includes("/")) return a.filename;
+  const m = a.url?.match(/social-assets\/(.+)$/);
+  if (m) return m[1];
+  return a.filename ?? null;
+}
+async function signAssetUrl(a: Pick<Asset, "url" | "filename">): Promise<string> {
+  const path = storagePathOf(a);
+  if (!path) return a.url ?? "";
+  const { data } = await supabase.storage.from("social-assets").createSignedUrl(path, 60 * 60);
+  return data?.signedUrl ?? a.url ?? "";
+}
 
 const PLATFORM_META: Record<Platform, { bg: string; color: string; Icon: any; label: string }> = {
   linkedin:  { bg: "#E8F1FB", color: "#0A66C2", Icon: Linkedin,  label: "LinkedIn" },
