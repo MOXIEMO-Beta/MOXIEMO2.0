@@ -89,6 +89,8 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   const [showPublishBanner, setShowPublishBanner] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!userId) return;
@@ -109,6 +111,26 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       setLoading(false);
     })();
   }, [userId]);
+
+  // Resolve signed URLs for post thumbnails (private bucket)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const entries: Array<[string, string]> = [];
+      for (const p of posts) {
+        const arr = Array.isArray(p.media_urls) ? (p.media_urls as any[]) : [];
+        const first = arr[0];
+        if (!first || typeof first !== "string") continue;
+        if (thumbUrls[p.id]) continue;
+        const url = await signAssetUrl({ url: first, filename: null });
+        if (url) entries.push([p.id, url]);
+      }
+      if (!cancelled && entries.length) {
+        setThumbUrls((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [posts]);
 
   const filtered = useMemo(() => {
     if (filter === "all") return posts;
@@ -259,7 +281,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     <Icon size={15} color={meta.color} />
                   </div>
                   {thumb && (
-                    <img src={thumb} alt="" className="flex-shrink-0"
+                    <img src={thumbUrls[post.id] ?? thumb} alt="" className="flex-shrink-0"
                       style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover", border: "0.5px solid #ECEAE5" }} />
                   )}
                   <div className="flex-1 min-w-0">
@@ -283,8 +305,8 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     {status[0].toUpperCase() + status.slice(1)}
                   </span>
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
-                    <button title="Edit" onClick={() => navigate(`/app/content?postId=${post.id}`)}>
-                      <Pencil size={13} color="#6B6860" /></button>
+                    <button title="Edit" onClick={() => setEditingId(editingId === post.id ? null : post.id)}>
+                      <Pencil size={13} color={editingId === post.id ? "#E85A46" : "#6B6860"} /></button>
                     <button title="Media library" onClick={() => setOpenMediaFor(isOpen ? null : post.id)}>
                       <ImageIcon size={13} color="#6B6860" /></button>
                     <button title="Delete" onClick={() => handleDelete(post)}>
@@ -311,6 +333,17 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     onAttached={(url) => {
                       setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, media_urls: [url] } : p)));
                     }} />
+                )}
+                {editingId === post.id && (
+                  <EditPostPanel
+                    post={post}
+                    userId={userId!}
+                    onClose={() => setEditingId(null)}
+                    onSaved={(updated) => {
+                      setPosts((arr) => arr.map((p) => (p.id === updated.id ? updated : p)));
+                      setEditingId(null);
+                    }}
+                  />
                 )}
               </div>
             );
