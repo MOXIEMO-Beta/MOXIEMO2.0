@@ -279,22 +279,46 @@ export default function Settings() {
         .maybeSingle();
       if (pendErr || !pending) throw new Error(pendErr?.message ?? "Pending selection expired.");
 
-      const rows = selected.map((org) => ({
-        user_id: user.id,
-        platform: "linkedin",
-        connection_type: "company",
-        organization_id: org.organization_id,
-        organization_name: org.organization_name,
-        profile_name: org.organization_name,
-        access_token: pending.access_token,
-        refresh_token: pending.refresh_token,
-        expires_at: pending.expires_at,
-        reminder_sent_at: null,
-      }));
-      const { error: insErr } = await supabase
-        .from("social_connections")
-        .upsert(rows as any, { onConflict: "user_id,platform,connection_type,organization_id" });
-      if (insErr) throw new Error(insErr.message);
+      // Explicit check-then-insert/update per selected org (partial unique indexes
+      // don't work with .upsert(onConflict) shorthand). Loop so multi-page
+      // selections each create/update their own row.
+      for (const org of selected) {
+        const { data: existing, error: selErr } = await supabase
+          .from("social_connections")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("platform", "linkedin")
+          .eq("connection_type", "company")
+          .eq("organization_id", org.organization_id)
+          .maybeSingle();
+        if (selErr) throw new Error(selErr.message);
+
+        const row = {
+          user_id: user.id,
+          platform: "linkedin",
+          connection_type: "company",
+          organization_id: org.organization_id,
+          organization_name: org.organization_name,
+          profile_name: org.organization_name,
+          access_token: pending.access_token,
+          refresh_token: pending.refresh_token,
+          expires_at: pending.expires_at,
+          reminder_sent_at: null,
+        };
+
+        if (existing) {
+          const { error: updErr } = await supabase
+            .from("social_connections")
+            .update(row as any)
+            .eq("id", (existing as any).id);
+          if (updErr) throw new Error(updErr.message);
+        } else {
+          const { error: insErr } = await supabase
+            .from("social_connections")
+            .insert(row as any);
+          if (insErr) throw new Error(insErr.message);
+        }
+      }
 
       await (supabase.from as any)("pending_pages_connections").delete().eq("user_id", user.id);
       toast.success(`Connected ${selected.length} page${selected.length === 1 ? "" : "s"}.`);
