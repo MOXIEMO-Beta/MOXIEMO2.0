@@ -90,6 +90,29 @@
   color: #FFFFFF !important;
 }
 
+/* Any dark-background card in strategy — force white for headings and body,
+   coral stays only on explicit .text-accent labels. */
+.moxie-strategy-page .bg-foreground h1,
+.moxie-strategy-page .bg-foreground h2,
+.moxie-strategy-page .bg-foreground h3,
+.moxie-strategy-page .bg-foreground h4,
+.moxie-strategy-page .bg-foreground h5,
+.moxie-strategy-page .bg-foreground p,
+.moxie-strategy-page .bg-foreground li,
+.moxie-strategy-page [class*="bg-foreground"] h1,
+.moxie-strategy-page [class*="bg-foreground"] h2,
+.moxie-strategy-page [class*="bg-foreground"] h3,
+.moxie-strategy-page [class*="bg-foreground"] h4,
+.moxie-strategy-page [class*="bg-foreground"] h5,
+.moxie-strategy-page [class*="bg-foreground"] p,
+.moxie-strategy-page [class*="bg-foreground"] li {
+  color: #FFFFFF !important;
+}
+.moxie-strategy-page .bg-foreground .text-accent,
+.moxie-strategy-page [class*="bg-foreground"] .text-accent {
+  color: #E85A46 !important;
+}
+
 .moxie-strategy-page p,
 .moxie-strategy-page li {
   font-size: 13px;

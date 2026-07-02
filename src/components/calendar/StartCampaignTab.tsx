@@ -25,29 +25,7 @@ type Recommendation = {
   description: string;
   cta: string;
 };
-const DEFAULT_RECS: Recommendation[] = [
-  {
-    type: "Gap",
-    title: "Launch a 'Strategy-First vs. Template-First' comparison campaign",
-    description:
-      "You have zero recent content establishing your core differentiator. A focused 2-week LinkedIn campaign would activate your Strategy-First Marketing pillar and directly address competitive positioning.",
-    cta: "Plan this campaign",
-  },
-  {
-    type: "Opportunity",
-    title: "Beta 2.0 waitlist re-engagement campaign",
-    description:
-      "Your email list is dormant and represents your warmest audience. A 3-email sequence over 2 weeks with a Beta 2.0 reveal angle could reactivate cold leads before launch.",
-    cta: "Plan this campaign",
-  },
-  {
-    type: "Gap",
-    title: "Founder proof campaign — one win, told with metrics",
-    description:
-      "Your Founder Wins pillar is untapped. A single campaign featuring one beta user result with before/after numbers would activate social proof and validate your positioning in market.",
-    cta: "Plan this campaign",
-  },
-];
+// Recommendations are always fetched per-user from the edge function.
 
 function pillarsFrom(strategy: any): string[] {
   const ef = (strategy?.enhanced_foundation || {}) as any;
@@ -66,6 +44,47 @@ function businessGoalFrom(strategy: any): string {
 export default function StartCampaignTab({ ctx }: { ctx: any }) {
   const { strategy, openCampaign } = ctx;
   const [prompt, setPrompt] = useState("");
+  const [recs, setRecs] = useState<Recommendation[]>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [recsError, setRecsError] = useState<string | null>(null);
+  const [recsMessage, setRecsMessage] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState<Set<number>>(new Set());
+
+  const loadRecs = async () => {
+    setRecsLoading(true);
+    setRecsError(null);
+    setRecsMessage(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setRecs([]);
+        setRecsMessage("Sign in to see recommendations.");
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke(
+        "generate-campaign-recommendations",
+        {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: {},
+        },
+      );
+      if (error) throw error;
+      const list: Recommendation[] = Array.isArray(data?.recommendations) ? data.recommendations : [];
+      setRecs(list);
+      setDismissed(new Set());
+      if (list.length === 0 && data?.message) setRecsMessage(String(data.message));
+    } catch (e: any) {
+      setRecsError(e?.message || "Could not load recommendations.");
+    } finally {
+      setRecsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRecs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const openModal = (title?: string) => openCampaign?.(title);
 
   const onChip = (t: Template) => {
@@ -209,6 +228,8 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
           </div>
           <button
             type="button"
+            onClick={loadRecs}
+            disabled={recsLoading}
             style={{
               background: SUBTLE,
               border: "none",
@@ -217,15 +238,31 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
               fontSize: 12,
               fontWeight: 600,
               color: INK,
-              cursor: "pointer",
+              cursor: recsLoading ? "wait" : "pointer",
+              opacity: recsLoading ? 0.6 : 1,
             }}
           >
-            ↺ Refresh
+            {recsLoading ? "Refreshing…" : "↺ Refresh"}
           </button>
         </div>
 
+        {recsLoading && recs.length === 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 14, height: 200, opacity: 0.5 }} />
+            ))}
+          </div>
+        ) : recsError ? (
+          <div style={{ padding: 18, border: `1px dashed ${BORDER}`, borderRadius: 12, color: MUTED, fontSize: 13 }}>
+            Could not load recommendations. <button onClick={loadRecs} style={{ background: "none", border: "none", color: CORAL, cursor: "pointer", fontWeight: 600, padding: 0 }}>Try again</button>
+          </div>
+        ) : recs.length === 0 ? (
+          <div style={{ padding: 18, border: `1px dashed ${BORDER}`, borderRadius: 12, color: MUTED, fontSize: 13 }}>
+            {recsMessage || "Complete Discovery to receive campaign recommendations."}
+          </div>
+        ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
-          {DEFAULT_RECS.map((rec, i) => {
+          {recs.filter((_, i) => !dismissed.has(i)).map((rec, i) => {
             const isGap = rec.type === "Gap";
             return (
               <div
@@ -264,6 +301,7 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
                   </span>
                   <button
                     type="button"
+                    onClick={() => setDismissed((s) => new Set(s).add(i))}
                     style={{ background: "transparent", border: "none", color: PLACEHOLDER, cursor: "pointer", fontSize: 16, lineHeight: 1 }}
                     aria-label="Dismiss"
                   >
@@ -298,6 +336,7 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
             );
           })}
         </div>
+        )}
       </div>
 
       <style>{`.moxiemo-template-chip:hover{border-color:${CORAL} !important}`}</style>
