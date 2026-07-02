@@ -72,6 +72,7 @@ function buildPrompt(opts: {
   campaign?: any;
   slot?: { scheduled_date?: string | null; pillar?: string | null };
   calendarContext?: { title?: string; pillar?: string; date?: string | null } | null;
+  crossPost?: { sourcePlatform?: string | null; sourceContent?: string | null } | null;
 }) {
   const s = opts.strategy ?? {};
   const voice = Array.isArray(s.voice_attributes)
@@ -88,7 +89,9 @@ function buildPrompt(opts: {
   const c = opts.campaign ?? {};
   const slot = opts.slot ?? {};
 
-  const richFormats = new Set(["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)"]);
+  const emailFormats = new Set(["Newsletter Section", "Standalone Newsletter (full)"]);
+  const isEmail = emailFormats.has(opts.platform);
+  const richFormats = new Set(["Long-Form Article"]);
   const isRich = richFormats.has(opts.platform);
   const isShortScript = opts.platform === "Short-Form Video Script";
   const isLongScript = opts.platform === "Long-Form Video Script";
@@ -111,6 +114,15 @@ function buildPrompt(opts: {
     ? "Return only the spoken script as plain text. No markdown, no HTML, no code fences, no preamble, no title."
     : (isAd || isProfileBio)
       ? "Return only the structured ad copy as plain text using the exact LABEL format described. Each labeled field on its own line as `LABEL (N chars max): value`. Section headers (like variation names) on their own line ending with a colon. No markdown, no HTML, no code fences, no preamble."
+      : isEmail
+      ? `Return plain text only. Do NOT use any HTML tags — no <p>, <h1>, <h2>, <em>, <strong>, <br>, or any other markup.
+
+Formatting rules:
+- Paragraph breaks: use a blank line between paragraphs
+- Headers/subject lines: plain text on their own line, no tag wrapping
+- Emphasis: convey through word choice and sentence structure, not markup. If truly necessary, use plain asterisks around the word (*like this*) rather than HTML — but prefer rewriting for emphasis through language first.
+
+The output must be ready to copy and paste directly into an email platform's compose box with no visible markup of any kind. No markdown, no code fences, no preamble.`
       : isRich
       ? "Return formatted HTML using <h1>, <h2>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <hr>. No <html> or <body> wrappers. No code fences."
       : "Return only plain text. No markdown, no HTML, no code fences.";
@@ -359,7 +371,27 @@ Use the topic as the subject of this post. Do not invent a different topic. Stay
 `
     : "";
 
-  return `${lengthPrepend(opts.platform)}${calBlock}ABOUT THIS FOUNDER:
+  const cp = opts.crossPost;
+  const crossPostBlock = (cp && cp.sourcePlatform && cp.sourceContent)
+    ? `CROSS-PLATFORM ADAPTATION MODE:
+You are adapting a piece of content from ${cp.sourcePlatform} to ${opts.platform}.
+The original content conveys this core message:
+"""
+${cp.sourceContent}
+"""
+
+Write a genuinely new version for ${opts.platform} that:
+- Conveys the same core idea and message
+- Uses different wording, opening line, and structure than the original
+- Matches ${opts.platform}'s typical tone, length, and format conventions
+- Does NOT copy sentences or phrases verbatim from the source
+
+Do not simply restate the source content. This must read as a distinct piece of content that happens to share the same underlying message.
+
+`
+    : "";
+
+  return `${lengthPrepend(opts.platform)}${crossPostBlock}${calBlock}ABOUT THIS FOUNDER:
 Positioning: ${s.positioning_statement ?? "(not set)"}
 Ideal client: ${s.ideal_client ?? "(not set)"}
 Their pain point: ${s.pain_point ?? "(not set)"}
@@ -398,7 +430,7 @@ Return only the content itself — no preamble, no explanation, no "here's your 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    const { topic, platform, contentType, strategy, campaign, slot, calendarContext, mode, text, existing, instruction } = await req.json();
+    const { topic, platform, contentType, strategy, campaign, slot, calendarContext, crossPost, mode, text, existing, instruction } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");
 
@@ -493,7 +525,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot, calendarContext });
+    const prompt = buildPrompt({ topic, platform, contentType, strategy, campaign, slot, calendarContext, crossPost });
 
     const longForm = ["Newsletter Section", "Long-Form Article", "Standalone Newsletter (full)", "Long-Form Video Script", "Podcast Script"].includes(platform);
     const isBioAbout = platform === "Profile Bio" && contentType === "LinkedIn About Section";
