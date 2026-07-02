@@ -866,13 +866,13 @@ function TaskGenerationModal({
 
           {category === "email" && (
             <>
-              <button type="button" onClick={handleOpenInEmail} disabled={showSpinner || !content}
+              <button type="button" onClick={handleCopy} disabled={showSpinner || !content}
                 style={{ background: "#E85A46", color: "#fff", borderRadius: 20, fontSize: 13, fontWeight: 500, padding: 11, border: "none", width: "100%", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: (showSpinner || !content) ? 0.6 : 1 }}>
-                <Mail size={14} />
-                Open in Email →
+                <Copy size={14} />
+                {copyLabel}
               </button>
               <div style={{ fontSize: 11, color: "#9A9896", textAlign: "center", marginTop: 2 }}>
-                This will open in Email where you can add subscribers, set your subject line, and send.
+                Copy this and paste it into your email platform.
               </div>
             </>
           )}
