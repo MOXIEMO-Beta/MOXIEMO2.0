@@ -396,7 +396,6 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
 /* ============================ MODAL ============================ */
 
 const GOAL_OPTIONS = [
-const GOAL_OPTIONS = [
   { id: "lead", icon: "🎯", title: "Lead Generation", sub: "Capture qualified leads", keywords: ["lead", "discovery", "pipeline", "waitlist", "sign"] },
   { id: "awareness", icon: "📣", title: "Audience Awareness", sub: "Grow your following", keywords: ["awareness", "follow", "audience", "grow", "reach"] },
   { id: "bizdev", icon: "🤝", title: "Business Development", sub: "Partnerships and intros", keywords: ["partner", "intro", "biz dev", "business development", "referral"] },
