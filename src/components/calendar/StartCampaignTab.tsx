@@ -228,6 +228,8 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
           </div>
           <button
             type="button"
+            onClick={loadRecs}
+            disabled={recsLoading}
             style={{
               background: SUBTLE,
               border: "none",
@@ -236,15 +238,31 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
               fontSize: 12,
               fontWeight: 600,
               color: INK,
-              cursor: "pointer",
+              cursor: recsLoading ? "wait" : "pointer",
+              opacity: recsLoading ? 0.6 : 1,
             }}
           >
-            ↺ Refresh
+            {recsLoading ? "Refreshing…" : "↺ Refresh"}
           </button>
         </div>
 
+        {recsLoading && recs.length === 0 ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ background: "#fff", border: `1px solid ${BORDER}`, borderRadius: 14, height: 200, opacity: 0.5 }} />
+            ))}
+          </div>
+        ) : recsError ? (
+          <div style={{ padding: 18, border: `1px dashed ${BORDER}`, borderRadius: 12, color: MUTED, fontSize: 13 }}>
+            Could not load recommendations. <button onClick={loadRecs} style={{ background: "none", border: "none", color: CORAL, cursor: "pointer", fontWeight: 600, padding: 0 }}>Try again</button>
+          </div>
+        ) : recs.length === 0 ? (
+          <div style={{ padding: 18, border: `1px dashed ${BORDER}`, borderRadius: 12, color: MUTED, fontSize: 13 }}>
+            {recsMessage || "Complete Discovery to receive campaign recommendations."}
+          </div>
+        ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
-          {DEFAULT_RECS.map((rec, i) => {
+          {recs.filter((_, i) => !dismissed.has(i)).map((rec, i) => {
             const isGap = rec.type === "Gap";
             return (
               <div
@@ -283,6 +301,7 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
                   </span>
                   <button
                     type="button"
+                    onClick={() => setDismissed((s) => new Set(s).add(i))}
                     style={{ background: "transparent", border: "none", color: PLACEHOLDER, cursor: "pointer", fontSize: 16, lineHeight: 1 }}
                     aria-label="Dismiss"
                   >
@@ -317,6 +336,7 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
             );
           })}
         </div>
+        )}
       </div>
 
       <style>{`.moxiemo-template-chip:hover{border-color:${CORAL} !important}`}</style>
