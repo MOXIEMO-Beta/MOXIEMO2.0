@@ -85,6 +85,14 @@ function StrategyHeader() {
       const { data, error } = await supabase.functions.invoke("generate-execution-plan", { body: { strategy } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      // Regenerating replaces contentCalendar (new item_ids). Purge overrides so
+      // stale references don't shadow the fresh calendar.
+      if (user?.id) {
+        try {
+          const { clearOverridesForUser } = await import("@/lib/contentCalendar");
+          await clearOverridesForUser(user.id);
+        } catch (e) { console.warn("clearOverridesForUser failed", e); }
+      }
       // Merge new sections into enhanced_foundation, preserving Sprint 1 fields.
       const merged = {
         ...ef,

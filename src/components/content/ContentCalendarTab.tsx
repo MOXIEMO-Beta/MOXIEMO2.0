@@ -6,6 +6,26 @@ import { usePlan } from "@/hooks/usePlan";
 import { aiErrorMessage } from "@/lib/aiErrors";
 import { toast } from "sonner";
 import {
+  DndContext,
+  useDraggable,
+  useDroppable,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  ensureItemIds,
+  persistItemIdBackfill,
+  resolveCalendarDates,
+  groupByWeek as groupResolvedByWeek,
+  fetchOverrides,
+  swapCalendarItems,
+  type ResolvedCalendarItem,
+  type CalendarOverride,
+} from "@/lib/contentCalendar";
+import {
   Calendar as CalendarIcon,
   Download,
   Sparkles,
@@ -89,13 +109,16 @@ function fmtCard(d: Date): string {
   return `${day} · ${fmtShort(d)}`;
 }
 
-function downloadCsv(rows: CalItem[]) {
-  const headers = ["date", "platform", "topic", "pillar"];
+function downloadCsv(rows: ResolvedCalendarItem[]) {
+  const headers = ["date", "platform", "topic", "pillar"] as const;
   const csv = [headers.join(",")]
     .concat(
       rows.map((r) =>
         headers
-          .map((h) => `"${((r as any)[h] ?? "").toString().replace(/"/g, '""')}"`)
+          .map((h) => {
+            const v = h === "date" ? r.resolvedDate : (r as any)[h];
+            return `"${(v ?? "").toString().replace(/"/g, '""')}"`;
+          })
           .join(","),
       ),
     )
@@ -117,14 +140,42 @@ export default function ContentCalendarTab({ strategy }: { strategy: any }) {
   const ef = (strategy?.enhanced_foundation || {}) as any;
   const calRaw: CalItem[] = Array.isArray(ef.contentCalendar) ? ef.contentCalendar : [];
 
-  const calendar = useMemo(() => {
-    return calRaw
-      .map((it, i) => ({ ...it, _i: i, _d: parseDate(it.date) }))
-      .sort((a, b) => {
-        if (a._d && b._d) return a._d.getTime() - b._d.getTime();
-        return a._i - b._i;
-      });
-  }, [calRaw]);
+  // Ensure every item has a stable item_id (backfill on first load if missing).
+  const { items: itemsWithIds, mutated } = useMemo(() => ensureItemIds(calRaw), [calRaw]);
+  useEffect(() => {
+    if (mutated && user?.id) {
+      void persistItemIdBackfill(user.id, strategy, itemsWithIds);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mutated, user?.id]);
+
+  const [overrides, setOverrides] = useState<CalendarOverride[]>([]);
+  const [overridesLoaded, setOverridesLoaded] = useState(false);
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const rows = await fetchOverrides(user.id);
+      if (!cancelled) {
+        setOverrides(rows);
+        setOverridesLoaded(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  async function refetchOverrides() {
+    if (!user?.id) return;
+    const rows = await fetchOverrides(user.id);
+    setOverrides(rows);
+  }
+
+  const calendar: (ResolvedCalendarItem & { _d: Date | null; _i: number })[] = useMemo(() => {
+    const resolved = resolveCalendarDates(itemsWithIds, overrides);
+    return [...resolved]
+      .sort((a, b) => (a.resolvedDate || "").localeCompare(b.resolvedDate || ""))
+      .map((it, i) => ({ ...it, _i: i, _d: parseDate(it.resolvedDate) }));
+  }, [itemsWithIds, overrides]);
 
   const weeks = useMemo(() => {
     const out: { week: number; items: typeof calendar }[] = [];
@@ -136,6 +187,37 @@ export default function ContentCalendarTab({ strategy }: { strategy: any }) {
 
   const [moreExpanded, setMoreExpanded] = useState(false);
   const [openPost, setOpenPost] = useState<CalItem | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [flashIds, setFlashIds] = useState<Set<string>>(new Set());
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
+  async function handleDragEnd(event: DragEndEvent) {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over || !user?.id) return;
+    const aId = String(active.id);
+    const bId = String(over.id);
+    if (aId === bId) return;
+    const a = calendar.find((c) => c.item_id === aId);
+    const b = calendar.find((c) => c.item_id === bId);
+    if (!a || !b) return;
+    // Optimistic swap
+    const prev = overrides;
+    const next = new Map(prev.map((o) => [o.item_id, o.override_date]));
+    next.set(a.item_id, b.resolvedDate);
+    next.set(b.item_id, a.resolvedDate);
+    setOverrides(Array.from(next, ([item_id, override_date]) => ({ item_id, override_date })));
+    setFlashIds(new Set([a.item_id, b.item_id]));
+    setTimeout(() => setFlashIds(new Set()), 320);
+    try {
+      await swapCalendarItems(user.id, a, b);
+      await refetchOverrides();
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Couldn't reorder", { description: e?.message });
+      setOverrides(prev);
+    }
+  }
 
   if (calendar.length === 0) {
     return (
@@ -200,7 +282,13 @@ export default function ContentCalendarTab({ strategy }: { strategy: any }) {
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 10 }}>
           {w.items.map((it: any, i: number) => (
-            <PostCard key={i} item={it} onOpen={() => setOpenPost(it)} />
+            <PostCard
+              key={it.item_id}
+              item={it}
+              onOpen={() => setOpenPost(it)}
+              isDragging={activeDragId === it.item_id}
+              flash={flashIds.has(it.item_id)}
+            />
           ))}
         </div>
       </div>
@@ -208,6 +296,13 @@ export default function ContentCalendarTab({ strategy }: { strategy: any }) {
   }
 
   return (
+    <DndContext
+      sensors={sensors}
+      autoScroll={{ threshold: { x: 0, y: 0.15 } }}
+      onDragStart={(e: DragStartEvent) => setActiveDragId(String(e.active.id))}
+      onDragCancel={() => setActiveDragId(null)}
+      onDragEnd={handleDragEnd}
+    >
     <div style={{ padding: "28px 0" }}>
       <div className="flex items-start justify-between" style={{ marginBottom: 24 }}>
         <div>
@@ -227,7 +322,7 @@ export default function ContentCalendarTab({ strategy }: { strategy: any }) {
             Content Calendar
           </h2>
           <p style={{ fontSize: 13, color: "#9A9896", margin: 0 }}>
-            30 days from your strategy. Click any post to generate and act on it.
+            30 days from your strategy. Drag to reorder. Click any post to generate.
           </p>
         </div>
         <button
@@ -301,27 +396,49 @@ export default function ContentCalendarTab({ strategy }: { strategy: any }) {
         />
       )}
     </div>
+    </DndContext>
   );
 }
 
 // ---------- Post Card ----------
-function PostCard({ item, onOpen }: { item: any; onOpen: () => void }) {
+function PostCard({
+  item,
+  onOpen,
+  isDragging,
+  flash,
+}: {
+  item: any;
+  onOpen: () => void;
+  isDragging?: boolean;
+  flash?: boolean;
+}) {
   const title = item.topic || item.title || "Untitled post";
   const pillar = item.pillar || item.theme || "";
   const d = item._d as Date | null;
+  const { attributes, listeners, setNodeRef: setDragRef, transform } = useDraggable({ id: item.item_id });
+  const { isOver, setNodeRef: setDropRef } = useDroppable({ id: item.item_id });
+  const setRef = (el: HTMLElement | null) => {
+    setDragRef(el);
+    setDropRef(el);
+  };
+  const style: React.CSSProperties = {
+    background: flash ? "#FEF1EE" : "#fff",
+    border: isOver ? "1.5px solid #E85A46" : "0.5px solid #ECEAE5",
+    borderRadius: 14,
+    padding: "14px 16px",
+    cursor: isDragging ? "grabbing" : "grab",
+    opacity: isDragging ? 0.4 : 1,
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+    transition: flash ? "background 0.3s ease" : "border-color 0.15s, background 0.3s ease",
+    touchAction: "none",
+  };
   return (
     <div
+      ref={setRef}
+      {...listeners}
+      {...attributes}
       onClick={onOpen}
-      style={{
-        background: "#fff",
-        border: "0.5px solid #ECEAE5",
-        borderRadius: 14,
-        padding: "14px 16px",
-        cursor: "pointer",
-        transition: "border-color 0.15s",
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "rgba(0,0,0,0.2)")}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#ECEAE5")}
+      style={style}
     >
       <div className="flex justify-between items-center" style={{ marginBottom: 8 }}>
         <span style={{ fontSize: 11, color: "#9A9896" }}>
@@ -339,6 +456,7 @@ function PostCard({ item, onOpen }: { item: any; onOpen: () => void }) {
             e.stopPropagation();
             onOpen();
           }}
+          onPointerDown={(e) => e.stopPropagation()}
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -381,7 +499,8 @@ function GenerateModal({
   const title = item.topic || item.title || "Untitled post";
   const pillar = item.pillar || item.theme || "";
   const platformLabel = fullPlatformLabel(item.platform);
-  const d = item._d as Date | null;
+  const effectiveDate: string | null = item.resolvedDate ?? item.date ?? null;
+  const d = (item._d as Date | null) ?? parseDate(effectiveDate ?? undefined);
   const dateStr = d ? fmtCard(d) : item.day || "";
 
   const [loading, setLoading] = useState(true);
@@ -400,8 +519,8 @@ function GenerateModal({
           platform: platformLabel,
           contentType: item.contentType || "My take / Opinion",
           strategy,
-          slot: { scheduled_date: item.date ?? null, pillar: pillar || null },
-          calendarContext: { title, pillar, date: item.date ?? null },
+          slot: { scheduled_date: effectiveDate, pillar: pillar || null },
+          calendarContext: { title, pillar, date: effectiveDate, item_id: item.item_id ?? null },
         },
       });
       if (handleGenerationResponse(data, error)) {
@@ -448,7 +567,7 @@ function GenerateModal({
       topic: title,
       body,
       status,
-      scheduled_for: status === "scheduled" ? item.date ?? null : null,
+      scheduled_for: status === "scheduled" ? effectiveDate : null,
     });
     if (error) {
       toast.error("Couldn't save", { description: error.message });
