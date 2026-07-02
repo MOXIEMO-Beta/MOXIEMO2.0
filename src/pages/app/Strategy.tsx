@@ -988,9 +988,16 @@ function StrategyContentInner({
         className="w-full"
         onValueChange={() => {
           const y = window.scrollY;
-          // Restore scroll position synchronously after Radix's internal
-          // focus management runs, so switching tabs never jumps the page.
-          requestAnimationFrame(() => window.scrollTo(0, y));
+          // Radix focuses the newly-activated trigger, which can scroll the
+          // page. Restore scroll position across multiple frames to cover
+          // focus scrolling that happens after the first paint.
+          const restore = () => window.scrollTo(0, y);
+          requestAnimationFrame(() => {
+            restore();
+            requestAnimationFrame(restore);
+          });
+          setTimeout(restore, 0);
+          setTimeout(restore, 50);
         }}
       >
         <TabsList className="bg-transparent h-auto w-full mb-7 flex flex-wrap justify-start gap-6 rounded-none p-0 border-b border-[#ECEAE5]">
