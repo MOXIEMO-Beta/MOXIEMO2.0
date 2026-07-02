@@ -433,8 +433,15 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
       body: { user_id: userId, post_id: post.id, platform, content },
     });
     setActionLoading(null);
-    if (error || (data as { error?: string })?.error) {
-      toast.error("Publish failed", { description: error?.message ?? (data as { error?: string })?.error });
+    const errCode = (data as { error?: string })?.error;
+    if (errCode === "multiple_destinations_available") {
+      toast.error("Multiple LinkedIn destinations", {
+        description: "Publish from the Social Queue to pick a destination.",
+      });
+      return;
+    }
+    if (error || errCode) {
+      toast.error("Publish failed", { description: error?.message ?? errCode });
       return;
     }
     toast.success("Published");

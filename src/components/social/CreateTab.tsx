@@ -458,6 +458,9 @@ export default function CreateTab({
         body: { user_id: userId, post_id: id, platform: "linkedin", content: content.linkedin },
       });
       if (error) throw error;
+      if ((data as any)?.error === "multiple_destinations_available") {
+        throw new Error("You have multiple LinkedIn destinations connected. Publish from the Social Queue to pick one.");
+      }
       if (data?.error) throw new Error(data.error);
       toast.success("Published to LinkedIn");
       setPublishedUrl("https://www.linkedin.com/feed/");
