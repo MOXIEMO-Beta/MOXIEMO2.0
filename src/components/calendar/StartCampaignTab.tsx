@@ -25,29 +25,7 @@ type Recommendation = {
   description: string;
   cta: string;
 };
-const DEFAULT_RECS: Recommendation[] = [
-  {
-    type: "Gap",
-    title: "Launch a 'Strategy-First vs. Template-First' comparison campaign",
-    description:
-      "You have zero recent content establishing your core differentiator. A focused 2-week LinkedIn campaign would activate your Strategy-First Marketing pillar and directly address competitive positioning.",
-    cta: "Plan this campaign",
-  },
-  {
-    type: "Opportunity",
-    title: "Beta 2.0 waitlist re-engagement campaign",
-    description:
-      "Your email list is dormant and represents your warmest audience. A 3-email sequence over 2 weeks with a Beta 2.0 reveal angle could reactivate cold leads before launch.",
-    cta: "Plan this campaign",
-  },
-  {
-    type: "Gap",
-    title: "Founder proof campaign — one win, told with metrics",
-    description:
-      "Your Founder Wins pillar is untapped. A single campaign featuring one beta user result with before/after numbers would activate social proof and validate your positioning in market.",
-    cta: "Plan this campaign",
-  },
-];
+// Recommendations are always fetched per-user from the edge function.
 
 function pillarsFrom(strategy: any): string[] {
   const ef = (strategy?.enhanced_foundation || {}) as any;
