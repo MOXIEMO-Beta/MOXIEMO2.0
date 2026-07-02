@@ -19,12 +19,12 @@ export default function LinkedInCallback() {
     const state = params.get("state");
     const oauthError = params.get("error");
 
-    const finish = (ok: boolean) => {
+    const finish = (ok: boolean, detail?: string) => {
       const isPopup = !!window.opener && window.opener !== window;
       if (isPopup) {
         try {
           window.opener.postMessage(
-            { type: ok ? "LINKEDIN_AUTH_SUCCESS" : "LINKEDIN_AUTH_ERROR" },
+            { type: ok ? "LINKEDIN_AUTH_SUCCESS" : "LINKEDIN_AUTH_ERROR", detail },
             window.location.origin,
           );
         } catch {
@@ -46,7 +46,7 @@ export default function LinkedInCallback() {
     if (oauthError || !code || !state) {
       setErrorMsg(oauthError || "Missing authorization code.");
       setStatus("error");
-      finish(false);
+      finish(false, oauthError || "missing_code_or_state");
       return;
     }
 
@@ -63,16 +63,18 @@ export default function LinkedInCallback() {
           },
           body: JSON.stringify({ code, state }),
         });
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch(() => ({} as any));
         if (!res.ok || !data?.ok) {
-          throw new Error(data?.error || "token_exchange_failed");
+          const detail = data?.detail || data?.error || `http_${res.status}`;
+          throw new Error(detail);
         }
         finish(true);
       } catch (err) {
         console.error("LinkedIn callback failed", err);
-        setErrorMsg("Connection failed. Please try again.");
+        const msg = err instanceof Error ? err.message : String(err);
+        setErrorMsg(msg);
         setStatus("error");
-        finish(false);
+        finish(false, msg);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps

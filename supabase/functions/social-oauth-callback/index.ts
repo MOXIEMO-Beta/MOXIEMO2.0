@@ -112,28 +112,55 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { error: upsertErr } = await supabase
+    // The unique index on social_connections is an expression index
+    // (user_id, platform, connection_type, COALESCE(organization_id,'')),
+    // which onConflict column-lists can't target. Do select-then-update/insert.
+    const row = {
+      user_id: userId,
+      platform,
+      connection_type: "personal" as const,
+      organization_id: null as string | null,
+      access_token: token.access_token,
+      refresh_token: token.refresh_token ?? null,
+      expires_at: token.expires_in
+        ? new Date(Date.now() + token.expires_in * 1000).toISOString()
+        : null,
+      profile_name: profile.name ?? profile.given_name ?? null,
+      profile_image: profile.picture ?? null,
+      reminder_sent_at: null,
+    };
+
+    const { data: existing, error: selErr } = await supabase
       .from("social_connections")
-      .upsert(
-        {
-          user_id: userId,
-          platform,
-          access_token: token.access_token,
-          refresh_token: token.refresh_token ?? null,
-          expires_at: token.expires_in
-            ? new Date(Date.now() + token.expires_in * 1000).toISOString()
-            : null,
-          profile_name: profile.name ?? profile.given_name ?? null,
-          profile_image: profile.picture ?? null,
-          reminder_sent_at: null,
-        },
-        { onConflict: "user_id,platform" },
-      );
+      .select("id")
+      .eq("user_id", userId)
+      .eq("platform", platform)
+      .eq("connection_type", "personal")
+      .is("organization_id", null)
+      .maybeSingle();
+
+    let upsertErr: { message?: string } | null = selErr ?? null;
+    if (!upsertErr) {
+      if (existing?.id) {
+        const { error } = await supabase
+          .from("social_connections")
+          .update(row)
+          .eq("id", existing.id);
+        upsertErr = error ?? null;
+      } else {
+        const { error } = await supabase.from("social_connections").insert(row);
+        upsertErr = error ?? null;
+      }
+    }
 
     if (upsertErr) {
-      console.error("upsert error", upsertErr);
-      if (isPost) return jsonResp(500, { ok: false, error: "save_failed" });
-      return Response.redirect(appRedirect(`/app/social?error=save_failed`), 302);
+      console.error("save error", upsertErr);
+      const detail = upsertErr.message ?? "save_failed";
+      if (isPost) return jsonResp(500, { ok: false, error: "save_failed", detail });
+      return Response.redirect(
+        appRedirect(`/app/social?error=save_failed&detail=${encodeURIComponent(detail)}`),
+        302,
+      );
     }
 
     if (isPost) return jsonResp(200, { ok: true, platform });
