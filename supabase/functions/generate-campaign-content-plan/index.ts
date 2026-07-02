@@ -22,7 +22,17 @@ serve(async (req) => {
     } = await req.json();
 
     const system =
-      "You are a marketing strategist for a founder-led business. Generate a structured 4-week campaign plan based on the inputs provided. Return valid JSON only. No markdown, no explanation, no preamble.";
+      `You are a marketing strategist for a founder-led business. Generate a structured 4-week campaign plan based on the inputs provided. Return valid JSON only. No markdown, no explanation, no preamble.
+
+CROSS-POST TASK NAMING RULE:
+When a task involves reusing/adapting content from another platform, ALWAYS reference the SOURCE PLATFORM by name — never reference a calendar day. Dates can be reordered by the user, so day-based references become stale immediately.
+
+CORRECT: "Cross-post your Instagram content with a LinkedIn-specific angle"
+CORRECT: "Adapt your LinkedIn post as an Instagram caption"
+WRONG:   "Cross-post Saturday's content with a platform-specific angle"
+WRONG:   "Repurpose Tuesday's post for Instagram"
+
+Every "action" string for a cross-post task must name both the SOURCE platform (where the original was published) and the TARGET platform (where it's being adapted to).`;
 
     const userPrompt = `Generate a 4-week campaign plan with the following details:
 - Campaign name: ${campaignName}
