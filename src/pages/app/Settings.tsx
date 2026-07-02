@@ -16,6 +16,7 @@ type SocialConn = {
   connection_type?: string | null;
   organization_id?: string | null;
   organization_name?: string | null;
+  expires_at?: string | null;
 };
 
 type PendingOrg = { organization_id: string; organization_name: string; urn: string };
@@ -109,7 +110,7 @@ export default function Settings() {
     if (!user) return;
     supabase
       .from("social_connections")
-      .select("id, platform, profile_name, connection_type, organization_id, organization_name")
+      .select("id, platform, profile_name, connection_type, organization_id, organization_name, expires_at")
       .eq("user_id", user.id)
       .then(({ data }) => setConnections((data ?? []) as any));
     if (typeof window !== "undefined" && (window.location.hash === "#integrations" || window.location.hash === "#integrations-section")) {
@@ -148,7 +149,7 @@ export default function Settings() {
       // Refresh the connections list.
       supabase
         .from("social_connections")
-        .select("id, platform, profile_name, connection_type, organization_id, organization_name")
+        .select("id, platform, profile_name, connection_type, organization_id, organization_name, expires_at")
         .eq("user_id", user.id)
         .then(({ data }) => setConnections((data ?? []) as any));
     }
@@ -275,7 +276,7 @@ export default function Settings() {
       setSelectedPending({});
       const { data } = await supabase
         .from("social_connections")
-        .select("id, platform, profile_name, connection_type, organization_id, organization_name")
+        .select("id, platform, profile_name, connection_type, organization_id, organization_name, expires_at")
         .eq("user_id", user.id);
       setConnections((data ?? []) as any);
     } catch (e: any) {
