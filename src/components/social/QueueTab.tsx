@@ -35,6 +35,13 @@ type SocialPost = {
   created_at: string;
 };
 
+type LinkedInConnection = {
+  id: string;
+  connection_type: string;
+  organization_name: string | null;
+  profile_name: string | null;
+};
+
 type Asset = {
   id: string;
   url: string;
@@ -96,6 +103,8 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   const [filter, setFilter] = useState<"all" | Platform>("all");
   const [loading, setLoading] = useState(true);
   const [connections, setConnections] = useState<Set<string>>(new Set());
+  const [platformConnections, setPlatformConnections] = useState<Record<string, LinkedInConnection[]>>({});
+  const [pickerFor, setPickerFor] = useState<{ post: SocialPost; options: LinkedInConnection[] } | null>(null);
   const [openMediaFor, setOpenMediaFor] = useState<string | null>(null);
   const [showPublishBanner, setShowPublishBanner] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -115,10 +124,21 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
           .order("sort_order", { ascending: true })
           .order("scheduled_for", { ascending: true, nullsFirst: false })
           .order("created_at", { ascending: false }),
-        supabase.from("social_connections").select("platform").eq("user_id", userId),
+        supabase.from("social_connections").select("id, platform, connection_type, organization_name, profile_name").eq("user_id", userId),
       ]);
       setPosts((rows ?? []) as any);
-      setConnections(new Set(((conns ?? []) as any[]).map((c) => c.platform)));
+      const list = (conns ?? []) as any[];
+      setConnections(new Set(list.map((c) => c.platform)));
+      const grouped: Record<string, LinkedInConnection[]> = {};
+      for (const c of list) {
+        (grouped[c.platform] ??= []).push({
+          id: c.id,
+          connection_type: c.connection_type,
+          organization_name: c.organization_name,
+          profile_name: c.profile_name,
+        });
+      }
+      setPlatformConnections(grouped);
       setLoading(false);
     })();
   }, [userId]);
@@ -170,19 +190,77 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     else toast.success("Post deleted");
   }
 
+  async function publishToConnection(post: SocialPost, connectionId?: string) {
+    try {
+      const { data, error } = await invokeWithAuth<any>("publish-social-post", {
+        postId: post.id,
+        ...(connectionId ? { connectionId } : {}),
+      });
+      if (error) {
+        // supabase.functions.invoke surfaces non-2xx as FunctionsHttpError;
+        // try to read the response body for structured errors.
+        const ctx: any = (error as any).context;
+        let payload: any = null;
+        try { payload = await ctx?.json?.(); } catch {}
+        if (payload?.error === "multiple_destinations_available" && payload.connections?.length) {
+          setPickerFor({ post, options: payload.connections });
+          return { ok: false, skipped: true };
+        }
+        throw new Error(payload?.error ?? error.message ?? "Publish failed");
+      }
+      if (data?.error === "multiple_destinations_available" && data.connections?.length) {
+        setPickerFor({ post, options: data.connections });
+        return { ok: false, skipped: true };
+      }
+      if (data?.error) throw new Error(data.error);
+      return { ok: true, destination: data?.destination as string | undefined };
+    } catch (e: any) {
+      return { ok: false, error: e?.message ?? "Publish failed" };
+    }
+  }
+
   async function handlePublish(post: SocialPost) {
     const plat = primaryPlatform(post);
     if (!connections.has(plat)) {
       setShowPublishBanner(true);
       return;
     }
-    try {
-      const { error } = await invokeWithAuth("publish-social-post", { postId: post.id });
-      if (error) throw error;
-      toast.success("Published!");
+    const options = platformConnections[plat] ?? [];
+    if (options.length > 1) {
+      setPickerFor({ post, options });
+      return;
+    }
+    const result = await publishToConnection(post);
+    if (result.ok) {
+      toast.success(result.destination ? `Published to ${result.destination}` : "Published!");
       setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
-    } catch (e: any) {
-      toast.error(e?.message ?? "Publish failed");
+    } else if (!result.skipped) {
+      toast.error(result.error ?? "Publish failed");
+    }
+  }
+
+  async function handlePickerPublish(selectedIds: string[]) {
+    if (!pickerFor || selectedIds.length === 0) return;
+    const post = pickerFor.post;
+    setPickerFor(null);
+    const results = await Promise.all(
+      selectedIds.map(async (id) => {
+        const opt = (platformConnections[primaryPlatform(post)] ?? []).find((c) => c.id === id);
+        const label = opt?.connection_type === "company"
+          ? (opt.organization_name ?? "Company page")
+          : (opt?.profile_name ?? "Personal");
+        const r = await publishToConnection(post, id);
+        return { id, label, ...r };
+      }),
+    );
+    const wins = results.filter((r) => r.ok);
+    const fails = results.filter((r) => !r.ok && !r.skipped);
+    if (wins.length) {
+      toast.success(`Published to ${wins.map((w) => w.label).join(", ")}`);
+      setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
+    }
+    for (const f of fails) {
+      toast.error(`Failed to publish to ${f.label}`, { description: (f as any).error });
     }
   }
 
@@ -361,6 +439,62 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
           })}
         </div>
       )}
+      {pickerFor && (
+        <DestinationPicker
+          options={pickerFor.options}
+          onCancel={() => setPickerFor(null)}
+          onConfirm={handlePickerPublish}
+        />
+      )}
+    </div>
+  );
+}
+
+function DestinationPicker({ options, onCancel, onConfirm }: {
+  options: LinkedInConnection[];
+  onCancel: () => void;
+  onConfirm: (ids: string[]) => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(options.map((o) => o.id)));
+  function toggle(id: string) {
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(14,15,16,0.4)" }}>
+      <div className="w-full max-w-sm rounded-xl bg-white p-5" style={{ border: "0.5px solid #ECEAE5" }}>
+        <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>Publish to</div>
+        <div className="text-[12px] mt-1" style={{ color: "#6B6860" }}>Choose one or more LinkedIn destinations.</div>
+        <div className="mt-3 space-y-2">
+          {options.map((o) => {
+            const label = o.connection_type === "company"
+              ? `${o.organization_name ?? "Company page"} (Company Page)`
+              : `${o.profile_name ?? "Personal"} (Personal)`;
+            const on = selected.has(o.id);
+            return (
+              <label key={o.id} className="flex items-center gap-2.5 cursor-pointer rounded-lg px-3 py-2"
+                style={{ border: "0.5px solid #ECEAE5", background: on ? "#FBF5F3" : "#fff" }}>
+                <input type="checkbox" checked={on} onChange={() => toggle(o.id)} />
+                <span className="text-[13px]" style={{ color: "#0E0F10" }}>{label}</span>
+              </label>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex justify-end gap-2">
+          <button onClick={onCancel} className="text-[12px] font-medium"
+            style={{ border: "0.5px solid #ECEAE5", borderRadius: 8, height: 32, padding: "0 14px", color: "#6B6860", background: "transparent" }}>
+            Cancel
+          </button>
+          <button onClick={() => onConfirm(Array.from(selected))} disabled={selected.size === 0}
+            className="text-[12px] font-semibold text-white"
+            style={{ background: "#E85A46", borderRadius: 8, height: 32, padding: "0 14px", opacity: selected.size === 0 ? 0.5 : 1 }}>
+            Publish now
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
