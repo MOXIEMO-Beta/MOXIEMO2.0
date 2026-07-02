@@ -1,0 +1,1 @@
+alter table public.social_connections add column if not exists reminder_sent_at timestamptz;

@@ -184,6 +184,7 @@ Deno.serve(async (req) => {
             refresh_token: token.refresh_token ?? null,
             expires_at: expiresAt,
             profile_name: org.organization_name,
+            reminder_sent_at: null,
           },
           { onConflict: "user_id,platform,connection_type,organization_id" },
         );

@@ -1091,6 +1091,7 @@ export type Database = {
           profile_name: string | null
           profile_url: string | null
           refresh_token: string | null
+          reminder_sent_at: string | null
           user_id: string
         }
         Insert: {
@@ -1106,6 +1107,7 @@ export type Database = {
           profile_name?: string | null
           profile_url?: string | null
           refresh_token?: string | null
+          reminder_sent_at?: string | null
           user_id: string
         }
         Update: {
@@ -1121,6 +1123,7 @@ export type Database = {
           profile_name?: string | null
           profile_url?: string | null
           refresh_token?: string | null
+          reminder_sent_at?: string | null
           user_id?: string
         }
         Relationships: []

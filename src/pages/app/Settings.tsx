@@ -16,6 +16,7 @@ type SocialConn = {
   connection_type?: string | null;
   organization_id?: string | null;
   organization_name?: string | null;
+  expires_at?: string | null;
 };
 
 type PendingOrg = { organization_id: string; organization_name: string; urn: string };
@@ -45,6 +46,32 @@ function platformIcon(platform: string | null) {
 function formatDate(iso: string) {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+}
+
+function expiryStatus(iso?: string | null): { kind: "expired" | "soon" | "ok"; days: number } | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime();
+  if (Number.isNaN(ms)) return null;
+  const days = Math.ceil((ms - Date.now()) / (24 * 60 * 60 * 1000));
+  if (days <= 0) return { kind: "expired", days: 0 };
+  if (days <= 7) return { kind: "soon", days };
+  return { kind: "ok", days };
+}
+
+function ExpiryChip({ iso }: { iso?: string | null }) {
+  const s = expiryStatus(iso);
+  if (!s || s.kind === "ok") return null;
+  const label = s.kind === "expired" ? "Expired — reconnect" : `Expires in ${s.days} day${s.days === 1 ? "" : "s"}`;
+  const bg = s.kind === "expired" ? "#FDE1DC" : "#FEF3C7";
+  const fg = s.kind === "expired" ? "#8A2C1D" : "#854F0B";
+  return (
+    <span
+      className="text-[10px] font-semibold"
+      style={{ background: bg, color: fg, borderRadius: 4, padding: "2px 8px" }}
+    >
+      {label}
+    </span>
+  );
 }
 
 export default function Settings() {
@@ -109,7 +136,7 @@ export default function Settings() {
     if (!user) return;
     supabase
       .from("social_connections")
-      .select("id, platform, profile_name, connection_type, organization_id, organization_name")
+      .select("id, platform, profile_name, connection_type, organization_id, organization_name, expires_at")
       .eq("user_id", user.id)
       .then(({ data }) => setConnections((data ?? []) as any));
     if (typeof window !== "undefined" && (window.location.hash === "#integrations" || window.location.hash === "#integrations-section")) {
@@ -148,7 +175,7 @@ export default function Settings() {
       // Refresh the connections list.
       supabase
         .from("social_connections")
-        .select("id, platform, profile_name, connection_type, organization_id, organization_name")
+        .select("id, platform, profile_name, connection_type, organization_id, organization_name, expires_at")
         .eq("user_id", user.id)
         .then(({ data }) => setConnections((data ?? []) as any));
     }
@@ -262,6 +289,7 @@ export default function Settings() {
         access_token: pending.access_token,
         refresh_token: pending.refresh_token,
         expires_at: pending.expires_at,
+        reminder_sent_at: null,
       }));
       const { error: insErr } = await supabase
         .from("social_connections")
@@ -274,7 +302,7 @@ export default function Settings() {
       setSelectedPending({});
       const { data } = await supabase
         .from("social_connections")
-        .select("id, platform, profile_name, connection_type, organization_id, organization_name")
+        .select("id, platform, profile_name, connection_type, organization_id, organization_name, expires_at")
         .eq("user_id", user.id);
       setConnections((data ?? []) as any);
     } catch (e: any) {
@@ -326,6 +354,7 @@ export default function Settings() {
           </div>
           {linkedin ? (
             <div className="flex items-center gap-2">
+              <ExpiryChip iso={linkedin.expires_at} />
               <span className="text-[10px] font-semibold" style={{ background: "#EAF3DE", color: "#3B6D11", borderRadius: 4, padding: "2px 8px" }}>Connected</span>
               <button onClick={disconnectLinkedIn} className="text-[12px]" style={{ border: "0.5px solid #ECEAE5", borderRadius: 6, height: 28, padding: "0 12px", color: "#6B6860" }}>Disconnect</button>
             </div>
@@ -352,6 +381,7 @@ export default function Settings() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <ExpiryChip iso={page.expires_at} />
               <span className="text-[10px] font-semibold" style={{ background: "#EAF3DE", color: "#3B6D11", borderRadius: 4, padding: "2px 8px" }}>Connected</span>
               <button onClick={() => disconnectCompanyPage(page.id)} className="text-[12px]" style={{ border: "0.5px solid #ECEAE5", borderRadius: 6, height: 28, padding: "0 12px", color: "#6B6860" }}>Disconnect</button>
             </div>
