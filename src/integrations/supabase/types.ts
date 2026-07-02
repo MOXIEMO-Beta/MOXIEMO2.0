@@ -859,6 +859,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pending_pages_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          organizations: Json
+          refresh_token: string | null
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          organizations: Json
+          refresh_token?: string | null
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          organizations?: Json
+          refresh_token?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       pillar_feed_cache: {
         Row: {
           angles_json: Json
@@ -1051,8 +1081,11 @@ export type Database = {
         Row: {
           access_token: string | null
           connected_at: string
+          connection_type: string
           expires_at: string | null
           id: string
+          organization_id: string | null
+          organization_name: string | null
           platform: string
           profile_image: string | null
           profile_name: string | null
@@ -1063,8 +1096,11 @@ export type Database = {
         Insert: {
           access_token?: string | null
           connected_at?: string
+          connection_type?: string
           expires_at?: string | null
           id?: string
+          organization_id?: string | null
+          organization_name?: string | null
           platform: string
           profile_image?: string | null
           profile_name?: string | null
@@ -1075,8 +1111,11 @@ export type Database = {
         Update: {
           access_token?: string | null
           connected_at?: string
+          connection_type?: string
           expires_at?: string | null
           id?: string
+          organization_id?: string | null
+          organization_name?: string | null
           platform?: string
           profile_image?: string | null
           profile_name?: string | null
