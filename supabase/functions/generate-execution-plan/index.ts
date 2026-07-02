@@ -12,7 +12,13 @@ Generate a complete EXECUTION PLAN that includes:
 4. Success metrics dashboard (parse the user's success metric into weekly/monthly targets, project lead source breakdown, content performance targets, brand health initial state)
 5. A 4-week quick-start action plan (Foundation → Launch → Engagement → Optimization, 4-5 tasks each with realistic estimated times) plus an ongoing weekly routine
 
-Be SPECIFIC and grounded in the foundation. Reference the user's actual ideal client, pillars, archetype, channel — never generic placeholders. Topic angles must progress logically (awareness → understanding → application). Tasks should reference the user's primary channel and positioning.`;
+Be SPECIFIC and grounded in the foundation. Reference the user's actual ideal client, pillars, archetype, channel — never generic placeholders. Topic angles must progress logically (awareness → understanding → application). Tasks should reference the user's primary channel and positioning.
+
+ACTION PLAN FORMAT — STRICT:
+Each of week1, week2, week3, week4 MUST be a structured OBJECT with:
+  - "title": a short 2-6 word thematic phrase specific to this founder's strategy (e.g. "Foundation & Strategy Lock-in", "Launch & Initial Engagement", "Building Momentum & Conversations", "Analysis & Optimization"). Do NOT prefix with "Week N", "Task:", or any date range. Do NOT include time estimates like "(Est. 10 hours)" in the title. Time estimates belong on individual task lines.
+  - "tasks": an array of task objects.
+Never return a week as a plain string, markdown block, or without a title.`;
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -435,7 +441,7 @@ Today's date: ${todayISO()}`;
                 week: {
                   type: "object",
                   properties: {
-                    title: { type: "string" },
+                    title: { type: "string", description: "REQUIRED. 2-6 word thematic phrase (e.g. 'Foundation & Strategy Lock-in'). No 'Week N' prefix, no date range, no '(Est. …)' annotation." },
                     tasks: {
                       type: "array",
                       items: {
@@ -469,7 +475,75 @@ Today's date: ${todayISO()}`;
     }
     const data = await res.json();
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    const parsed = args ? JSON.parse(args) : {};
+    let parsed = args ? JSON.parse(args) : {};
+
+    // Validate action plan week titles. If any are missing/empty, retry once
+    // with a reinforced reminder targeting only the action plan.
+    const missingTitles = (ap: any): number[] => {
+      const bad: number[] = [];
+      for (const n of [1, 2, 3, 4]) {
+        const w = ap?.[`week${n}`];
+        const t = w && typeof w === "object" ? w.title : null;
+        if (!t || typeof t !== "string" || !t.trim()) bad.push(n);
+      }
+      return bad;
+    };
+    let bad = missingTitles(parsed?.actionPlan);
+    if (bad.length > 0) {
+      console.error("execution-plan: missing week titles", {
+        weeks: bad,
+        preview: JSON.stringify(parsed?.actionPlan).slice(0, 500),
+      });
+      // Targeted retry: regenerate only the action plan section.
+      const retryRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: SYSTEM },
+            { role: "user", content: userBrief },
+            { role: "user", content: `RETRY: your previous response returned week(s) ${bad.join(", ")} without a "title" field. Regenerate ONLY the actionPlan. Every week MUST have a short 2-6 word thematic title. Do NOT return weeks as strings.` },
+          ],
+          tools: [{
+            type: "function",
+            function: {
+              name: "save_action_plan",
+              description: "Save only the action plan (4 weeks + ongoing routine).",
+              parameters: {
+                type: "object",
+                properties: {
+                  actionPlan: {
+                    type: "object",
+                    properties: {
+                      week1: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
+                      week2: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
+                      week3: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
+                      week4: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
+                    },
+                    required: ["week1", "week2", "week3", "week4"],
+                  },
+                },
+                required: ["actionPlan"],
+              },
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "save_action_plan" } },
+        }),
+      });
+      if (retryRes.ok) {
+        const rd = await retryRes.json();
+        const rArgs = rd.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+        const rParsed = rArgs ? JSON.parse(rArgs) : {};
+        if (rParsed?.actionPlan) {
+          parsed.actionPlan = { ...(parsed.actionPlan || {}), ...rParsed.actionPlan };
+          const stillBad = missingTitles(parsed.actionPlan);
+          if (stillBad.length > 0) console.error("execution-plan: retry still missing titles", stillBad);
+        }
+      } else {
+        console.error("execution-plan: retry failed", retryRes.status, await retryRes.text());
+      }
+    }
 
     return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
