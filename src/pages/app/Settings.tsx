@@ -354,6 +354,7 @@ export default function Settings() {
           </div>
           {linkedin ? (
             <div className="flex items-center gap-2">
+              <ExpiryChip iso={linkedin.expires_at} />
               <span className="text-[10px] font-semibold" style={{ background: "#EAF3DE", color: "#3B6D11", borderRadius: 4, padding: "2px 8px" }}>Connected</span>
               <button onClick={disconnectLinkedIn} className="text-[12px]" style={{ border: "0.5px solid #ECEAE5", borderRadius: 6, height: 28, padding: "0 12px", color: "#6B6860" }}>Disconnect</button>
             </div>
@@ -380,6 +381,7 @@ export default function Settings() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <ExpiryChip iso={page.expires_at} />
               <span className="text-[10px] font-semibold" style={{ background: "#EAF3DE", color: "#3B6D11", borderRadius: 4, padding: "2px 8px" }}>Connected</span>
               <button onClick={() => disconnectCompanyPage(page.id)} className="text-[12px]" style={{ border: "0.5px solid #ECEAE5", borderRadius: 6, height: 28, padding: "0 12px", color: "#6B6860" }}>Disconnect</button>
             </div>
