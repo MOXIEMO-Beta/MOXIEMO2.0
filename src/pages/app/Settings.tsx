@@ -107,7 +107,20 @@ export default function Settings() {
     if (!user) return;
     setConnecting("linkedin");
     try {
-      const { data, error } = await supabase.functions.invoke("social-oauth-start", { body: { platform: "linkedin" } });
+      // Only these origins are registered as LinkedIn OAuth redirect URIs.
+      // On any other origin (e.g. Lovable editor preview) we fall back to the
+      // primary production callback so LinkedIn's exact-match check passes.
+      const ALLOWED_ORIGINS = new Set([
+        "https://buildwithmoxiemo.com",
+        "https://moxie-grow-platform.lovable.app",
+      ]);
+      const origin = window.location.origin;
+      const redirect_uri = ALLOWED_ORIGINS.has(origin)
+        ? `${origin}/auth/linkedin/callback`
+        : "https://buildwithmoxiemo.com/auth/linkedin/callback";
+      const { data, error } = await supabase.functions.invoke("social-oauth-start", {
+        body: { platform: "linkedin", user_id: user.id, redirect_uri },
+      });
       if (error) throw error;
       const url = (data as any)?.url ?? (data as any)?.authUrl;
       if (url) window.location.href = url;
