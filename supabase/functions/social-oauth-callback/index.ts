@@ -118,7 +118,6 @@ Deno.serve(async (req) => {
         {
           user_id: userId,
           platform,
-          connection_type: "personal",
           access_token: token.access_token,
           refresh_token: token.refresh_token ?? null,
           expires_at: token.expires_in
