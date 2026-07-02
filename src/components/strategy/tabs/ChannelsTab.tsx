@@ -8,6 +8,8 @@ import { ChevronDown, Clock, Sparkles, AlertTriangle, Loader2, Zap } from "lucid
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { clearOverridesForUser } from "@/lib/contentCalendar";
 
 function ChannelSection({ channel, level, defaultOpen }: { channel: any; level: string; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(!!defaultOpen);
@@ -136,6 +138,9 @@ export function ChannelsTab() {
       const { data, error } = await supabase.functions.invoke("generate-execution-plan", { body: { strategy } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+      if (user?.id) {
+        try { await clearOverridesForUser(user.id); } catch (e) { console.warn(e); }
+      }
       const merged = {
         ...ef,
         quarterlyThemes: data.quarterlyThemes,
