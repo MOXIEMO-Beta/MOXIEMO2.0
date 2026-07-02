@@ -209,7 +209,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
           style={{ background: "#FEF3C7", border: "0.5px solid #FBBF24", color: "#854F0B" }}>
           <span>Connect a platform in Settings to publish posts directly from MOXIEMO.</span>
           <button className="text-[12px] font-medium" style={{ color: "#E85A46" }}
-            onClick={() => navigate("/app/settings#integrations")}>Go to Settings →</button>
+            onClick={() => navigate("/app/settings#integrations-section")}>Go to Settings →</button>
         </div>
       )}
 
