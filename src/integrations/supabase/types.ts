@@ -388,6 +388,33 @@ export type Database = {
         }
         Relationships: []
       }
+      content_calendar_overrides: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          override_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          override_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          override_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       content_items: {
         Row: {
           body: string | null
