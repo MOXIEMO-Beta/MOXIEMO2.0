@@ -29,19 +29,42 @@ function normalizeWeek(raw: any, weekNumber: number): { title: string; tasks: an
     let title: string | null = null;
     const tasks: any[] = [];
     let idx = 0;
-    for (const lineRaw of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const lineRaw = lines[i];
       const line = lineRaw.trim();
       if (!line) continue;
-      // Match "### Week 1: Foundation ..." or "Task: Week 1: Foundation (Est. 10 hours)"
-      const titleMatch =
-        line.match(/^#+\s*Week\s*\d+\s*[:\-]?\s*(.*)$/i) ||
-        line.match(/^(?:\*\*)?Task:(?:\*\*)?\s*Week\s*\d+\s*[:\-]?\s*(.*)$/i);
-      if (titleMatch) {
-        let t = titleMatch[1].trim();
-        // Strip trailing "(Est. 10 hours)" or "(Est: ...)" annotations from the title
-        t = t.replace(/\s*\(\s*Est(?:imated)?[:\.]?\s*[^)]+\)\s*$/i, "").trim();
-        if (t) title = t;
-        continue;
+      // Match "### Week 1: Foundation ...", "Task: Week 1: Foundation ...",
+      // "**Week 1: Foundation**", or plain "Week 1 (June 8-14): Foundation ...".
+      // We only look for the header on the first non-empty line to avoid
+      // matching a "Week 2" reference inside a task body.
+      if (title === null) {
+        const stripped = line.replace(/^\*+|\*+$/g, "").trim();
+        const headerMatch =
+          stripped.match(/^#+\s*Week\s*\d+\b\s*(?:\([^)]*\))?\s*[:\-]?\s*(.*)$/i) ||
+          stripped.match(/^(?:\*\*)?Task:(?:\*\*)?\s*Week\s*\d+\b\s*(?:\([^)]*\))?\s*[:\-]?\s*(.*)$/i) ||
+          stripped.match(/^Week\s*\d+\b\s*(?:\([^)]*\))?\s*[:\-]?\s*(.*)$/i);
+        if (headerMatch) {
+          let t = headerMatch[1].trim();
+          // Strip trailing "(Est. 10 hours)" / "(Est: ...)" / "(Est. Time: 12 hours)" annotations.
+          t = t.replace(/\s*\(\s*Est(?:\.|imated)?(?:\s*Time)?\s*[:\.]?\s*[^)]+\)\s*$/i, "").trim();
+          // If title contains inline tasks after " - " (e.g. "Foundation - Do X. Do Y."),
+          // keep only the short prefix as the theme.
+          if (t.length > 60 && / - | – /.test(t)) t = t.split(/ [–-] /)[0].trim();
+          // Trim trailing punctuation.
+          t = t.replace(/[\s\-–:.]+$/, "").trim();
+          if (t) title = t;
+          continue;
+        }
+        // Final fallback: a bare first line like "FOUNDATION (Est. 4 hours)".
+        // Accept it if it looks like a short heading (few words, no leading list marker).
+        if (!/^[\*\-]/.test(line)) {
+          let t = line.replace(/\s*\(\s*Est(?:\.|imated)?(?:\s*Time)?\s*[:\.]?\s*[^)]+\)\s*$/i, "").trim();
+          t = t.replace(/[\s\-–:.]+$/, "").trim();
+          if (t && t.split(/\s+/).length <= 8) {
+            title = t;
+            continue;
+          }
+        }
       }
       const taskMatch = line.match(/^[\*\-]\s*(?:\*\*Task:\*\*|Task:)?\s*(.+)$/i);
       if (taskMatch) {
