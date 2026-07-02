@@ -262,6 +262,7 @@ export default function Settings() {
         access_token: pending.access_token,
         refresh_token: pending.refresh_token,
         expires_at: pending.expires_at,
+        reminder_sent_at: null,
       }));
       const { error: insErr } = await supabase
         .from("social_connections")
