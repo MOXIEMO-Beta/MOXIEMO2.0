@@ -44,6 +44,47 @@ function businessGoalFrom(strategy: any): string {
 export default function StartCampaignTab({ ctx }: { ctx: any }) {
   const { strategy, openCampaign } = ctx;
   const [prompt, setPrompt] = useState("");
+  const [recs, setRecs] = useState<Recommendation[]>([]);
+  const [recsLoading, setRecsLoading] = useState(false);
+  const [recsError, setRecsError] = useState<string | null>(null);
+  const [recsMessage, setRecsMessage] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState<Set<number>>(new Set());
+
+  const loadRecs = async () => {
+    setRecsLoading(true);
+    setRecsError(null);
+    setRecsMessage(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setRecs([]);
+        setRecsMessage("Sign in to see recommendations.");
+        return;
+      }
+      const { data, error } = await supabase.functions.invoke(
+        "generate-campaign-recommendations",
+        {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+          body: {},
+        },
+      );
+      if (error) throw error;
+      const list: Recommendation[] = Array.isArray(data?.recommendations) ? data.recommendations : [];
+      setRecs(list);
+      setDismissed(new Set());
+      if (list.length === 0 && data?.message) setRecsMessage(String(data.message));
+    } catch (e: any) {
+      setRecsError(e?.message || "Could not load recommendations.");
+    } finally {
+      setRecsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRecs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const openModal = (title?: string) => openCampaign?.(title);
 
   const onChip = (t: Template) => {
