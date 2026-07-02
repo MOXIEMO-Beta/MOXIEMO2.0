@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, Calendar as CalendarIcon, Download, FileText, Mail, Mic } from "lucide-react";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  ensureItemIds,
+  resolveCalendarDates,
+  fetchOverrides,
+  type CalendarOverride,
+  type ResolvedCalendarItem,
+} from "@/lib/contentCalendar";
 
 function platformIcon(p: string) {
   const s = (p || "").toLowerCase();
@@ -39,14 +47,30 @@ function groupByWeek(items: any[]) {
 export function ContentTab() {
   const { strategy } = useStrategyEditor();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const ef = (strategy?.enhanced_foundation || {}) as any;
   const themes: any[] = ef.quarterlyThemes || [];
-  const calendar: any[] = ef.contentCalendar || [];
+  const rawCalendar: any[] = ef.contentCalendar || [];
   const pillarsRaw = strategy?.content_pillars;
   const pillars: any[] = Array.isArray(pillarsRaw)
     ? pillarsRaw.map((p: any) => (typeof p === "string" ? { name: p } : p))
     : [];
   const [expanded, setExpanded] = useState<string | null>(themes[0]?.quarter || null);
+  const [overrides, setOverrides] = useState<CalendarOverride[]>([]);
+  useEffect(() => {
+    if (!user?.id) return;
+    let cancelled = false;
+    (async () => {
+      const rows = await fetchOverrides(user.id);
+      if (!cancelled) setOverrides(rows);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
+  const calendar: ResolvedCalendarItem[] = useMemo(() => {
+    const { items } = ensureItemIds(rawCalendar);
+    return resolveCalendarDates(items, overrides);
+  }, [rawCalendar, overrides]);
 
   if (!themes.length && !calendar.length && pillars.length === 0) {
     return (
@@ -190,7 +214,7 @@ export function ContentTab() {
                   {items.map((item, i) => (
                     <div key={i} className="p-4 rounded-lg border border-border bg-background">
                       <div className="flex items-center justify-between mb-2 text-xs text-muted-foreground">
-                        <span className="font-medium">{item.day} · {item.date}</span>
+                        <span className="font-medium">{item.day} · {item.resolvedDate || item.date}</span>
                         <span className="inline-flex items-center gap-1.5 text-accent">{platformIcon(item.platform)} {item.platform}</span>
                       </div>
                       <div className="text-sm font-medium leading-snug mb-2">{item.topic}</div>
