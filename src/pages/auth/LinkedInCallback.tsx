@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { MoxieLogo } from "@/components/MoxieLogo";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
@@ -51,12 +52,14 @@ export default function LinkedInCallback() {
 
     (async () => {
       try {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token ?? SUPABASE_ANON_KEY;
         const res = await fetch(`${SUPABASE_URL}/functions/v1/social-oauth-callback`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: JSON.stringify({ code, state }),
         });
