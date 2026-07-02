@@ -499,7 +499,8 @@ function GenerateModal({
   const title = item.topic || item.title || "Untitled post";
   const pillar = item.pillar || item.theme || "";
   const platformLabel = fullPlatformLabel(item.platform);
-  const d = item._d as Date | null;
+  const effectiveDate: string | null = item.resolvedDate ?? item.date ?? null;
+  const d = (item._d as Date | null) ?? parseDate(effectiveDate ?? undefined);
   const dateStr = d ? fmtCard(d) : item.day || "";
 
   const [loading, setLoading] = useState(true);
@@ -518,8 +519,8 @@ function GenerateModal({
           platform: platformLabel,
           contentType: item.contentType || "My take / Opinion",
           strategy,
-          slot: { scheduled_date: item.date ?? null, pillar: pillar || null },
-          calendarContext: { title, pillar, date: item.date ?? null },
+          slot: { scheduled_date: effectiveDate, pillar: pillar || null },
+          calendarContext: { title, pillar, date: effectiveDate, item_id: item.item_id ?? null },
         },
       });
       if (handleGenerationResponse(data, error)) {
@@ -566,7 +567,7 @@ function GenerateModal({
       topic: title,
       body,
       status,
-      scheduled_for: status === "scheduled" ? item.date ?? null : null,
+      scheduled_for: status === "scheduled" ? effectiveDate : null,
     });
     if (error) {
       toast.error("Couldn't save", { description: error.message });
