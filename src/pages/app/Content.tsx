@@ -664,6 +664,12 @@ export default function Content() {
         },
       });
       if (error) throw error;
+      if (data?.error === "multiple_destinations_available") {
+        toast.error("You have multiple LinkedIn destinations", {
+          description: "Open the Social Queue to choose a destination before publishing.",
+        });
+        return;
+      }
       if (data?.error) throw new Error(data.error);
       await patchItem(it.id, {
         status: "published",
