@@ -19,19 +19,28 @@ function stripMarkdown(text: string): string {
 function normalizeWeek(raw: any, weekNumber: number): { title: string; tasks: any[] } {
   if (!raw) return { title: `Week ${weekNumber}`, tasks: [] };
   if (typeof raw === "object" && Array.isArray(raw.tasks)) {
-    return { title: raw.title || `Week ${weekNumber}`, tasks: raw.tasks };
+    const t =
+      raw.theme ?? raw.title ?? raw.weekTheme ?? raw.focus ?? raw.weekFocus ?? null;
+    const title = typeof t === "string" && t.trim() ? t.trim() : `Week ${weekNumber} — theme not generated`;
+    return { title, tasks: raw.tasks };
   }
   if (typeof raw === "string") {
     const lines = raw.split(/\r?\n/);
-    let title = `Week ${weekNumber}`;
+    let title: string | null = null;
     const tasks: any[] = [];
     let idx = 0;
     for (const lineRaw of lines) {
       const line = lineRaw.trim();
       if (!line) continue;
-      const titleMatch = line.match(/^#+\s*Week\s*\d+\s*[:\-]?\s*(.*)$/i);
+      // Match "### Week 1: Foundation ..." or "Task: Week 1: Foundation (Est. 10 hours)"
+      const titleMatch =
+        line.match(/^#+\s*Week\s*\d+\s*[:\-]?\s*(.*)$/i) ||
+        line.match(/^(?:\*\*)?Task:(?:\*\*)?\s*Week\s*\d+\s*[:\-]?\s*(.*)$/i);
       if (titleMatch) {
-        title = titleMatch[1].trim() || title;
+        let t = titleMatch[1].trim();
+        // Strip trailing "(Est. 10 hours)" or "(Est: ...)" annotations from the title
+        t = t.replace(/\s*\(\s*Est(?:imated)?[:\.]?\s*[^)]+\)\s*$/i, "").trim();
+        if (t) title = t;
         continue;
       }
       const taskMatch = line.match(/^[\*\-]\s*(?:\*\*Task:\*\*|Task:)?\s*(.+)$/i);
@@ -43,6 +52,8 @@ function normalizeWeek(raw: any, weekNumber: number): { title: string; tasks: an
           estimatedTime = estMatch[1].trim();
           text = text.slice(0, estMatch.index).trim();
         }
+        // Strip leading bold markers like "**Label:**"
+        text = text.replace(/^\*\*([^*]+)\*\*\s*:?\s*/, "$1: ").trim();
         tasks.push({
           id: `week-${weekNumber}-task-${idx++}`,
           task: text,
@@ -50,7 +61,7 @@ function normalizeWeek(raw: any, weekNumber: number): { title: string; tasks: an
         });
       }
     }
-    return { title, tasks };
+    return { title: title || `Week ${weekNumber} — theme not generated`, tasks };
   }
   return { title: `Week ${weekNumber}`, tasks: [] };
 }
