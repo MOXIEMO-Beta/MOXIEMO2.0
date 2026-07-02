@@ -44,14 +44,14 @@ function normalizeWeek(raw: any, weekNumber: number): { title: string; tasks: an
           stripped.match(/^(?:\*\*)?Task:(?:\*\*)?\s*Week\s*\d+\b\s*(?:\([^)]*\))?\s*[:\-]?\s*(.*)$/i) ||
           stripped.match(/^Week\s*\d+\b\s*(?:\([^)]*\))?\s*[:\-]?\s*(.*)$/i);
         if (headerMatch) {
-          let t = headerMatch[1].trim();
-          // Strip trailing "(Est. 10 hours)" / "(Est: ...)" / "(Est. Time: 12 hours)" annotations.
-          t = t.replace(/\s*\(\s*Est(?:\.|imated)?(?:\s*Time)?\s*[:\.]?\s*[^)]+\)\s*$/i, "").trim();
+          const stripEst = (s: string) =>
+            s.replace(/\s*\(\s*Est(?:\.|imated)?(?:\s*Time)?\s*[:\.]?\s*[^)]+\)\s*$/i, "").trim();
+          let t = stripEst(headerMatch[1].trim());
           // If title contains inline tasks after " - " (e.g. "Foundation - Do X. Do Y."),
           // keep only the short prefix as the theme.
           if (t.length > 60 && / - | – /.test(t)) t = t.split(/ [–-] /)[0].trim();
-          // Trim trailing punctuation.
-          t = t.replace(/[\s\-–:.]+$/, "").trim();
+          // Re-strip in case Est annotation was embedded before the " - " split.
+          t = stripEst(t).replace(/[\s\-–:.]+$/, "").trim();
           if (t) title = t;
           continue;
         }
