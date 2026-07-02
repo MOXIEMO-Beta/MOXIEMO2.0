@@ -99,6 +99,7 @@ function ChannelSection({ channel, level, defaultOpen }: { channel: any; level: 
 
 export function ChannelsTab() {
   const { strategy, setEnhanced, saveNow } = useStrategyEditor();
+  const { user } = useAuth();
   const [regenerating, setRegenerating] = useState(false);
   const ef = (strategy?.enhanced_foundation || {}) as any;
   const cs = ef.channelStrategy;
