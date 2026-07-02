@@ -52,10 +52,30 @@ Deno.serve(async (req) => {
     }
 
     const state = JSON.parse(atob(stateRaw));
-    const { platform, user_id, redirect_uri: stateRedirectUri } = state ?? {};
-    if (!platform || !user_id) {
+    const { platform, user_id: stateUserId, redirect_uri: stateRedirectUri } = state ?? {};
+    if (!platform) {
       if (isPost) return jsonResp(400, { ok: false, error: "invalid_state" });
       return new Response("Invalid state", { status: 400, headers: corsHeaders });
+    }
+
+    // Derive the MOXIEMO user from the caller's JWT (never trust the state
+    // param). Fall back to the state's user_id only for the legacy GET-redirect
+    // path where LinkedIn calls the function directly with no auth header.
+    const authHeader = req.headers.get("Authorization") ?? "";
+    let userId: string | null = null;
+    if (authHeader) {
+      const userClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const { data: userData } = await userClient.auth.getUser();
+      userId = userData.user?.id ?? null;
+    }
+    if (!userId) userId = stateUserId ?? null;
+    if (!userId) {
+      if (isPost) return jsonResp(401, { ok: false, error: "unauthorized" });
+      return new Response("Unauthorized", { status: 401, headers: corsHeaders });
     }
 
     const redirectUri = (stateRedirectUri ?? Deno.env.get("LINKEDIN_REDIRECT_URI") ?? "").trim();
@@ -96,8 +116,9 @@ Deno.serve(async (req) => {
       .from("social_connections")
       .upsert(
         {
-          user_id,
+          user_id: userId,
           platform,
+          connection_type: "personal",
           access_token: token.access_token,
           refresh_token: token.refresh_token ?? null,
           expires_at: token.expires_in
