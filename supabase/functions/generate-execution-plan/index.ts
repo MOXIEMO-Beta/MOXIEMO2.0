@@ -12,7 +12,13 @@ Generate a complete EXECUTION PLAN that includes:
 4. Success metrics dashboard (parse the user's success metric into weekly/monthly targets, project lead source breakdown, content performance targets, brand health initial state)
 5. A 4-week quick-start action plan (Foundation → Launch → Engagement → Optimization, 4-5 tasks each with realistic estimated times) plus an ongoing weekly routine
 
-Be SPECIFIC and grounded in the foundation. Reference the user's actual ideal client, pillars, archetype, channel — never generic placeholders. Topic angles must progress logically (awareness → understanding → application). Tasks should reference the user's primary channel and positioning.`;
+Be SPECIFIC and grounded in the foundation. Reference the user's actual ideal client, pillars, archetype, channel — never generic placeholders. Topic angles must progress logically (awareness → understanding → application). Tasks should reference the user's primary channel and positioning.
+
+ACTION PLAN FORMAT — STRICT:
+Each of week1, week2, week3, week4 MUST be a structured OBJECT with:
+  - "title": a short 2-6 word thematic phrase specific to this founder's strategy (e.g. "Foundation & Strategy Lock-in", "Launch & Initial Engagement", "Building Momentum & Conversations", "Analysis & Optimization"). Do NOT prefix with "Week N", "Task:", or any date range. Do NOT include time estimates like "(Est. 10 hours)" in the title. Time estimates belong on individual task lines.
+  - "tasks": an array of task objects.
+Never return a week as a plain string, markdown block, or without a title.`;
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
@@ -435,7 +441,7 @@ Today's date: ${todayISO()}`;
                 week: {
                   type: "object",
                   properties: {
-                    title: { type: "string" },
+                    title: { type: "string", description: "REQUIRED. 2-6 word thematic phrase (e.g. 'Foundation & Strategy Lock-in'). No 'Week N' prefix, no date range, no '(Est. …)' annotation." },
                     tasks: {
                       type: "array",
                       items: {
