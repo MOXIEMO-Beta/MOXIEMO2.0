@@ -171,25 +171,35 @@ Deno.serve(async (req) => {
 
     if (orgs.length === 1) {
       const org = orgs[0];
-      const { error: upsertErr } = await supabase
+      const row = {
+        user_id: userId,
+        platform: "linkedin",
+        connection_type: "company",
+        organization_id: org.organization_id,
+        organization_name: org.organization_name,
+        access_token: accessToken,
+        refresh_token: token.refresh_token ?? null,
+        expires_at: expiresAt,
+        profile_name: org.organization_name,
+        reminder_sent_at: null,
+      };
+      // Explicit check-then-insert/update — partial unique index isn't
+      // reachable via .upsert(onConflict).
+      const { data: existing, error: selErr } = await supabase
         .from("social_connections")
-        .upsert(
-          {
-            user_id: userId,
-            platform: "linkedin",
-            connection_type: "company",
-            organization_id: org.organization_id,
-            organization_name: org.organization_name,
-            access_token: accessToken,
-            refresh_token: token.refresh_token ?? null,
-            expires_at: expiresAt,
-            profile_name: org.organization_name,
-            reminder_sent_at: null,
-          },
-          { onConflict: "user_id,platform,connection_type,organization_id" },
-        );
-      if (upsertErr) {
-        console.error("company connection upsert failed", upsertErr);
+        .select("id")
+        .eq("user_id", userId)
+        .eq("platform", "linkedin")
+        .eq("connection_type", "company")
+        .eq("organization_id", org.organization_id)
+        .maybeSingle();
+      const saveErr = selErr
+        ? selErr
+        : existing
+          ? (await supabase.from("social_connections").update(row).eq("id", (existing as any).id)).error
+          : (await supabase.from("social_connections").insert(row)).error;
+      if (saveErr) {
+        console.error("company connection save failed", saveErr);
         return Response.redirect(
           appRedirect(`/app/settings?pages_error=save_failed#integrations-section`),
           302,
