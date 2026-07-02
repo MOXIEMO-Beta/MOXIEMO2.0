@@ -325,6 +325,27 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_recommendations: {
+        Row: {
+          generated_at: string
+          id: string
+          recommendations: Json
+          user_id: string
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          recommendations?: Json
+          user_id: string
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          recommendations?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       campaigns: {
         Row: {
           archived: boolean
