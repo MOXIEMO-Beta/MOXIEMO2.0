@@ -125,6 +125,7 @@ Deno.serve(async (req) => {
             : null,
           profile_name: profile.name ?? profile.given_name ?? null,
           profile_image: profile.picture ?? null,
+          reminder_sent_at: null,
         },
         { onConflict: "user_id,platform" },
       );
