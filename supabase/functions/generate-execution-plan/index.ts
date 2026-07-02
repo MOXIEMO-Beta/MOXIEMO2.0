@@ -475,7 +475,75 @@ Today's date: ${todayISO()}`;
     }
     const data = await res.json();
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    const parsed = args ? JSON.parse(args) : {};
+    let parsed = args ? JSON.parse(args) : {};
+
+    // Validate action plan week titles. If any are missing/empty, retry once
+    // with a reinforced reminder targeting only the action plan.
+    const missingTitles = (ap: any): number[] => {
+      const bad: number[] = [];
+      for (const n of [1, 2, 3, 4]) {
+        const w = ap?.[`week${n}`];
+        const t = w && typeof w === "object" ? w.title : null;
+        if (!t || typeof t !== "string" || !t.trim()) bad.push(n);
+      }
+      return bad;
+    };
+    let bad = missingTitles(parsed?.actionPlan);
+    if (bad.length > 0) {
+      console.error("execution-plan: missing week titles", {
+        weeks: bad,
+        preview: JSON.stringify(parsed?.actionPlan).slice(0, 500),
+      });
+      // Targeted retry: regenerate only the action plan section.
+      const retryRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: SYSTEM },
+            { role: "user", content: userBrief },
+            { role: "user", content: `RETRY: your previous response returned week(s) ${bad.join(", ")} without a "title" field. Regenerate ONLY the actionPlan. Every week MUST have a short 2-6 word thematic title. Do NOT return weeks as strings.` },
+          ],
+          tools: [{
+            type: "function",
+            function: {
+              name: "save_action_plan",
+              description: "Save only the action plan (4 weeks + ongoing routine).",
+              parameters: {
+                type: "object",
+                properties: {
+                  actionPlan: {
+                    type: "object",
+                    properties: {
+                      week1: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
+                      week2: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
+                      week3: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
+                      week4: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
+                    },
+                    required: ["week1", "week2", "week3", "week4"],
+                  },
+                },
+                required: ["actionPlan"],
+              },
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "save_action_plan" } },
+        }),
+      });
+      if (retryRes.ok) {
+        const rd = await retryRes.json();
+        const rArgs = rd.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+        const rParsed = rArgs ? JSON.parse(rArgs) : {};
+        if (rParsed?.actionPlan) {
+          parsed.actionPlan = { ...(parsed.actionPlan || {}), ...rParsed.actionPlan };
+          const stillBad = missingTitles(parsed.actionPlan);
+          if (stillBad.length > 0) console.error("execution-plan: retry still missing titles", stillBad);
+        }
+      } else {
+        console.error("execution-plan: retry failed", retryRes.status, await retryRes.text());
+      }
+    }
 
     return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
