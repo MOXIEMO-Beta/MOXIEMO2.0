@@ -731,7 +731,7 @@ function GenerateModal({
                 ))}
               </div>
               <button
-                onClick={() => toast.info("Connect your platform in Settings to publish directly")}
+                onClick={() => toast.info("Connect your platform in Settings to publish directly.")}
                 style={{
                   width: "100%",
                   background: "#E85A46",

@@ -96,8 +96,8 @@ export default function Settings() {
     if (!user) return;
     supabase.from("social_connections").select("id, platform, profile_name").eq("user_id", user.id)
       .then(({ data }) => setConnections((data ?? []) as any));
-    if (typeof window !== "undefined" && window.location.hash === "#integrations") {
-      setTimeout(() => document.getElementById("integrations")?.scrollIntoView({ behavior: "smooth" }), 200);
+    if (typeof window !== "undefined" && (window.location.hash === "#integrations" || window.location.hash === "#integrations-section")) {
+      setTimeout(() => document.getElementById("integrations-section")?.scrollIntoView({ behavior: "smooth" }), 200);
     }
   }, [user]);
 
@@ -145,7 +145,7 @@ export default function Settings() {
         </Button>
       </Card>
 
-      <div id="integrations" className="mt-10">
+      <div id="integrations-section" className="mt-10">
         <div className="text-xs uppercase tracking-[0.2em] font-semibold text-muted-foreground mb-2">Integrations</div>
         <p className="text-[13px] mb-3" style={{ color: "#6B6860" }}>
           Connect your social platforms to schedule and publish posts directly from MOXIEMO.

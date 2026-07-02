@@ -786,7 +786,7 @@ export default function Analytics() {
           Performance data appears here automatically when your platforms are connected.
         </p>
         <div className="text-center mt-2">
-          <button onClick={() => navigate("/app/settings#integrations")} className="text-[12px] font-semibold" style={{ color: "#E85A46" }}>
+          <button onClick={() => navigate("/app/settings#integrations-section")} className="text-[12px] font-semibold" style={{ color: "#E85A46" }}>
             Connect platforms →
           </button>
         </div>

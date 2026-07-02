@@ -648,7 +648,7 @@ function TaskGenerationModal({
 
   async function handlePublish() {
     if (category === "social" && !isPlatformConnected) {
-      setPublishNote(`Connect your ${style.label} account first →`);
+      setPublishNote(`Connect your ${style.label} account in Settings →`);
       return;
     }
     try {
@@ -852,11 +852,11 @@ function TaskGenerationModal({
               </button>
               {!isPlatformConnected && !publishNote && (
                 <div style={{ fontSize: 11, color: "#9A9896", textAlign: "center", marginTop: -4 }}>
-                  Connect {style.label} in Social settings to publish directly.
+                  Connect {style.label} in Settings to publish directly.
                 </div>
               )}
               {publishNote && (
-                <button type="button" onClick={() => navigate("/app/social")}
+                <button type="button" onClick={() => { navigate("/app/settings#integrations-section"); requestAnimationFrame(() => document.getElementById("integrations-section")?.scrollIntoView({ behavior: "smooth" })); }}
                   style={{ background: "none", border: "none", fontSize: 11, color: "#E85A46", cursor: "pointer", textAlign: "center", marginTop: -4 }}>
                   {publishNote}
                 </button>
