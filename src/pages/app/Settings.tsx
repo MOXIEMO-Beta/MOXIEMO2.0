@@ -48,6 +48,32 @@ function formatDate(iso: string) {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+function expiryStatus(iso?: string | null): { kind: "expired" | "soon" | "ok"; days: number } | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime();
+  if (Number.isNaN(ms)) return null;
+  const days = Math.ceil((ms - Date.now()) / (24 * 60 * 60 * 1000));
+  if (days <= 0) return { kind: "expired", days: 0 };
+  if (days <= 7) return { kind: "soon", days };
+  return { kind: "ok", days };
+}
+
+function ExpiryChip({ iso }: { iso?: string | null }) {
+  const s = expiryStatus(iso);
+  if (!s || s.kind === "ok") return null;
+  const label = s.kind === "expired" ? "Expired — reconnect" : `Expires in ${s.days} day${s.days === 1 ? "" : "s"}`;
+  const bg = s.kind === "expired" ? "#FDE1DC" : "#FEF3C7";
+  const fg = s.kind === "expired" ? "#8A2C1D" : "#854F0B";
+  return (
+    <span
+      className="text-[10px] font-semibold"
+      style={{ background: bg, color: fg, borderRadius: 4, padding: "2px 8px" }}
+    >
+      {label}
+    </span>
+  );
+}
+
 export default function Settings() {
   const { user } = useAuth();
   const [name, setName] = useState("");
