@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, X, Copy, Save, Calendar as CalendarIcon, Send, RefreshCw, Mail } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Copy, Save, Calendar as CalendarIcon, Send, RefreshCw } from "lucide-react";
 import { startOfWeek, addDays, sameDay, ymd } from "./helpers";
 import { cn } from "@/lib/utils";
 
@@ -464,6 +464,32 @@ function TaskGenerationModal({
   const category = contentCategoryFor(task.platform);
   const navigate = useNavigate();
 
+  // Cross-post detection: parse "Cross-post your <SOURCE> content..." style actions.
+  const crossPostInfo = (() => {
+    const action = task.action ?? "";
+    if (!/cross[- ]?post|repurpose|adapt/i.test(action)) return null;
+    const platforms = ["LinkedIn", "Instagram", "Facebook", "Email", "Newsletter", "Twitter", "X"];
+    const found: string[] = [];
+    for (const p of platforms) {
+      const re = new RegExp(`\\b${p}\\b`, "i");
+      if (re.test(action)) found.push(p);
+    }
+    // Source = first mentioned platform that isn't the current target platform.
+    const targetKey = platformKey(task.platform);
+    const source = found.find((p) => platformKey(p) !== targetKey);
+    if (!source) return null;
+    return { sourcePlatform: source };
+  })();
+
+  // Look up saved content for the source platform within the same campaign.
+  function findSourceContent(sourcePlatform: string): string | null {
+    // The parent passes the entire campaign via task.campaignId; we don't have the
+    // full plan here, but savedContent lives on sibling tasks. Best-effort: return
+    // null and let Claude write fresh — the prompt still enforces platform-specific
+    // rewrite even without the exact source text.
+    return null;
+  }
+
   const isPlatformConnected = (() => {
     if (category !== "social") return true;
     const want = pKey;
@@ -500,6 +526,28 @@ function TaskGenerationModal({
   })();
 
   async function callGenerate(): Promise<string | null> {
+    let crossPost: { sourcePlatform: string; sourceContent: string } | null = null;
+    if (crossPostInfo) {
+      // Fetch fresh plan to find the sibling task's saved content.
+      try {
+        const { data } = await supabase
+          .from("campaigns").select("plan").eq("id", task.campaignId).maybeSingle();
+        const weeks = Array.isArray((data as any)?.plan?.weeks) ? (data as any).plan.weeks : [];
+        const wantKey = platformKey(crossPostInfo.sourcePlatform);
+        let src: string | null = null;
+        for (const wk of weeks) {
+          const tasks = Array.isArray(wk?.tasks) ? wk.tasks : [];
+          for (const t of tasks) {
+            if (platformKey(t?.platform) === wantKey && typeof t?.savedContent === "string" && t.savedContent.trim()) {
+              src = t.savedContent;
+              break;
+            }
+          }
+          if (src) break;
+        }
+        if (src) crossPost = { sourcePlatform: crossPostInfo.sourcePlatform, sourceContent: src };
+      } catch { /* best-effort */ }
+    }
     const { data, error } = await supabase.functions.invoke("generate-content", {
       body: {
         topic: task.action,
@@ -516,6 +564,7 @@ function TaskGenerationModal({
           pillar: task.campaignPillars?.[0] ?? null,
           date: task.date,
         },
+        crossPost,
       },
     });
     if (error || (data as any)?.error) {
@@ -608,11 +657,6 @@ function TaskGenerationModal({
     } catch { /* visual-only confirmation per spec */ }
     setPublishLabel("Published!");
     setTimeout(() => { setPublishLabel("Publish now"); onClose(); }, 2000);
-  }
-
-  function handleOpenInEmail() {
-    try { sessionStorage.setItem("email_prefill_body", content); } catch { /* ignore */ }
-    navigate(`/app/email?prefill=1`);
   }
 
   async function handleRegenerate() {
