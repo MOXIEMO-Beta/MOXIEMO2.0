@@ -20,12 +20,15 @@ const TEMPLATES: Template[] = [
 ];
 
 type Recommendation = {
+  id?: string;
   type: "Gap" | "Opportunity";
   title: string;
   description: string;
   cta: string;
+  dismissed?: boolean;
 };
-// Recommendations are always fetched per-user from the edge function.
+// Recommendations are cached in the campaign_recommendations table (one row per user)
+// and only regenerate when the user explicitly clicks Refresh.
 
 function pillarsFrom(strategy: any): string[] {
   const ef = (strategy?.enhanced_foundation || {}) as any;
@@ -44,20 +47,21 @@ function businessGoalFrom(strategy: any): string {
 export default function StartCampaignTab({ ctx }: { ctx: any }) {
   const { strategy, openCampaign } = ctx;
   const [prompt, setPrompt] = useState("");
-  const [recs, setRecs] = useState<Recommendation[]>([]);
+  const [allRecs, setAllRecs] = useState<Recommendation[]>([]);
   const [recsLoading, setRecsLoading] = useState(false);
   const [recsError, setRecsError] = useState<string | null>(null);
   const [recsMessage, setRecsMessage] = useState<string | null>(null);
-  const [dismissed, setDismissed] = useState<Set<number>>(new Set());
 
-  const loadRecs = async () => {
+  const recs = useMemo(() => allRecs.filter((c) => !c.dismissed), [allRecs]);
+
+  const generateRecs = async () => {
     setRecsLoading(true);
     setRecsError(null);
     setRecsMessage(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        setRecs([]);
+        setAllRecs([]);
         setRecsMessage("Sign in to see recommendations.");
         return;
       }
@@ -70,14 +74,59 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
       );
       if (error) throw error;
       const list: Recommendation[] = Array.isArray(data?.recommendations) ? data.recommendations : [];
-      setRecs(list);
-      setDismissed(new Set());
-      if (list.length === 0 && data?.message) setRecsMessage(String(data.message));
+      const withIds = list.map((r) => ({
+        ...r,
+        id: (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`),
+        dismissed: false,
+      }));
+      if (withIds.length > 0) {
+        await supabase.from("campaign_recommendations").upsert(
+          {
+            user_id: session.user.id,
+            recommendations: withIds as any,
+            generated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" },
+        );
+      }
+      setAllRecs(withIds);
+      if (withIds.length === 0 && data?.message) setRecsMessage(String(data.message));
     } catch (e: any) {
       setRecsError(e?.message || "Could not load recommendations.");
     } finally {
       setRecsLoading(false);
     }
+  };
+
+  const loadRecs = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setRecsMessage("Sign in to see recommendations.");
+      return;
+    }
+    const { data: existing } = await supabase
+      .from("campaign_recommendations")
+      .select("recommendations")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+    if (existing?.recommendations && Array.isArray(existing.recommendations)) {
+      setAllRecs(existing.recommendations as unknown as Recommendation[]);
+      return;
+    }
+    // No cached row — genuinely first visit. Generate once.
+    await generateRecs();
+  };
+
+  const dismissCard = async (cardId: string | undefined) => {
+    if (!cardId) return;
+    const updated = allRecs.map((c) => (c.id === cardId ? { ...c, dismissed: true } : c));
+    setAllRecs(updated);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await supabase
+      .from("campaign_recommendations")
+      .update({ recommendations: updated as any })
+      .eq("user_id", session.user.id);
   };
 
   useEffect(() => {
@@ -228,7 +277,7 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
           </div>
           <button
             type="button"
-            onClick={loadRecs}
+            onClick={generateRecs}
             disabled={recsLoading}
             style={{
               background: SUBTLE,
@@ -254,7 +303,7 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
           </div>
         ) : recsError ? (
           <div style={{ padding: 18, border: `1px dashed ${BORDER}`, borderRadius: 12, color: MUTED, fontSize: 13 }}>
-            Could not load recommendations. <button onClick={loadRecs} style={{ background: "none", border: "none", color: CORAL, cursor: "pointer", fontWeight: 600, padding: 0 }}>Try again</button>
+            Could not load recommendations. <button onClick={generateRecs} style={{ background: "none", border: "none", color: CORAL, cursor: "pointer", fontWeight: 600, padding: 0 }}>Try again</button>
           </div>
         ) : recs.length === 0 ? (
           <div style={{ padding: 18, border: `1px dashed ${BORDER}`, borderRadius: 12, color: MUTED, fontSize: 13 }}>
@@ -262,11 +311,11 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
           </div>
         ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 14 }}>
-          {recs.filter((_, i) => !dismissed.has(i)).map((rec, i) => {
+          {recs.map((rec, i) => {
             const isGap = rec.type === "Gap";
             return (
               <div
-                key={i}
+                key={rec.id ?? i}
                 style={{
                   background: "#fff",
                   border: `1px solid ${BORDER}`,
@@ -301,7 +350,7 @@ export default function StartCampaignTab({ ctx }: { ctx: any }) {
                   </span>
                   <button
                     type="button"
-                    onClick={() => setDismissed((s) => new Set(s).add(i))}
+                    onClick={() => dismissCard(rec.id)}
                     style={{ background: "transparent", border: "none", color: PLACEHOLDER, cursor: "pointer", fontSize: 16, lineHeight: 1 }}
                     aria-label="Dismiss"
                   >
