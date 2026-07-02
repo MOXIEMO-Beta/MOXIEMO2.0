@@ -245,12 +245,30 @@ export default function Settings() {
     }
     setSavingPending(true);
     try {
-      const { data: res, error } = await supabase.functions.invoke("finalize-pending-pages", {
-        body: { organization_ids: selected.map((s) => s.organization_id) },
-      });
-      if (error || (res as any)?.error) {
-        throw new Error((res as any)?.error ?? error?.message ?? "save_failed");
-      }
+      // Load the pending row to get the token/expiry (RLS scopes it to this user).
+      const { data: pending, error: pendErr } = await (supabase.from as any)("pending_pages_connections")
+        .select("access_token, refresh_token, expires_at")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (pendErr || !pending) throw new Error(pendErr?.message ?? "Pending selection expired.");
+
+      const rows = selected.map((org) => ({
+        user_id: user.id,
+        platform: "linkedin",
+        connection_type: "company",
+        organization_id: org.organization_id,
+        organization_name: org.organization_name,
+        profile_name: org.organization_name,
+        access_token: pending.access_token,
+        refresh_token: pending.refresh_token,
+        expires_at: pending.expires_at,
+      }));
+      const { error: insErr } = await supabase
+        .from("social_connections")
+        .upsert(rows as any, { onConflict: "user_id,platform,connection_type,organization_id" });
+      if (insErr) throw new Error(insErr.message);
+
+      await (supabase.from as any)("pending_pages_connections").delete().eq("user_id", user.id);
       toast.success(`Connected ${selected.length} page${selected.length === 1 ? "" : "s"}.`);
       setPendingPages(null);
       setSelectedPending({});
