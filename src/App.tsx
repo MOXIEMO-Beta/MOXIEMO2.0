@@ -54,6 +54,7 @@ import Email from "./pages/app/Email.tsx";
 import BrandHub from "./pages/app/BrandHub.tsx";
 import WaitlistAdmin from "./pages/app/WaitlistAdmin.tsx";
 import Onboarding from "./pages/onboarding/Onboarding.tsx";
+import Shared from "./pages/Shared.tsx";
 import { AuthProvider } from "./hooks/useAuth.tsx";
 import { PlanProvider } from "./hooks/usePlan.tsx";
 import { UpgradeDialog } from "./components/UpgradeDialog.tsx";
@@ -116,6 +117,7 @@ const App = () => (
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
+            <Route path="/shared/:token" element={<Shared />} />
             <Route path="/onboarding" element={<ProtectedRoute requireOnboarding={false}><Onboarding /></ProtectedRoute>} />
             <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
               <Route index element={<ErrorBoundary><Dashboard /></ErrorBoundary>} />
