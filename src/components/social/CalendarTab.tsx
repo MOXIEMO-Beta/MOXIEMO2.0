@@ -217,6 +217,35 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Compose panel (click-to-create / edit-in-place / add-another)
+  type ComposeMode = "new" | "add" | "edit";
+  type ComposeState = {
+    mode: ComposeMode;
+    date: Date;
+    post: SocialPost | null;
+    platform: Platform;
+    pillar: string | null;
+    text: string;
+    suggestedPillar: string | null;
+    saving: boolean;
+  };
+  const [compose, setCompose] = useState<ComposeState | null>(null);
+  const [cachedAngles, setCachedAngles] = useState<Array<{ pillar: string; angle: string }>>([]);
+
+  // Load pillar_feed_cache for gap-pillar suggestions
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("pillar_feed_cache")
+        .select("angles_json")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const list = ((data as any)?.angles_json?.angles ?? []) as Array<{ pillar: string; angle: string }>;
+      if (Array.isArray(list)) setCachedAngles(list);
+    })();
+  }, [userId]);
+
   // drag and drop
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<string | null>(null);
@@ -401,10 +430,114 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
 
   /* side panel actions */
   const handleDayClick = (date: Date) => {
+    // Called only when the user clicks the empty area of a day cell.
+    const key = ymd(date);
+    const dayPosts = postsByDay.get(key) ?? [];
+    if (dayPosts.length === 0) {
+      openCompose({ mode: "new", date });
+    } else {
+      openCompose({ mode: "add", date });
+    }
+  };
+  const openDayList = (date: Date) => {
     setSelectedDate(date);
     setSidePanelOpen(true);
     setRescheduleForId(null);
   };
+  const openCompose = (args: { mode: ComposeMode; date: Date; post?: SocialPost }) => {
+    const { mode, date, post } = args;
+    let platform: Platform = "linkedin";
+    let pillar: string | null = null;
+    let text = "";
+    let suggestedPillar: string | null = null;
+
+    if (mode === "edit" && post) {
+      const p0 = (post.platforms ?? [])[0]?.toLowerCase();
+      if (p0 === "linkedin" || p0 === "facebook" || p0 === "instagram") platform = p0 as Platform;
+      pillar = post.pillar ?? null;
+      const cbp = post.content_by_platform || {};
+      text = String(cbp[platform] || Object.values(cbp)[0] || "");
+    }
+
+    if (mode === "new") {
+      // If any pillar is in amber/coral state this month, pre-fill with a
+      // suggested angle for the first such pillar from pillar_feed_cache.
+      const gapPillar = (() => {
+        for (const c of coverage.chips) {
+          if (c.state === "amber" || c.state === "coral") return c.name;
+        }
+        return null;
+      })();
+      if (gapPillar) {
+        suggestedPillar = gapPillar;
+        pillar = gapPillar;
+        const found = cachedAngles.find((a) => a.pillar === gapPillar);
+        if (found?.angle) text = found.angle;
+      }
+    }
+
+    setCompose({
+      mode, date, post: post ?? null, platform, pillar, text,
+      suggestedPillar, saving: false,
+    });
+  };
+  const closeCompose = () => setCompose(null);
+
+  const submitCompose = async () => {
+    if (!compose || !userId) return;
+    const { mode, date, post, platform, pillar, text } = compose;
+    const body = text.trim();
+    if (!body) { toast.error("Add some content first"); return; }
+    setCompose((c) => (c ? { ...c, saving: true } : c));
+    try {
+      if (mode === "edit" && post) {
+        const nextCbp = { ...(post.content_by_platform || {}), [platform]: body };
+        const { error } = await supabase.from("social_posts").update({
+          content_by_platform: nextCbp,
+          platforms: [platform],
+          pillar: pillar || null,
+        }).eq("id", post.id);
+        if (error) throw error;
+        toast.success("Post updated");
+      } else {
+        // new / add — create a scheduled draft at 9:00 local on the chosen date
+        const when = new Date(date);
+        when.setHours(9, 0, 0, 0);
+        const { error } = await supabase.from("social_posts").insert({
+          user_id: userId,
+          platforms: [platform],
+          content_by_platform: { [platform]: body } as any,
+          status: "scheduled",
+          scheduled_for: when.toISOString(),
+          pillar: pillar || null,
+          sort_order: 0,
+        });
+        if (error) throw error;
+        toast.success("Draft saved");
+      }
+      setCompose(null);
+      await fetchPosts();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Save failed");
+      setCompose((c) => (c ? { ...c, saving: false } : c));
+    }
+  };
+
+  const removeCompose = async () => {
+    if (!compose?.post) return;
+    if (!confirm("Remove this post?")) return;
+    setCompose((c) => (c ? { ...c, saving: true } : c));
+    const { error } = await supabase.from("social_posts").delete().eq("id", compose.post.id);
+    if (error) {
+      toast.error("Couldn't remove");
+      setCompose((c) => (c ? { ...c, saving: false } : c));
+      return;
+    }
+    toast.success("Post removed");
+    setCompose(null);
+    await fetchPosts();
+  };
+
   const closePanel = () => {
     setSidePanelOpen(false);
     setRescheduleForId(null);
@@ -472,10 +605,10 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     setRescheduleDate(ymd(d));
     setRescheduleTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
   };
-  // Clicking a post chip opens the same day panel as clicking the day cell.
+  // Clicking a post chip in the month grid opens edit-in-place compose panel.
   const handleSelectPost = (p: SocialPost) => {
     const d = postDate(p) ?? new Date();
-    handleDayClick(d);
+    openCompose({ mode: "edit", date: d, post: p });
   };
 
   const dayPosts = useMemo(() => {
@@ -660,6 +793,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
             dayRefs={dayRefs}
             onSelectPost={handleSelectPost}
             onDayClick={handleDayClick}
+            onOpenDayList={openDayList}
             onAddAtDate={(d) => onCreateAtDate(d.toISOString())}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
