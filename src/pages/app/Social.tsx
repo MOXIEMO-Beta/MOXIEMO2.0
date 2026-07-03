@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
@@ -15,12 +14,12 @@ export default function Social() {
   const navigate = useNavigate();
   const [sp, setSp] = useSearchParams();
   const urlTab = sp.get("tab") as TabKey | null;
-  const initial: TabKey = urlTab && TABS.includes(urlTab) ? urlTab : "queue";
-  const [tab, setTab] = useState<TabKey>(initial);
+  const tab: TabKey = urlTab && TABS.includes(urlTab) ? urlTab : "queue";
 
   function changeTab(t: TabKey) {
-    setTab(t);
-    sp.set("tab", t); setSp(sp, { replace: true });
+    const next = new URLSearchParams(sp);
+    next.set("tab", t);
+    setSp(next, { replace: true });
   }
 
   return (
