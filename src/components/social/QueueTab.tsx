@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
   Trash2, CloudUpload, Check, Video, Sparkles, CalendarPlus, Lightbulb, CalendarDays, RefreshCw,
-  RotateCcw, X, Loader2,
+  RotateCcw, X, Loader2, ImagePlus, Search,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -83,7 +83,7 @@ function previewText(p: SocialPost): string {
   const plat = primaryPlatform(p);
   const cbp = p.content_by_platform ?? {};
   const txt = cbp[plat] || Object.values(cbp)[0] || "";
-  return String(txt).slice(0, 100);
+  return String(txt);
 }
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
