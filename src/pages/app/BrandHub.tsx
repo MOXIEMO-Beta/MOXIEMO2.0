@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/components/ui/use-toast";
 import {
   ShieldCheck,
   ClipboardCheck,
@@ -21,6 +22,60 @@ import {
 type BrandTab = "welcome" | "audit" | "kit" | "assets";
 type AuditStep = "prompt" | "running" | "results";
 type KitStep = "visual" | "generating" | "kit";
+
+export type ShareDocumentType = "strategy" | "brand-kit" | "brand-audit";
+
+async function copyToClipboard(text: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* fall through */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    return true;
+  } catch { return false; }
+}
+
+async function createShareLink(document_type: ShareDocumentType, source_id: string | null | undefined, opts?: { rotate?: boolean }) {
+  if (!source_id) {
+    toast({ title: "Nothing to share yet", description: "Generate this document first, then try again.", variant: "destructive" });
+    return null;
+  }
+  const { data, error } = await supabase.functions.invoke("generate-share-token", {
+    body: { document_type, source_id, rotate: !!opts?.rotate },
+  });
+  if (error || !data?.shareUrl) {
+    toast({ title: "Could not create share link", description: error?.message ?? "Please try again.", variant: "destructive" });
+    return null;
+  }
+  const copied = await copyToClipboard(data.shareUrl);
+  toast({
+    title: opts?.rotate ? "New share link created" : (data.reused ? "Share link ready" : "Share link created"),
+    description: copied ? `Copied to clipboard: ${data.shareUrl}` : data.shareUrl,
+  });
+  return data.shareUrl as string;
+}
+
+async function revokeShareLink(document_type: ShareDocumentType, source_id: string | null | undefined) {
+  if (!source_id) return;
+  const { error } = await supabase.functions.invoke("revoke-share-token", {
+    body: { document_type, source_id },
+  });
+  if (error) {
+    toast({ title: "Could not revoke link", description: error.message, variant: "destructive" });
+    return;
+  }
+  toast({ title: "Share link revoked", description: "The previous link no longer works." });
+}
 
 const INK = "#0E0F10";
 const MUTED = "#6B6860";
