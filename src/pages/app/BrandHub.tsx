@@ -408,7 +408,7 @@ function WelcomeCard({
 
 /* -------------------- Brand Audit -------------------- */
 function AuditPanel({
-  step, setStep, profile, setProfile, userId, goAssets, latestAuditId,
+  step, setStep, profile, setProfile, userId, goAssets, latestAuditId, onNewAudit,
 }: {
   step: AuditStep;
   setStep: (s: AuditStep) => void;
@@ -417,6 +417,7 @@ function AuditPanel({
   userId?: string;
   goAssets: () => void;
   latestAuditId?: string | null;
+  onNewAudit?: (id: string) => void;
 }) {
   const [url, setUrl] = useState<string>(profile?.website_url ?? "");
   const [saving, setSaving] = useState(false);
@@ -479,6 +480,7 @@ function AuditPanel({
         if (!data) continue;
         if (data.status === "ready") {
           setRunPhase("ready");
+          onNewAudit?.(auditId);
           setStep("results");
           return;
         }
