@@ -681,6 +681,48 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
     onClose();
   }
 
+  async function runStockSearch() {
+    const q = stockQuery.trim();
+    if (!q) return;
+    setStockLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("pexels-search", {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        body: { query: q },
+      });
+      if (error) throw error;
+      setStockResults(((data as any)?.results ?? []) as any);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Search failed");
+    } finally { setStockLoading(false); }
+  }
+
+  async function attachStockPhoto(photo: { id: number; fullUrl: string }) {
+    setAttachingId(photo.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("pexels-attach", {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        body: { imageUrl: photo.fullUrl, postId },
+      });
+      if (error) throw error;
+      const payload = data as any;
+      const asset = payload?.asset as Asset | undefined;
+      const path = payload?.path as string | undefined;
+      if (asset) {
+        setAssets((arr) => [asset, ...arr]);
+        const display = await signAssetUrl(asset);
+        setSigned((s) => ({ ...s, [asset.id]: display }));
+      }
+      onAttached(path ?? payload?.url ?? "");
+      toast.success("Attached to post");
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Attach failed");
+    } finally { setAttachingId(null); }
+  }
+
   const visible = useMemo(() => {
     if (tab === "images") return assets.filter((a) => a.media_type === "image");
     if (tab === "videos") return assets.filter((a) => a.media_type === "video");
