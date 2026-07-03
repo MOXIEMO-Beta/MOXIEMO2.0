@@ -14,7 +14,7 @@ import {
   Trash2,
   Send,
   Pencil,
-  AlertTriangle,
+  SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import ImportFromContentDrawer from "./ImportFromContentDrawer";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -499,89 +500,46 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
   const totalAll = posts.length;
   const noContent = !loading && totalAll === 0;
 
+  const activeFilterCount = useMemo(() => {
+    let n = 0;
+    (["linkedin","facebook","instagram"] as Platform[]).forEach((p) => { if (!platformFilter[p]) n++; });
+    STATUSES.forEach((s) => { if (!statusFilter[s.key]) n++; });
+    pillars.forEach((p) => { if (pillarFilter[p] === false) n++; });
+    return n;
+  }, [platformFilter, statusFilter, pillarFilter, pillars]);
+
+  // Coverage state — threshold-based (calm early month, escalate later)
+  const coverage = useMemo(() => {
+    const now = new Date();
+    const y = cursor.getFullYear();
+    const m = cursor.getMonth();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const isCurrentMonth = now.getFullYear() === y && now.getMonth() === m;
+    const daysElapsed = isCurrentMonth ? now.getDate() : (now > new Date(y, m + 1, 0) ? daysInMonth : 1);
+    const daysRemaining = Math.max(0, daysInMonth - daysElapsed);
+    const progress = daysElapsed / daysInMonth;
+    const inMonth = (d: Date) => d.getMonth() === m && d.getFullYear() === y;
+    const counts = new Map<string, number>();
+    pillars.forEach((p) => counts.set(p, 0));
+    filteredPosts.forEach((p) => {
+      const d = postDate(p);
+      if (!d || !inMonth(d) || !p.pillar) return;
+      counts.set(p.pillar, (counts.get(p.pillar) ?? 0) + 1);
+    });
+    const chips = pillars.map((name, i) => {
+      const postCount = counts.get(name) ?? 0;
+      let state: "active" | "calm" | "amber" | "coral" = "calm";
+      if (postCount > 0) state = "active";
+      else if (progress < 0.35) state = "calm";
+      else if (progress < 0.7) state = "amber";
+      else state = "coral";
+      return { name, postCount, state, color: PILLAR_COLORS[i % PILLAR_COLORS.length] };
+    });
+    return { chips, daysElapsed, daysRemaining, isCurrentMonth };
+  }, [pillars, filteredPosts, cursor]);
+
   return (
-    <div className="flex flex-col gap-6 lg:flex-row">
-      {/* LEFT SIDEBAR */}
-      <aside className="w-full shrink-0 space-y-4 lg:w-60">
-        <MiniMonth
-          cursor={cursor}
-          setCursor={setCursor}
-          postsByDay={postsByDay}
-          onPickDay={(d) => scrollToDay(ymd(d))}
-        />
-
-        <Card className="space-y-3 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filter by</p>
-
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-foreground">Platforms</p>
-            {(["linkedin", "facebook", "instagram"] as Platform[]).map((p) => (
-              <label key={p} className="flex cursor-pointer items-center gap-2 text-xs">
-                <Checkbox
-                  checked={platformFilter[p]}
-                  onCheckedChange={(v) => setPlatformFilter((s) => ({ ...s, [p]: !!v }))}
-                />
-                <PlatformIcon p={p} size={13} />
-                <span className="capitalize">{p}</span>
-              </label>
-            ))}
-          </div>
-
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-foreground">Status</p>
-            {STATUSES.map((s) => (
-              <label key={s.key} className="flex cursor-pointer items-center gap-2 text-xs">
-                <Checkbox
-                  checked={statusFilter[s.key]}
-                  onCheckedChange={(v) => setStatusFilter((x) => ({ ...x, [s.key]: !!v }))}
-                />
-                <span>{s.label}</span>
-              </label>
-            ))}
-          </div>
-
-          {pillars.length > 0 && (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-foreground">Pillars</p>
-                <button
-                  type="button"
-                  className="text-[10px] text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    const allOn = pillars.every((p) => pillarFilter[p]);
-                    const next: Record<string, boolean> = {};
-                    pillars.forEach((p) => (next[p] = !allOn));
-                    setPillarFilter(next);
-                  }}
-                >
-                  All pillars
-                </button>
-              </div>
-              {pillars.map((p, i) => (
-                <label key={p} className="flex cursor-pointer items-center gap-2 text-xs">
-                  <Checkbox
-                    checked={pillarFilter[p] ?? true}
-                    onCheckedChange={(v) => setPillarFilter((s) => ({ ...s, [p]: !!v }))}
-                  />
-                  <span
-                    className="inline-block h-2 w-2 rounded-full"
-                    style={{ backgroundColor: PILLAR_COLORS[i % PILLAR_COLORS.length] }}
-                  />
-                  <span className="truncate">{p}</span>
-                </label>
-              ))}
-            </div>
-          )}
-        </Card>
-
-        <Card className="space-y-1 p-3 text-xs text-muted-foreground">
-          <p className="font-semibold text-foreground">This month</p>
-          <p>{monthStats.scheduled} scheduled</p>
-          <p>{monthStats.published} published</p>
-          <p>Coverage: {monthStats.coverage} of 4 weeks</p>
-        </Card>
-      </aside>
-
+    <div className="flex flex-col gap-6">
       {/* MAIN */}
       <div className="flex-1 space-y-4">
         {/* Top bar */}
@@ -609,6 +567,67 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
           </div>
 
           <div className="flex items-center gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5"
+                  style={{
+                    fontSize: 12, fontWeight: 500, padding: "6px 12px",
+                    borderRadius: 20, border: "0.5px solid #ECEAE5",
+                    color: "#6B6860", background: "#F7F5F1", cursor: "pointer",
+                  }}
+                >
+                  <SlidersHorizontal size={13} />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span style={{
+                      background: "#E85A46", color: "#fff", fontSize: 10, fontWeight: 700,
+                      borderRadius: 10, width: 16, height: 16,
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      marginLeft: 2,
+                    }}>{activeFilterCount}</span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-64 space-y-3">
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-foreground">Platforms</p>
+                  {(["linkedin", "facebook", "instagram"] as Platform[]).map((p) => (
+                    <label key={p} className="flex cursor-pointer items-center gap-2 text-xs">
+                      <Checkbox checked={platformFilter[p]}
+                        onCheckedChange={(v) => setPlatformFilter((s) => ({ ...s, [p]: !!v }))} />
+                      <PlatformIcon p={p} size={13} />
+                      <span className="capitalize">{p}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-foreground">Status</p>
+                  {STATUSES.map((s) => (
+                    <label key={s.key} className="flex cursor-pointer items-center gap-2 text-xs">
+                      <Checkbox checked={statusFilter[s.key]}
+                        onCheckedChange={(v) => setStatusFilter((x) => ({ ...x, [s.key]: !!v }))} />
+                      <span>{s.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {pillars.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-foreground">Pillars</p>
+                    {pillars.map((p, i) => (
+                      <label key={p} className="flex cursor-pointer items-center gap-2 text-xs">
+                        <Checkbox checked={pillarFilter[p] ?? true}
+                          onCheckedChange={(v) => setPillarFilter((s) => ({ ...s, [p]: !!v }))} />
+                        <span className="inline-block h-2 w-2 rounded-full"
+                          style={{ backgroundColor: PILLAR_COLORS[i % PILLAR_COLORS.length] }} />
+                        <span className="truncate">{p}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </PopoverContent>
+            </Popover>
             <div className="flex rounded-md border border-border p-0.5">
               {(["month", "week", "list"] as ViewMode[]).map((v) => (
                 <button
@@ -632,40 +651,6 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
             </Button>
           </div>
         </div>
-
-        {noContent && view === "month" && pillarCoverage.length > 0 && (
-          <>
-            <p className="text-xs text-muted-foreground">
-              Your strategy has identified these content pillars. Start scheduling to build consistent coverage.
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                className="bg-[#ff6b6b] text-white hover:bg-[#ff6b6b]/90"
-                onClick={() => onCreateAtDate(new Date().toISOString())}
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" /> Create new post
-              </Button>
-              <Button size="sm" variant="outline" onClick={openImport}>
-                Import from drafts
-              </Button>
-            </div>
-            <Card className="space-y-3 p-4">
-              <p className="text-sm font-semibold text-foreground">Content Pillar Coverage — {fmtMonth(cursor)}</p>
-              <div className="space-y-2">
-                {pillarCoverage.map((c) => (
-                  <div key={c.name} className="flex items-center gap-3 text-xs">
-                    <span className="w-56 shrink-0 truncate text-foreground">{c.name}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full" style={{ width: `${c.pct}%`, backgroundColor: c.color }} />
-                    </div>
-                    <span className="w-16 shrink-0 text-right text-muted-foreground">{c.count} posts</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </>
-        )}
 
         {view === "month" ? (
           <MonthGrid
@@ -693,78 +678,38 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
           <ListView posts={filteredPosts} onSelectPost={handleSelectPost} />
         )}
 
-        {/* Strategy coverage panel */}
-        {!noContent && view === "month" && pillarCoverage.length > 0 && (
-          <Card className="space-y-3 p-4">
-            <p className="text-sm font-semibold text-foreground">Content Pillar Coverage — {fmtMonth(cursor)}</p>
-            <div className="space-y-2">
-              {pillarCoverage.map((c) => (
-                <div key={c.name} className="flex items-center gap-3 text-xs">
-                  <span className="w-56 shrink-0 truncate text-foreground">{c.name}</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full" style={{ width: `${c.pct}%`, backgroundColor: c.color }} />
-                  </div>
-                  <span className="w-16 shrink-0 text-right text-muted-foreground">{c.count} posts</span>
-                </div>
-              ))}
+        {/* Coverage panel — single, threshold-based, tone-aware */}
+        {view === "month" && coverage.chips.length > 0 && (
+          <div style={{
+            background: "#F7F5F1", border: "0.5px solid #ECEAE5",
+            borderRadius: 12, padding: "16px 18px",
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#0E0F10" }}>
+              {coverage.isCurrentMonth ? "Your month is just getting started" : `Coverage — ${fmtMonth(cursor)}`}
             </div>
-            {pillarCoverage.some((c) => c.count < 2) && (
-              <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <div className="flex-1 space-y-1">
-                  {pillarCoverage
-                    .filter((c) => c.count < 2)
-                    .map((c) => (
-                      <div key={c.name} className="flex items-center justify-between gap-2">
-                        <span>"{c.name}" is underrepresented this month.</span>
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1 rounded-full border border-[#ff6b6b]/40 px-2.5 py-1 text-[11px] font-medium text-[#c43d3d] transition-colors hover:bg-[#ff6b6b]/10"
-                          onClick={() => {
-                            // Count this-month posts per platform for this pillar
-                            const inMonth = (d: Date) =>
-                              d.getMonth() === cursor.getMonth() &&
-                              d.getFullYear() === cursor.getFullYear();
-                            const counts: Record<Platform, number> = {
-                              linkedin: 0,
-                              facebook: 0,
-                              instagram: 0,
-                            };
-                            posts.forEach((p) => {
-                              if (p.pillar !== c.name) return;
-                              const d = postDate(p);
-                              if (!d || !inMonth(d)) return;
-                              (p.platforms ?? []).forEach((pl) => {
-                                if (pl === "linkedin" || pl === "facebook" || pl === "instagram") {
-                                  counts[pl] += 1;
-                                }
-                              });
-                            });
-                            const order: Platform[] = ["linkedin", "facebook", "instagram"];
-                            let lowest: Platform = "linkedin";
-                            let min = Infinity;
-                            for (const pl of order) {
-                              if (counts[pl] < min) {
-                                min = counts[pl];
-                                lowest = pl;
-                              }
-                            }
-                            const monthLabel = cursor.toLocaleDateString(undefined, { month: "long" });
-                            if (onCreateForPillar) {
-                              onCreateForPillar({ pillar: c.name, platform: lowest, monthLabel });
-                            } else {
-                              onCreateAtDate(new Date().toISOString(), c.name);
-                            }
-                          }}
-                        >
-                          <Plus className="h-3 w-3" /> Create a post for this pillar
-                        </button>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </Card>
+            <p style={{ fontSize: 12, color: "#6B6860", marginBottom: 14 }}>
+              {coverage.isCurrentMonth
+                ? `${coverage.daysElapsed} days in, ${coverage.daysRemaining} to go. Here's where each pillar stands — no pressure yet.`
+                : `Where each pillar landed this month.`}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {coverage.chips.map((c) => {
+                const style =
+                  c.state === "coral"
+                    ? { background: "#FEF1EE", color: "#993C1D", border: "0.5px solid #F5C4B3" }
+                    : c.state === "amber"
+                    ? { background: "#FEF3C7", color: "#854F0B", border: "0.5px solid #FBBF24" }
+                    : { background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5" };
+                return (
+                  <div key={c.name} className="flex items-center gap-1.5"
+                    style={{ fontSize: 11, padding: "5px 10px", borderRadius: 20, ...style }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.color, flexShrink: 0 }} />
+                    {c.name} · {c.postCount} {c.postCount === 1 ? "post" : "posts"}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
 

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
   Trash2, CloudUpload, Check, Video, Sparkles, CalendarPlus, Lightbulb, CalendarDays, RefreshCw,
-  RotateCcw, X, Loader2,
+  RotateCcw, X, Loader2, ImagePlus, Search,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -83,7 +83,7 @@ function previewText(p: SocialPost): string {
   const plat = primaryPlatform(p);
   const cbp = p.content_by_platform ?? {};
   const txt = cbp[plat] || Object.values(cbp)[0] || "";
-  return String(txt).slice(0, 100);
+  return String(txt);
 }
 function fmtDate(iso: string | null): string {
   if (!iso) return "—";
@@ -111,6 +111,14 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   const [composeOpen, setComposeOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  const [suggestion, setSuggestion] = useState<{ pillar: string; angle: string; platform?: string } | null>(null);
+  const [suggestionDismissed, setSuggestionDismissed] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = sessionStorage.getItem("moxiemo_queue_suggest_dismiss");
+      return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch { return new Set(); }
+  });
 
   useEffect(() => {
     if (!userId) return;
@@ -142,6 +150,50 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       setLoading(false);
     })();
   }, [userId]);
+
+  // Pick one auto-suggestion from pillar_feed_cache (most underrepresented pillar in queue)
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("pillar_feed_cache").select("angles_json").eq("user_id", userId).maybeSingle();
+      const list = ((data as any)?.angles_json?.angles ?? []) as Array<{ pillar: string; angle: string; platform?: string }>;
+      if (!Array.isArray(list) || list.length === 0) { setSuggestion(null); return; }
+      const counts: Record<string, number> = {};
+      posts.forEach((p) => { if (p.pillar) counts[p.pillar] = (counts[p.pillar] ?? 0) + 1; });
+      const sorted = [...list].sort((a, b) => (counts[a.pillar] ?? 0) - (counts[b.pillar] ?? 0));
+      const pick = sorted.find((s) => s.angle && !suggestionDismissed.has(s.angle)) ?? null;
+      setSuggestion(pick);
+    })();
+  }, [userId, posts, suggestionDismissed]);
+
+  function dismissSuggestion(angle: string) {
+    setSuggestionDismissed((prev) => {
+      const next = new Set(prev); next.add(angle);
+      try { sessionStorage.setItem("moxiemo_queue_suggest_dismiss", JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+  }
+
+  async function saveSuggestionAsDraft(open: boolean) {
+    if (!suggestion || !userId) return;
+    const platform: Platform = (["linkedin","instagram","facebook","x"].includes((suggestion.platform ?? "").toLowerCase())
+      ? (suggestion.platform!.toLowerCase() as Platform)
+      : "linkedin");
+    const { data, error } = await supabase.from("social_posts").insert({
+      user_id: userId,
+      platforms: [platform],
+      content_by_platform: { [platform]: suggestion.angle } as any,
+      status: "draft",
+      pillar: suggestion.pillar,
+      sort_order: 0,
+    }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
+    if (error) { toast.error(error.message); return; }
+    setPosts((arr) => [data as any, ...arr]);
+    dismissSuggestion(suggestion.angle);
+    if (open) setEditingId((data as any).id);
+    toast.success(open ? "Draft ready — edit and save" : "Saved to queue");
+  }
 
   // Resolve signed URLs for post thumbnails (private bucket)
   useEffect(() => {
@@ -336,6 +388,42 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         />
       ) : (
         <div>
+          {suggestion && !suggestionDismissed.has(suggestion.angle) && (
+            <div style={{
+              background: "#FEF1EE", border: "1px dashed #F5C4B3", borderRadius: 12,
+              padding: "14px 16px", marginBottom: 18,
+            }}>
+              <div className="flex items-center gap-1.5" style={{
+                fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                letterSpacing: "0.06em", color: "#E85A46", marginBottom: 8,
+              }}>
+                <Sparkles size={12} /> MOXIEMO started this for you
+              </div>
+              <div style={{ fontSize: 13, color: "#0E0F10", lineHeight: 1.55, marginBottom: 6 }}>
+                {suggestion.angle}
+              </div>
+              <div style={{ fontSize: 11, color: "#9A9896", marginBottom: 12 }}>
+                {suggestion.pillar}{suggestion.platform ? ` · ${suggestion.platform}` : ""}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => saveSuggestionAsDraft(false)}
+                  style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+                    background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
+                  Use this
+                </button>
+                <button onClick={() => saveSuggestionAsDraft(true)}
+                  style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                    background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                  Edit first
+                </button>
+                <button onClick={() => dismissSuggestion(suggestion.angle)}
+                  style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                    background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                  Not now
+                </button>
+              </div>
+            </div>
+          )}
           {composeOpen && (
             <ComposeBlock
               userId={userId!}
@@ -357,7 +445,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
             return (
               <div key={post.id}>
                 <div
-                  className="group flex items-center gap-2.5 mb-2"
+                  className="group flex items-start gap-2.5 mb-2"
                   style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "14px 16px" }}
                   draggable
                   onDragStart={() => onDragStart(post.id)}
@@ -374,11 +462,37 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                       style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover", border: "0.5px solid #ECEAE5" }} />
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] truncate" style={{ color: "#0E0F10" }}>
+                    <div
+                      className="text-[13px]"
+                      style={{
+                        color: "#0E0F10",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        lineHeight: 1.4,
+                        wordBreak: "break-word",
+                      }}
+                    >
                       {previewText(post) || <span style={{ color: "#9A9896" }}>(empty)</span>}
                     </div>
                     {post.pillar && <div className="text-[11px]" style={{ color: "#9A9896" }}>{post.pillar}</div>}
                   </div>
+                  {!hasMedia && (
+                    <button
+                      onClick={() => setOpenMediaFor(isOpen ? null : post.id)}
+                      className="flex items-center gap-1.5 flex-shrink-0"
+                      style={{
+                        fontSize: 11, color: "#E85A46",
+                        border: "1px dashed #F5C4B3",
+                        borderRadius: 7, padding: "4px 8px",
+                        background: "transparent", cursor: "pointer",
+                      }}
+                      title="Add a visual to this post"
+                    >
+                      <ImagePlus size={13} /> Add visual
+                    </button>
+                  )}
                   <label className="text-[12px] whitespace-nowrap cursor-pointer" style={{ color: "#6B6860" }}>
                     {fmtDate(post.scheduled_for)}
                     <input type="datetime-local" defaultValue={toLocalInputValue(post.scheduled_for)}
@@ -504,11 +618,15 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   userId: string; postId: string; onClose: () => void; onAttached: (url: string) => void;
 }) {
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [tab, setTab] = useState<"all" | "images" | "videos" | "colors">("all");
+  const [tab, setTab] = useState<"all" | "images" | "videos" | "colors" | "stock">("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [brandColors, setBrandColors] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [signed, setSigned] = useState<Record<string, string>>({});
+  const [stockQuery, setStockQuery] = useState("");
+  const [stockResults, setStockResults] = useState<Array<{ id: number; thumbnailUrl: string; fullUrl: string; photographer: string }>>([]);
+  const [stockLoading, setStockLoading] = useState(false);
+  const [attachingId, setAttachingId] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -563,6 +681,48 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
     onClose();
   }
 
+  async function runStockSearch() {
+    const q = stockQuery.trim();
+    if (!q) return;
+    setStockLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("pexels-search", {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        body: { query: q },
+      });
+      if (error) throw error;
+      setStockResults(((data as any)?.results ?? []) as any);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Search failed");
+    } finally { setStockLoading(false); }
+  }
+
+  async function attachStockPhoto(photo: { id: number; fullUrl: string }) {
+    setAttachingId(photo.id);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const { data, error } = await supabase.functions.invoke("pexels-attach", {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        body: { imageUrl: photo.fullUrl, postId },
+      });
+      if (error) throw error;
+      const payload = data as any;
+      const asset = payload?.asset as Asset | undefined;
+      const path = payload?.path as string | undefined;
+      if (asset) {
+        setAssets((arr) => [asset, ...arr]);
+        const display = await signAssetUrl(asset);
+        setSigned((s) => ({ ...s, [asset.id]: display }));
+      }
+      onAttached(path ?? payload?.url ?? "");
+      toast.success("Attached to post");
+      onClose();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Attach failed");
+    } finally { setAttachingId(null); }
+  }
+
   const visible = useMemo(() => {
     if (tab === "images") return assets.filter((a) => a.media_type === "image");
     if (tab === "videos") return assets.filter((a) => a.media_type === "video");
@@ -584,8 +744,8 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       </label>
 
       <div className="flex gap-2 mt-3">
-        {(["all","images","videos","colors"] as const).map((t) => {
-          const labels: any = { all: "All", images: "Images", videos: "Videos", colors: "Brand Colors" };
+        {(["all","images","videos","colors","stock"] as const).map((t) => {
+          const labels: any = { all: "All", images: "Images", videos: "Videos", colors: "Brand Colors", stock: "Stock Photos" };
           const active = tab === t;
           return (
             <button key={t} onClick={() => setTab(t)} className="text-[12px] font-medium"
@@ -608,6 +768,64 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
               <div className="text-[11px]" style={{ color: "#6B6860" }}>{c}</div>
             </div>
           ))}
+        </div>
+      ) : tab === "stock" ? (
+        <div className="mt-3">
+          <div className="flex gap-2 mb-3">
+            <input
+              value={stockQuery}
+              onChange={(e) => setStockQuery(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  await runStockSearch();
+                }
+              }}
+              placeholder="Search millions of free stock photos..."
+              style={{
+                flex: 1, height: 34, border: "0.5px solid #ECEAE5",
+                borderRadius: 8, padding: "0 12px", fontSize: 13, background: "#F7F5F1",
+              }}
+            />
+            <button
+              onClick={runStockSearch}
+              disabled={stockLoading}
+              style={{
+                height: 34, padding: "0 16px", borderRadius: 8, border: "none",
+                background: "#0E0F10", color: "#F7F5F1", fontSize: 12, fontWeight: 500,
+                cursor: "pointer", opacity: stockLoading ? 0.6 : 1,
+              }}
+            >{stockLoading ? "Searching…" : "Search"}</button>
+          </div>
+          {stockResults.length === 0 && !stockLoading && (
+            <div className="text-[12px] text-center py-6" style={{ color: "#9A9896" }}>
+              Search for photos to browse Pexels' free library.
+            </div>
+          )}
+          <div className="grid grid-cols-4 gap-2">
+            {stockResults.map((photo) => (
+              <div key={photo.id} className="relative group overflow-hidden"
+                style={{ aspectRatio: "1", borderRadius: 10, cursor: "pointer" }}>
+                <img src={photo.thumbnailUrl} alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <div className="absolute inset-0 flex items-end justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ background: "rgba(15,17,20,0.45)", padding: 8 }}>
+                  <button
+                    onClick={() => attachStockPhoto(photo)}
+                    disabled={attachingId === photo.id}
+                    style={{
+                      fontSize: 10, fontWeight: 600, padding: "5px 9px",
+                      borderRadius: 14, background: "#E85A46", color: "#fff",
+                      border: "none", cursor: "pointer",
+                    }}
+                  >{attachingId === photo.id ? "Adding…" : "Add to post"}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: "#9A9896", textAlign: "right", marginTop: 4 }}>
+            Photos provided by Pexels
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-5 gap-2 mt-3">
@@ -653,11 +871,11 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         <div className="flex gap-2">
           <button onClick={onClose} className="text-[12px]"
             style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 14px", color: "#6B6860" }}>Cancel</button>
-          <button onClick={attach} disabled={!selected || tab === "colors"} className="text-[12px] font-semibold"
+          <button onClick={attach} disabled={!selected || tab === "colors" || tab === "stock"} className="text-[12px] font-semibold"
             style={{
               background: "#E85A46", color: "#fff",
               borderRadius: 20, padding: "5px 14px",
-              opacity: !selected || tab === "colors" ? 0.5 : 1,
+              opacity: !selected || tab === "colors" || tab === "stock" ? 0.5 : 1,
             }}>Attach to post</button>
         </div>
       </div>
