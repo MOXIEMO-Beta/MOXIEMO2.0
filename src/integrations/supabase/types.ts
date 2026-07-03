@@ -268,6 +268,39 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_kit_shares: {
+        Row: {
+          created_at: string
+          document_type: string
+          id: string
+          revoked_at: string | null
+          source_id: string
+          token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          id?: string
+          revoked_at?: string | null
+          source_id: string
+          token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          id?: string
+          revoked_at?: string | null
+          source_id?: string
+          token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       calendar_ideas: {
         Row: {
           channel: string | null
