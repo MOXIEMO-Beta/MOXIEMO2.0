@@ -467,29 +467,76 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
               }}>
                 <Sparkles size={12} /> MOXIEMO started this for you
               </div>
+              {suggestion.anecdoteRequired && !guidedResult && (
+                <div className="inline-flex items-center gap-1"
+                  style={{
+                    fontSize: 9, fontWeight: 600, background: "#fff",
+                    border: "0.5px solid #F5C4B3", color: "#993C1D",
+                    padding: "2px 8px", borderRadius: 10, marginBottom: 10,
+                  }}>
+                  <MessageCircle size={11} /> Needs your story
+                </div>
+              )}
               <div style={{ fontSize: 13, color: "#0E0F10", lineHeight: 1.55, marginBottom: 6 }}>
                 {suggestion.angle}
               </div>
               <div style={{ fontSize: 11, color: "#9A9896", marginBottom: 12 }}>
                 {suggestion.pillar}{suggestion.platform ? ` · ${suggestion.platform}` : ""}
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => saveSuggestionAsDraft(false)}
-                  style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
-                    background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
-                  Use this
-                </button>
-                <button onClick={() => saveSuggestionAsDraft(true)}
-                  style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
-                    background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
-                  Edit first
-                </button>
-                <button onClick={() => dismissSuggestion(suggestion.angle)}
-                  style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
-                    background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
-                  Not now
-                </button>
-              </div>
+              {!guidedOpen && !guidedResult && (
+                <div className="flex gap-2">
+                  {suggestion.anecdoteRequired ? (
+                    <>
+                      <button onClick={() => setGuidedOpen(true)}
+                        className="inline-flex items-center gap-1.5"
+                        style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+                          background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
+                        <Pencil size={13} /> Add my story
+                      </button>
+                      <button onClick={() => dismissSuggestion(suggestion.angle)}
+                        style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                          background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                        Not now
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => saveSuggestionAsDraft(false)}
+                        style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+                          background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
+                        Use this
+                      </button>
+                      <button onClick={() => saveSuggestionAsDraft(true)}
+                        style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                          background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                        Edit first
+                      </button>
+                      <button onClick={() => dismissSuggestion(suggestion.angle)}
+                        style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                          background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                        Not now
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+              {guidedOpen && suggestion.guidedQuestions && (
+                <GuidedQuestionPanel
+                  questions={suggestion.guidedQuestions}
+                  loading={guidedLoading}
+                  onCancel={cancelGuided}
+                  onGenerate={runGeneratePostFromStory}
+                />
+              )}
+              {guidedResult && (
+                <GeneratedResult
+                  postText={guidedResult.post}
+                  loading={guidedLoading}
+                  onEdit={(txt) => setGuidedResult({ ...guidedResult, post: txt })}
+                  onRegenerate={() => runGeneratePostFromStory(guidedResult.answers)}
+                  onSave={saveGuidedResult}
+                />
+              )}
             </div>
           )}
           {composeOpen && (
