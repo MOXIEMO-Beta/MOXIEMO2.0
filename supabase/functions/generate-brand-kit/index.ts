@@ -151,16 +151,15 @@ serve(async (req) => {
     const authed = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } },
+      { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } },
     );
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claims, error: cErr } = await authed.auth.getClaims(token);
-    if (cErr || !claims?.claims?.sub) {
-      return new Response(JSON.stringify({ error: "unauthorized" }), {
+    const { data: userData, error: uErr } = await authed.auth.getUser();
+    if (uErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "unauthorized", detail: uErr?.message ?? null }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const userId = claims.claims.sub as string;
+    const userId = userData.user.id;
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
