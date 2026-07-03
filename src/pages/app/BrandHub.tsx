@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/components/ui/use-toast";
 import {
   ShieldCheck,
   ClipboardCheck,
@@ -21,6 +22,97 @@ import {
 type BrandTab = "welcome" | "audit" | "kit" | "assets";
 type AuditStep = "prompt" | "running" | "results";
 type KitStep = "visual" | "generating" | "kit";
+
+export type ShareDocumentType = "strategy" | "brand-kit" | "brand-audit";
+
+async function copyToClipboard(text: string) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* fall through */ }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+    return true;
+  } catch { return false; }
+}
+
+async function createShareLink(document_type: ShareDocumentType, source_id: string | null | undefined, opts?: { rotate?: boolean }) {
+  if (!source_id) {
+    toast({ title: "Nothing to share yet", description: "Generate this document first, then try again.", variant: "destructive" });
+    return null;
+  }
+  const { data, error } = await supabase.functions.invoke("generate-share-token", {
+    body: { document_type, source_id, rotate: !!opts?.rotate },
+  });
+  if (error || !data?.shareUrl) {
+    toast({ title: "Could not create share link", description: error?.message ?? "Please try again.", variant: "destructive" });
+    return null;
+  }
+  const copied = await copyToClipboard(data.shareUrl);
+  toast({
+    title: opts?.rotate ? "New share link created" : (data.reused ? "Share link ready" : "Share link created"),
+    description: copied ? `Copied to clipboard: ${data.shareUrl}` : data.shareUrl,
+  });
+  return data.shareUrl as string;
+}
+
+async function revokeShareLink(document_type: ShareDocumentType, source_id: string | null | undefined) {
+  if (!source_id) return;
+  const { error } = await supabase.functions.invoke("revoke-share-token", {
+    body: { document_type, source_id },
+  });
+  if (error) {
+    toast({ title: "Could not revoke link", description: error.message, variant: "destructive" });
+    return;
+  }
+  toast({ title: "Share link revoked", description: "The previous link no longer works." });
+}
+
+function ShareControls({
+  documentType, sourceId, dark = false,
+}: { documentType: ShareDocumentType; sourceId: string | null | undefined; dark?: boolean }) {
+  const [busy, setBusy] = useState(false);
+  const baseStyle: React.CSSProperties = dark
+    ? { border: "1px solid rgba(255,255,255,0.15)", color: "#fff", borderRadius: 20, padding: "6px 14px", fontSize: 12, background: "transparent", cursor: "pointer" }
+    : { border: `1px solid ${BORDER}`, borderRadius: 20, padding: "6px 14px", fontSize: 12, background: "transparent", color: INK, cursor: "pointer", fontWeight: 500 };
+  const rotateStyle: React.CSSProperties = { ...baseStyle, padding: "6px 10px", opacity: 0.85 };
+  return (
+    <span style={{ display: "inline-flex", gap: 4 }}>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => { setBusy(true); try { await createShareLink(documentType, sourceId); } finally { setBusy(false); } }}
+        style={baseStyle}
+      >
+        {busy ? "Working…" : "Share Link"}
+      </button>
+      <button
+        type="button"
+        title="Revoke previous link and create a new one"
+        aria-label="Rotate share link"
+        disabled={busy}
+        onClick={async () => {
+          if (!sourceId) return;
+          if (!confirm("Revoke the current share link and create a new one? The old link will stop working immediately.")) return;
+          setBusy(true);
+          try { await createShareLink(documentType, sourceId, { rotate: true }); } finally { setBusy(false); }
+        }}
+        style={rotateStyle}
+      >
+        ↻
+      </button>
+    </span>
+  );
+}
 
 const INK = "#0E0F10";
 const MUTED = "#6B6860";
@@ -65,6 +157,7 @@ export default function BrandHub() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [strategy, setStrategy] = useState<any>(null);
+  const [latestAuditId, setLatestAuditId] = useState<string | null>(null);
   const [hubVisited, setHubVisited] = useState(false);
   const [tab, setTab] = useState<BrandTab>("welcome");
   const [auditStep, setAuditStep] = useState<AuditStep>("prompt");
@@ -85,6 +178,10 @@ export default function BrandHub() {
       const prof: any = p.data ?? {};
       setProfile(prof);
       setStrategy(s.data);
+      // Brand Audit records are anonymous today, so there is no per-user audit id
+      // to attach a share to. Leaving as null makes the audit Share Link show a
+      // clear "nothing to share yet" toast until audits are linked to users.
+      setLatestAuditId(null);
       const visited = !!prof.brand_hub_visited;
       setHubVisited(visited);
       if (visited) {
@@ -169,6 +266,7 @@ export default function BrandHub() {
             setProfile={setProfile}
             userId={user?.id}
             goAssets={() => setTab("assets")}
+            latestAuditId={latestAuditId}
           />
         )}
         {tab === "kit" && (
@@ -187,6 +285,9 @@ export default function BrandHub() {
             goAuditResults={() => { setTab("audit"); setAuditStep("results"); }}
             goAuditPrompt={() => { setTab("audit"); setAuditStep("prompt"); }}
             goKitVisual={() => { setTab("kit"); setKitStep("visual"); }}
+            strategyId={strategy?.id ?? null}
+            kitOwnerId={user?.id ?? null}
+            latestAuditId={latestAuditId}
           />
         )}
       </div>
@@ -293,7 +394,7 @@ function WelcomeCard({
 
 /* -------------------- Brand Audit -------------------- */
 function AuditPanel({
-  step, setStep, profile, setProfile, userId, goAssets,
+  step, setStep, profile, setProfile, userId, goAssets, latestAuditId,
 }: {
   step: AuditStep;
   setStep: (s: AuditStep) => void;
@@ -301,6 +402,7 @@ function AuditPanel({
   setProfile: (p: any) => void;
   userId?: string;
   goAssets: () => void;
+  latestAuditId?: string | null;
 }) {
   const [url, setUrl] = useState<string>(profile?.website_url ?? "");
   const [saving, setSaving] = useState(false);
@@ -404,7 +506,7 @@ function AuditPanel({
   }
 
   // results
-  return <AuditResults domain={domain} setStep={setStep} goAssets={goAssets} />;
+  return <AuditResults domain={domain} setStep={setStep} goAssets={goAssets} latestAuditId={latestAuditId} />;
 }
 
 function ChecklistRow({ status, label }: { status: "done" | "active" | "idle"; label: string }) {
@@ -418,7 +520,7 @@ function ChecklistRow({ status, label }: { status: "done" | "active" | "idle"; l
   );
 }
 
-function AuditResults({ domain, setStep, goAssets }: { domain: string; setStep: (s: AuditStep) => void; goAssets: () => void }) {
+function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: string; setStep: (s: AuditStep) => void; goAssets: () => void; latestAuditId?: string | null }) {
   const score = 71;
   const C = 2 * Math.PI * 52;
 
@@ -740,7 +842,7 @@ function KitPanel({
   }
 
   // kit
-  return <KitDocument profile={profile} strategy={strategy} colors={colors} logoUrl={logoUrl} fonts={fonts} setStep={setStep} goAssets={goAssets} />;
+  return <KitDocument profile={profile} strategy={strategy} colors={colors} logoUrl={logoUrl} fonts={fonts} setStep={setStep} goAssets={goAssets} kitOwnerId={userId} />;
 }
 
 function StepPill({ index, label, state }: { index: number; label: string; state: "done" | "active" | "idle" }) {
@@ -763,7 +865,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 function Divider() { return <div style={{ height: 1, background: BORDER, margin: "16px 0" }} />; }
 
-function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets }: any) {
+function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets, kitOwnerId }: any) {
   const brandName = strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand";
   const generatedAt = "Jun 22, 2026";
 
@@ -780,7 +882,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
           <div style={{ fontSize: 12, color: "#9A9896", marginTop: 4 }}>Brand Identity · Voice · Visual Direction · Key Messages</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button style={{ border: "1px solid rgba(255,255,255,0.15)", color: "#fff", borderRadius: 20, padding: "6px 14px", fontSize: 12, background: "transparent", cursor: "pointer" }}>Share Link</button>
+          <ShareControls documentType="brand-kit" sourceId={kitOwnerId} dark />
           <button style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Download PDF</button>
         </div>
       </div>
@@ -911,7 +1013,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         <div style={{ display: "flex", gap: 8 }}>
           <button style={pill()} onClick={goAssets}>View in Assets</button>
           <button style={pill()}>Download PDF</button>
-          <button style={pill()}>Share Link</button>
+          <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
           <button style={pill(true)} onClick={() => setStep("visual")}>↺ Regenerate Kit</button>
         </div>
       </div>
@@ -935,7 +1037,7 @@ function CopyPill() {
 }
 
 /* -------------------- Brand Assets -------------------- */
-function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void }) {
+function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <AssetCard
@@ -963,7 +1065,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual }: { goAuditRe
           <>
             <PrimaryPill>Download PDF</PrimaryPill>
             <button style={pill()}>Copy All</button>
-            <button style={pill()}>Share Link</button>
+            <ShareControls documentType="strategy" sourceId={strategyId} />
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Auto-saved from your strategy</span>
           </>
         }
@@ -990,7 +1092,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual }: { goAuditRe
           <>
             <PrimaryPill>Download PDF</PrimaryPill>
             <button style={pill()}>Copy All</button>
-            <button style={pill()}>Share Link</button>
+            <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
             <button style={pill(true)} onClick={goKitVisual}>↺ Regenerate</button>
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Kit tab</span>
           </>
@@ -1021,6 +1123,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual }: { goAuditRe
           <>
             <PrimaryPill>Download PDF</PrimaryPill>
             <button style={pill()}>View All Runs</button>
+            <ShareControls documentType="brand-audit" sourceId={latestAuditId} />
             <button style={pill()} onClick={goAuditResults}>Open Full Report</button>
             <button style={pill(true)} onClick={goAuditPrompt}>↺ Re-run Audit</button>
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Audit tab</span>
