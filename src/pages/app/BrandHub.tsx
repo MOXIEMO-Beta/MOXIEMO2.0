@@ -1080,6 +1080,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         colors: palette.map((hex: string, i: number) => ({ hex, rgb: "", role: i === 0 ? "Primary" : i === 1 ? "Accent" : `Support ${i - 1}` })),
         fonts: { heading: fontName, body: fonts?.[1] || fontName },
         imagery: [],
+        kit: kit ?? null,
       };
       const blob = await generateBrandKitPdf(data);
       const url = URL.createObjectURL(blob);
@@ -1275,6 +1276,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         colors: (Array.isArray(profile?.brand_colors) ? profile.brand_colors : []).map((hex: string, i: number) => ({ hex, rgb: "", role: i === 0 ? "Primary" : i === 1 ? "Accent" : `Support ${i - 1}` })),
         fonts: { heading: profile?.brand_fonts?.[0] || "Helvetica", body: profile?.brand_fonts?.[1] || profile?.brand_fonts?.[0] || "Helvetica" },
         imagery: [],
+        kit: latestKit?.kit_json ?? null,
       };
       const blob = await generateBrandKitPdf(data);
       const url = URL.createObjectURL(blob);
