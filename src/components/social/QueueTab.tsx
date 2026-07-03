@@ -205,7 +205,10 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         const first = arr[0];
         if (!first || typeof first !== "string") continue;
         if (thumbUrls[p.id]) continue;
-        const url = await signAssetUrl({ url: first, filename: null });
+        // `first` is a storage path (e.g. "userId/1234-pexels.jpg"). Pass it as
+        // `filename` so storagePathOf() recognizes it and we produce a signed URL
+        // instead of returning the raw path (which renders as a broken image).
+        const url = await signAssetUrl({ url: first, filename: first });
         if (url) entries.push([p.id, url]);
       }
       if (!cancelled && entries.length) {
