@@ -398,7 +398,7 @@ function WelcomeCard({
 
 /* -------------------- Brand Audit -------------------- */
 function AuditPanel({
-  step, setStep, profile, setProfile, userId, goAssets,
+  step, setStep, profile, setProfile, userId, goAssets, latestAuditId,
 }: {
   step: AuditStep;
   setStep: (s: AuditStep) => void;
@@ -406,6 +406,7 @@ function AuditPanel({
   setProfile: (p: any) => void;
   userId?: string;
   goAssets: () => void;
+  latestAuditId?: string | null;
 }) {
   const [url, setUrl] = useState<string>(profile?.website_url ?? "");
   const [saving, setSaving] = useState(false);
@@ -1040,7 +1041,7 @@ function CopyPill() {
 }
 
 /* -------------------- Brand Assets -------------------- */
-function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void }) {
+function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <AssetCard
