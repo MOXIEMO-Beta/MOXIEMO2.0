@@ -618,11 +618,15 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   userId: string; postId: string; onClose: () => void; onAttached: (url: string) => void;
 }) {
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [tab, setTab] = useState<"all" | "images" | "videos" | "colors">("all");
+  const [tab, setTab] = useState<"all" | "images" | "videos" | "colors" | "stock">("all");
   const [selected, setSelected] = useState<string | null>(null);
   const [brandColors, setBrandColors] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [signed, setSigned] = useState<Record<string, string>>({});
+  const [stockQuery, setStockQuery] = useState("");
+  const [stockResults, setStockResults] = useState<Array<{ id: number; thumbnailUrl: string; fullUrl: string; photographer: string }>>([]);
+  const [stockLoading, setStockLoading] = useState(false);
+  const [attachingId, setAttachingId] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -698,8 +702,8 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       </label>
 
       <div className="flex gap-2 mt-3">
-        {(["all","images","videos","colors"] as const).map((t) => {
-          const labels: any = { all: "All", images: "Images", videos: "Videos", colors: "Brand Colors" };
+        {(["all","images","videos","colors","stock"] as const).map((t) => {
+          const labels: any = { all: "All", images: "Images", videos: "Videos", colors: "Brand Colors", stock: "Stock Photos" };
           const active = tab === t;
           return (
             <button key={t} onClick={() => setTab(t)} className="text-[12px] font-medium"
@@ -722,6 +726,64 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
               <div className="text-[11px]" style={{ color: "#6B6860" }}>{c}</div>
             </div>
           ))}
+        </div>
+      ) : tab === "stock" ? (
+        <div className="mt-3">
+          <div className="flex gap-2 mb-3">
+            <input
+              value={stockQuery}
+              onChange={(e) => setStockQuery(e.target.value)}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  await runStockSearch();
+                }
+              }}
+              placeholder="Search millions of free stock photos..."
+              style={{
+                flex: 1, height: 34, border: "0.5px solid #ECEAE5",
+                borderRadius: 8, padding: "0 12px", fontSize: 13, background: "#F7F5F1",
+              }}
+            />
+            <button
+              onClick={runStockSearch}
+              disabled={stockLoading}
+              style={{
+                height: 34, padding: "0 16px", borderRadius: 8, border: "none",
+                background: "#0E0F10", color: "#F7F5F1", fontSize: 12, fontWeight: 500,
+                cursor: "pointer", opacity: stockLoading ? 0.6 : 1,
+              }}
+            >{stockLoading ? "Searching…" : "Search"}</button>
+          </div>
+          {stockResults.length === 0 && !stockLoading && (
+            <div className="text-[12px] text-center py-6" style={{ color: "#9A9896" }}>
+              Search for photos to browse Pexels' free library.
+            </div>
+          )}
+          <div className="grid grid-cols-4 gap-2">
+            {stockResults.map((photo) => (
+              <div key={photo.id} className="relative group overflow-hidden"
+                style={{ aspectRatio: "1", borderRadius: 10, cursor: "pointer" }}>
+                <img src={photo.thumbnailUrl} alt=""
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                <div className="absolute inset-0 flex items-end justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ background: "rgba(15,17,20,0.45)", padding: 8 }}>
+                  <button
+                    onClick={() => attachStockPhoto(photo)}
+                    disabled={attachingId === photo.id}
+                    style={{
+                      fontSize: 10, fontWeight: 600, padding: "5px 9px",
+                      borderRadius: 14, background: "#E85A46", color: "#fff",
+                      border: "none", cursor: "pointer",
+                    }}
+                  >{attachingId === photo.id ? "Adding…" : "Add to post"}</button>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: "#9A9896", textAlign: "right", marginTop: 4 }}>
+            Photos provided by Pexels
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-5 gap-2 mt-3">
