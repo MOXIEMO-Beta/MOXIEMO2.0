@@ -674,6 +674,26 @@ function ChecklistRow({ status, label }: { status: "done" | "active" | "idle"; l
 }
 
 function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: string; setStep: (s: AuditStep) => void; goAssets: () => void; latestAuditId?: string | null }) {
+  const [dlBusy, setDlBusy] = useState(false);
+  const handleDownload = async () => {
+    if (!latestAuditId) { toast({ title: "Run an audit first", variant: "destructive" }); return; }
+    setDlBusy(true);
+    try {
+      const { data, error } = await supabase.from("audits").select("status, brand_audit_score, report, inputs, stage, posture").eq("id", latestAuditId).maybeSingle();
+      if (error) throw error;
+      if (!data || !data.report) throw new Error("Audit report not available.");
+      await downloadAuditPdf({
+        status: data.status as any,
+        brand_audit_score: data.brand_audit_score ?? 0,
+        report: data.report as any,
+        inputs: data.inputs as any,
+        stage: data.stage ?? null,
+        posture: data.posture ?? null,
+      });
+    } catch (e: any) {
+      toast({ title: "PDF export failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setDlBusy(false); }
+  };
   const score = 71;
   const C = 2 * Math.PI * 52;
 
@@ -800,7 +820,7 @@ function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: st
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button style={pill()} onClick={goAssets}>View in Assets</button>
-          <button style={pill()}>Download PDF</button>
+          <button style={pill()} onClick={handleDownload} disabled={dlBusy}>{dlBusy ? "Preparing…" : "Download PDF"}</button>
           <button style={pill(true)} onClick={() => setStep("prompt")}>↺ Re-run Audit</button>
         </div>
       </div>
