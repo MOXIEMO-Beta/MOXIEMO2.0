@@ -614,6 +614,51 @@ function DestinationPicker({ options, onCancel, onConfirm }: {
 }
 
 /* ---------------- Media library panel ---------------- */
+function PhotoCard({
+  photo, attaching, onAttach, onCanva,
+}: {
+  photo: { id: number; thumbnailUrl: string; fullUrl: string; photographer?: string };
+  attaching: boolean;
+  onAttach: () => void;
+  onCanva: () => void;
+}) {
+  return (
+    <div className="relative group overflow-hidden"
+      style={{ aspectRatio: "1", borderRadius: 10, cursor: "pointer" }}>
+      <img src={photo.thumbnailUrl} alt=""
+        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+      <div className="absolute inset-0 flex items-end justify-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+        style={{ background: "rgba(15,17,20,0.45)", padding: 8 }}>
+        <button
+          onClick={onAttach}
+          disabled={attaching}
+          style={{
+            fontSize: 10, fontWeight: 600, padding: "5px 9px",
+            borderRadius: 14, background: "#E85A46", color: "#fff",
+            border: "none", cursor: "pointer",
+          }}
+        >{attaching ? "Adding…" : "Add to post"}</button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onCanva(); }}
+          title="Download & open Canva"
+          className="inline-flex items-center gap-1"
+          style={{
+            fontSize: 10, fontWeight: 600, padding: "5px 9px",
+            borderRadius: 14, background: "#fff", color: "#0E0F10",
+            border: "none", cursor: "pointer",
+          }}
+        >
+          <svg width="10" height="10" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle cx="16" cy="16" r="14" fill="#00C4CC" />
+            <path d="M22 20.4c-1.6 1.9-3.8 3-6.2 3-4.1 0-7.3-3.5-7.3-7.9 0-4.8 3.5-8.3 7.9-8.3 3.2 0 5.7 1.7 5.7 4.1 0 1.1-.6 1.9-1.5 1.9-1 0-1.6-.6-1.9-1.7-.3-1.5-1.1-2.3-2.4-2.3-2 0-3.5 2.4-3.5 5.6 0 3.2 1.5 5.7 3.6 5.7 1.4 0 2.5-.7 3.6-2.4l1.9 2.2z" fill="#fff" />
+          </svg>
+          Canva
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function MediaPanel({ userId, postId, onClose, onAttached }: {
   userId: string; postId: string; onClose: () => void; onAttached: (url: string) => void;
 }) {
