@@ -846,7 +846,7 @@ function KitPanel({
   }
 
   // kit
-  return <KitDocument profile={profile} strategy={strategy} colors={colors} logoUrl={logoUrl} fonts={fonts} setStep={setStep} goAssets={goAssets} />;
+  return <KitDocument profile={profile} strategy={strategy} colors={colors} logoUrl={logoUrl} fonts={fonts} setStep={setStep} goAssets={goAssets} kitOwnerId={userId} />;
 }
 
 function StepPill({ index, label, state }: { index: number; label: string; state: "done" | "active" | "idle" }) {
@@ -869,7 +869,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 function Divider() { return <div style={{ height: 1, background: BORDER, margin: "16px 0" }} />; }
 
-function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets }: any) {
+function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets, kitOwnerId }: any) {
   const brandName = strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand";
   const generatedAt = "Jun 22, 2026";
 
@@ -886,7 +886,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
           <div style={{ fontSize: 12, color: "#9A9896", marginTop: 4 }}>Brand Identity · Voice · Visual Direction · Key Messages</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button style={{ border: "1px solid rgba(255,255,255,0.15)", color: "#fff", borderRadius: 20, padding: "6px 14px", fontSize: 12, background: "transparent", cursor: "pointer" }}>Share Link</button>
+          <ShareControls documentType="brand-kit" sourceId={kitOwnerId} dark />
           <button style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Download PDF</button>
         </div>
       </div>
