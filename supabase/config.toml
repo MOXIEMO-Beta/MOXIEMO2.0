@@ -19,3 +19,5 @@ project_id = "mqhipuvkdsvapbhrrzjd"
     verify_jwt = false
   [functions.send-brand-kit]
     verify_jwt = false
+  [functions.generate-brand-kit]
+    verify_jwt = false

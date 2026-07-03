@@ -72,6 +72,7 @@ export type Database = {
           signals: Json | null
           stage: string | null
           status: string
+          user_id: string | null
           validation: Json | null
         }
         Insert: {
@@ -90,6 +91,7 @@ export type Database = {
           signals?: Json | null
           stage?: string | null
           status?: string
+          user_id?: string | null
           validation?: Json | null
         }
         Update: {
@@ -108,6 +110,7 @@ export type Database = {
           signals?: Json | null
           stage?: string | null
           status?: string
+          user_id?: string | null
           validation?: Json | null
         }
         Relationships: []
@@ -300,6 +303,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      brand_kits: {
+        Row: {
+          created_at: string
+          id: string
+          kit_json: Json
+          model: string | null
+          strategy_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kit_json: Json
+          model?: string | null
+          strategy_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kit_json?: Json
+          model?: string | null
+          strategy_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_kits_strategy_id_fkey"
+            columns: ["strategy_id"]
+            isOneToOne: false
+            referencedRelation: "strategies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       calendar_ideas: {
         Row: {

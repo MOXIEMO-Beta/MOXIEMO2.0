@@ -28,6 +28,49 @@ serve(async (req) => {
 
     const domain = normalizeDomain(url);
 
+    // OPTIONAL AUTH — the public marketing-tool path must continue to work with
+    // zero changes. Only when the caller sent a Bearer token do we look up the
+    // user, own the row, and load their strategy foundation.
+    let userId: string | null = null;
+    let strategyFoundation: any = null;
+    let strategyId: string | null = null;
+    const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const authed = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } },
+        );
+        const token = authHeader.replace("Bearer ", "");
+        const { data: claims } = await authed.auth.getClaims(token);
+        const sub = claims?.claims?.sub as string | undefined;
+        if (sub) {
+          userId = sub;
+          const { data: strat } = await supabase
+            .from("strategies")
+            .select("id, enhanced_foundation, business_name, ideal_client, pain_point, differentiation, voice_attributes, transformation")
+            .eq("user_id", sub)
+            .maybeSingle();
+          if (strat) {
+            strategyId = strat.id ?? null;
+            strategyFoundation = {
+              enhanced_foundation: strat.enhanced_foundation ?? null,
+              business_name: strat.business_name ?? null,
+              ideal_client: strat.ideal_client ?? null,
+              pain_point: strat.pain_point ?? null,
+              differentiation: strat.differentiation ?? null,
+              voice_attributes: strat.voice_attributes ?? null,
+              transformation: strat.transformation ?? null,
+            };
+          }
+        }
+      } catch (e) {
+        // Auth failure must not break the public flow. Log and continue as anon.
+        console.warn("[finalize-audit] optional auth resolution failed:", String(e));
+      }
+    }
+
     // Derive stage and posture once, store on the row, and pass into Vera.
     const framing = deriveFraming({
       inputs: payload?.inputs ?? null,
@@ -38,11 +81,15 @@ serve(async (req) => {
 
     // Merge competitor_signals (light-scraped per-competitor data) into the stored
     // signals so Vera can reason from real signal on every entered competitor.
+    // If a signed-in user ran this audit, stash their strategy foundation on the
+    // row so run-audit-generation can hoist it into the Vera payload.
     const mergedSignals = {
       ...(payload?.signals ?? {}),
       competitor_signals: Array.isArray(payload?.competitor_signals) ? payload.competitor_signals : [],
       render_ok: payload?.render_ok !== false,
       render_meta: payload?.render_meta ?? null,
+      strategy_foundation: strategyFoundation,
+      strategy_id: strategyId,
     };
 
     // 1. Create audit row first (status = generating, with start timestamp)
@@ -58,6 +105,7 @@ serve(async (req) => {
         posture: framing.posture,
         status: "generating",
         generation_started_at: new Date().toISOString(),
+        user_id: userId,
       })
       .select("id")
       .single();

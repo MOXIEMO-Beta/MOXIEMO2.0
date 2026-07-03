@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/use-toast";
+import { downloadStrategyPdf } from "@/lib/strategyPdf";
+import { downloadAuditPdf } from "@/lib/brandAuditPdf";
+import { generateBrandKitPdf, type BrandKitData } from "@/lib/brandKitPdf";
+import { buildReportData } from "@/lib/reportDataBinding";
 import {
   ShieldCheck,
   ClipboardCheck,
@@ -158,6 +162,7 @@ export default function BrandHub() {
   const [profile, setProfile] = useState<any>(null);
   const [strategy, setStrategy] = useState<any>(null);
   const [latestAuditId, setLatestAuditId] = useState<string | null>(null);
+  const [latestKit, setLatestKit] = useState<{ id: string; kit_json: any } | null>(null);
   const [hubVisited, setHubVisited] = useState(false);
   const [tab, setTab] = useState<BrandTab>("welcome");
   const [auditStep, setAuditStep] = useState<AuditStep>("prompt");
@@ -167,21 +172,23 @@ export default function BrandHub() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [p, s] = await Promise.all([
+      const [p, s, a, k] = await Promise.all([
         supabase
           .from("profiles")
           .select("website_url, brand_hub_visited, brand_colors, brand_logo_url, brand_fonts, business_name, full_name")
           .eq("id", user.id)
           .maybeSingle(),
         supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("audits").select("id").eq("user_id", user.id).eq("status", "ready").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("brand_kits").select("id, kit_json").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       const prof: any = p.data ?? {};
       setProfile(prof);
       setStrategy(s.data);
-      // Brand Audit records are anonymous today, so there is no per-user audit id
-      // to attach a share to. Leaving as null makes the audit Share Link show a
-      // clear "nothing to share yet" toast until audits are linked to users.
-      setLatestAuditId(null);
+      // Audits are now linked to signed-in users, so we can surface the latest
+      // ready one for share/download/report views.
+      setLatestAuditId(a.data?.id ?? null);
+      setLatestKit(k.data ?? null);
       const visited = !!prof.brand_hub_visited;
       setHubVisited(visited);
       if (visited) {
@@ -267,6 +274,7 @@ export default function BrandHub() {
             userId={user?.id}
             goAssets={() => setTab("assets")}
             latestAuditId={latestAuditId}
+            onNewAudit={(id) => setLatestAuditId(id)}
           />
         )}
         {tab === "kit" && (
@@ -278,6 +286,8 @@ export default function BrandHub() {
             strategy={strategy}
             userId={user?.id}
             goAssets={() => setTab("assets")}
+            latestKit={latestKit}
+            onNewKit={(k) => setLatestKit(k)}
           />
         )}
         {tab === "assets" && (
@@ -286,7 +296,11 @@ export default function BrandHub() {
             goAuditPrompt={() => { setTab("audit"); setAuditStep("prompt"); }}
             goKitVisual={() => { setTab("kit"); setKitStep("visual"); }}
             strategyId={strategy?.id ?? null}
-            kitOwnerId={user?.id ?? null}
+            kitOwnerId={latestKit?.id ?? null}
+            userId={user?.id ?? null}
+            profile={profile}
+            strategy={strategy}
+            latestKit={latestKit}
             latestAuditId={latestAuditId}
           />
         )}
@@ -394,7 +408,7 @@ function WelcomeCard({
 
 /* -------------------- Brand Audit -------------------- */
 function AuditPanel({
-  step, setStep, profile, setProfile, userId, goAssets, latestAuditId,
+  step, setStep, profile, setProfile, userId, goAssets, latestAuditId, onNewAudit,
 }: {
   step: AuditStep;
   setStep: (s: AuditStep) => void;
@@ -403,6 +417,7 @@ function AuditPanel({
   userId?: string;
   goAssets: () => void;
   latestAuditId?: string | null;
+  onNewAudit?: (id: string) => void;
 }) {
   const [url, setUrl] = useState<string>(profile?.website_url ?? "");
   const [saving, setSaving] = useState(false);
@@ -465,6 +480,7 @@ function AuditPanel({
         if (!data) continue;
         if (data.status === "ready") {
           setRunPhase("ready");
+          onNewAudit?.(auditId);
           setStep("results");
           return;
         }
@@ -658,6 +674,26 @@ function ChecklistRow({ status, label }: { status: "done" | "active" | "idle"; l
 }
 
 function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: string; setStep: (s: AuditStep) => void; goAssets: () => void; latestAuditId?: string | null }) {
+  const [dlBusy, setDlBusy] = useState(false);
+  const handleDownload = async () => {
+    if (!latestAuditId) { toast({ title: "Run an audit first", variant: "destructive" }); return; }
+    setDlBusy(true);
+    try {
+      const { data, error } = await supabase.from("audits").select("status, brand_audit_score, report, inputs, stage, posture").eq("id", latestAuditId).maybeSingle();
+      if (error) throw error;
+      if (!data || !data.report) throw new Error("Audit report not available.");
+      await downloadAuditPdf({
+        status: data.status as any,
+        brand_audit_score: data.brand_audit_score ?? 0,
+        report: data.report as any,
+        inputs: data.inputs as any,
+        stage: data.stage ?? null,
+        posture: data.posture ?? null,
+      });
+    } catch (e: any) {
+      toast({ title: "PDF export failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setDlBusy(false); }
+  };
   const score = 71;
   const C = 2 * Math.PI * 52;
 
@@ -784,7 +820,7 @@ function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: st
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button style={pill()} onClick={goAssets}>View in Assets</button>
-          <button style={pill()}>Download PDF</button>
+          <button style={pill()} onClick={handleDownload} disabled={dlBusy}>{dlBusy ? "Preparing…" : "Download PDF"}</button>
           <button style={pill(true)} onClick={() => setStep("prompt")}>↺ Re-run Audit</button>
         </div>
       </div>
@@ -794,7 +830,7 @@ function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: st
 
 /* -------------------- Brand Kit -------------------- */
 function KitPanel({
-  step, setStep, profile, setProfile, strategy, userId, goAssets,
+  step, setStep, profile, setProfile, strategy, userId, goAssets, latestKit, onNewKit,
 }: any) {
   const [url, setUrl] = useState<string>(profile?.website_url ?? "");
   const [colors, setColors] = useState<string[]>(
@@ -809,12 +845,38 @@ function KitPanel({
   );
   const [logoUrl, setLogoUrl] = useState<string | null>(profile?.brand_logo_url ?? null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [kit, setKit] = useState<any>(latestKit?.kit_json ?? null);
+  const [kitId, setKitId] = useState<string | null>(latestKit?.id ?? null);
+
+  useEffect(() => {
+    if (latestKit?.kit_json && !kit) {
+      setKit(latestKit.kit_json);
+      setKitId(latestKit.id);
+    }
+  }, [latestKit, kit]);
 
   useEffect(() => {
     if (step !== "generating") return;
-    const t = setTimeout(() => setStep("kit"), 2400);
-    return () => clearTimeout(t);
-  }, [step, setStep]);
+    let cancelled = false;
+    (async () => {
+      setGenError(null);
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-brand-kit", { body: {} });
+        if (cancelled) return;
+        if (error) throw error;
+        if (!data?.kit) throw new Error(data?.error || "Kit generation returned no content");
+        setKit(data.kit);
+        setKitId(data.kit_id ?? null);
+        onNewKit?.({ id: data.kit_id, kit_json: data.kit });
+        setStep("kit");
+      } catch (e: any) {
+        if (cancelled) return;
+        setGenError(String(e?.message ?? e));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [step, setStep, onNewKit]);
 
   async function handleLogo(file: File) {
     if (!userId) return;
@@ -964,22 +1026,39 @@ function KitPanel({
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
         <div style={{ ...card, maxWidth: 480, width: "100%", padding: 32, textAlign: "center" }}>
-          <div style={{ width: 40, height: 40, border: `3px solid ${BORDER}`, borderTopColor: CORAL, borderRadius: "50%", margin: "0 auto", animation: "brand-hub-spin 0.9s linear infinite" }} />
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 16 }}>Building Your Brand Kit…</h3>
-          <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Combining your strategy with your visual assets</div>
-          <div style={{ marginTop: 20, maxWidth: 320, marginLeft: "auto", marginRight: "auto", textAlign: "left" }}>
-            <ChecklistRow status="done" label="Voice data loaded from your strategy" />
-            <ChecklistRow status="done" label="Visual assets confirmed" />
-            <ChecklistRow status="active" label="Writing narrative sections…" />
-            <ChecklistRow status="idle" label="Assembling final document" />
-          </div>
+          {genError ? (
+            <>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: "#FEF1EE", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <ShieldCheck size={24} color={CORAL} />
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 16 }}>Could not generate your kit</h3>
+              <p style={{ fontSize: 13, color: MUTED, marginTop: 6, lineHeight: 1.6 }}>{genError}</p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 18 }}>
+                <button type="button" onClick={() => setStep("visual")} style={pill(false)}>Back</button>
+                <button type="button" onClick={() => { setGenError(null); setStep("visual"); setTimeout(() => setStep("generating"), 0); }}
+                  style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Retry</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ width: 40, height: 40, border: `3px solid ${BORDER}`, borderTopColor: CORAL, borderRadius: "50%", margin: "0 auto", animation: "brand-hub-spin 0.9s linear infinite" }} />
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 16 }}>Building Your Brand Kit…</h3>
+              <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Combining your strategy with your visual assets</div>
+              <div style={{ marginTop: 20, maxWidth: 320, marginLeft: "auto", marginRight: "auto", textAlign: "left" }}>
+                <ChecklistRow status="done" label="Voice data loaded from your strategy" />
+                <ChecklistRow status="done" label="Visual assets confirmed" />
+                <ChecklistRow status="active" label="Writing narrative sections…" />
+                <ChecklistRow status="idle" label="Assembling final document" />
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
   }
 
   // kit
-  return <KitDocument profile={profile} strategy={strategy} colors={colors} logoUrl={logoUrl} fonts={fonts} setStep={setStep} goAssets={goAssets} kitOwnerId={userId} />;
+  return <KitDocument profile={profile} strategy={strategy} colors={colors} logoUrl={logoUrl} fonts={fonts} setStep={setStep} goAssets={goAssets} kitOwnerId={kitId} kit={kit} />;
 }
 
 function StepPill({ index, label, state }: { index: number; label: string; state: "done" | "active" | "idle" }) {
@@ -1002,12 +1081,63 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 function Divider() { return <div style={{ height: 1, background: BORDER, margin: "16px 0" }} />; }
 
-function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets, kitOwnerId }: any) {
-  const brandName = strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand";
+function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets, kitOwnerId, kit }: any) {
+  const brandName = kit?.brand_name || strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand";
   const generatedAt = "Jun 22, 2026";
 
   const palette = (colors && colors.length ? colors : ["#0E0F10", "#E85A46", "#F7F5F1", "#B8C5A6"]).slice(0, 4);
   const fontName = fonts?.[0] || "Space Grotesk";
+
+  const archetypePrimary = kit?.archetype?.primary || "The Magician";
+  const archetypeSecondary = kit?.archetype?.secondary || "Creator";
+  const archetypeDescription = kit?.archetype?.description || "Transforms chaos into clarity, complexity into autonomy. Promises to turn a founder's vision into reality through a system that feels effortless.";
+  const voiceAttrs: string[] = Array.isArray(kit?.voice?.attributes) && kit.voice.attributes.length
+    ? kit.voice.attributes
+    : ["Clear and Direct", "Empowering, Not Overwhelming", "Strategic, Not Salesy", "Honest and Specific"];
+  const neverUse: string[] = Array.isArray(kit?.voice?.never_use) && kit.voice.never_use.length
+    ? kit.voice.never_use
+    : ["Em-Dashes", "Contractions in Formal Copy", "Filler Phrases"];
+  const icpRows: [string, string][] = [
+    ["Revenue Floor", kit?.icp?.revenue_floor || "$250K+ annually"],
+    ["Business Type", kit?.icp?.business_type || "Expertise-based, founder-led"],
+    ["Core Pain", kit?.icp?.core_pain || "20+ hrs/week on reactive marketing with no strategy"],
+    ["Transformation", kit?.icp?.transformation || "From tool chaos to 1 platform, 2 hrs/week"],
+  ];
+  const keyMessages: string[] = Array.isArray(kit?.key_messages) && kit.key_messages.length
+    ? kit.key_messages
+    : [
+        "You built a real business. Your marketing should match.",
+        "Strategy first. Always. Then content that actually works.",
+        "One platform. 18 hours back. Revenue that moves.",
+      ];
+  const primaryPillar = kit?.pillars?.primary || "Strategy-First Marketing";
+  const supportingPillars: string[] = Array.isArray(kit?.pillars?.supporting) && kit.pillars.supporting.length
+    ? kit.pillars.supporting
+    : ["Founder Wins & Beta Stories", "Platform Transparency & Product Updates", "Founder Efficiency Hacks", "Market Positioning & Differentiation"];
+
+  const [dlBusy, setDlBusy] = useState(false);
+  const handleDownload = async () => {
+    setDlBusy(true);
+    try {
+      const data: BrandKitData = {
+        siteName: brandName,
+        websiteUrl: profile?.website_url ?? "",
+        logo: logoUrl ?? undefined,
+        colors: palette.map((hex: string, i: number) => ({ hex, rgb: "", role: i === 0 ? "Primary" : i === 1 ? "Accent" : `Support ${i - 1}` })),
+        fonts: { heading: fontName, body: fonts?.[1] || fontName },
+        imagery: [],
+      };
+      const blob = await generateBrandKitPdf(data);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${brandName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "brand"}-brand-kit.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e: any) {
+      toast({ title: "PDF export failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setDlBusy(false); }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1020,7 +1150,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <ShareControls documentType="brand-kit" sourceId={kitOwnerId} dark />
-          <button style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Download PDF</button>
+          <button onClick={handleDownload} disabled={dlBusy} style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, cursor: dlBusy ? "not-allowed" : "pointer", opacity: dlBusy ? 0.6 : 1 }}>{dlBusy ? "Preparing…" : "Download PDF"}</button>
         </div>
       </div>
 
@@ -1035,12 +1165,12 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
               <Wand2 size={24} color={CORAL} />
             </div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: INK }}>The Magician</div>
-              <div style={{ fontSize: 12, color: MUTED }}>Secondary: Creator</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: INK }}>{archetypePrimary}</div>
+              <div style={{ fontSize: 12, color: MUTED }}>Secondary: {archetypeSecondary}</div>
             </div>
           </div>
           <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.6, marginTop: 10 }}>
-            Transforms chaos into clarity, complexity into autonomy. Promises to turn a founder's vision into reality through a system that feels effortless.
+            {archetypeDescription}
           </p>
         </KitCard>
 
@@ -1048,19 +1178,14 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         <KitCard>
           <CopyPill />
           <div style={{ fontSize: 11, color: FAINT, marginBottom: 8 }}>Use these to brief anyone writing for your brand.</div>
-          {[
-            "Clear and Direct",
-            "Empowering, Not Overwhelming",
-            "Strategic, Not Salesy",
-            "Honest and Specific",
-          ].map((v) => (
+          {voiceAttrs.map((v: string) => (
             <div key={v} style={{ borderLeft: `2px solid ${CORAL}`, background: "#FAFAF8", borderRadius: 6, padding: "8px 12px", fontSize: 13, color: INK, marginBottom: 4 }}>
               {v}
             </div>
           ))}
           <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT, marginTop: 12, marginBottom: 6 }}>Never Use</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {["Em-Dashes", "Contractions in Formal Copy", "Filler Phrases"].map((v) => (
+            {neverUse.map((v: string) => (
               <span key={v} style={{ background: "#F0EFEC", borderRadius: 20, padding: "3px 10px", fontSize: 11, color: FAINT, textDecoration: "line-through" }}>{v}</span>
             ))}
           </div>
@@ -1071,12 +1196,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
           <CopyPill />
           <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 10 }}>Ideal Client Profile</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {[
-              ["Revenue Floor", "$250K+ annually"],
-              ["Business Type", "Expertise-based, founder-led"],
-              ["Core Pain", "20+ hrs/week on reactive marketing with no strategy"],
-              ["Transformation", "From tool chaos to 1 platform, 2 hrs/week"],
-            ].map(([l, v]) => (
+            {icpRows.map(([l, v]) => (
               <div key={l} style={{ background: "#F7F5F1", borderRadius: 8, padding: "10px 12px" }}>
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT, letterSpacing: "0.06em" }}>{l}</div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: INK, lineHeight: 1.4, marginTop: 2 }}>{v}</div>
@@ -1090,11 +1210,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
           <CopyPill />
           <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 8 }}>Key Messages</div>
           <div style={{ fontSize: 11, color: FAINT, marginBottom: 8 }}>Use across bio, pitches, and onboarding copy.</div>
-          {[
-            "You built a real business. Your marketing should match.",
-            "Strategy first. Always. Then content that actually works.",
-            "One platform. 18 hours back. Revenue that moves.",
-          ].map((q) => (
+          {keyMessages.map((q: string) => (
             <div key={q} style={{ background: "#F7F5F1", borderLeft: `2.5px solid ${CORAL}`, borderRadius: "0 8px 8px 0", padding: "10px 14px", fontSize: 13, color: INK, lineHeight: 1.5, marginBottom: 6 }}>
               {q}
             </div>
@@ -1106,8 +1222,8 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
           <CopyPill />
           <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 10 }}>Content Pillars</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            <span style={{ background: INK, color: "#fff", borderRadius: 20, padding: "6px 16px", fontSize: 13, fontWeight: 600 }}>Strategy-First Marketing</span>
-            {["Founder Wins & Beta Stories", "Platform Transparency & Product Updates", "Founder Efficiency Hacks", "Market Positioning & Differentiation"].map((p) => (
+            <span style={{ background: INK, color: "#fff", borderRadius: 20, padding: "6px 16px", fontSize: 13, fontWeight: 600 }}>{primaryPillar}</span>
+            {supportingPillars.map((p: string) => (
               <span key={p} style={{ background: "#FEF1EE", color: CORAL, borderRadius: 20, padding: "6px 16px", fontSize: 13, fontWeight: 500 }}>{p}</span>
             ))}
           </div>
@@ -1149,7 +1265,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button style={pill()} onClick={goAssets}>View in Assets</button>
-          <button style={pill()}>Download PDF</button>
+          <button style={pill()} onClick={handleDownload} disabled={dlBusy}>{dlBusy ? "Preparing…" : "Download PDF"}</button>
           <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
           <button style={pill(true)} onClick={() => setStep("visual")}>↺ Regenerate Kit</button>
         </div>
@@ -1174,7 +1290,68 @@ function CopyPill() {
 }
 
 /* -------------------- Brand Assets -------------------- */
-function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null }) {
+function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId, userId, profile, strategy, latestKit }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null; userId?: string | null; profile?: any; strategy?: any; latestKit?: { id: string; kit_json: any } | null }) {
+  const [busy, setBusy] = useState<null | "strategy" | "kit" | "audit">(null);
+  const dlStrategy = async () => {
+    if (!userId) { toast({ title: "Sign in required", variant: "destructive" }); return; }
+    setBusy("strategy");
+    try {
+      const [{ data: strategyRow }, { data: profileRow }] = await Promise.all([
+        supabase.from("strategies").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("profiles").select("full_name, business_name, email, created_at").eq("id", userId).maybeSingle(),
+      ]);
+      if (!strategyRow) throw new Error("No strategy on file.");
+      const rd = buildReportData(strategyRow, profileRow);
+      const first = String(profileRow?.full_name || "Founder").split(/\s+/)[0].replace(/[^A-Za-z0-9_-]/g, "") || "Founder";
+      const d = new Date();
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      await downloadStrategyPdf(rd, `${first}-MOXIEMO-Strategy-${date}.pdf`);
+    } catch (e: any) {
+      toast({ title: "Could not export strategy PDF", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setBusy(null); }
+  };
+  const dlKit = async () => {
+    if (!latestKit) { toast({ title: "Generate your Brand Kit first", variant: "destructive" }); return; }
+    setBusy("kit");
+    try {
+      const data: BrandKitData = {
+        siteName: strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand",
+        websiteUrl: profile?.website_url ?? "",
+        logo: profile?.brand_logo_url ?? undefined,
+        colors: (Array.isArray(profile?.brand_colors) ? profile.brand_colors : []).map((hex: string, i: number) => ({ hex, rgb: "", role: i === 0 ? "Primary" : i === 1 ? "Accent" : `Support ${i - 1}` })),
+        fonts: { heading: profile?.brand_fonts?.[0] || "Helvetica", body: profile?.brand_fonts?.[1] || profile?.brand_fonts?.[0] || "Helvetica" },
+        imagery: [],
+      };
+      const blob = await generateBrandKitPdf(data);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.siteName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "brand"}-brand-kit.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e: any) {
+      toast({ title: "Could not export brand kit PDF", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setBusy(null); }
+  };
+  const dlAudit = async () => {
+    if (!latestAuditId) { toast({ title: "Run a Brand Audit first", variant: "destructive" }); return; }
+    setBusy("audit");
+    try {
+      const { data: row, error } = await supabase.from("audits").select("status, brand_audit_score, report, inputs, stage, posture").eq("id", latestAuditId).maybeSingle();
+      if (error) throw error;
+      if (!row || !row.report) throw new Error("Audit report not available yet.");
+      await downloadAuditPdf({
+        status: row.status as any,
+        brand_audit_score: row.brand_audit_score ?? 0,
+        report: row.report as any,
+        inputs: row.inputs as any,
+        stage: row.stage ?? null,
+        posture: row.posture ?? null,
+      });
+    } catch (e: any) {
+      toast({ title: "Could not export audit PDF", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setBusy(null); }
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <AssetCard
@@ -1200,7 +1377,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         bodyNote="6 sections · Auto-updates when strategy is regenerated"
         footer={
           <>
-            <PrimaryPill>Download PDF</PrimaryPill>
+            <PrimaryPill onClick={dlStrategy} disabled={busy === "strategy"}>{busy === "strategy" ? "Preparing…" : "Download PDF"}</PrimaryPill>
             <button style={pill()}>Copy All</button>
             <ShareControls documentType="strategy" sourceId={strategyId} />
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Auto-saved from your strategy</span>
@@ -1227,7 +1404,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         bodyNote="5 sections · 1 page · Regenerate from Brand Kit tab when strategy changes"
         footer={
           <>
-            <PrimaryPill>Download PDF</PrimaryPill>
+            <PrimaryPill onClick={dlKit} disabled={busy === "kit"}>{busy === "kit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
             <button style={pill()}>Copy All</button>
             <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
             <button style={pill(true)} onClick={goKitVisual}>↺ Regenerate</button>
@@ -1258,7 +1435,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         bodyNote="Next audit recommended: Sep 26, 2026 · Each run saved separately"
         footer={
           <>
-            <PrimaryPill>Download PDF</PrimaryPill>
+            <PrimaryPill onClick={dlAudit} disabled={busy === "audit"}>{busy === "audit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
             <button style={pill()}>View All Runs</button>
             <ShareControls documentType="brand-audit" sourceId={latestAuditId} />
             <button style={pill()} onClick={goAuditResults}>Open Full Report</button>
@@ -1271,9 +1448,9 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
   );
 }
 
-function PrimaryPill({ children }: { children: React.ReactNode }) {
+function PrimaryPill({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) {
   return (
-    <button style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+    <button onClick={onClick} disabled={disabled} style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1 }}>
       {children}
     </button>
   );
