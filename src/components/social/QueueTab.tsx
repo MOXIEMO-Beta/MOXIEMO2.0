@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
@@ -99,6 +99,7 @@ function toLocalInputValue(iso: string | null): string {
 
 export default function QueueTab({ userId, onChangeTab }: { userId: string | null; onChangeTab?: (t: string) => void }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [filter, setFilter] = useState<"all" | Platform>("all");
   const [loading, setLoading] = useState(true);
@@ -170,13 +171,21 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         .from("pillar_feed_cache").select("angles_json").eq("user_id", userId).maybeSingle();
       const list = ((data as any)?.angles_json?.angles ?? []) as Suggestion[];
       if (!Array.isArray(list) || list.length === 0) { setSuggestion(null); return; }
-      const counts: Record<string, number> = {};
-      posts.forEach((p) => { if (p.pillar) counts[p.pillar] = (counts[p.pillar] ?? 0) + 1; });
-      const sorted = [...list].sort((a, b) => (counts[a.pillar] ?? 0) - (counts[b.pillar] ?? 0));
-      const pick = sorted.find((s) => s.angle && !suggestionDismissed.has(s.angle)) ?? null;
+      const params = new URLSearchParams(location.search);
+      const requestedPillar = params.get("pillar");
+      let pick: Suggestion | null = null;
+      if (requestedPillar) {
+        pick = list.find((s) => s.pillar === requestedPillar && s.angle) ?? null;
+      }
+      if (!pick) {
+        const counts: Record<string, number> = {};
+        posts.forEach((p) => { if (p.pillar) counts[p.pillar] = (counts[p.pillar] ?? 0) + 1; });
+        const sorted = [...list].sort((a, b) => (counts[a.pillar] ?? 0) - (counts[b.pillar] ?? 0));
+        pick = sorted.find((s) => s.angle && !suggestionDismissed.has(s.angle)) ?? null;
+      }
       setSuggestion(pick);
     })();
-  }, [userId, posts, suggestionDismissed]);
+  }, [userId, posts, suggestionDismissed, location.search]);
 
   function dismissSuggestion(angle: string) {
     setSuggestionDismissed((prev) => {
