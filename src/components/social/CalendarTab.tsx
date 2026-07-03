@@ -653,40 +653,6 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
           </div>
         </div>
 
-        {noContent && view === "month" && pillarCoverage.length > 0 && (
-          <>
-            <p className="text-xs text-muted-foreground">
-              Your strategy has identified these content pillars. Start scheduling to build consistent coverage.
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                className="bg-[#ff6b6b] text-white hover:bg-[#ff6b6b]/90"
-                onClick={() => onCreateAtDate(new Date().toISOString())}
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" /> Create new post
-              </Button>
-              <Button size="sm" variant="outline" onClick={openImport}>
-                Import from drafts
-              </Button>
-            </div>
-            <Card className="space-y-3 p-4">
-              <p className="text-sm font-semibold text-foreground">Content Pillar Coverage — {fmtMonth(cursor)}</p>
-              <div className="space-y-2">
-                {pillarCoverage.map((c) => (
-                  <div key={c.name} className="flex items-center gap-3 text-xs">
-                    <span className="w-56 shrink-0 truncate text-foreground">{c.name}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full" style={{ width: `${c.pct}%`, backgroundColor: c.color }} />
-                    </div>
-                    <span className="w-16 shrink-0 text-right text-muted-foreground">{c.count} posts</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </>
-        )}
-
         {view === "month" ? (
           <MonthGrid
             cursor={cursor}
