@@ -113,6 +113,176 @@ const imageryGuide: Record<string, { conveys: string; use: string }> = {
 };
 
 function BrandKitDoc({ data }: { data: BrandKitData }) {
+  return <BrandKitDocInner data={data} />;
+}
+
+function StrategyPages({ kit, headingFam, bodyFam, bodyBoldFam, primary, accent, coverInk }: {
+  kit: NonNullable<BrandKitData["kit"]>;
+  headingFam: string;
+  bodyFam: string;
+  bodyBoldFam: string;
+  primary: string;
+  accent: string;
+  coverInk: string;
+}) {
+  const arche = kit.archetype ?? {};
+  const voice = kit.voice ?? {};
+  const icp = kit.icp ?? {};
+  const messages = Array.isArray(kit.key_messages) ? kit.key_messages : [];
+  const pillars = kit.pillars ?? {};
+  const supporting = Array.isArray(pillars.supporting) ? pillars.supporting : [];
+  const attrs = Array.isArray(voice.attributes) ? voice.attributes : [];
+  const nevers = Array.isArray(voice.never_use) ? voice.never_use : [];
+
+  const icpRows: [string, string | undefined][] = [
+    ["Revenue floor", icp.revenue_floor],
+    ["Business type", icp.business_type],
+    ["Core pain", icp.core_pain],
+    ["Transformation", icp.transformation],
+  ];
+
+  return (
+    <>
+      {/* Archetype + Voice — one editorial page */}
+      <Page size="A4" style={s.page}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+          <Text style={s.eyebrow}>04  ·  ARCHETYPE & VOICE</Text>
+          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>HOW YOU SOUND</Text>
+        </View>
+        <View style={s.divider} />
+
+        <Text style={{ fontSize: 32, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>
+          Your archetype.
+        </Text>
+        <Text style={{ fontSize: 11, color: C.muted, marginBottom: 18, lineHeight: 1.5, fontFamily: bodyFam }}>
+          The story pattern your brand belongs to. Everything else is a downstream expression of this.
+        </Text>
+
+        <View style={{ backgroundColor: C.ink, padding: 22, borderRadius: 4, marginBottom: 22 }}>
+          <Text style={{ fontSize: 9, color: accent, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>PRIMARY  ·  SECONDARY</Text>
+          <Text style={{ fontSize: 30, color: C.white, fontFamily: headingFam, letterSpacing: -0.6, marginBottom: 4 }}>
+            {arche.primary || "—"}
+          </Text>
+          <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: bodyFam, marginBottom: 14 }}>
+            with {arche.secondary || "—"}
+          </Text>
+          {arche.description ? (
+            <Text style={{ fontSize: 11, color: "rgba(255,255,255,0.9)", fontFamily: bodyFam, lineHeight: 1.6 }}>
+              {arche.description}
+            </Text>
+          ) : null}
+        </View>
+
+        <View style={{ flexDirection: "row", gap: 14 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 10 }}>VOICE ATTRIBUTES</Text>
+            {attrs.length ? attrs.map((a, i) => (
+              <View key={i} style={{ borderLeftWidth: 2, borderLeftColor: accent, backgroundColor: C.white, padding: "8px 12px", marginBottom: 6, borderRadius: 3 }}>
+                <Text style={{ fontSize: 11, color: C.ink, fontFamily: bodyBoldFam }}>{a}</Text>
+              </View>
+            )) : <Text style={{ fontSize: 10, color: C.muted, fontFamily: bodyFam }}>Not provided.</Text>}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 10 }}>NEVER USE</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {nevers.length ? nevers.map((n, i) => (
+                <Text key={i} style={{ fontSize: 10, color: C.muted, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: "3px 10px", textDecoration: "line-through" }}>
+                  {n}
+                </Text>
+              )) : <Text style={{ fontSize: 10, color: C.muted, fontFamily: bodyFam }}>Not provided.</Text>}
+            </View>
+          </View>
+        </View>
+        <Footer />
+      </Page>
+
+      {/* ICP */}
+      <Page size="A4" style={s.page}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+          <Text style={s.eyebrow}>05  ·  IDEAL CLIENT</Text>
+          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>WHO YOU SERVE</Text>
+        </View>
+        <View style={s.divider} />
+        <Text style={{ fontSize: 32, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>
+          Your buyer.
+        </Text>
+        <Text style={{ fontSize: 11, color: C.muted, marginBottom: 22, lineHeight: 1.5, fontFamily: bodyFam }}>
+          The specific human this brand is built for. Use these details to keep every message aimed.
+        </Text>
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+          {icpRows.map(([label, value], i) => (
+            <View key={label} style={{ width: "50%", padding: 6 }} wrap={false}>
+              <View style={{ backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 16, minHeight: 110 }}>
+                <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
+                  0{i + 1}  ·  {label.toUpperCase()}
+                </Text>
+                <Text style={{ fontSize: 13, color: C.ink, fontFamily: bodyBoldFam, lineHeight: 1.45 }}>
+                  {value?.trim() ? value : "Not provided."}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+        <Footer />
+      </Page>
+
+      {/* Key messages + Content pillars */}
+      <Page size="A4" style={s.page}>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+          <Text style={s.eyebrow}>06  ·  MESSAGES & PILLARS</Text>
+          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>WHAT YOU SAY</Text>
+        </View>
+        <View style={s.divider} />
+
+        <Text style={{ fontSize: 32, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>
+          Your messages.
+        </Text>
+        <Text style={{ fontSize: 11, color: C.muted, marginBottom: 14, lineHeight: 1.5, fontFamily: bodyFam }}>
+          Paste-ready copy for bios, pitches, and hero sections. Say these often.
+        </Text>
+        {messages.length ? messages.map((m, i) => (
+          <View key={i} style={{ backgroundColor: C.white, borderLeftWidth: 3, borderLeftColor: accent, borderRadius: 4, padding: "12px 16px", marginBottom: 8 }} wrap={false}>
+            <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5, fontFamily: "Helvetica-Bold", marginBottom: 4 }}>
+              0{i + 1}
+            </Text>
+            <Text style={{ fontSize: 13, color: C.ink, fontFamily: bodyFam, lineHeight: 1.5 }}>
+              {m}
+            </Text>
+          </View>
+        )) : <Text style={{ fontSize: 10, color: C.muted, fontFamily: bodyFam }}>Not provided.</Text>}
+
+        <View style={{ marginTop: 26, marginBottom: 14, flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.ink, opacity: 0.8 }} />
+          <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 3, fontFamily: "Helvetica-Bold" }}>PILLARS</Text>
+          <View style={{ flex: 1, height: 1, backgroundColor: C.ink, opacity: 0.8 }} />
+        </View>
+
+        <Text style={{ fontSize: 22, color: C.ink, fontFamily: headingFam, marginBottom: 12, letterSpacing: -0.5 }}>
+          Your content pillars.
+        </Text>
+
+        {pillars.primary ? (
+          <View style={{ backgroundColor: primary, padding: 16, borderRadius: 4, marginBottom: 12 }}>
+            <Text style={{ fontSize: 8, color: coverInk, opacity: 0.75, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 4 }}>PRIMARY PILLAR</Text>
+            <Text style={{ fontSize: 18, color: coverInk, fontFamily: headingFam, letterSpacing: -0.3 }}>{pillars.primary}</Text>
+          </View>
+        ) : null}
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          {supporting.length ? supporting.map((p, i) => (
+            <Text key={i} style={{ fontSize: 11, color: C.ink, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: "5px 12px" }}>
+              {p}
+            </Text>
+          )) : <Text style={{ fontSize: 10, color: C.muted, fontFamily: bodyFam }}>Supporting pillars not provided.</Text>}
+        </View>
+        <Footer />
+      </Page>
+    </>
+  );
+}
+
+function BrandKitDocInner({ data }: { data: BrandKitData }) {
   const safeHost = (() => {
     try {
       return new URL(data.websiteUrl.startsWith("http") ? data.websiteUrl : `https://${data.websiteUrl}`).hostname;
