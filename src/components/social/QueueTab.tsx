@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
   Trash2, CloudUpload, Check, Video, Sparkles, CalendarPlus, Lightbulb, CalendarDays, RefreshCw,
-  RotateCcw, X, Loader2, ImagePlus, Search,
+  RotateCcw, X, Loader2, ImagePlus, Search, MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
