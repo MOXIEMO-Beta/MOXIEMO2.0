@@ -205,7 +205,10 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         const first = arr[0];
         if (!first || typeof first !== "string") continue;
         if (thumbUrls[p.id]) continue;
-        const url = await signAssetUrl({ url: first, filename: null });
+        // `first` is a storage path (e.g. "userId/1234-pexels.jpg"). Pass it as
+        // `filename` so storagePathOf() recognizes it and we produce a signed URL
+        // instead of returning the raw path (which renders as a broken image).
+        const url = await signAssetUrl({ url: first, filename: first });
         if (url) entries.push([p.id, url]);
       }
       if (!cancelled && entries.length) {
@@ -445,8 +448,14 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
             return (
               <div key={post.id}>
                 <div
-                  className="group flex items-start gap-2.5 mb-2"
-                  style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "14px 16px" }}
+                  className="group flex items-center gap-2.5 mb-2"
+                  style={{
+                    background: "#fff",
+                    border: "0.5px solid #ECEAE5",
+                    borderRadius: 12,
+                    padding: hasMedia ? "14px 16px" : "14px 16px",
+                    minHeight: hasMedia ? 96 : 56,
+                  }}
                   draggable
                   onDragStart={() => onDragStart(post.id)}
                   onDragOver={onDragOver}
@@ -458,8 +467,19 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     <Icon size={15} color={meta.color} />
                   </div>
                   {thumb && (
-                    <img src={thumbUrls[post.id] ?? thumb} alt="" className="flex-shrink-0"
-                      style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover", border: "0.5px solid #ECEAE5" }} />
+                    <img
+                      src={thumbUrls[post.id] ?? thumb}
+                      alt=""
+                      className="flex-shrink-0"
+                      style={{
+                        width: 72,
+                        height: 72,
+                        borderRadius: 8,
+                        objectFit: "cover",
+                        border: "0.5px solid #ECEAE5",
+                        background: "#F0EFEC",
+                      }}
+                    />
                   )}
                   <div className="flex-1 min-w-0">
                     <div
