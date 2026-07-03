@@ -1061,12 +1061,63 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 }
 function Divider() { return <div style={{ height: 1, background: BORDER, margin: "16px 0" }} />; }
 
-function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets, kitOwnerId }: any) {
-  const brandName = strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand";
+function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets, kitOwnerId, kit }: any) {
+  const brandName = kit?.brand_name || strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand";
   const generatedAt = "Jun 22, 2026";
 
   const palette = (colors && colors.length ? colors : ["#0E0F10", "#E85A46", "#F7F5F1", "#B8C5A6"]).slice(0, 4);
   const fontName = fonts?.[0] || "Space Grotesk";
+
+  const archetypePrimary = kit?.archetype?.primary || "The Magician";
+  const archetypeSecondary = kit?.archetype?.secondary || "Creator";
+  const archetypeDescription = kit?.archetype?.description || "Transforms chaos into clarity, complexity into autonomy. Promises to turn a founder's vision into reality through a system that feels effortless.";
+  const voiceAttrs: string[] = Array.isArray(kit?.voice?.attributes) && kit.voice.attributes.length
+    ? kit.voice.attributes
+    : ["Clear and Direct", "Empowering, Not Overwhelming", "Strategic, Not Salesy", "Honest and Specific"];
+  const neverUse: string[] = Array.isArray(kit?.voice?.never_use) && kit.voice.never_use.length
+    ? kit.voice.never_use
+    : ["Em-Dashes", "Contractions in Formal Copy", "Filler Phrases"];
+  const icpRows: [string, string][] = [
+    ["Revenue Floor", kit?.icp?.revenue_floor || "$250K+ annually"],
+    ["Business Type", kit?.icp?.business_type || "Expertise-based, founder-led"],
+    ["Core Pain", kit?.icp?.core_pain || "20+ hrs/week on reactive marketing with no strategy"],
+    ["Transformation", kit?.icp?.transformation || "From tool chaos to 1 platform, 2 hrs/week"],
+  ];
+  const keyMessages: string[] = Array.isArray(kit?.key_messages) && kit.key_messages.length
+    ? kit.key_messages
+    : [
+        "You built a real business. Your marketing should match.",
+        "Strategy first. Always. Then content that actually works.",
+        "One platform. 18 hours back. Revenue that moves.",
+      ];
+  const primaryPillar = kit?.pillars?.primary || "Strategy-First Marketing";
+  const supportingPillars: string[] = Array.isArray(kit?.pillars?.supporting) && kit.pillars.supporting.length
+    ? kit.pillars.supporting
+    : ["Founder Wins & Beta Stories", "Platform Transparency & Product Updates", "Founder Efficiency Hacks", "Market Positioning & Differentiation"];
+
+  const [dlBusy, setDlBusy] = useState(false);
+  const handleDownload = async () => {
+    setDlBusy(true);
+    try {
+      const data: BrandKitData = {
+        siteName: brandName,
+        websiteUrl: profile?.website_url ?? "",
+        logo: logoUrl ?? undefined,
+        colors: palette.map((hex: string, i: number) => ({ hex, rgb: "", role: i === 0 ? "Primary" : i === 1 ? "Accent" : `Support ${i - 1}` })),
+        fonts: { heading: fontName, body: fonts?.[1] || fontName },
+        imagery: [],
+      };
+      const blob = await generateBrandKitPdf(data);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${brandName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "brand"}-brand-kit.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e: any) {
+      toast({ title: "PDF export failed", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setDlBusy(false); }
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1079,7 +1130,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <ShareControls documentType="brand-kit" sourceId={kitOwnerId} dark />
-          <button style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, cursor: "pointer" }}>Download PDF</button>
+          <button onClick={handleDownload} disabled={dlBusy} style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, cursor: dlBusy ? "not-allowed" : "pointer", opacity: dlBusy ? 0.6 : 1 }}>{dlBusy ? "Preparing…" : "Download PDF"}</button>
         </div>
       </div>
 
@@ -1094,12 +1145,12 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
               <Wand2 size={24} color={CORAL} />
             </div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: INK }}>The Magician</div>
-              <div style={{ fontSize: 12, color: MUTED }}>Secondary: Creator</div>
+              <div style={{ fontSize: 18, fontWeight: 700, color: INK }}>{archetypePrimary}</div>
+              <div style={{ fontSize: 12, color: MUTED }}>Secondary: {archetypeSecondary}</div>
             </div>
           </div>
           <p style={{ fontSize: 13, color: MUTED, lineHeight: 1.6, marginTop: 10 }}>
-            Transforms chaos into clarity, complexity into autonomy. Promises to turn a founder's vision into reality through a system that feels effortless.
+            {archetypeDescription}
           </p>
         </KitCard>
 
@@ -1107,19 +1158,14 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         <KitCard>
           <CopyPill />
           <div style={{ fontSize: 11, color: FAINT, marginBottom: 8 }}>Use these to brief anyone writing for your brand.</div>
-          {[
-            "Clear and Direct",
-            "Empowering, Not Overwhelming",
-            "Strategic, Not Salesy",
-            "Honest and Specific",
-          ].map((v) => (
+          {voiceAttrs.map((v: string) => (
             <div key={v} style={{ borderLeft: `2px solid ${CORAL}`, background: "#FAFAF8", borderRadius: 6, padding: "8px 12px", fontSize: 13, color: INK, marginBottom: 4 }}>
               {v}
             </div>
           ))}
           <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT, marginTop: 12, marginBottom: 6 }}>Never Use</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {["Em-Dashes", "Contractions in Formal Copy", "Filler Phrases"].map((v) => (
+            {neverUse.map((v: string) => (
               <span key={v} style={{ background: "#F0EFEC", borderRadius: 20, padding: "3px 10px", fontSize: 11, color: FAINT, textDecoration: "line-through" }}>{v}</span>
             ))}
           </div>
@@ -1130,12 +1176,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
           <CopyPill />
           <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 10 }}>Ideal Client Profile</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {[
-              ["Revenue Floor", "$250K+ annually"],
-              ["Business Type", "Expertise-based, founder-led"],
-              ["Core Pain", "20+ hrs/week on reactive marketing with no strategy"],
-              ["Transformation", "From tool chaos to 1 platform, 2 hrs/week"],
-            ].map(([l, v]) => (
+            {icpRows.map(([l, v]) => (
               <div key={l} style={{ background: "#F7F5F1", borderRadius: 8, padding: "10px 12px" }}>
                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT, letterSpacing: "0.06em" }}>{l}</div>
                 <div style={{ fontSize: 13, fontWeight: 500, color: INK, lineHeight: 1.4, marginTop: 2 }}>{v}</div>
@@ -1149,11 +1190,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
           <CopyPill />
           <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 8 }}>Key Messages</div>
           <div style={{ fontSize: 11, color: FAINT, marginBottom: 8 }}>Use across bio, pitches, and onboarding copy.</div>
-          {[
-            "You built a real business. Your marketing should match.",
-            "Strategy first. Always. Then content that actually works.",
-            "One platform. 18 hours back. Revenue that moves.",
-          ].map((q) => (
+          {keyMessages.map((q: string) => (
             <div key={q} style={{ background: "#F7F5F1", borderLeft: `2.5px solid ${CORAL}`, borderRadius: "0 8px 8px 0", padding: "10px 14px", fontSize: 13, color: INK, lineHeight: 1.5, marginBottom: 6 }}>
               {q}
             </div>
@@ -1165,8 +1202,8 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
           <CopyPill />
           <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 10 }}>Content Pillars</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            <span style={{ background: INK, color: "#fff", borderRadius: 20, padding: "6px 16px", fontSize: 13, fontWeight: 600 }}>Strategy-First Marketing</span>
-            {["Founder Wins & Beta Stories", "Platform Transparency & Product Updates", "Founder Efficiency Hacks", "Market Positioning & Differentiation"].map((p) => (
+            <span style={{ background: INK, color: "#fff", borderRadius: 20, padding: "6px 16px", fontSize: 13, fontWeight: 600 }}>{primaryPillar}</span>
+            {supportingPillars.map((p: string) => (
               <span key={p} style={{ background: "#FEF1EE", color: CORAL, borderRadius: 20, padding: "6px 16px", fontSize: 13, fontWeight: 500 }}>{p}</span>
             ))}
           </div>
@@ -1208,7 +1245,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button style={pill()} onClick={goAssets}>View in Assets</button>
-          <button style={pill()}>Download PDF</button>
+          <button style={pill()} onClick={handleDownload} disabled={dlBusy}>{dlBusy ? "Preparing…" : "Download PDF"}</button>
           <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
           <button style={pill(true)} onClick={() => setStep("visual")}>↺ Regenerate Kit</button>
         </div>
