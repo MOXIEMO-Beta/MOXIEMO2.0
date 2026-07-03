@@ -627,6 +627,9 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   const [stockResults, setStockResults] = useState<Array<{ id: number; thumbnailUrl: string; fullUrl: string; photographer: string }>>([]);
   const [stockLoading, setStockLoading] = useState(false);
   const [attachingId, setAttachingId] = useState<number | null>(null);
+  const [recommended, setRecommended] = useState<Array<{ id: number; thumbnailUrl: string; fullUrl: string; photographer: string }>>([]);
+  const [recLoading, setRecLoading] = useState(false);
+  const [recAvailable, setRecAvailable] = useState<boolean | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -645,6 +648,78 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       setSigned(Object.fromEntries(pairs));
     })();
   }, [userId]);
+
+  // Load cached recommendations (or check strategy availability) when Stock tab opens
+  useEffect(() => {
+    if (tab !== "stock" || !userId) return;
+    let cancelled = false;
+    (async () => {
+      // Determine if we have enhanced_foundation for this user
+      const { data: strat } = await supabase
+        .from("strategies").select("enhanced_foundation").eq("user_id", userId).maybeSingle();
+      const ef = (strat as any)?.enhanced_foundation;
+      const hasStrategy = ef && typeof ef === "object" && Object.keys(ef).length > 0;
+      if (cancelled) return;
+      setRecAvailable(hasStrategy);
+      if (!hasStrategy) return;
+
+      const { data: cache } = await supabase
+        .from("brand_image_cache")
+        .select("images_json, generated_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (cancelled) return;
+      const stale = !cache || (Date.now() - new Date((cache as any).generated_at).getTime()) > 7 * 24 * 60 * 60 * 1000;
+      if (cache && !stale) {
+        setRecommended((((cache as any).images_json ?? []) as any[]).map((p) => ({
+          id: p.id, thumbnailUrl: p.thumbnailUrl, fullUrl: p.fullUrl, photographer: p.photographer,
+        })));
+      } else {
+        await generateRecommended(false);
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, userId]);
+
+  async function generateRecommended(force: boolean) {
+    setRecLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (force) {
+        await supabase.from("brand_image_cache").delete().eq("user_id", userId);
+      }
+      const { data, error } = await supabase.functions.invoke("generate-brand-images", {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        body: { refresh: force },
+      });
+      if (error) throw error;
+      const imgs = ((data as any)?.images ?? []) as any[];
+      setRecommended(imgs.map((p) => ({
+        id: p.id, thumbnailUrl: p.thumbnailUrl, fullUrl: p.fullUrl, photographer: p.photographer,
+      })));
+      if (force) toast.success("Recommendations refreshed");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't generate recommendations");
+    } finally { setRecLoading(false); }
+  }
+
+  function editInCanva(fullUrl: string) {
+    // Fallback handoff: download image locally, then open a blank Canva design.
+    // Canva has no public no-auth URL scheme that reliably pre-loads an external image asset.
+    try {
+      const a = document.createElement("a");
+      a.href = fullUrl;
+      a.download = "moxiemo-image.jpg";
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch { /* noop */ }
+    window.open("https://www.canva.com/create/", "_blank", "noopener,noreferrer");
+    toast.info("Image downloaded — upload it in Canva to start designing");
+  }
 
   async function handleUpload(file: File) {
     setUploading(true);
@@ -771,6 +846,66 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         </div>
       ) : tab === "stock" ? (
         <div className="mt-3">
+          {/* Recommended for your brand — strategy-aware curated row */}
+          {recAvailable !== false && (
+            <div style={{ marginBottom: 14 }}>
+              <div className="flex items-center gap-1.5" style={{ marginBottom: 2 }}>
+                <Sparkles size={13} color="#E85A46" />
+                <span style={{ fontSize: 12, fontWeight: 600, color: "#0E0F10" }}>Recommended for your brand</span>
+              </div>
+              <p style={{ fontSize: 11, color: "#6B6860", margin: "0 0 8px 0" }}>
+                Based on your positioning, aesthetic, and industry — no search needed.
+              </p>
+              {recLoading ? (
+                <div className="flex items-center gap-1.5" style={{ fontSize: 11, color: "#9A9896" }}>
+                  <Loader2 size={12} className="animate-spin" /> Curating imagery…
+                </div>
+              ) : recommended.length === 0 ? (
+                <div style={{ fontSize: 11, color: "#9A9896" }}>
+                  No recommendations yet.{" "}
+                  <button onClick={() => generateRecommended(true)} style={{ color: "#E85A46", fontWeight: 600 }}>
+                    Generate now
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-4 gap-2">
+                    {recommended.map((photo) => (
+                      <PhotoCard
+                        key={photo.id}
+                        photo={photo}
+                        attaching={attachingId === photo.id}
+                        onAttach={() => attachStockPhoto(photo)}
+                        onCanva={() => editInCanva(photo.fullUrl)}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center justify-between" style={{ marginTop: 6 }}>
+                    <span style={{ fontSize: 10, color: "#9A9896" }}>Photos provided by Pexels</span>
+                    <button
+                      onClick={() => generateRecommended(true)}
+                      disabled={recLoading}
+                      className="inline-flex items-center gap-1"
+                      style={{
+                        fontSize: 11, color: "#6B6860", background: "transparent",
+                        border: "0.5px solid #ECEAE5", borderRadius: 14, padding: "3px 10px",
+                      }}
+                    >
+                      <RefreshCw size={10} /> Refresh
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          {recAvailable === false && (
+            <div style={{
+              fontSize: 11, color: "#6B6860", background: "#fff",
+              border: "0.5px solid #ECEAE5", borderRadius: 8, padding: "8px 10px", marginBottom: 14,
+            }}>
+              Complete your strategy to unlock brand-matched image recommendations.
+            </div>
+          )}
           <div className="flex gap-2 mb-3">
             <input
               value={stockQuery}
@@ -804,23 +939,13 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
           )}
           <div className="grid grid-cols-4 gap-2">
             {stockResults.map((photo) => (
-              <div key={photo.id} className="relative group overflow-hidden"
-                style={{ aspectRatio: "1", borderRadius: 10, cursor: "pointer" }}>
-                <img src={photo.thumbnailUrl} alt=""
-                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-                <div className="absolute inset-0 flex items-end justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ background: "rgba(15,17,20,0.45)", padding: 8 }}>
-                  <button
-                    onClick={() => attachStockPhoto(photo)}
-                    disabled={attachingId === photo.id}
-                    style={{
-                      fontSize: 10, fontWeight: 600, padding: "5px 9px",
-                      borderRadius: 14, background: "#E85A46", color: "#fff",
-                      border: "none", cursor: "pointer",
-                    }}
-                  >{attachingId === photo.id ? "Adding…" : "Add to post"}</button>
-                </div>
-              </div>
+              <PhotoCard
+                key={photo.id}
+                photo={photo}
+                attaching={attachingId === photo.id}
+                onAttach={() => attachStockPhoto(photo)}
+                onCanva={() => editInCanva(photo.fullUrl)}
+              />
             ))}
           </div>
           <div style={{ fontSize: 10, color: "#9A9896", textAlign: "right", marginTop: 4 }}>
