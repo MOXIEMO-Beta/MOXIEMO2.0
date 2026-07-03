@@ -871,11 +871,11 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         <div className="flex gap-2">
           <button onClick={onClose} className="text-[12px]"
             style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 14px", color: "#6B6860" }}>Cancel</button>
-          <button onClick={attach} disabled={!selected || tab === "colors"} className="text-[12px] font-semibold"
+          <button onClick={attach} disabled={!selected || tab === "colors" || tab === "stock"} className="text-[12px] font-semibold"
             style={{
               background: "#E85A46", color: "#fff",
               borderRadius: 20, padding: "5px 14px",
-              opacity: !selected || tab === "colors" ? 0.5 : 1,
+              opacity: !selected || tab === "colors" || tab === "stock" ? 0.5 : 1,
             }}>Attach to post</button>
         </div>
       </div>
