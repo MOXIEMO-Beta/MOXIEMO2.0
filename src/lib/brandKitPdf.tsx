@@ -11,6 +11,17 @@ export type BrandKitData = {
   fonts: { heading: string; body: string };
   imagery: string[];
   images?: string[]; // optional user-uploaded image data URLs
+  // Optional strategic content — populated from the generated brand_kit row.
+  // When present, the PDF adds Archetype, Voice, ICP, Messages, and Pillars
+  // pages so the export matches the live in-app Brand Kit view.
+  kit?: {
+    brand_name?: string;
+    archetype?: { primary?: string; secondary?: string; description?: string };
+    voice?: { attributes?: string[]; never_use?: string[] };
+    icp?: { revenue_floor?: string; business_type?: string; core_pain?: string; transformation?: string };
+    key_messages?: string[];
+    pillars?: { primary?: string; supporting?: string[] };
+  } | null;
 };
 
 const C = {
