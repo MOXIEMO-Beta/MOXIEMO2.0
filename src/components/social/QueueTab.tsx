@@ -111,7 +111,18 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   const [composeOpen, setComposeOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
-  const [suggestion, setSuggestion] = useState<{ pillar: string; angle: string; platform?: string } | null>(null);
+  type GuidedQuestion = { label: string; hint?: string };
+  type Suggestion = {
+    pillar: string;
+    angle: string;
+    platform?: string;
+    anecdoteRequired?: boolean;
+    guidedQuestions?: GuidedQuestion[];
+  };
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
+  const [guidedOpen, setGuidedOpen] = useState(false);
+  const [guidedResult, setGuidedResult] = useState<{ post: string; answers: Record<string, string> } | null>(null);
+  const [guidedLoading, setGuidedLoading] = useState(false);
   const [suggestionDismissed, setSuggestionDismissed] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
