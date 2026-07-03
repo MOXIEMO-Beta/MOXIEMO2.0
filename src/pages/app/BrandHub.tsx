@@ -157,6 +157,7 @@ export default function BrandHub() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [strategy, setStrategy] = useState<any>(null);
+  const [latestAuditId, setLatestAuditId] = useState<string | null>(null);
   const [hubVisited, setHubVisited] = useState(false);
   const [tab, setTab] = useState<BrandTab>("welcome");
   const [auditStep, setAuditStep] = useState<AuditStep>("prompt");
@@ -166,17 +167,25 @@ export default function BrandHub() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [p, s] = await Promise.all([
+      const [p, s, a] = await Promise.all([
         supabase
           .from("profiles")
           .select("website_url, brand_hub_visited, brand_colors, brand_logo_url, brand_fonts, business_name, full_name")
           .eq("id", user.id)
           .maybeSingle(),
         supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase
+          .from("audits")
+          .select("id")
+          .eq("inputs->>user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
       const prof: any = p.data ?? {};
       setProfile(prof);
       setStrategy(s.data);
+      setLatestAuditId((a as any)?.data?.id ?? null);
       const visited = !!prof.brand_hub_visited;
       setHubVisited(visited);
       if (visited) {
@@ -261,6 +270,7 @@ export default function BrandHub() {
             setProfile={setProfile}
             userId={user?.id}
             goAssets={() => setTab("assets")}
+            latestAuditId={latestAuditId}
           />
         )}
         {tab === "kit" && (
@@ -279,6 +289,9 @@ export default function BrandHub() {
             goAuditResults={() => { setTab("audit"); setAuditStep("results"); }}
             goAuditPrompt={() => { setTab("audit"); setAuditStep("prompt"); }}
             goKitVisual={() => { setTab("kit"); setKitStep("visual"); }}
+            strategyId={strategy?.id ?? null}
+            kitOwnerId={user?.id ?? null}
+            latestAuditId={latestAuditId}
           />
         )}
       </div>
