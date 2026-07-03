@@ -810,7 +810,7 @@ function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: st
 
 /* -------------------- Brand Kit -------------------- */
 function KitPanel({
-  step, setStep, profile, setProfile, strategy, userId, goAssets,
+  step, setStep, profile, setProfile, strategy, userId, goAssets, latestKit, onNewKit,
 }: any) {
   const [url, setUrl] = useState<string>(profile?.website_url ?? "");
   const [colors, setColors] = useState<string[]>(
@@ -825,12 +825,38 @@ function KitPanel({
   );
   const [logoUrl, setLogoUrl] = useState<string | null>(profile?.brand_logo_url ?? null);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [genError, setGenError] = useState<string | null>(null);
+  const [kit, setKit] = useState<any>(latestKit?.kit_json ?? null);
+  const [kitId, setKitId] = useState<string | null>(latestKit?.id ?? null);
+
+  useEffect(() => {
+    if (latestKit?.kit_json && !kit) {
+      setKit(latestKit.kit_json);
+      setKitId(latestKit.id);
+    }
+  }, [latestKit, kit]);
 
   useEffect(() => {
     if (step !== "generating") return;
-    const t = setTimeout(() => setStep("kit"), 2400);
-    return () => clearTimeout(t);
-  }, [step, setStep]);
+    let cancelled = false;
+    (async () => {
+      setGenError(null);
+      try {
+        const { data, error } = await supabase.functions.invoke("generate-brand-kit", { body: {} });
+        if (cancelled) return;
+        if (error) throw error;
+        if (!data?.kit) throw new Error(data?.error || "Kit generation returned no content");
+        setKit(data.kit);
+        setKitId(data.kit_id ?? null);
+        onNewKit?.({ id: data.kit_id, kit_json: data.kit });
+        setStep("kit");
+      } catch (e: any) {
+        if (cancelled) return;
+        setGenError(String(e?.message ?? e));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [step, setStep, onNewKit]);
 
   async function handleLogo(file: File) {
     if (!userId) return;
@@ -980,22 +1006,39 @@ function KitPanel({
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
         <div style={{ ...card, maxWidth: 480, width: "100%", padding: 32, textAlign: "center" }}>
-          <div style={{ width: 40, height: 40, border: `3px solid ${BORDER}`, borderTopColor: CORAL, borderRadius: "50%", margin: "0 auto", animation: "brand-hub-spin 0.9s linear infinite" }} />
-          <h3 style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 16 }}>Building Your Brand Kit…</h3>
-          <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Combining your strategy with your visual assets</div>
-          <div style={{ marginTop: 20, maxWidth: 320, marginLeft: "auto", marginRight: "auto", textAlign: "left" }}>
-            <ChecklistRow status="done" label="Voice data loaded from your strategy" />
-            <ChecklistRow status="done" label="Visual assets confirmed" />
-            <ChecklistRow status="active" label="Writing narrative sections…" />
-            <ChecklistRow status="idle" label="Assembling final document" />
-          </div>
+          {genError ? (
+            <>
+              <div style={{ width: 48, height: 48, borderRadius: 12, background: "#FEF1EE", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                <ShieldCheck size={24} color={CORAL} />
+              </div>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 16 }}>Could not generate your kit</h3>
+              <p style={{ fontSize: 13, color: MUTED, marginTop: 6, lineHeight: 1.6 }}>{genError}</p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 18 }}>
+                <button type="button" onClick={() => setStep("visual")} style={pill(false)}>Back</button>
+                <button type="button" onClick={() => { setGenError(null); setStep("visual"); setTimeout(() => setStep("generating"), 0); }}
+                  style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Retry</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ width: 40, height: 40, border: `3px solid ${BORDER}`, borderTopColor: CORAL, borderRadius: "50%", margin: "0 auto", animation: "brand-hub-spin 0.9s linear infinite" }} />
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 16 }}>Building Your Brand Kit…</h3>
+              <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Combining your strategy with your visual assets</div>
+              <div style={{ marginTop: 20, maxWidth: 320, marginLeft: "auto", marginRight: "auto", textAlign: "left" }}>
+                <ChecklistRow status="done" label="Voice data loaded from your strategy" />
+                <ChecklistRow status="done" label="Visual assets confirmed" />
+                <ChecklistRow status="active" label="Writing narrative sections…" />
+                <ChecklistRow status="idle" label="Assembling final document" />
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
   }
 
   // kit
-  return <KitDocument profile={profile} strategy={strategy} colors={colors} logoUrl={logoUrl} fonts={fonts} setStep={setStep} goAssets={goAssets} kitOwnerId={userId} />;
+  return <KitDocument profile={profile} strategy={strategy} colors={colors} logoUrl={logoUrl} fonts={fonts} setStep={setStep} goAssets={goAssets} kitOwnerId={kitId} kit={kit} />;
 }
 
 function StepPill({ index, label, state }: { index: number; label: string; state: "done" | "active" | "idle" }) {
