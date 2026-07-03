@@ -357,7 +357,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
             return (
               <div key={post.id}>
                 <div
-                  className="group flex items-center gap-2.5 mb-2"
+                  className="group flex items-start gap-2.5 mb-2"
                   style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "14px 16px" }}
                   draggable
                   onDragStart={() => onDragStart(post.id)}
