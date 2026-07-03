@@ -14,7 +14,6 @@ import {
   Trash2,
   Send,
   Pencil,
-  AlertTriangle,
   SlidersHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
