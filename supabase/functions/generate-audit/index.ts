@@ -994,6 +994,42 @@ serve(async (req) => {
     let issues: ValidationFailure[] = [];
     let rawReport: any = null;
     const factsBlock = buildFactsBlock(payload);
+    // If a signed-in user ran this audit, their strategy foundation is on the
+    // payload. Steer Vera to treat it as the internal truth-of-brand while the
+    // scraped signals remain the external truth-of-presence — the gap between
+    // the two is the audit.
+    const sf: any = payload?.strategy_foundation ?? null;
+    const hasStrategy = sf && typeof sf === "object" && (
+      sf.enhanced_foundation || sf.ideal_client || sf.pain_point || sf.differentiation || sf.voice_attributes
+    );
+    const strategyAddendum = hasStrategy
+      ? `STRATEGY FOUNDATION (INTERNAL TRUTH-OF-BRAND, AUTHORITATIVE)
+The payload includes strategy_foundation. This is the founder's own documented
+strategy inside MOXIEMO: ICP, pain point, differentiation, voice attributes,
+transformation, and (in enhanced_foundation) any further defined positioning,
+archetype, pillars, and messaging.
+
+Treat strategy_foundation as the internal truth of what this brand intends to
+be. Treat the scraped signals as the external truth of how the brand is
+actually showing up. The audit is the gap between the two.
+
+Consequences:
+- Judge Positioning & Differentiation against the strategy's stated position,
+  not just what the site says on its own. Reward alignment. Name divergence
+  where the site drifts from the documented ICP, pain point, or differentiation.
+- Judge Messaging & Voice against the documented voice_attributes. If the site
+  copy contradicts the stated voice, name the specific contradiction.
+- Judge Purpose & Values and Brand Story against enhanced_foundation, when
+  present, before falling back to "we could not find this."
+- In the advisor_overview.read, name the gap between strategy and presence
+  explicitly (one sentence is enough): "your strategy says X, your presence
+  reads Y."
+- Never invent strategy specifics. If a field is empty or missing on
+  strategy_foundation, do not fabricate it.`
+      : "";
+    const veraExtraSystem = strategyAddendum
+      ? `${factsBlock}\n\n${strategyAddendum}`
+      : factsBlock;
 
     if (debugForce !== undefined) {
       report = debugForce;
@@ -1008,8 +1044,8 @@ serve(async (req) => {
         req,
         payload,
         previousValidationError
-          ? `${factsBlock}\n\n${buildValidationRepairNote([previousValidationError], "previous generation")}`
-          : factsBlock,
+          ? `${veraExtraSystem}\n\n${buildValidationRepairNote([previousValidationError], "previous generation")}`
+          : veraExtraSystem,
       );
       report = parseModel(text1);
       rawReport = report ?? { _unparsed: text1 };
