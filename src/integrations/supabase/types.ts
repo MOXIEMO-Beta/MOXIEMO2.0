@@ -213,18 +213,21 @@ export type Database = {
           generated_at: string
           id: string
           images_json: Json
+          search_terms: Json | null
           user_id: string
         }
         Insert: {
           generated_at?: string
           id?: string
           images_json: Json
+          search_terms?: Json | null
           user_id: string
         }
         Update: {
           generated_at?: string
           id?: string
           images_json?: Json
+          search_terms?: Json | null
           user_id?: string
         }
         Relationships: []

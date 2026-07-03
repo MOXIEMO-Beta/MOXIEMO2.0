@@ -18,8 +18,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { query } = await req.json().catch(() => ({ query: "" }));
+    const { query, page } = await req.json().catch(() => ({ query: "", page: 1 }));
     const q = String(query ?? "").trim();
+    const pageNum = Math.max(1, Math.min(50, Number.isFinite(Number(page)) ? Number(page) : 1));
     if (!q) {
       return new Response(JSON.stringify({ results: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -27,7 +28,7 @@ Deno.serve(async (req) => {
     }
 
     const pexelsRes = await fetch(
-      `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=12`,
+      `https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=12&page=${pageNum}`,
       { headers: { Authorization: PEXELS_API_KEY } },
     );
     if (!pexelsRes.ok) {

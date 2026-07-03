@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
   GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
@@ -99,6 +99,7 @@ function toLocalInputValue(iso: string | null): string {
 
 export default function QueueTab({ userId, onChangeTab }: { userId: string | null; onChangeTab?: (t: string) => void }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [filter, setFilter] = useState<"all" | Platform>("all");
   const [loading, setLoading] = useState(true);
@@ -170,13 +171,21 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         .from("pillar_feed_cache").select("angles_json").eq("user_id", userId).maybeSingle();
       const list = ((data as any)?.angles_json?.angles ?? []) as Suggestion[];
       if (!Array.isArray(list) || list.length === 0) { setSuggestion(null); return; }
-      const counts: Record<string, number> = {};
-      posts.forEach((p) => { if (p.pillar) counts[p.pillar] = (counts[p.pillar] ?? 0) + 1; });
-      const sorted = [...list].sort((a, b) => (counts[a.pillar] ?? 0) - (counts[b.pillar] ?? 0));
-      const pick = sorted.find((s) => s.angle && !suggestionDismissed.has(s.angle)) ?? null;
+      const params = new URLSearchParams(location.search);
+      const requestedPillar = params.get("pillar");
+      let pick: Suggestion | null = null;
+      if (requestedPillar) {
+        pick = list.find((s) => s.pillar === requestedPillar && s.angle) ?? null;
+      }
+      if (!pick) {
+        const counts: Record<string, number> = {};
+        posts.forEach((p) => { if (p.pillar) counts[p.pillar] = (counts[p.pillar] ?? 0) + 1; });
+        const sorted = [...list].sort((a, b) => (counts[a.pillar] ?? 0) - (counts[b.pillar] ?? 0));
+        pick = sorted.find((s) => s.angle && !suggestionDismissed.has(s.angle)) ?? null;
+      }
       setSuggestion(pick);
     })();
-  }, [userId, posts, suggestionDismissed]);
+  }, [userId, posts, suggestionDismissed, location.search]);
 
   function dismissSuggestion(angle: string) {
     setSuggestionDismissed((prev) => {
@@ -803,10 +812,17 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   const [stockQuery, setStockQuery] = useState("");
   const [stockResults, setStockResults] = useState<Array<{ id: number; thumbnailUrl: string; fullUrl: string; photographer: string }>>([]);
   const [stockLoading, setStockLoading] = useState(false);
+  const [stockPage, setStockPage] = useState(1);
+  const [stockActiveQuery, setStockActiveQuery] = useState("");
+  const [stockLoadingMore, setStockLoadingMore] = useState(false);
   const [attachingId, setAttachingId] = useState<number | null>(null);
   const [recommended, setRecommended] = useState<Array<{ id: number; thumbnailUrl: string; fullUrl: string; photographer: string }>>([]);
   const [recLoading, setRecLoading] = useState(false);
   const [recAvailable, setRecAvailable] = useState<boolean | null>(null);
+  const [recSearchTerms, setRecSearchTerms] = useState<string[]>([]);
+  const [recPage, setRecPage] = useState(1);
+  const [recLoadingMore, setRecLoadingMore] = useState(false);
+  const REC_LOAD_MORE_CAP = 2;
 
   useEffect(() => {
     (async () => {
@@ -842,7 +858,7 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
 
       const { data: cache } = await supabase
         .from("brand_image_cache")
-        .select("images_json, generated_at")
+        .select("images_json, generated_at, search_terms")
         .eq("user_id", userId)
         .maybeSingle();
       if (cancelled) return;
@@ -851,6 +867,9 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         setRecommended((((cache as any).images_json ?? []) as any[]).map((p) => ({
           id: p.id, thumbnailUrl: p.thumbnailUrl, fullUrl: p.fullUrl, photographer: p.photographer,
         })));
+        const terms = ((cache as any).search_terms ?? []) as string[];
+        setRecSearchTerms(Array.isArray(terms) ? terms : []);
+        setRecPage(1);
       } else {
         await generateRecommended(false);
       }
@@ -875,10 +894,39 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       setRecommended(imgs.map((p) => ({
         id: p.id, thumbnailUrl: p.thumbnailUrl, fullUrl: p.fullUrl, photographer: p.photographer,
       })));
+      const terms = (((data as any)?.searchTerms ?? []) as any[]).map((t) => String(t)).filter(Boolean);
+      setRecSearchTerms(terms);
+      setRecPage(1);
       if (force) toast.success("Recommendations refreshed");
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't generate recommendations");
     } finally { setRecLoading(false); }
+  }
+
+  async function loadMoreRecommended() {
+    if (recSearchTerms.length === 0 || recPage >= 1 + REC_LOAD_MORE_CAP) return;
+    setRecLoadingMore(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const nextPage = recPage + 1;
+      const groups = await Promise.all(recSearchTerms.map(async (term) => {
+        const { data, error } = await supabase.functions.invoke("pexels-search", {
+          headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+          body: { query: term, page: nextPage },
+        });
+        if (error) return [];
+        return ((data as any)?.results ?? []) as any[];
+      }));
+      const seen = new Set(recommended.map((p) => p.id));
+      const additions: any[] = [];
+      groups.forEach((arr) => arr.forEach((p) => {
+        if (!seen.has(p.id)) { seen.add(p.id); additions.push(p); }
+      }));
+      setRecommended((prev) => [...prev, ...additions]);
+      setRecPage(nextPage);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't load more");
+    } finally { setRecLoadingMore(false); }
   }
 
   function editInCanva(fullUrl: string) {
@@ -941,13 +989,37 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke("pexels-search", {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
-        body: { query: q },
+        body: { query: q, page: 1 },
       });
       if (error) throw error;
       setStockResults(((data as any)?.results ?? []) as any);
+      setStockActiveQuery(q);
+      setStockPage(1);
     } catch (e: any) {
       toast.error(e?.message ?? "Search failed");
     } finally { setStockLoading(false); }
+  }
+
+  async function loadMoreStock() {
+    if (!stockActiveQuery) return;
+    setStockLoadingMore(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const nextPage = stockPage + 1;
+      const { data, error } = await supabase.functions.invoke("pexels-search", {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        body: { query: stockActiveQuery, page: nextPage },
+      });
+      if (error) throw error;
+      const more = ((data as any)?.results ?? []) as any[];
+      setStockResults((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        return [...prev, ...more.filter((p: any) => !seen.has(p.id))];
+      });
+      setStockPage(nextPage);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't load more");
+    } finally { setStockLoadingMore(false); }
   }
 
   async function attachStockPhoto(photo: { id: number; fullUrl: string }) {
@@ -1057,6 +1129,21 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
                       />
                     ))}
                   </div>
+                  {recSearchTerms.length > 0 && recPage < 1 + REC_LOAD_MORE_CAP && (
+                    <div className="flex justify-center" style={{ marginTop: 8 }}>
+                      <button
+                        onClick={loadMoreRecommended}
+                        disabled={recLoadingMore}
+                        style={{
+                          fontSize: 11, color: "#6B6860", background: "#fff",
+                          border: "0.5px solid #ECEAE5", borderRadius: 14, padding: "4px 14px",
+                          cursor: recLoadingMore ? "default" : "pointer",
+                        }}
+                      >
+                        {recLoadingMore ? "Loading…" : "Load more"}
+                      </button>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between" style={{ marginTop: 6 }}>
                     <span style={{ fontSize: 10, color: "#9A9896" }}>Photos provided by Pexels</span>
                     <button
@@ -1125,6 +1212,21 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
               />
             ))}
           </div>
+          {stockResults.length > 0 && stockActiveQuery && (
+            <div className="flex justify-center" style={{ marginTop: 8 }}>
+              <button
+                onClick={loadMoreStock}
+                disabled={stockLoadingMore}
+                style={{
+                  fontSize: 11, color: "#6B6860", background: "#fff",
+                  border: "0.5px solid #ECEAE5", borderRadius: 14, padding: "4px 14px",
+                  cursor: stockLoadingMore ? "default" : "pointer",
+                }}
+              >
+                {stockLoadingMore ? "Loading…" : "Load more"}
+              </button>
+            </div>
+          )}
           <div style={{ fontSize: 10, color: "#9A9896", textAlign: "right", marginTop: 4 }}>
             Photos provided by Pexels
           </div>

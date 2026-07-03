@@ -52,13 +52,17 @@ Deno.serve(async (req) => {
     if (!forceRefresh) {
       const { data: cache } = await supabase
         .from("brand_image_cache")
-        .select("images_json, generated_at")
+        .select("images_json, generated_at, search_terms")
         .eq("user_id", user.id)
         .maybeSingle();
       if (cache?.images_json) {
         const ageMs = Date.now() - new Date(cache.generated_at).getTime();
         if (ageMs < 7 * 24 * 60 * 60 * 1000) {
-          return new Response(JSON.stringify({ images: cache.images_json, cached: true }), {
+          return new Response(JSON.stringify({
+            images: cache.images_json,
+            searchTerms: (cache as any).search_terms ?? [],
+            cached: true,
+          }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
@@ -143,7 +147,7 @@ Return JSON only: { "searchTerms": ["term one", "term two", "term three"] }`;
     });
 
     await supabase.from("brand_image_cache").upsert(
-      { user_id: user.id, images_json: images, generated_at: new Date().toISOString() },
+      { user_id: user.id, images_json: images, search_terms: terms, generated_at: new Date().toISOString() },
       { onConflict: "user_id" },
     );
 
