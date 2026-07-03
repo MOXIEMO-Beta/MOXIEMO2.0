@@ -679,78 +679,38 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
           <ListView posts={filteredPosts} onSelectPost={handleSelectPost} />
         )}
 
-        {/* Strategy coverage panel */}
-        {!noContent && view === "month" && pillarCoverage.length > 0 && (
-          <Card className="space-y-3 p-4">
-            <p className="text-sm font-semibold text-foreground">Content Pillar Coverage — {fmtMonth(cursor)}</p>
-            <div className="space-y-2">
-              {pillarCoverage.map((c) => (
-                <div key={c.name} className="flex items-center gap-3 text-xs">
-                  <span className="w-56 shrink-0 truncate text-foreground">{c.name}</span>
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div className="h-full rounded-full" style={{ width: `${c.pct}%`, backgroundColor: c.color }} />
-                  </div>
-                  <span className="w-16 shrink-0 text-right text-muted-foreground">{c.count} posts</span>
-                </div>
-              ))}
+        {/* Coverage panel — single, threshold-based, tone-aware */}
+        {view === "month" && coverage.chips.length > 0 && (
+          <div style={{
+            background: "#F7F5F1", border: "0.5px solid #ECEAE5",
+            borderRadius: 12, padding: "16px 18px",
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#0E0F10" }}>
+              {coverage.isCurrentMonth ? "Your month is just getting started" : `Coverage — ${fmtMonth(cursor)}`}
             </div>
-            {pillarCoverage.some((c) => c.count < 2) && (
-              <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                <div className="flex-1 space-y-1">
-                  {pillarCoverage
-                    .filter((c) => c.count < 2)
-                    .map((c) => (
-                      <div key={c.name} className="flex items-center justify-between gap-2">
-                        <span>"{c.name}" is underrepresented this month.</span>
-                        <button
-                          type="button"
-                          className="inline-flex items-center gap-1 rounded-full border border-[#ff6b6b]/40 px-2.5 py-1 text-[11px] font-medium text-[#c43d3d] transition-colors hover:bg-[#ff6b6b]/10"
-                          onClick={() => {
-                            // Count this-month posts per platform for this pillar
-                            const inMonth = (d: Date) =>
-                              d.getMonth() === cursor.getMonth() &&
-                              d.getFullYear() === cursor.getFullYear();
-                            const counts: Record<Platform, number> = {
-                              linkedin: 0,
-                              facebook: 0,
-                              instagram: 0,
-                            };
-                            posts.forEach((p) => {
-                              if (p.pillar !== c.name) return;
-                              const d = postDate(p);
-                              if (!d || !inMonth(d)) return;
-                              (p.platforms ?? []).forEach((pl) => {
-                                if (pl === "linkedin" || pl === "facebook" || pl === "instagram") {
-                                  counts[pl] += 1;
-                                }
-                              });
-                            });
-                            const order: Platform[] = ["linkedin", "facebook", "instagram"];
-                            let lowest: Platform = "linkedin";
-                            let min = Infinity;
-                            for (const pl of order) {
-                              if (counts[pl] < min) {
-                                min = counts[pl];
-                                lowest = pl;
-                              }
-                            }
-                            const monthLabel = cursor.toLocaleDateString(undefined, { month: "long" });
-                            if (onCreateForPillar) {
-                              onCreateForPillar({ pillar: c.name, platform: lowest, monthLabel });
-                            } else {
-                              onCreateAtDate(new Date().toISOString(), c.name);
-                            }
-                          }}
-                        >
-                          <Plus className="h-3 w-3" /> Create a post for this pillar
-                        </button>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
-          </Card>
+            <p style={{ fontSize: 12, color: "#6B6860", marginBottom: 14 }}>
+              {coverage.isCurrentMonth
+                ? `${coverage.daysElapsed} days in, ${coverage.daysRemaining} to go. Here's where each pillar stands — no pressure yet.`
+                : `Where each pillar landed this month.`}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {coverage.chips.map((c) => {
+                const style =
+                  c.state === "coral"
+                    ? { background: "#FEF1EE", color: "#993C1D", border: "0.5px solid #F5C4B3" }
+                    : c.state === "amber"
+                    ? { background: "#FEF3C7", color: "#854F0B", border: "0.5px solid #FBBF24" }
+                    : { background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5" };
+                return (
+                  <div key={c.name} className="flex items-center gap-1.5"
+                    style={{ fontSize: 11, padding: "5px 10px", borderRadius: 20, ...style }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: c.color, flexShrink: 0 }} />
+                    {c.name} · {c.postCount} {c.postCount === 1 ? "post" : "posts"}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
       </div>
 
