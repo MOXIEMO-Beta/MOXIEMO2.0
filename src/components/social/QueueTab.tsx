@@ -388,6 +388,42 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         />
       ) : (
         <div>
+          {suggestion && !suggestionDismissed.has(suggestion.angle) && (
+            <div style={{
+              background: "#FEF1EE", border: "1px dashed #F5C4B3", borderRadius: 12,
+              padding: "14px 16px", marginBottom: 18,
+            }}>
+              <div className="flex items-center gap-1.5" style={{
+                fontSize: 10, fontWeight: 700, textTransform: "uppercase",
+                letterSpacing: "0.06em", color: "#E85A46", marginBottom: 8,
+              }}>
+                <Sparkles size={12} /> MOXIEMO started this for you
+              </div>
+              <div style={{ fontSize: 13, color: "#0E0F10", lineHeight: 1.55, marginBottom: 6 }}>
+                {suggestion.angle}
+              </div>
+              <div style={{ fontSize: 11, color: "#9A9896", marginBottom: 12 }}>
+                {suggestion.pillar}{suggestion.platform ? ` · ${suggestion.platform}` : ""}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => saveSuggestionAsDraft(false)}
+                  style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+                    background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
+                  Use this
+                </button>
+                <button onClick={() => saveSuggestionAsDraft(true)}
+                  style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                    background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                  Edit first
+                </button>
+                <button onClick={() => dismissSuggestion(suggestion.angle)}
+                  style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                    background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                  Not now
+                </button>
+              </div>
+            </div>
+          )}
           {composeOpen && (
             <ComposeBlock
               userId={userId!}
