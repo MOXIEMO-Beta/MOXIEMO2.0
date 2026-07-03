@@ -69,6 +69,9 @@ async function runGeneration(audit_id: string) {
     const competitor_signals = Array.isArray(storedSignals.competitor_signals)
       ? storedSignals.competitor_signals
       : [];
+    // Hoist optional strategy_foundation (present when a signed-in user ran the
+    // audit) so Vera sees it as an authoritative top-level payload key.
+    const strategy_foundation = storedSignals.strategy_foundation ?? null;
 
     const payload = {
       inputs: inputsForVera,
@@ -79,6 +82,7 @@ async function runGeneration(audit_id: string) {
       framing,
       render_ok: storedSignals?.render_ok !== false,
       render_meta: storedSignals?.render_meta ?? null,
+      strategy_foundation,
     };
     const previousValidationError = typeof row.review_reason === "string" ? row.review_reason.trim() : "";
     const existingReport = row.report && typeof row.report === "object" && !Array.isArray(row.report) && Array.isArray((row.report as any).sections)
