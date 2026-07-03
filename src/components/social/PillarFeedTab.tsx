@@ -165,7 +165,13 @@ export default function PillarFeedTab({ userId }: { userId: string | null }) {
                 <p className="mt-3 italic" style={{ color: "#6B6860", fontSize: 12, lineHeight: 1.6 }}>{angle}</p>
                 <button
                   onClick={() => navigate(`/app/social?tab=queue&pillar=${encodeURIComponent(pillar)}`)}
-                  className="mt-3.5 text-[12px] font-semibold" style={{ color: "#E85A46" }}>
+                  className="mt-3.5 inline-flex items-center"
+                  style={{
+                    background: "#E85A46", color: "#fff",
+                    borderRadius: 8, padding: "9px 18px",
+                    fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
+                    boxShadow: "0 4px 14px rgba(232, 90, 70, 0.28)",
+                  }}>
                   Write this post →
                 </button>
               </div>

@@ -427,12 +427,14 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
             const label = p === "all" ? "All platforms" : PLATFORM_META[p as Platform].label;
             return (
               <button key={p} onClick={() => setFilter(p)}
-                className="text-[12px] font-medium transition"
+                className="transition"
                 style={{
                   borderRadius: 20, padding: "5px 14px",
-                  border: active ? "1px solid #E85A46" : "0.5px solid #ECEAE5",
+                  fontSize: 12,
+                  fontWeight: active ? 700 : 500,
+                  border: active ? "1.5px solid #E85A46" : "1.5px solid #ECEAE5",
                   color: active ? "#E85A46" : "#6B6860",
-                  background: "transparent",
+                  background: active ? "#FEF1EE" : "#fff",
                 }}>{label}</button>
             );
           })}
@@ -441,14 +443,15 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
           <span className="text-[12px]" style={{ color: "#9A9896" }}>{filtered.length} posts in queue</span>
           {posts.length > 0 && (
             <button onClick={() => setComposeOpen((v) => !v)}
-              className="text-[12px] font-medium"
+              className="text-[12px]"
               style={{
-                border: composeOpen ? "1px solid #E85A46" : "0.5px solid #ECEAE5",
                 borderRadius: 8, height: 32, padding: "0 14px",
-                color: composeOpen ? "#E85A46" : "#0E0F10",
-                background: "transparent",
+                background: "#0E0F10",
+                color: "#fff",
+                fontWeight: 600,
+                border: "none",
               }}>
-              Add post
+              + Add post
             </button>
           )}
         </div>
@@ -467,8 +470,8 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         <div>
           {suggestion && !suggestionDismissed.has(suggestion.angle) && (
             <div style={{
-              background: "#FEF1EE", border: "1px dashed #F5C4B3", borderRadius: 12,
-              padding: "14px 16px", marginBottom: 18,
+              background: "#FFF7F5", border: "1.5px solid #F5C0B5", borderRadius: 14,
+              padding: "20px 22px", marginBottom: 18,
             }}>
               <div className="flex items-center gap-1.5" style={{
                 fontSize: 10, fontWeight: 700, textTransform: "uppercase",
@@ -479,9 +482,9 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
               {suggestion.anecdoteRequired && !guidedResult && (
                 <div className="inline-flex items-center gap-1"
                   style={{
-                    fontSize: 9, fontWeight: 600, background: "#fff",
-                    border: "0.5px solid #F5C4B3", color: "#993C1D",
-                    padding: "2px 8px", borderRadius: 10, marginBottom: 10,
+                    fontSize: 11, fontWeight: 600, background: "#fff",
+                    border: "1px solid #F5C0B5", color: "#E85A46",
+                    padding: "3px 10px", borderRadius: 20, marginBottom: 10,
                   }}>
                   <MessageCircle size={11} /> Needs your story
                 </div>
@@ -498,31 +501,33 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     <>
                       <button onClick={() => setGuidedOpen(true)}
                         className="inline-flex items-center gap-1.5"
-                        style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
-                          background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
+                        style={{ fontSize: 12, fontWeight: 700, padding: "9px 18px", borderRadius: 20,
+                          background: "#E85A46", color: "#fff", border: "none", cursor: "pointer",
+                          boxShadow: "0 4px 14px rgba(232, 90, 70, 0.28)" }}>
                         <Pencil size={13} /> Add my story
                       </button>
                       <button onClick={() => dismissSuggestion(suggestion.angle)}
-                        style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
-                          background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                        style={{ fontSize: 12, fontWeight: 500, padding: "9px 18px", borderRadius: 20,
+                          background: "#fff", color: "#6B6860", border: "1px solid #ECEAE5", cursor: "pointer" }}>
                         Not now
                       </button>
                     </>
                   ) : (
                     <>
                       <button onClick={() => saveSuggestionAsDraft(false)}
-                        style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
-                          background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
+                        style={{ fontSize: 12, fontWeight: 700, padding: "9px 18px", borderRadius: 20,
+                          background: "#E85A46", color: "#fff", border: "none", cursor: "pointer",
+                          boxShadow: "0 4px 14px rgba(232, 90, 70, 0.28)" }}>
                         Use this
                       </button>
                       <button onClick={() => saveSuggestionAsDraft(true)}
-                        style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
-                          background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                        style={{ fontSize: 12, fontWeight: 500, padding: "9px 18px", borderRadius: 20,
+                          background: "#fff", color: "#6B6860", border: "1px solid #ECEAE5", cursor: "pointer" }}>
                         Edit first
                       </button>
                       <button onClick={() => dismissSuggestion(suggestion.angle)}
-                        style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
-                          background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                        style={{ fontSize: 12, fontWeight: 500, padding: "9px 18px", borderRadius: 20,
+                          background: "#fff", color: "#6B6860", border: "1px solid #ECEAE5", cursor: "pointer" }}>
                         Not now
                       </button>
                     </>
@@ -572,20 +577,20 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                   className="group flex items-center gap-2.5 mb-2"
                   style={{
                     background: "#fff",
-                    border: "0.5px solid #ECEAE5",
+                    border: "1px solid #ECEAE5",
                     borderRadius: 12,
-                    padding: hasMedia ? "14px 16px" : "14px 16px",
-                    minHeight: hasMedia ? 96 : 56,
+                    padding: "14px 16px",
+                    minHeight: hasMedia ? 74 : 56,
                   }}
                   draggable
                   onDragStart={() => onDragStart(post.id)}
                   onDragOver={onDragOver}
                   onDrop={() => onDropOn(post)}
                 >
-                  <GripVertical size={16} color="#9A9896" style={{ cursor: "grab", flexShrink: 0 }} />
+                  <GripVertical size={16} color="#C9C7C2" style={{ cursor: "grab", flexShrink: 0 }} />
                   <div className="flex items-center justify-center flex-shrink-0"
-                    style={{ width: 28, height: 28, borderRadius: 7, background: meta.bg }}>
-                    <Icon size={15} color={meta.color} />
+                    style={{ width: 30, height: 30, borderRadius: 8, background: meta.bg }}>
+                    <Icon size={16} color={meta.color} />
                   </div>
                   {thumb && (
                     <img
@@ -593,11 +598,11 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                       alt=""
                       className="flex-shrink-0"
                       style={{
-                        width: 72,
-                        height: 72,
+                        width: 46,
+                        height: 46,
                         borderRadius: 8,
                         objectFit: "cover",
-                        border: "0.5px solid #ECEAE5",
+                        border: "1px solid #ECEAE5",
                         background: "#F0EFEC",
                       }}
                     />
@@ -624,9 +629,9 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                       onClick={() => setOpenMediaFor(isOpen ? null : post.id)}
                       className="flex items-center gap-1.5 flex-shrink-0"
                       style={{
-                        fontSize: 11, color: "#E85A46",
-                        border: "1px dashed #F5C4B3",
-                        borderRadius: 7, padding: "4px 8px",
+                        fontSize: 11, color: "#E85A46", fontWeight: 600,
+                        border: "1.5px dashed #F0A08F",
+                        borderRadius: 8, padding: "7px 12px",
                         background: "transparent", cursor: "pointer",
                       }}
                       title="Add a visual to this post"
@@ -641,10 +646,10 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                   </label>
                   <span className="text-[10px] font-semibold whitespace-nowrap"
                     style={{
-                      borderRadius: 4, padding: "2px 8px",
+                      borderRadius: 6, padding: "2px 8px",
                       background: status === "scheduled" ? "#E6F1FB" : status === "published" ? "#EAF3DE" : "#F0EFEC",
                       color: status === "scheduled" ? "#185FA5" : status === "published" ? "#3B6D11" : "#6B6860",
-                      border: status === "draft" ? "0.5px solid #ECEAE5" : "none",
+                      border: "none",
                     }}>
                     {status[0].toUpperCase() + status.slice(1)}
                   </span>
@@ -658,15 +663,15 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                   </div>
                   {isConnected && (
                     <button onClick={() => handlePublish(post)}
-                      className="font-semibold"
-                      style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 26, padding: "0 10px", fontSize: 11 }}>
+                      style={{ background: "#E85A46", color: "#fff", borderRadius: 8, height: 28, padding: "0 12px", fontSize: 11, fontWeight: 700, border: "none" }}>
                       Publish now
                     </button>
                   )}
                   {!isConnected && (
-                    <button onClick={() => setShowPublishBanner(true)}
-                      className="font-semibold opacity-60"
-                      style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 26, padding: "0 10px", fontSize: 11 }}>
+                    <button
+                      onClick={() => setShowPublishBanner(true)}
+                      title={`Connect ${meta.label} to publish`}
+                      style={{ background: "#F4B0A3", color: "#fff", borderRadius: 8, height: 28, padding: "0 12px", fontSize: 11, fontWeight: 700, border: "none", cursor: "not-allowed" }}>
                       Publish now
                     </button>
                   )}
