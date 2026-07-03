@@ -1681,3 +1681,89 @@ function EditPostPanel({
     </div>
   );
 }
+function GuidedQuestionPanel({ questions, loading, onCancel, onGenerate }: {
+  questions: { label: string; hint?: string }[];
+  loading: boolean;
+  onCancel: () => void;
+  onGenerate: (answers: Record<string, string>) => void;
+}) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const anyAnswered = Object.values(answers).some((v) => v && v.trim().length > 0);
+  return (
+    <div style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "18px 20px", marginTop: 14 }}>
+      <p style={{ fontSize: 12, color: "#6B6860", lineHeight: 1.6, marginBottom: 16, paddingBottom: 14, borderBottom: "0.5px solid #ECEAE5" }}>
+        Tell me what happened in your own words — a few short notes is plenty.
+        I'll turn it into a polished post in your voice.
+      </p>
+      {questions.map((q, i) => (
+        <div key={i} style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 12, fontWeight: 500, color: "#0E0F10", marginBottom: 6, display: "block" }}>{q.label}</label>
+          {q.hint && <div style={{ fontSize: 11, color: "#9A9896", marginBottom: 6 }}>{q.hint}</div>}
+          <textarea
+            value={answers[i] ?? ""}
+            onChange={(e) => setAnswers({ ...answers, [i]: e.target.value })}
+            style={{
+              width: "100%", minHeight: 44, background: "#F7F5F1",
+              border: "0.5px solid #ECEAE5", borderRadius: 8, padding: "9px 12px",
+              fontSize: 13, color: "#0E0F10", fontFamily: "inherit", resize: "vertical", outline: "none",
+            }}
+          />
+        </div>
+      ))}
+      <div className="flex justify-end gap-2" style={{ marginTop: 16 }}>
+        <button onClick={onCancel} disabled={loading}
+          style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+            background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+          Cancel
+        </button>
+        <button onClick={() => onGenerate(answers)} disabled={loading || !anyAnswered}
+          className="inline-flex items-center gap-1.5"
+          style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+            background: "#E85A46", color: "#fff", border: "1px solid #E85A46",
+            cursor: loading || !anyAnswered ? "not-allowed" : "pointer", opacity: loading || !anyAnswered ? 0.6 : 1 }}>
+          {loading ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+          {loading ? "Generating…" : "Generate my post"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GeneratedResult({ postText, loading, onSave, onRegenerate, onEdit }: {
+  postText: string;
+  loading: boolean;
+  onSave: () => void;
+  onRegenerate: () => void;
+  onEdit: (text: string) => void;
+}) {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <span className="inline-flex items-center gap-1.5"
+        style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+          color: "#3B6D11", background: "#EAF3DE", padding: "3px 10px", borderRadius: 10, marginBottom: 12 }}>
+        <Check size={11} /> Generated from your story
+      </span>
+      <textarea
+        value={postText}
+        onChange={(e) => onEdit(e.target.value)}
+        style={{
+          width: "100%", background: "#F7F5F1", border: "0.5px solid #ECEAE5", borderRadius: 8,
+          padding: 12, fontSize: 13, color: "#0E0F10", lineHeight: 1.6, minHeight: 120,
+          marginBottom: 12, fontFamily: "inherit", resize: "vertical", outline: "none",
+        }}
+      />
+      <div className="flex justify-end gap-2">
+        <button onClick={onRegenerate} disabled={loading}
+          style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+            background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: loading ? "not-allowed" : "pointer" }}>
+          {loading ? "Regenerating…" : "Regenerate"}
+        </button>
+        <button onClick={onSave} disabled={loading}
+          style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+            background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: loading ? "not-allowed" : "pointer" }}>
+          Save as draft
+        </button>
+      </div>
+    </div>
+  );
+}
