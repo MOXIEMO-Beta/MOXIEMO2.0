@@ -58,7 +58,41 @@ Deno.serve(async (req) => {
     const icp = ef?.idealClient ?? strategy?.ideal_client ?? "small business owners";
 
     const today = new Date().toISOString().split("T")[0];
-    const prompt = `You are a content strategist. Suggest one specific, timely content angle for each pillar below.\nEach angle must be 1-2 sentences, concrete, and relevant to the current date.\nNo generic advice. Reference the ICP and current business moment where possible.\n\nPillars: ${JSON.stringify(pillars)}\nICP summary: ${icp}\nCurrent date: ${today}\n\nReturn JSON only, no other text:\n{\n  "angles": [\n    { "pillar": "exact pillar name", "angle": "1-2 sentence suggested angle" }\n  ]\n}`;
+    const prompt = `You are a content strategist. Suggest one specific, timely content angle for each pillar below.
+Each angle must be 1-2 sentences, concrete, and relevant to the current date.
+No generic advice. Reference the ICP and current business moment where possible.
+
+For each suggested angle, determine whether it depends on a specific, true
+anecdote (a client story, a prospect interaction, a recent update, "a case
+where...") that only the founder knows the details of — as opposed to a
+purely informational or positioning angle that can stand on its own.
+
+If the angle IS anecdote-dependent, set "anecdoteRequired": true and generate
+3-4 SPECIFIC guided questions that would elicit the real details needed to
+write this exact post. Questions must be tailored to this specific angle —
+not a generic template. Each question needs a short "label" and an optional
+"hint" giving light guidance on what kind of answer is useful.
+
+If the angle does NOT depend on a specific anecdote, set "anecdoteRequired":
+false and omit guidedQuestions entirely.
+
+Pillars: ${JSON.stringify(pillars)}
+ICP summary: ${icp}
+Current date: ${today}
+
+Return JSON only, no other text:
+{
+  "angles": [
+    {
+      "pillar": "exact pillar name",
+      "angle": "1-2 sentence suggested angle",
+      "anecdoteRequired": true,
+      "guidedQuestions": [
+        { "label": "question text", "hint": "optional guidance" }
+      ]
+    }
+  ]
+}`;
 
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -69,7 +103,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-5-20250929",
-        max_tokens: 600,
+        max_tokens: 1500,
         messages: [{ role: "user", content: prompt }],
       }),
     });

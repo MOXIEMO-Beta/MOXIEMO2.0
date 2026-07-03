@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   GripVertical, Linkedin, Instagram, Facebook, Twitter, Pencil, Image as ImageIcon,
   Trash2, CloudUpload, Check, Video, Sparkles, CalendarPlus, Lightbulb, CalendarDays, RefreshCw,
-  RotateCcw, X, Loader2, ImagePlus, Search,
+  RotateCcw, X, Loader2, ImagePlus, Search, MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -111,7 +111,18 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   const [composeOpen, setComposeOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
-  const [suggestion, setSuggestion] = useState<{ pillar: string; angle: string; platform?: string } | null>(null);
+  type GuidedQuestion = { label: string; hint?: string };
+  type Suggestion = {
+    pillar: string;
+    angle: string;
+    platform?: string;
+    anecdoteRequired?: boolean;
+    guidedQuestions?: GuidedQuestion[];
+  };
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
+  const [guidedOpen, setGuidedOpen] = useState(false);
+  const [guidedResult, setGuidedResult] = useState<{ post: string; answers: Record<string, string> } | null>(null);
+  const [guidedLoading, setGuidedLoading] = useState(false);
   const [suggestionDismissed, setSuggestionDismissed] = useState<Set<string>>(() => {
     if (typeof window === "undefined") return new Set();
     try {
@@ -157,7 +168,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     (async () => {
       const { data } = await supabase
         .from("pillar_feed_cache").select("angles_json").eq("user_id", userId).maybeSingle();
-      const list = ((data as any)?.angles_json?.angles ?? []) as Array<{ pillar: string; angle: string; platform?: string }>;
+      const list = ((data as any)?.angles_json?.angles ?? []) as Suggestion[];
       if (!Array.isArray(list) || list.length === 0) { setSuggestion(null); return; }
       const counts: Record<string, number> = {};
       posts.forEach((p) => { if (p.pillar) counts[p.pillar] = (counts[p.pillar] ?? 0) + 1; });
@@ -193,6 +204,60 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     dismissSuggestion(suggestion.angle);
     if (open) setEditingId((data as any).id);
     toast.success(open ? "Draft ready — edit and save" : "Saved to queue");
+  }
+
+  function suggestionPlatform(s: Suggestion): Platform {
+    const p = (s.platform ?? "").toLowerCase();
+    if (["linkedin","instagram","facebook","x"].includes(p)) return p as Platform;
+    return "linkedin";
+  }
+
+  async function runGeneratePostFromStory(answers: Record<string, string>) {
+    if (!suggestion) return;
+    setGuidedLoading(true);
+    try {
+      const { data, error } = await invokeWithAuth<{ post: string; error?: string }>(
+        "generate-post-from-story",
+        {
+          angle: suggestion.angle,
+          pillar: suggestion.pillar,
+          platform: suggestionPlatform(suggestion),
+          answers,
+          questions: suggestion.guidedQuestions ?? [],
+        },
+      );
+      if (error || !data?.post) throw new Error((data as any)?.error ?? error?.message ?? "Generation failed");
+      setGuidedResult({ post: data.post, answers });
+      setGuidedOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Generation failed");
+    } finally {
+      setGuidedLoading(false);
+    }
+  }
+
+  async function saveGuidedResult() {
+    if (!suggestion || !userId || !guidedResult) return;
+    const platform = suggestionPlatform(suggestion);
+    const { data, error } = await supabase.from("social_posts").insert({
+      user_id: userId,
+      platforms: [platform],
+      content_by_platform: { [platform]: guidedResult.post } as any,
+      status: "draft",
+      pillar: suggestion.pillar,
+      sort_order: 0,
+    }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
+    if (error) { toast.error(error.message); return; }
+    setPosts((arr) => [data as any, ...arr]);
+    dismissSuggestion(suggestion.angle);
+    setGuidedResult(null);
+    setGuidedOpen(false);
+    toast.success("Saved to queue");
+  }
+
+  function cancelGuided() {
+    setGuidedOpen(false);
+    setGuidedResult(null);
   }
 
   // Resolve signed URLs for post thumbnails (private bucket)
@@ -402,29 +467,76 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
               }}>
                 <Sparkles size={12} /> MOXIEMO started this for you
               </div>
+              {suggestion.anecdoteRequired && !guidedResult && (
+                <div className="inline-flex items-center gap-1"
+                  style={{
+                    fontSize: 9, fontWeight: 600, background: "#fff",
+                    border: "0.5px solid #F5C4B3", color: "#993C1D",
+                    padding: "2px 8px", borderRadius: 10, marginBottom: 10,
+                  }}>
+                  <MessageCircle size={11} /> Needs your story
+                </div>
+              )}
               <div style={{ fontSize: 13, color: "#0E0F10", lineHeight: 1.55, marginBottom: 6 }}>
                 {suggestion.angle}
               </div>
               <div style={{ fontSize: 11, color: "#9A9896", marginBottom: 12 }}>
                 {suggestion.pillar}{suggestion.platform ? ` · ${suggestion.platform}` : ""}
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => saveSuggestionAsDraft(false)}
-                  style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
-                    background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
-                  Use this
-                </button>
-                <button onClick={() => saveSuggestionAsDraft(true)}
-                  style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
-                    background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
-                  Edit first
-                </button>
-                <button onClick={() => dismissSuggestion(suggestion.angle)}
-                  style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
-                    background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
-                  Not now
-                </button>
-              </div>
+              {!guidedOpen && !guidedResult && (
+                <div className="flex gap-2">
+                  {suggestion.anecdoteRequired ? (
+                    <>
+                      <button onClick={() => setGuidedOpen(true)}
+                        className="inline-flex items-center gap-1.5"
+                        style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+                          background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
+                        <Pencil size={13} /> Add my story
+                      </button>
+                      <button onClick={() => dismissSuggestion(suggestion.angle)}
+                        style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                          background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                        Not now
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => saveSuggestionAsDraft(false)}
+                        style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+                          background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: "pointer" }}>
+                        Use this
+                      </button>
+                      <button onClick={() => saveSuggestionAsDraft(true)}
+                        style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                          background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                        Edit first
+                      </button>
+                      <button onClick={() => dismissSuggestion(suggestion.angle)}
+                        style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+                          background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+                        Not now
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+              {guidedOpen && suggestion.guidedQuestions && (
+                <GuidedQuestionPanel
+                  questions={suggestion.guidedQuestions}
+                  loading={guidedLoading}
+                  onCancel={cancelGuided}
+                  onGenerate={runGeneratePostFromStory}
+                />
+              )}
+              {guidedResult && (
+                <GeneratedResult
+                  postText={guidedResult.post}
+                  loading={guidedLoading}
+                  onEdit={(txt) => setGuidedResult({ ...guidedResult, post: txt })}
+                  onRegenerate={() => runGeneratePostFromStory(guidedResult.answers)}
+                  onSave={saveGuidedResult}
+                />
+              )}
             </div>
           )}
           {composeOpen && (
@@ -1566,6 +1678,92 @@ function EditPostPanel({
           />
         </div>
       )}
+    </div>
+  );
+}
+function GuidedQuestionPanel({ questions, loading, onCancel, onGenerate }: {
+  questions: { label: string; hint?: string }[];
+  loading: boolean;
+  onCancel: () => void;
+  onGenerate: (answers: Record<string, string>) => void;
+}) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const anyAnswered = Object.values(answers).some((v) => v && v.trim().length > 0);
+  return (
+    <div style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "18px 20px", marginTop: 14 }}>
+      <p style={{ fontSize: 12, color: "#6B6860", lineHeight: 1.6, marginBottom: 16, paddingBottom: 14, borderBottom: "0.5px solid #ECEAE5" }}>
+        Tell me what happened in your own words — a few short notes is plenty.
+        I'll turn it into a polished post in your voice.
+      </p>
+      {questions.map((q, i) => (
+        <div key={i} style={{ marginBottom: 14 }}>
+          <label style={{ fontSize: 12, fontWeight: 500, color: "#0E0F10", marginBottom: 6, display: "block" }}>{q.label}</label>
+          {q.hint && <div style={{ fontSize: 11, color: "#9A9896", marginBottom: 6 }}>{q.hint}</div>}
+          <textarea
+            value={answers[i] ?? ""}
+            onChange={(e) => setAnswers({ ...answers, [i]: e.target.value })}
+            style={{
+              width: "100%", minHeight: 44, background: "#F7F5F1",
+              border: "0.5px solid #ECEAE5", borderRadius: 8, padding: "9px 12px",
+              fontSize: 13, color: "#0E0F10", fontFamily: "inherit", resize: "vertical", outline: "none",
+            }}
+          />
+        </div>
+      ))}
+      <div className="flex justify-end gap-2" style={{ marginTop: 16 }}>
+        <button onClick={onCancel} disabled={loading}
+          style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+            background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: "pointer" }}>
+          Cancel
+        </button>
+        <button onClick={() => onGenerate(answers)} disabled={loading || !anyAnswered}
+          className="inline-flex items-center gap-1.5"
+          style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+            background: "#E85A46", color: "#fff", border: "1px solid #E85A46",
+            cursor: loading || !anyAnswered ? "not-allowed" : "pointer", opacity: loading || !anyAnswered ? 0.6 : 1 }}>
+          {loading ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+          {loading ? "Generating…" : "Generate my post"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GeneratedResult({ postText, loading, onSave, onRegenerate, onEdit }: {
+  postText: string;
+  loading: boolean;
+  onSave: () => void;
+  onRegenerate: () => void;
+  onEdit: (text: string) => void;
+}) {
+  return (
+    <div style={{ marginTop: 14 }}>
+      <span className="inline-flex items-center gap-1.5"
+        style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em",
+          color: "#3B6D11", background: "#EAF3DE", padding: "3px 10px", borderRadius: 10, marginBottom: 12 }}>
+        <Check size={11} /> Generated from your story
+      </span>
+      <textarea
+        value={postText}
+        onChange={(e) => onEdit(e.target.value)}
+        style={{
+          width: "100%", background: "#F7F5F1", border: "0.5px solid #ECEAE5", borderRadius: 8,
+          padding: 12, fontSize: 13, color: "#0E0F10", lineHeight: 1.6, minHeight: 120,
+          marginBottom: 12, fontFamily: "inherit", resize: "vertical", outline: "none",
+        }}
+      />
+      <div className="flex justify-end gap-2">
+        <button onClick={onRegenerate} disabled={loading}
+          style={{ fontSize: 12, fontWeight: 500, padding: "6px 14px", borderRadius: 20,
+            background: "#fff", color: "#6B6860", border: "0.5px solid #ECEAE5", cursor: loading ? "not-allowed" : "pointer" }}>
+          {loading ? "Regenerating…" : "Regenerate"}
+        </button>
+        <button onClick={onSave} disabled={loading}
+          style={{ fontSize: 12, fontWeight: 600, padding: "6px 14px", borderRadius: 20,
+            background: "#E85A46", color: "#fff", border: "1px solid #E85A46", cursor: loading ? "not-allowed" : "pointer" }}>
+          Save as draft
+        </button>
+      </div>
     </div>
   );
 }
