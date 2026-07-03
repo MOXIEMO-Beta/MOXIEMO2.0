@@ -429,10 +429,14 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
         <Footer />
       </Page>
 
-      {/* Imagery showcase — optional, only when user uploaded images */}
-      {data.images && data.images.length > 0 && (
-        <></>
+      {/* Strategic content pages — Archetype, Voice, ICP, Messages, Pillars.
+          Rendered only when the caller passes generated kit content so the
+          exported PDF matches the live Brand Kit view section-for-section. */}
+      {data.kit && (
+        <StrategyPages kit={data.kit} headingFam={headingFam} bodyFam={bodyFam} bodyBoldFam={bodyBoldFam} primary={primary} accent={accent} coverInk={coverInk} />
       )}
+
+      {/* Imagery showcase — optional, only when user uploaded images */}
       {data.images && data.images.length > 0 && (
         <Page size="A4" style={s.page}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
