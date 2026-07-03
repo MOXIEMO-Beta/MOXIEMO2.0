@@ -6,6 +6,7 @@ import { downloadStrategyPdf } from "@/lib/strategyPdf";
 import { downloadAuditPdf } from "@/lib/brandAuditPdf";
 import { generateBrandKitPdf, type BrandKitData } from "@/lib/brandKitPdf";
 import { buildReportData } from "@/lib/reportDataBinding";
+import { BrandAuditReport, type AuditResponse } from "@/components/audit/BrandAuditReport";
 import {
   ShieldCheck,
   ClipboardCheck,
@@ -675,14 +676,34 @@ function ChecklistRow({ status, label }: { status: "done" | "active" | "idle"; l
 
 function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: string; setStep: (s: AuditStep) => void; goAssets: () => void; latestAuditId?: string | null }) {
   const [dlBusy, setDlBusy] = useState(false);
-  const handleDownload = async () => {
-    if (!latestAuditId) { toast({ title: "Run an audit first", variant: "destructive" }); return; }
-    setDlBusy(true);
-    try {
-      const { data, error } = await supabase.from("audits").select("status, brand_audit_score, report, inputs, stage, posture").eq("id", latestAuditId).maybeSingle();
-      if (error) throw error;
-      if (!data || !data.report) throw new Error("Audit report not available.");
-      await downloadAuditPdf({
+  const [auditData, setAuditData] = useState<AuditResponse | null>(null);
+  const [auditCreatedAt, setAuditCreatedAt] = useState<string | null>(null);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Always drive the results view off the actual latest ready audit row.
+  // When `latestAuditId` changes (a new run finished), refetch — this is what
+  // keeps the view from displaying a stale audit after a fresh run.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadErr(null);
+      setLoading(true);
+      if (!latestAuditId) {
+        setAuditData(null);
+        setAuditCreatedAt(null);
+        setLoading(false);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("audits")
+        .select("status, brand_audit_score, report, inputs, stage, posture, created_at")
+        .eq("id", latestAuditId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error) { setLoadErr(error.message); setLoading(false); return; }
+      if (!data || !data.report) { setLoadErr("Audit report not available."); setLoading(false); return; }
+      setAuditData({
         status: data.status as any,
         brand_audit_score: data.brand_audit_score ?? 0,
         report: data.report as any,
@@ -690,139 +711,72 @@ function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: st
         stage: data.stage ?? null,
         posture: data.posture ?? null,
       });
+      setAuditCreatedAt(data.created_at as string | null);
+      setLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [latestAuditId]);
+
+  const handleDownload = async () => {
+    if (!auditData) { toast({ title: "Run an audit first", variant: "destructive" }); return; }
+    setDlBusy(true);
+    try {
+      await downloadAuditPdf(auditData);
     } catch (e: any) {
       toast({ title: "PDF export failed", description: e?.message ?? String(e), variant: "destructive" });
     } finally { setDlBusy(false); }
   };
-  const score = 71;
-  const C = 2 * Math.PI * 52;
 
-  const sections = [
-    { name: "Positioning Clarity", score: 88, finding: "ICP revenue floor is present. \"Why now\" urgency missing from public copy." },
-    { name: "Voice Consistency", score: 62, finding: "LinkedIn bio contains \"passionate about\" and two em dashes, contradicts your voice rules." },
-    { name: "Content-Strategy Alignment", score: 44, finding: "Strategy-First Marketing pillar, your primary differentiator, has zero posts in 30 days." },
-    { name: "ICP Signal Strength", score: 58, finding: "External copy says \"founders\" without the qualifiers. A $50K founder thinks this is for them." },
-  ];
-
-  const scoreMeta = (s: number) => {
-    if (s >= 75) return { color: GREEN, badgeBg: "#EAF3DE", badgeText: "#3B6D11", label: "Strong" };
-    if (s >= 55) return { color: "#D97706", badgeBg: "#FEF3C7", badgeText: "#854F0B", label: "Needs Work" };
-    return { color: CORAL, badgeBg: "#FEF1EE", badgeText: "#993C1D", label: "Critical Gap" };
+  const fmtDate = (iso: string | null) => {
+    if (!iso) return "—";
+    try { return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }); }
+    catch { return "—"; }
   };
+
+  if (loading) {
+    return (
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 40 }}>
+        <div style={{ width: 32, height: 32, border: `3px solid ${BORDER}`, borderTopColor: CORAL, borderRadius: "50%", animation: "brand-hub-spin 0.9s linear infinite" }} />
+      </div>
+    );
+  }
+
+  if (!auditData) {
+    return (
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+        <div style={{ ...card, maxWidth: 480, width: "100%", padding: 32, textAlign: "center" }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: "#FEF1EE", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+            <ShieldCheck size={24} color={CORAL} />
+          </div>
+          <h3 style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 16 }}>No audit yet</h3>
+          <p style={{ fontSize: 13, color: MUTED, marginTop: 6, lineHeight: 1.6 }}>
+            {loadErr || "Run your first Brand Audit to see your strategy-aware findings here."}
+          </p>
+          <button type="button" onClick={() => setStep("prompt")} style={{ marginTop: 16, background: CORAL, color: "#fff", border: "none", borderRadius: 8, padding: "10px 20px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
+            Run Brand Audit
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      {/* Returning banner */}
-      <div style={{ ...card, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: 10 }}>
+      {/* Returning banner — driven by the actual audit row */}
+      <div style={{ ...card, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: 10, flexWrap: "wrap", gap: 8 }}>
         <div style={{ fontSize: 12, color: MUTED }}>
-          Last audit: Jun 26, 2026 · Score 71/100 · Auditing <strong style={{ color: INK }}>{domain}</strong>
+          Last audit: {fmtDate(auditCreatedAt)} · Score {auditData.brand_audit_score}/100 · Auditing <strong style={{ color: INK }}>{domain}</strong>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ fontSize: 11, color: FAINT }}>Next recommended: Sep 26, 2026</div>
+          <button type="button" onClick={goAssets} style={pill(false)}>View in Assets</button>
+          <button type="button" onClick={handleDownload} disabled={dlBusy} style={pill(false)}>{dlBusy ? "Preparing…" : "Download PDF"}</button>
           <button type="button" onClick={() => setStep("prompt")} style={pill(true)}>↺ Re-run Audit</button>
         </div>
       </div>
 
-      {/* Dark hero */}
-      <div style={{ background: INK, borderRadius: 14, padding: "24px 28px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 24 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11, fontWeight: 500, textTransform: "uppercase", color: "#5A5855", letterSpacing: "0.1em" }}>
-            Brand Health Score · Jun 26, 2026
-          </div>
-          <div style={{ fontSize: 20, fontWeight: 700, color: "#fff", lineHeight: 1.3, marginTop: 6 }}>
-            Your strategy is strong. Your presence has catching up to do.
-          </div>
-          <div style={{ fontSize: 13, color: "#9A9896", lineHeight: 1.55, maxWidth: 400, marginTop: 6 }}>
-            MOXIEMO compared your external presence, website, LinkedIn, content, against your strategy. Here is the gap report.
-          </div>
-        </div>
-        <div style={{ flexShrink: 0, textAlign: "center" }}>
-          <svg viewBox="0 0 120 120" width="120" height="120">
-            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="10" />
-            <circle
-              cx="60" cy="60" r="52" fill="none" stroke={CORAL} strokeWidth="10"
-              strokeDasharray={C} strokeDashoffset={C * (1 - score / 100)}
-              strokeLinecap="round" transform="rotate(-90 60 60)"
-            />
-            <text x="60" y="56" textAnchor="middle" fontSize="26" fontWeight="700" fill="white" dy="8">{score}</text>
-            <text x="60" y="76" textAnchor="middle" fontSize="12" fill="#5A5855">/100</text>
-          </svg>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, fontSize: 11, color: GREEN, marginTop: 4 }}>
-            <TrendingUp size={12} /> from 64
-          </div>
-        </div>
-      </div>
-
-      {/* Strategic Advisor Read */}
-      <div style={{ ...card, borderLeft: `2px solid ${CORAL}`, padding: "20px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: CORAL, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            Strategic Advisor Read
-          </span>
-          <span style={{ fontSize: 11, color: "#16A34A", background: "#F0FDF4", borderRadius: 20, padding: "2px 10px" }}>
-            Early Stage · Founder-Led Expertise
-          </span>
-        </div>
-        <p style={{ fontSize: 13, color: INK, lineHeight: 1.75, marginTop: 10 }}>
-          Your strategy foundation is one of the strongest MOXIEMO has seen, clear ICP, sharp pain point, differentiated positioning. That clarity is not yet visible externally. Your LinkedIn presence reads like a generalist. The gap is execution, not thinking.
-        </p>
-        <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 5 }}>
-          {[
-            "Strategy foundation is specific and differentiated, ICP, pain, and transformation are locked",
-            "Brand archetype (The Magician) is a strong fit and creates a compelling content angle",
-          ].map((t, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-              <div style={{ width: 6, height: 6, borderRadius: "50%", background: GREEN, flexShrink: 0, marginTop: 6 }} />
-              <div style={{ fontSize: 12, color: INK }}>{t}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: 14, background: "#FFF7F5", border: "1px solid #FED7D0", borderRadius: 10, padding: "12px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 600, color: CORAL, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            What Matters Most Right Now
-          </div>
-          <div style={{ fontSize: 13, color: INK, lineHeight: 1.6, marginTop: 4 }}>
-            Close the strategy-to-presence gap on LinkedIn. Your strategy says you serve founders doing $250K+ who are done playing small. Your last 10 posts do not say that.
-          </div>
-        </div>
-      </div>
-
-      {/* Section scores */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        {sections.map((s) => {
-          const m = scoreMeta(s.score);
-          const isCritical = m.label === "Critical Gap";
-          return (
-            <div key={s.name} style={{ ...card, padding: 16, border: isCritical ? `1.5px solid ${CORAL}` : `1px solid ${BORDER}`, borderRadius: 12 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: INK }}>{s.name}</div>
-                <div>
-                  <span style={{ fontSize: 20, fontWeight: 700, color: m.color }}>{s.score}</span>
-                  <span style={{ fontSize: 12, color: FAINT }}>/100</span>
-                </div>
-              </div>
-              <div style={{ marginTop: 4 }}>
-                <span style={{ fontSize: 10, fontWeight: 600, background: m.badgeBg, color: m.badgeText, borderRadius: 4, padding: "2px 8px" }}>{m.label}</span>
-              </div>
-              <div style={{ marginTop: 8, height: 6, background: "#F0EFEC", borderRadius: 3 }}>
-                <div style={{ width: `${s.score}%`, height: "100%", background: m.color, borderRadius: 3 }} />
-              </div>
-              <div style={{ marginTop: 8, fontSize: 12, color: MUTED, lineHeight: 1.5 }}>{s.finding}</div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Footer action bar */}
-      <div style={{ ...card, padding: "12px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: 10 }}>
-        <div style={{ fontSize: 12, color: FAINT }}>
-          Auditing <span style={{ color: INK, fontWeight: 600 }}>{domain}</span> · Saved to Brand Assets as PDF
-        </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button style={pill()} onClick={goAssets}>View in Assets</button>
-          <button style={pill()} onClick={handleDownload} disabled={dlBusy}>{dlBusy ? "Preparing…" : "Download PDF"}</button>
-          <button style={pill(true)} onClick={() => setStep("prompt")}>↺ Re-run Audit</button>
-        </div>
+      {/* Real strategy-aware report — same component the /brand-audit/r/:id page uses */}
+      <div style={{ background: "#F7F5F1", borderRadius: 14, marginTop: -6 }}>
+        <BrandAuditReport data={auditData} />
       </div>
     </div>
   );
