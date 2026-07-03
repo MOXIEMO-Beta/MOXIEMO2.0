@@ -208,6 +208,27 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_image_cache: {
+        Row: {
+          generated_at: string
+          id: string
+          images_json: Json
+          user_id: string
+        }
+        Insert: {
+          generated_at?: string
+          id?: string
+          images_json: Json
+          user_id: string
+        }
+        Update: {
+          generated_at?: string
+          id?: string
+          images_json?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       brand_kit_leads: {
         Row: {
           created_at: string

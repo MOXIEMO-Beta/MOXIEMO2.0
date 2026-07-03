@@ -217,6 +217,35 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
   const [rescheduleTime, setRescheduleTime] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
+  // Compose panel (click-to-create / edit-in-place / add-another)
+  type ComposeMode = "new" | "add" | "edit";
+  type ComposeState = {
+    mode: ComposeMode;
+    date: Date;
+    post: SocialPost | null;
+    platform: Platform;
+    pillar: string | null;
+    text: string;
+    suggestedPillar: string | null;
+    saving: boolean;
+  };
+  const [compose, setCompose] = useState<ComposeState | null>(null);
+  const [cachedAngles, setCachedAngles] = useState<Array<{ pillar: string; angle: string }>>([]);
+
+  // Load pillar_feed_cache for gap-pillar suggestions
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("pillar_feed_cache")
+        .select("angles_json")
+        .eq("user_id", userId)
+        .maybeSingle();
+      const list = ((data as any)?.angles_json?.angles ?? []) as Array<{ pillar: string; angle: string }>;
+      if (Array.isArray(list)) setCachedAngles(list);
+    })();
+  }, [userId]);
+
   // drag and drop
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [dragOverDay, setDragOverDay] = useState<string | null>(null);
@@ -401,10 +430,114 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
 
   /* side panel actions */
   const handleDayClick = (date: Date) => {
+    // Called only when the user clicks the empty area of a day cell.
+    const key = ymd(date);
+    const dayPosts = postsByDay.get(key) ?? [];
+    if (dayPosts.length === 0) {
+      openCompose({ mode: "new", date });
+    } else {
+      openCompose({ mode: "add", date });
+    }
+  };
+  const openDayList = (date: Date) => {
     setSelectedDate(date);
     setSidePanelOpen(true);
     setRescheduleForId(null);
   };
+  const openCompose = (args: { mode: ComposeMode; date: Date; post?: SocialPost }) => {
+    const { mode, date, post } = args;
+    let platform: Platform = "linkedin";
+    let pillar: string | null = null;
+    let text = "";
+    let suggestedPillar: string | null = null;
+
+    if (mode === "edit" && post) {
+      const p0 = (post.platforms ?? [])[0]?.toLowerCase();
+      if (p0 === "linkedin" || p0 === "facebook" || p0 === "instagram") platform = p0 as Platform;
+      pillar = post.pillar ?? null;
+      const cbp = post.content_by_platform || {};
+      text = String(cbp[platform] || Object.values(cbp)[0] || "");
+    }
+
+    if (mode === "new") {
+      // If any pillar is in amber/coral state this month, pre-fill with a
+      // suggested angle for the first such pillar from pillar_feed_cache.
+      const gapPillar = (() => {
+        for (const c of coverage.chips) {
+          if (c.state === "amber" || c.state === "coral") return c.name;
+        }
+        return null;
+      })();
+      if (gapPillar) {
+        suggestedPillar = gapPillar;
+        pillar = gapPillar;
+        const found = cachedAngles.find((a) => a.pillar === gapPillar);
+        if (found?.angle) text = found.angle;
+      }
+    }
+
+    setCompose({
+      mode, date, post: post ?? null, platform, pillar, text,
+      suggestedPillar, saving: false,
+    });
+  };
+  const closeCompose = () => setCompose(null);
+
+  const submitCompose = async () => {
+    if (!compose || !userId) return;
+    const { mode, date, post, platform, pillar, text } = compose;
+    const body = text.trim();
+    if (!body) { toast.error("Add some content first"); return; }
+    setCompose((c) => (c ? { ...c, saving: true } : c));
+    try {
+      if (mode === "edit" && post) {
+        const nextCbp = { ...(post.content_by_platform || {}), [platform]: body };
+        const { error } = await supabase.from("social_posts").update({
+          content_by_platform: nextCbp,
+          platforms: [platform],
+          pillar: pillar || null,
+        }).eq("id", post.id);
+        if (error) throw error;
+        toast.success("Post updated");
+      } else {
+        // new / add — create a scheduled draft at 9:00 local on the chosen date
+        const when = new Date(date);
+        when.setHours(9, 0, 0, 0);
+        const { error } = await supabase.from("social_posts").insert({
+          user_id: userId,
+          platforms: [platform],
+          content_by_platform: { [platform]: body } as any,
+          status: "scheduled",
+          scheduled_for: when.toISOString(),
+          pillar: pillar || null,
+          sort_order: 0,
+        });
+        if (error) throw error;
+        toast.success("Draft saved");
+      }
+      setCompose(null);
+      await fetchPosts();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Save failed");
+      setCompose((c) => (c ? { ...c, saving: false } : c));
+    }
+  };
+
+  const removeCompose = async () => {
+    if (!compose?.post) return;
+    if (!confirm("Remove this post?")) return;
+    setCompose((c) => (c ? { ...c, saving: true } : c));
+    const { error } = await supabase.from("social_posts").delete().eq("id", compose.post.id);
+    if (error) {
+      toast.error("Couldn't remove");
+      setCompose((c) => (c ? { ...c, saving: false } : c));
+      return;
+    }
+    toast.success("Post removed");
+    setCompose(null);
+    await fetchPosts();
+  };
+
   const closePanel = () => {
     setSidePanelOpen(false);
     setRescheduleForId(null);
@@ -472,10 +605,10 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     setRescheduleDate(ymd(d));
     setRescheduleTime(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
   };
-  // Clicking a post chip opens the same day panel as clicking the day cell.
+  // Clicking a post chip in the month grid opens edit-in-place compose panel.
   const handleSelectPost = (p: SocialPost) => {
     const d = postDate(p) ?? new Date();
-    handleDayClick(d);
+    openCompose({ mode: "edit", date: d, post: p });
   };
 
   const dayPosts = useMemo(() => {
@@ -660,6 +793,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
             dayRefs={dayRefs}
             onSelectPost={handleSelectPost}
             onDayClick={handleDayClick}
+            onOpenDayList={openDayList}
             onAddAtDate={(d) => onCreateAtDate(d.toISOString())}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
@@ -867,6 +1001,117 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
         pillars={pillars}
         onScheduled={fetchPosts}
       />
+
+      {/* Compose panel — new / add / edit */}
+      {compose && (
+        <div className="fixed inset-0 z-50" onClick={closeCompose}>
+          <div className="absolute inset-0 bg-black/30" />
+          <div
+            className="absolute right-0 top-0 flex h-full w-[380px] flex-col bg-background shadow-xl"
+            style={{ borderLeft: "0.5px solid #ECEAE5" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4" style={{ borderBottom: "0.5px solid #ECEAE5" }}>
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {compose.mode === "edit"
+                    ? `Edit post — ${fmtDateLong(compose.date)}`
+                    : compose.mode === "add"
+                    ? `Add another post — ${fmtDateLong(compose.date)}`
+                    : `New post — ${fmtDateLong(compose.date)}`}
+                </p>
+                <span
+                  className="inline-block mt-1"
+                  style={{
+                    fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em",
+                    padding: "2px 8px", borderRadius: 10,
+                    background: compose.mode === "edit" ? "#E8F1FB" : compose.mode === "add" ? "#F0EFEC" : "#EAF3DE",
+                    color:      compose.mode === "edit" ? "#0A66C2" : compose.mode === "add" ? "#6B6860" : "#3B6D11",
+                  }}
+                >
+                  {compose.mode === "edit" ? "Editing" : compose.mode === "add" ? "Adding to this day" : "New post"}
+                </span>
+              </div>
+              <button onClick={closeCompose} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {compose.mode === "new" && compose.suggestedPillar && (
+                <div
+                  className="inline-flex items-center gap-1.5"
+                  style={{
+                    fontSize: 11, color: "#3B6D11", background: "#EAF3DE",
+                    border: "0.5px solid #C7DEA8", borderRadius: 8, padding: "6px 10px",
+                  }}
+                >
+                  <span style={{ fontSize: 12 }}>✨</span>
+                  Suggested — {compose.suggestedPillar} hasn't been covered this month
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <label className="text-[11px] text-muted-foreground">Platform</label>
+                <select
+                  value={compose.platform}
+                  onChange={(e) => setCompose((c) => (c ? { ...c, platform: e.target.value as Platform } : c))}
+                  className="text-xs rounded border border-border px-2 py-1 bg-background"
+                >
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="facebook">Facebook</option>
+                  <option value="instagram">Instagram</option>
+                </select>
+                {pillars.length > 0 && (
+                  <>
+                    <label className="text-[11px] text-muted-foreground ml-2">Pillar</label>
+                    <select
+                      value={compose.pillar ?? ""}
+                      onChange={(e) => setCompose((c) => (c ? { ...c, pillar: e.target.value || null } : c))}
+                      className="text-xs rounded border border-border px-2 py-1 bg-background max-w-[140px] truncate"
+                    >
+                      <option value="">—</option>
+                      {pillars.map((p) => (
+                        <option key={p} value={p}>{p}</option>
+                      ))}
+                    </select>
+                  </>
+                )}
+              </div>
+              <textarea
+                value={compose.text}
+                onChange={(e) => setCompose((c) => (c ? { ...c, text: e.target.value } : c))}
+                placeholder={compose.mode === "add" ? "Write another post for this day…" : "What do you want to say?"}
+                rows={10}
+                className="w-full text-sm rounded-md border border-border p-3 focus:outline-none focus:ring-2 focus:ring-[#E85A46]/40"
+                style={{ resize: "vertical" }}
+              />
+            </div>
+            <div className="flex items-center gap-2 p-4" style={{ borderTop: "0.5px solid #ECEAE5" }}>
+              <Button
+                size="sm"
+                className="bg-accent text-accent-foreground hover:bg-accent/90"
+                onClick={submitCompose}
+                disabled={compose.saving}
+              >
+                {compose.saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (compose.mode === "edit" ? "Save changes" : "Save as draft")}
+              </Button>
+              <Button size="sm" variant="outline" onClick={closeCompose} disabled={compose.saving}>
+                Cancel
+              </Button>
+              {compose.mode === "edit" && (
+                <button
+                  type="button"
+                  onClick={removeCompose}
+                  disabled={compose.saving}
+                  className="ml-auto inline-flex items-center gap-1 text-xs"
+                  style={{ color: "#E85A46", background: "transparent", border: "none" }}
+                >
+                  <Trash2 className="h-3 w-3" /> Remove post
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -935,6 +1180,7 @@ function MonthGrid({
   dayRefs,
   onSelectPost,
   onDayClick,
+  onOpenDayList,
   onAddAtDate,
   onDragStart,
   onDragEnd,
@@ -948,6 +1194,7 @@ function MonthGrid({
   dayRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   onSelectPost: (p: SocialPost) => void;
   onDayClick: (d: Date) => void;
+  onOpenDayList: (d: Date) => void;
   onAddAtDate: (d: Date) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>, p: SocialPost) => void;
   onDragEnd: () => void;
@@ -973,7 +1220,8 @@ function MonthGrid({
           const isToday = sameDay(d, today);
           const best = bestTimeFor(d);
           const isDragOver = dragOverDay === key;
-          const visible = dayPosts.slice(0, dayPosts.length > 3 ? 2 : 3);
+          // Cap inline chip display at 2 when there are 3+ posts on this day.
+          const visible = dayPosts.length > 2 ? dayPosts.slice(0, 2) : dayPosts;
           const overflow = dayPosts.length - visible.length;
           return (
             <div
@@ -1052,7 +1300,7 @@ function MonthGrid({
                     className="block w-full text-left text-[10px] text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onSelectPost(dayPosts[2]);
+                      onOpenDayList(d);
                     }}
                   >
                     + {overflow} more
