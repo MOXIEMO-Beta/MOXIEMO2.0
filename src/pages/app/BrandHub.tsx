@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/components/ui/use-toast";
+import { downloadStrategyPdf } from "@/lib/strategyPdf";
+import { downloadAuditPdf } from "@/lib/brandAuditPdf";
+import { generateBrandKitPdf, type BrandKitData } from "@/lib/brandKitPdf";
+import { buildReportData } from "@/lib/reportDataBinding";
 import {
   ShieldCheck,
   ClipboardCheck,
@@ -158,6 +162,7 @@ export default function BrandHub() {
   const [profile, setProfile] = useState<any>(null);
   const [strategy, setStrategy] = useState<any>(null);
   const [latestAuditId, setLatestAuditId] = useState<string | null>(null);
+  const [latestKit, setLatestKit] = useState<{ id: string; kit_json: any } | null>(null);
   const [hubVisited, setHubVisited] = useState(false);
   const [tab, setTab] = useState<BrandTab>("welcome");
   const [auditStep, setAuditStep] = useState<AuditStep>("prompt");
@@ -167,21 +172,23 @@ export default function BrandHub() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [p, s] = await Promise.all([
+      const [p, s, a, k] = await Promise.all([
         supabase
           .from("profiles")
           .select("website_url, brand_hub_visited, brand_colors, brand_logo_url, brand_fonts, business_name, full_name")
           .eq("id", user.id)
           .maybeSingle(),
         supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("audits").select("id").eq("user_id", user.id).eq("status", "ready").order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("brand_kits").select("id, kit_json").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       const prof: any = p.data ?? {};
       setProfile(prof);
       setStrategy(s.data);
-      // Brand Audit records are anonymous today, so there is no per-user audit id
-      // to attach a share to. Leaving as null makes the audit Share Link show a
-      // clear "nothing to share yet" toast until audits are linked to users.
-      setLatestAuditId(null);
+      // Audits are now linked to signed-in users, so we can surface the latest
+      // ready one for share/download/report views.
+      setLatestAuditId(a.data?.id ?? null);
+      setLatestKit(k.data ?? null);
       const visited = !!prof.brand_hub_visited;
       setHubVisited(visited);
       if (visited) {
@@ -267,6 +274,7 @@ export default function BrandHub() {
             userId={user?.id}
             goAssets={() => setTab("assets")}
             latestAuditId={latestAuditId}
+            onNewAudit={(id) => setLatestAuditId(id)}
           />
         )}
         {tab === "kit" && (
@@ -278,6 +286,8 @@ export default function BrandHub() {
             strategy={strategy}
             userId={user?.id}
             goAssets={() => setTab("assets")}
+            latestKit={latestKit}
+            onNewKit={(k) => setLatestKit(k)}
           />
         )}
         {tab === "assets" && (
@@ -286,7 +296,11 @@ export default function BrandHub() {
             goAuditPrompt={() => { setTab("audit"); setAuditStep("prompt"); }}
             goKitVisual={() => { setTab("kit"); setKitStep("visual"); }}
             strategyId={strategy?.id ?? null}
-            kitOwnerId={user?.id ?? null}
+            kitOwnerId={latestKit?.id ?? null}
+            userId={user?.id ?? null}
+            profile={profile}
+            strategy={strategy}
+            latestKit={latestKit}
             latestAuditId={latestAuditId}
           />
         )}
