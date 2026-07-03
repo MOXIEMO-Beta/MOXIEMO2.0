@@ -761,27 +761,56 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
                 )}
               </PopoverContent>
             </Popover>
-            <div className="flex rounded-md border border-border p-0.5">
-              {(["month", "week", "list"] as ViewMode[]).map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => setView(v)}
-                  className={cn(
-                    "rounded px-3 py-1 text-xs capitalize transition-colors",
-                    view === v ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {v}
-                </button>
-              ))}
+            <div style={{ display: "inline-flex", background: "#F0EFEC", borderRadius: 8, padding: 3 }}>
+              {(["month", "week", "list"] as ViewMode[]).map((v) => {
+                const active = view === v;
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setView(v)}
+                    style={{
+                      padding: "5px 12px",
+                      fontSize: 12,
+                      borderRadius: 6,
+                      textTransform: "capitalize",
+                      background: active ? "#E85A46" : "transparent",
+                      color: active ? "#fff" : "#6B6860",
+                      fontWeight: active ? 700 : 500,
+                      border: "none",
+                      cursor: "pointer",
+                      transition: "background-color 150ms",
+                    }}
+                  >
+                    {v}
+                  </button>
+                );
+              })}
             </div>
-            <Button size="sm" variant="outline" onClick={openImport}>
+            <button
+              type="button"
+              onClick={openImport}
+              style={{
+                background: "#fff", border: "1px solid #ECEAE5",
+                borderRadius: 8, height: 32, padding: "0 14px",
+                fontSize: 12, fontWeight: 500, color: "#0E0F10", cursor: "pointer",
+              }}
+            >
               Import from drafts
-            </Button>
-            <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => onCreateAtDate(new Date().toISOString())}>
+            </button>
+            <button
+              type="button"
+              onClick={() => onCreateAtDate(new Date().toISOString())}
+              className="inline-flex items-center"
+              style={{
+                background: "#E85A46", color: "#fff",
+                borderRadius: 8, height: 32, padding: "0 14px",
+                fontSize: 12, fontWeight: 700, border: "none", cursor: "pointer",
+                boxShadow: "0 4px 14px rgba(232, 90, 70, 0.28)",
+              }}
+            >
               <Plus className="mr-1 h-3.5 w-3.5" /> New Post
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -1241,7 +1270,7 @@ function MonthGrid({
                 <span
                   className={cn(
                     "inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px]",
-                    isToday && "bg-[#ff6b6b] text-white font-semibold",
+                    isToday && "bg-[#E85A46] text-white font-semibold h-6 min-w-[24px] shadow-[0_2px_8px_rgba(232,90,70,0.35)]",
                   )}
                 >
                   {d.getDate()}
@@ -1268,7 +1297,8 @@ function MonthGrid({
                             }
                             onAddAtDate(next);
                           }}
-                          className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[9px] text-muted-foreground transition-colors hover:bg-[#ff6b6b]/10 hover:text-[#c43d3d]"
+                          className="flex items-center gap-0.5 rounded px-1 py-0.5 text-[10px] transition-colors hover:bg-[#E85A46]/10 hover:text-[#E85A46]"
+                          style={{ color: "#B5B3AE" }}
                         >
                           <Plus className="h-2.5 w-2.5" />
                           {best}
