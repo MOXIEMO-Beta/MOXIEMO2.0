@@ -111,6 +111,14 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   const [composeOpen, setComposeOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  const [suggestion, setSuggestion] = useState<{ pillar: string; angle: string; platform?: string } | null>(null);
+  const [suggestionDismissed, setSuggestionDismissed] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = sessionStorage.getItem("moxiemo_queue_suggest_dismiss");
+      return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch { return new Set(); }
+  });
 
   useEffect(() => {
     if (!userId) return;
@@ -142,6 +150,50 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       setLoading(false);
     })();
   }, [userId]);
+
+  // Pick one auto-suggestion from pillar_feed_cache (most underrepresented pillar in queue)
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("pillar_feed_cache").select("angles_json").eq("user_id", userId).maybeSingle();
+      const list = ((data as any)?.angles_json?.angles ?? []) as Array<{ pillar: string; angle: string; platform?: string }>;
+      if (!Array.isArray(list) || list.length === 0) { setSuggestion(null); return; }
+      const counts: Record<string, number> = {};
+      posts.forEach((p) => { if (p.pillar) counts[p.pillar] = (counts[p.pillar] ?? 0) + 1; });
+      const sorted = [...list].sort((a, b) => (counts[a.pillar] ?? 0) - (counts[b.pillar] ?? 0));
+      const pick = sorted.find((s) => s.angle && !suggestionDismissed.has(s.angle)) ?? null;
+      setSuggestion(pick);
+    })();
+  }, [userId, posts, suggestionDismissed]);
+
+  function dismissSuggestion(angle: string) {
+    setSuggestionDismissed((prev) => {
+      const next = new Set(prev); next.add(angle);
+      try { sessionStorage.setItem("moxiemo_queue_suggest_dismiss", JSON.stringify(Array.from(next))); } catch {}
+      return next;
+    });
+  }
+
+  async function saveSuggestionAsDraft(open: boolean) {
+    if (!suggestion || !userId) return;
+    const platform: Platform = (["linkedin","instagram","facebook","x"].includes((suggestion.platform ?? "").toLowerCase())
+      ? (suggestion.platform!.toLowerCase() as Platform)
+      : "linkedin");
+    const { data, error } = await supabase.from("social_posts").insert({
+      user_id: userId,
+      platforms: [platform],
+      content_by_platform: { [platform]: suggestion.angle } as any,
+      status: "draft",
+      pillar: suggestion.pillar,
+      sort_order: 0,
+    }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
+    if (error) { toast.error(error.message); return; }
+    setPosts((arr) => [data as any, ...arr]);
+    dismissSuggestion(suggestion.angle);
+    if (open) setEditingId((data as any).id);
+    toast.success(open ? "Draft ready — edit and save" : "Saved to queue");
+  }
 
   // Resolve signed URLs for post thumbnails (private bucket)
   useEffect(() => {
