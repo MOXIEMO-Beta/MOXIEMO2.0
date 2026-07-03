@@ -1069,6 +1069,7 @@ function MonthGrid({
   dayRefs,
   onSelectPost,
   onDayClick,
+  onOpenDayList,
   onAddAtDate,
   onDragStart,
   onDragEnd,
@@ -1082,6 +1083,7 @@ function MonthGrid({
   dayRefs: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
   onSelectPost: (p: SocialPost) => void;
   onDayClick: (d: Date) => void;
+  onOpenDayList: (d: Date) => void;
   onAddAtDate: (d: Date) => void;
   onDragStart: (e: DragEvent<HTMLDivElement>, p: SocialPost) => void;
   onDragEnd: () => void;
@@ -1107,7 +1109,8 @@ function MonthGrid({
           const isToday = sameDay(d, today);
           const best = bestTimeFor(d);
           const isDragOver = dragOverDay === key;
-          const visible = dayPosts.slice(0, dayPosts.length > 3 ? 2 : 3);
+          // Cap inline chip display at 2 when there are 3+ posts on this day.
+          const visible = dayPosts.length > 2 ? dayPosts.slice(0, 2) : dayPosts;
           const overflow = dayPosts.length - visible.length;
           return (
             <div
@@ -1186,7 +1189,7 @@ function MonthGrid({
                     className="block w-full text-left text-[10px] text-muted-foreground hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onSelectPost(dayPosts[2]);
+                      onOpenDayList(d);
                     }}
                   >
                     + {overflow} more
