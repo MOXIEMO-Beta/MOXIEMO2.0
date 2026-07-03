@@ -1017,7 +1017,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         <div style={{ display: "flex", gap: 8 }}>
           <button style={pill()} onClick={goAssets}>View in Assets</button>
           <button style={pill()}>Download PDF</button>
-          <button style={pill()}>Share Link</button>
+          <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
           <button style={pill(true)} onClick={() => setStep("visual")}>↺ Regenerate Kit</button>
         </div>
       </div>
@@ -1069,7 +1069,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
           <>
             <PrimaryPill>Download PDF</PrimaryPill>
             <button style={pill()}>Copy All</button>
-            <button style={pill()}>Share Link</button>
+            <ShareControls documentType="strategy" sourceId={strategyId} />
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Auto-saved from your strategy</span>
           </>
         }
@@ -1096,7 +1096,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
           <>
             <PrimaryPill>Download PDF</PrimaryPill>
             <button style={pill()}>Copy All</button>
-            <button style={pill()}>Share Link</button>
+            <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
             <button style={pill(true)} onClick={goKitVisual}>↺ Regenerate</button>
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Kit tab</span>
           </>
@@ -1127,6 +1127,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
           <>
             <PrimaryPill>Download PDF</PrimaryPill>
             <button style={pill()}>View All Runs</button>
+            <ShareControls documentType="brand-audit" sourceId={latestAuditId} />
             <button style={pill()} onClick={goAuditResults}>Open Full Report</button>
             <button style={pill(true)} onClick={goAuditPrompt}>↺ Re-run Audit</button>
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Audit tab</span>
