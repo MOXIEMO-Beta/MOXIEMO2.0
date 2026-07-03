@@ -374,11 +374,37 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                       style={{ width: 32, height: 32, borderRadius: 6, objectFit: "cover", border: "0.5px solid #ECEAE5" }} />
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="text-[13px] truncate" style={{ color: "#0E0F10" }}>
+                    <div
+                      className="text-[13px]"
+                      style={{
+                        color: "#0E0F10",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                        lineHeight: 1.4,
+                        wordBreak: "break-word",
+                      }}
+                    >
                       {previewText(post) || <span style={{ color: "#9A9896" }}>(empty)</span>}
                     </div>
                     {post.pillar && <div className="text-[11px]" style={{ color: "#9A9896" }}>{post.pillar}</div>}
                   </div>
+                  {!hasMedia && (
+                    <button
+                      onClick={() => setOpenMediaFor(isOpen ? null : post.id)}
+                      className="flex items-center gap-1.5 flex-shrink-0"
+                      style={{
+                        fontSize: 11, color: "#E85A46",
+                        border: "1px dashed #F5C4B3",
+                        borderRadius: 7, padding: "4px 8px",
+                        background: "transparent", cursor: "pointer",
+                      }}
+                      title="Add a visual to this post"
+                    >
+                      <ImagePlus size={13} /> Add visual
+                    </button>
+                  )}
                   <label className="text-[12px] whitespace-nowrap cursor-pointer" style={{ color: "#6B6860" }}>
                     {fmtDate(post.scheduled_for)}
                     <input type="datetime-local" defaultValue={toLocalInputValue(post.scheduled_for)}
