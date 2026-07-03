@@ -168,7 +168,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     (async () => {
       const { data } = await supabase
         .from("pillar_feed_cache").select("angles_json").eq("user_id", userId).maybeSingle();
-      const list = ((data as any)?.angles_json?.angles ?? []) as Array<{ pillar: string; angle: string; platform?: string }>;
+      const list = ((data as any)?.angles_json?.angles ?? []) as Suggestion[];
       if (!Array.isArray(list) || list.length === 0) { setSuggestion(null); return; }
       const counts: Record<string, number> = {};
       posts.forEach((p) => { if (p.pillar) counts[p.pillar] = (counts[p.pillar] ?? 0) + 1; });
