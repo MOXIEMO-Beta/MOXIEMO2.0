@@ -1129,6 +1129,21 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
                       />
                     ))}
                   </div>
+                  {recSearchTerms.length > 0 && recPage < 1 + REC_LOAD_MORE_CAP && (
+                    <div className="flex justify-center" style={{ marginTop: 8 }}>
+                      <button
+                        onClick={loadMoreRecommended}
+                        disabled={recLoadingMore}
+                        style={{
+                          fontSize: 11, color: "#6B6860", background: "#fff",
+                          border: "0.5px solid #ECEAE5", borderRadius: 14, padding: "4px 14px",
+                          cursor: recLoadingMore ? "default" : "pointer",
+                        }}
+                      >
+                        {recLoadingMore ? "Loading…" : "Load more"}
+                      </button>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between" style={{ marginTop: 6 }}>
                     <span style={{ fontSize: 10, color: "#9A9896" }}>Photos provided by Pexels</span>
                     <button
@@ -1197,6 +1212,21 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
               />
             ))}
           </div>
+          {stockResults.length > 0 && stockActiveQuery && (
+            <div className="flex justify-center" style={{ marginTop: 8 }}>
+              <button
+                onClick={loadMoreStock}
+                disabled={stockLoadingMore}
+                style={{
+                  fontSize: 11, color: "#6B6860", background: "#fff",
+                  border: "0.5px solid #ECEAE5", borderRadius: 14, padding: "4px 14px",
+                  cursor: stockLoadingMore ? "default" : "pointer",
+                }}
+              >
+                {stockLoadingMore ? "Loading…" : "Load more"}
+              </button>
+            </div>
+          )}
           <div style={{ fontSize: 10, color: "#9A9896", textAlign: "right", marginTop: 4 }}>
             Photos provided by Pexels
           </div>
