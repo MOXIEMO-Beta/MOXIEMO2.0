@@ -77,6 +77,43 @@ async function revokeShareLink(document_type: ShareDocumentType, source_id: stri
   toast({ title: "Share link revoked", description: "The previous link no longer works." });
 }
 
+function ShareControls({
+  documentType, sourceId, dark = false,
+}: { documentType: ShareDocumentType; sourceId: string | null | undefined; dark?: boolean }) {
+  const [busy, setBusy] = useState(false);
+  const baseStyle: React.CSSProperties = dark
+    ? { border: "1px solid rgba(255,255,255,0.15)", color: "#fff", borderRadius: 20, padding: "6px 14px", fontSize: 12, background: "transparent", cursor: "pointer" }
+    : { border: `1px solid ${BORDER}`, borderRadius: 20, padding: "6px 14px", fontSize: 12, background: "transparent", color: INK, cursor: "pointer", fontWeight: 500 };
+  const rotateStyle: React.CSSProperties = { ...baseStyle, padding: "6px 10px", opacity: 0.85 };
+  return (
+    <span style={{ display: "inline-flex", gap: 4 }}>
+      <button
+        type="button"
+        disabled={busy}
+        onClick={async () => { setBusy(true); try { await createShareLink(documentType, sourceId); } finally { setBusy(false); } }}
+        style={baseStyle}
+      >
+        {busy ? "Working…" : "Share Link"}
+      </button>
+      <button
+        type="button"
+        title="Revoke previous link and create a new one"
+        aria-label="Rotate share link"
+        disabled={busy}
+        onClick={async () => {
+          if (!sourceId) return;
+          if (!confirm("Revoke the current share link and create a new one? The old link will stop working immediately.")) return;
+          setBusy(true);
+          try { await createShareLink(documentType, sourceId, { rotate: true }); } finally { setBusy(false); }
+        }}
+        style={rotateStyle}
+      >
+        ↻
+      </button>
+    </span>
+  );
+}
+
 const INK = "#0E0F10";
 const MUTED = "#6B6860";
 const FAINT = "#9A9896";
