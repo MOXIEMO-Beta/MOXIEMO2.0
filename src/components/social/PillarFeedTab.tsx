@@ -164,7 +164,7 @@ export default function PillarFeedTab({ userId }: { userId: string | null }) {
                 </div>
                 <p className="mt-3 italic" style={{ color: "#6B6860", fontSize: 12, lineHeight: 1.6 }}>{angle}</p>
                 <button
-                  onClick={() => navigate(`/app/content?pillar=${encodeURIComponent(pillar)}&prompt=${encodeURIComponent(angle)}`)}
+                  onClick={() => navigate(`/app/social?tab=queue&pillar=${encodeURIComponent(pillar)}`)}
                   className="mt-3.5 text-[12px] font-semibold" style={{ color: "#E85A46" }}>
                   Write this post →
                 </button>
