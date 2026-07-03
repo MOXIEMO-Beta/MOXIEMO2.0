@@ -1190,7 +1190,68 @@ function CopyPill() {
 }
 
 /* -------------------- Brand Assets -------------------- */
-function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null }) {
+function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId, userId, profile, strategy, latestKit }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null; userId?: string | null; profile?: any; strategy?: any; latestKit?: { id: string; kit_json: any } | null }) {
+  const [busy, setBusy] = useState<null | "strategy" | "kit" | "audit">(null);
+  const dlStrategy = async () => {
+    if (!userId) { toast({ title: "Sign in required", variant: "destructive" }); return; }
+    setBusy("strategy");
+    try {
+      const [{ data: strategyRow }, { data: profileRow }] = await Promise.all([
+        supabase.from("strategies").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("profiles").select("full_name, business_name, email, created_at").eq("id", userId).maybeSingle(),
+      ]);
+      if (!strategyRow) throw new Error("No strategy on file.");
+      const rd = buildReportData(strategyRow, profileRow);
+      const first = String(profileRow?.full_name || "Founder").split(/\s+/)[0].replace(/[^A-Za-z0-9_-]/g, "") || "Founder";
+      const d = new Date();
+      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      await downloadStrategyPdf(rd, `${first}-MOXIEMO-Strategy-${date}.pdf`);
+    } catch (e: any) {
+      toast({ title: "Could not export strategy PDF", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setBusy(null); }
+  };
+  const dlKit = async () => {
+    if (!latestKit) { toast({ title: "Generate your Brand Kit first", variant: "destructive" }); return; }
+    setBusy("kit");
+    try {
+      const data: BrandKitData = {
+        siteName: strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand",
+        websiteUrl: profile?.website_url ?? "",
+        logo: profile?.brand_logo_url ?? undefined,
+        colors: (Array.isArray(profile?.brand_colors) ? profile.brand_colors : []).map((hex: string, i: number) => ({ hex, rgb: "", role: i === 0 ? "Primary" : i === 1 ? "Accent" : `Support ${i - 1}` })),
+        fonts: { heading: profile?.brand_fonts?.[0] || "Helvetica", body: profile?.brand_fonts?.[1] || profile?.brand_fonts?.[0] || "Helvetica" },
+        imagery: [],
+      };
+      const blob = await generateBrandKitPdf(data);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.siteName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "brand"}-brand-kit.pdf`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e: any) {
+      toast({ title: "Could not export brand kit PDF", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setBusy(null); }
+  };
+  const dlAudit = async () => {
+    if (!latestAuditId) { toast({ title: "Run a Brand Audit first", variant: "destructive" }); return; }
+    setBusy("audit");
+    try {
+      const { data: row, error } = await supabase.from("audits").select("status, brand_audit_score, report, inputs, stage, posture").eq("id", latestAuditId).maybeSingle();
+      if (error) throw error;
+      if (!row || !row.report) throw new Error("Audit report not available yet.");
+      await downloadAuditPdf({
+        status: row.status as any,
+        brand_audit_score: row.brand_audit_score ?? 0,
+        report: row.report as any,
+        inputs: row.inputs as any,
+        stage: row.stage ?? null,
+        posture: row.posture ?? null,
+      });
+    } catch (e: any) {
+      toast({ title: "Could not export audit PDF", description: e?.message ?? String(e), variant: "destructive" });
+    } finally { setBusy(null); }
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <AssetCard
@@ -1216,7 +1277,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         bodyNote="6 sections · Auto-updates when strategy is regenerated"
         footer={
           <>
-            <PrimaryPill>Download PDF</PrimaryPill>
+            <PrimaryPill onClick={dlStrategy} disabled={busy === "strategy"}>{busy === "strategy" ? "Preparing…" : "Download PDF"}</PrimaryPill>
             <button style={pill()}>Copy All</button>
             <ShareControls documentType="strategy" sourceId={strategyId} />
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Auto-saved from your strategy</span>
@@ -1243,7 +1304,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         bodyNote="5 sections · 1 page · Regenerate from Brand Kit tab when strategy changes"
         footer={
           <>
-            <PrimaryPill>Download PDF</PrimaryPill>
+            <PrimaryPill onClick={dlKit} disabled={busy === "kit"}>{busy === "kit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
             <button style={pill()}>Copy All</button>
             <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
             <button style={pill(true)} onClick={goKitVisual}>↺ Regenerate</button>
@@ -1274,7 +1335,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         bodyNote="Next audit recommended: Sep 26, 2026 · Each run saved separately"
         footer={
           <>
-            <PrimaryPill>Download PDF</PrimaryPill>
+            <PrimaryPill onClick={dlAudit} disabled={busy === "audit"}>{busy === "audit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
             <button style={pill()}>View All Runs</button>
             <ShareControls documentType="brand-audit" sourceId={latestAuditId} />
             <button style={pill()} onClick={goAuditResults}>Open Full Report</button>
@@ -1287,9 +1348,9 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
   );
 }
 
-function PrimaryPill({ children }: { children: React.ReactNode }) {
+function PrimaryPill({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) {
   return (
-    <button style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+    <button onClick={onClick} disabled={disabled} style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 20, padding: "6px 14px", fontSize: 12, fontWeight: 600, cursor: disabled ? "not-allowed" : "pointer", opacity: disabled ? 0.6 : 1 }}>
       {children}
     </button>
   );
