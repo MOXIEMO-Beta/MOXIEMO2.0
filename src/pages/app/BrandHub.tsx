@@ -167,25 +167,21 @@ export default function BrandHub() {
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [p, s, a] = await Promise.all([
+      const [p, s] = await Promise.all([
         supabase
           .from("profiles")
           .select("website_url, brand_hub_visited, brand_colors, brand_logo_url, brand_fonts, business_name, full_name")
           .eq("id", user.id)
           .maybeSingle(),
         supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
-        supabase
-          .from("audits")
-          .select("id")
-          .eq("inputs->>user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
       ]);
       const prof: any = p.data ?? {};
       setProfile(prof);
       setStrategy(s.data);
-      setLatestAuditId((a as any)?.data?.id ?? null);
+      // Brand Audit records are anonymous today, so there is no per-user audit id
+      // to attach a share to. Leaving as null makes the audit Share Link show a
+      // clear "nothing to share yet" toast until audits are linked to users.
+      setLatestAuditId(null);
       const visited = !!prof.brand_hub_visited;
       setHubVisited(visited);
       if (visited) {
