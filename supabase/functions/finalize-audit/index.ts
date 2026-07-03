@@ -40,11 +40,10 @@ serve(async (req) => {
         const authed = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_ANON_KEY")!,
-          { global: { headers: { Authorization: authHeader } } },
+          { global: { headers: { Authorization: authHeader } }, auth: { persistSession: false } },
         );
-        const token = authHeader.replace("Bearer ", "");
-        const { data: claims } = await authed.auth.getClaims(token);
-        const sub = claims?.claims?.sub as string | undefined;
+        const { data: userData } = await authed.auth.getUser();
+        const sub = userData?.user?.id;
         if (sub) {
           userId = sub;
           const { data: strat } = await supabase
