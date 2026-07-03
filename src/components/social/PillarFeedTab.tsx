@@ -128,8 +128,8 @@ export default function PillarFeedTab({ userId }: { userId: string | null }) {
     <div>
       <div className="flex items-center justify-end mb-5">
         <button onClick={refresh} disabled={refreshing}
-          className="text-[11px] font-medium flex items-center gap-1"
-          style={{ color: "#9A9896", border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "4px 12px" }}>
+          className="text-[11px] flex items-center gap-1"
+          style={{ background: "#FEF1EE", color: "#E85A46", border: "1.5px solid #E85A46", borderRadius: 20, padding: "4px 12px", fontWeight: 700 }}>
           {refreshing && <Loader2 size={11} className="animate-spin" />}
           Refresh angles
         </button>
