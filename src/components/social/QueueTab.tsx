@@ -812,10 +812,17 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   const [stockQuery, setStockQuery] = useState("");
   const [stockResults, setStockResults] = useState<Array<{ id: number; thumbnailUrl: string; fullUrl: string; photographer: string }>>([]);
   const [stockLoading, setStockLoading] = useState(false);
+  const [stockPage, setStockPage] = useState(1);
+  const [stockActiveQuery, setStockActiveQuery] = useState("");
+  const [stockLoadingMore, setStockLoadingMore] = useState(false);
   const [attachingId, setAttachingId] = useState<number | null>(null);
   const [recommended, setRecommended] = useState<Array<{ id: number; thumbnailUrl: string; fullUrl: string; photographer: string }>>([]);
   const [recLoading, setRecLoading] = useState(false);
   const [recAvailable, setRecAvailable] = useState<boolean | null>(null);
+  const [recSearchTerms, setRecSearchTerms] = useState<string[]>([]);
+  const [recPage, setRecPage] = useState(1);
+  const [recLoadingMore, setRecLoadingMore] = useState(false);
+  const REC_LOAD_MORE_CAP = 2;
 
   useEffect(() => {
     (async () => {
@@ -851,7 +858,7 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
 
       const { data: cache } = await supabase
         .from("brand_image_cache")
-        .select("images_json, generated_at")
+        .select("images_json, generated_at, search_terms")
         .eq("user_id", userId)
         .maybeSingle();
       if (cancelled) return;
@@ -860,6 +867,9 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         setRecommended((((cache as any).images_json ?? []) as any[]).map((p) => ({
           id: p.id, thumbnailUrl: p.thumbnailUrl, fullUrl: p.fullUrl, photographer: p.photographer,
         })));
+        const terms = ((cache as any).search_terms ?? []) as string[];
+        setRecSearchTerms(Array.isArray(terms) ? terms : []);
+        setRecPage(1);
       } else {
         await generateRecommended(false);
       }
@@ -884,10 +894,39 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       setRecommended(imgs.map((p) => ({
         id: p.id, thumbnailUrl: p.thumbnailUrl, fullUrl: p.fullUrl, photographer: p.photographer,
       })));
+      const terms = (((data as any)?.searchTerms ?? []) as any[]).map((t) => String(t)).filter(Boolean);
+      setRecSearchTerms(terms);
+      setRecPage(1);
       if (force) toast.success("Recommendations refreshed");
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't generate recommendations");
     } finally { setRecLoading(false); }
+  }
+
+  async function loadMoreRecommended() {
+    if (recSearchTerms.length === 0 || recPage >= 1 + REC_LOAD_MORE_CAP) return;
+    setRecLoadingMore(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const nextPage = recPage + 1;
+      const groups = await Promise.all(recSearchTerms.map(async (term) => {
+        const { data, error } = await supabase.functions.invoke("pexels-search", {
+          headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+          body: { query: term, page: nextPage },
+        });
+        if (error) return [];
+        return ((data as any)?.results ?? []) as any[];
+      }));
+      const seen = new Set(recommended.map((p) => p.id));
+      const additions: any[] = [];
+      groups.forEach((arr) => arr.forEach((p) => {
+        if (!seen.has(p.id)) { seen.add(p.id); additions.push(p); }
+      }));
+      setRecommended((prev) => [...prev, ...additions]);
+      setRecPage(nextPage);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't load more");
+    } finally { setRecLoadingMore(false); }
   }
 
   function editInCanva(fullUrl: string) {
@@ -950,13 +989,37 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       const { data: { session } } = await supabase.auth.getSession();
       const { data, error } = await supabase.functions.invoke("pexels-search", {
         headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
-        body: { query: q },
+        body: { query: q, page: 1 },
       });
       if (error) throw error;
       setStockResults(((data as any)?.results ?? []) as any);
+      setStockActiveQuery(q);
+      setStockPage(1);
     } catch (e: any) {
       toast.error(e?.message ?? "Search failed");
     } finally { setStockLoading(false); }
+  }
+
+  async function loadMoreStock() {
+    if (!stockActiveQuery) return;
+    setStockLoadingMore(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const nextPage = stockPage + 1;
+      const { data, error } = await supabase.functions.invoke("pexels-search", {
+        headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : undefined,
+        body: { query: stockActiveQuery, page: nextPage },
+      });
+      if (error) throw error;
+      const more = ((data as any)?.results ?? []) as any[];
+      setStockResults((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        return [...prev, ...more.filter((p: any) => !seen.has(p.id))];
+      });
+      setStockPage(nextPage);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't load more");
+    } finally { setStockLoadingMore(false); }
   }
 
   async function attachStockPhoto(photo: { id: number; fullUrl: string }) {
