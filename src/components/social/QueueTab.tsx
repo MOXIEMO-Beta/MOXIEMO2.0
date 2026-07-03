@@ -206,6 +206,60 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     toast.success(open ? "Draft ready — edit and save" : "Saved to queue");
   }
 
+  function suggestionPlatform(s: Suggestion): Platform {
+    const p = (s.platform ?? "").toLowerCase();
+    if (["linkedin","instagram","facebook","x"].includes(p)) return p as Platform;
+    return "linkedin";
+  }
+
+  async function runGeneratePostFromStory(answers: Record<string, string>) {
+    if (!suggestion) return;
+    setGuidedLoading(true);
+    try {
+      const { data, error } = await invokeWithAuth<{ post: string; error?: string }>(
+        "generate-post-from-story",
+        {
+          angle: suggestion.angle,
+          pillar: suggestion.pillar,
+          platform: suggestionPlatform(suggestion),
+          answers,
+          questions: suggestion.guidedQuestions ?? [],
+        },
+      );
+      if (error || !data?.post) throw new Error((data as any)?.error ?? error?.message ?? "Generation failed");
+      setGuidedResult({ post: data.post, answers });
+      setGuidedOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Generation failed");
+    } finally {
+      setGuidedLoading(false);
+    }
+  }
+
+  async function saveGuidedResult() {
+    if (!suggestion || !userId || !guidedResult) return;
+    const platform = suggestionPlatform(suggestion);
+    const { data, error } = await supabase.from("social_posts").insert({
+      user_id: userId,
+      platforms: [platform],
+      content_by_platform: { [platform]: guidedResult.post } as any,
+      status: "draft",
+      pillar: suggestion.pillar,
+      sort_order: 0,
+    }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
+    if (error) { toast.error(error.message); return; }
+    setPosts((arr) => [data as any, ...arr]);
+    dismissSuggestion(suggestion.angle);
+    setGuidedResult(null);
+    setGuidedOpen(false);
+    toast.success("Saved to queue");
+  }
+
+  function cancelGuided() {
+    setGuidedOpen(false);
+    setGuidedResult(null);
+  }
+
   // Resolve signed URLs for post thumbnails (private bucket)
   useEffect(() => {
     let cancelled = false;
