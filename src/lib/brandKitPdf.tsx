@@ -431,6 +431,9 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
 
       {/* Imagery showcase — optional, only when user uploaded images */}
       {data.images && data.images.length > 0 && (
+        <></>
+      )}
+      {data.images && data.images.length > 0 && (
         <Page size="A4" style={s.page}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
             <Text style={s.eyebrow}>04  ·  YOUR IMAGERY</Text>
