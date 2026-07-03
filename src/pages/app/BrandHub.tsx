@@ -510,7 +510,7 @@ function AuditPanel({
   }
 
   // results
-  return <AuditResults domain={domain} setStep={setStep} goAssets={goAssets} />;
+  return <AuditResults domain={domain} setStep={setStep} goAssets={goAssets} latestAuditId={latestAuditId} />;
 }
 
 function ChecklistRow({ status, label }: { status: "done" | "active" | "idle"; label: string }) {
@@ -524,7 +524,7 @@ function ChecklistRow({ status, label }: { status: "done" | "active" | "idle"; l
   );
 }
 
-function AuditResults({ domain, setStep, goAssets }: { domain: string; setStep: (s: AuditStep) => void; goAssets: () => void }) {
+function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: string; setStep: (s: AuditStep) => void; goAssets: () => void; latestAuditId?: string | null }) {
   const score = 71;
   const C = 2 * Math.PI * 52;
 
