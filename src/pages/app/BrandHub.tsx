@@ -64,8 +64,12 @@ async function createShareLink(document_type: ShareDocumentType, source_id: stri
   }
   const copied = await copyToClipboard(data.shareUrl);
   toast({
-    title: opts?.rotate ? "New share link created" : (data.reused ? "Share link ready" : "Share link created"),
-    description: copied ? `Copied to clipboard: ${data.shareUrl}` : data.shareUrl,
+    title: copied
+      ? (opts?.rotate ? "✓ New share link copied to clipboard" : "✓ Share link copied to clipboard")
+      : (opts?.rotate ? "New share link ready" : "Share link ready"),
+    description: copied
+      ? `Paste anywhere to share. Link:\n${data.shareUrl}`
+      : `Copy this link to share:\n${data.shareUrl}`,
   });
   return data.shareUrl as string;
 }
