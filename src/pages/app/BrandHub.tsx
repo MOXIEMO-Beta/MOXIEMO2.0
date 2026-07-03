@@ -409,12 +409,93 @@ function AuditPanel({
 
   useEffect(() => { setUrl(profile?.website_url ?? ""); }, [profile?.website_url]);
 
-  // Auto-transition from running to results after 2.4s
+  // Real progress state, wired to actual backend events. No fixed timers driving
+  // the checklist any more: each row flips to "done" only when its corresponding
+  // call resolves. If any call fails or the whole run exceeds AUDIT_TIMEOUT_MS,
+  // we transition to an "error" state instead of hanging on a spinner.
+  type RunPhase = "idle" | "scraping" | "kickoff" | "generating" | "ready" | "error";
+  const [runPhase, setRunPhase] = useState<RunPhase>("idle");
+  const [runError, setRunError] = useState<string | null>(null);
+  const [runAuditId, setRunAuditId] = useState<string | null>(null);
+  const runIdRef = useRef(0);
+
+  const AUDIT_TIMEOUT_MS = 180_000; // 3 minutes end-to-end
+
+  const startRun = async (websiteUrl: string) => {
+    const myRun = ++runIdRef.current;
+    setRunError(null);
+    setRunAuditId(null);
+    setRunPhase("scraping");
+
+    const deadline = Date.now() + AUDIT_TIMEOUT_MS;
+    const stillCurrent = () => runIdRef.current === myRun;
+
+    try {
+      // Gate 1 (Strategy foundation loaded) is already true — profile+strategy
+      // were fetched on Brand Hub mount before this panel could render.
+
+      // Gate 2: Website scraped and read.
+      const scrape = await supabase.functions.invoke("scrape-initial", { body: { url: websiteUrl } });
+      if (!stillCurrent()) return;
+      if (scrape.error) throw new Error(scrape.error.message || "Website scrape failed");
+
+      // Gate 3: kickoff the audit generation pipeline.
+      setRunPhase("kickoff");
+      const finalize = await supabase.functions.invoke("finalize-audit", {
+        body: { url: websiteUrl, payload: { inputs: { website: websiteUrl } } },
+      });
+      if (!stillCurrent()) return;
+      if (finalize.error) throw new Error(finalize.error.message || "Could not start audit");
+      const auditId: string | undefined = (finalize.data as any)?.audit_id;
+      if (!auditId) throw new Error("Audit backend did not return an id");
+      setRunAuditId(auditId);
+      setRunPhase("generating");
+
+      // Gate 4/5: poll audits row for the terminal status the backend writes.
+      while (stillCurrent()) {
+        if (Date.now() > deadline) throw new Error("Audit timed out. Please try again.");
+        await new Promise((r) => setTimeout(r, 3000));
+        if (!stillCurrent()) return;
+        const { data, error } = await supabase
+          .from("audits")
+          .select("status, review_reason")
+          .eq("id", auditId)
+          .maybeSingle();
+        if (error) throw new Error(error.message);
+        if (!data) continue;
+        if (data.status === "ready") {
+          setRunPhase("ready");
+          setStep("results");
+          return;
+        }
+        if (data.status === "failed") {
+          throw new Error(data.review_reason || "Audit generation failed");
+        }
+      }
+    } catch (e: any) {
+      if (!stillCurrent()) return;
+      setRunError(String(e?.message ?? e));
+      setRunPhase("error");
+    }
+  };
+
+  // Kick off a real run whenever we enter the "running" step.
   useEffect(() => {
-    if (step !== "running") return;
-    const t = setTimeout(() => setStep("results"), 2400);
-    return () => clearTimeout(t);
-  }, [step, setStep]);
+    if (step !== "running") {
+      runIdRef.current++; // cancel any in-flight run
+      setRunPhase("idle");
+      setRunError(null);
+      return;
+    }
+    const target = (profile?.website_url || url || "").trim();
+    if (!target) {
+      setRunError("No website URL on file.");
+      setRunPhase("error");
+      return;
+    }
+    startRun(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   const domain = useMemo(() => {
     const u = profile?.website_url || url || "";
@@ -487,6 +568,57 @@ function AuditPanel({
   }
 
   if (step === "running") {
+    // Map real phases to the 5 checklist rows. Rows are driven by concrete
+    // events, not a fixed timer: rows only flip to "done" after their gate
+    // has been observed to succeed.
+    const statusFor = (idx: number): "done" | "active" | "idle" => {
+      // 0: Strategy foundation loaded (mount)
+      // 1: Website scraped and read (scrape-initial resolved)
+      // 2: Comparing presence to strategy (finalize-audit accepted the run)
+      // 3: Generating advisor read (audits row is generating)
+      // 4: Building priority list (audits row transitions to ready)
+      const phaseOrder: RunPhase[] = ["scraping", "kickoff", "generating", "generating", "ready"];
+      const rowPhase = phaseOrder[idx];
+      // ordering of phases for comparison
+      const rank: Record<RunPhase, number> = {
+        idle: -1, scraping: 0, kickoff: 1, generating: 2, ready: 3, error: -2,
+      };
+      if (runPhase === "ready") return "done";
+      if (runPhase === "error") return idx === 0 ? "done" : "idle";
+      const cur = rank[runPhase];
+      const need = rank[rowPhase];
+      if (idx === 0) return "done"; // strategy is already loaded before entering this step
+      if (cur > need) return "done";
+      if (cur === need) return "active";
+      return "idle";
+    };
+
+    if (runPhase === "error") {
+      return (
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ ...card, maxWidth: 480, width: "100%", padding: 32, textAlign: "center" }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: "#FEF1EE", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+              <ShieldCheck size={24} color={CORAL} />
+            </div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 16 }}>Something went wrong</h3>
+            <p style={{ fontSize: 13, color: MUTED, marginTop: 6, lineHeight: 1.6 }}>
+              {runError || "The audit could not finish. Your profile is saved — try again."}
+            </p>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 18 }}>
+              <button type="button" onClick={() => setStep("prompt")} style={pill(false)}>Back</button>
+              <button
+                type="button"
+                onClick={() => { setRunPhase("idle"); startRun((profile?.website_url || url || "").trim()); }}
+                style={{ background: CORAL, color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
         <div style={{ ...card, maxWidth: 480, width: "100%", padding: 32, textAlign: "center" }}>
@@ -494,12 +626,17 @@ function AuditPanel({
           <h3 style={{ fontSize: 16, fontWeight: 700, color: INK, marginTop: 16 }}>Running Your Brand Audit</h3>
           <div style={{ fontSize: 13, color: MUTED, marginTop: 4 }}>Scanning {domain} and comparing against your strategy</div>
           <div style={{ marginTop: 20, maxWidth: 320, marginLeft: "auto", marginRight: "auto", textAlign: "left", display: "flex", flexDirection: "column", gap: 0 }}>
-            <ChecklistRow status="done" label="Strategy foundation loaded" />
-            <ChecklistRow status="done" label="Website scraped and read" />
-            <ChecklistRow status="active" label="Comparing presence to strategy…" />
-            <ChecklistRow status="idle" label="Generating advisor read" />
-            <ChecklistRow status="idle" label="Building priority list" />
+            <ChecklistRow status={statusFor(0)} label="Strategy foundation loaded" />
+            <ChecklistRow status={statusFor(1)} label="Website scraped and read" />
+            <ChecklistRow status={statusFor(2)} label="Comparing presence to strategy…" />
+            <ChecklistRow status={statusFor(3)} label="Generating advisor read" />
+            <ChecklistRow status={statusFor(4)} label="Building priority list" />
           </div>
+          {runAuditId && (
+            <div style={{ marginTop: 14, fontSize: 10, color: FAINT, fontFamily: "ui-monospace, monospace" }}>
+              audit {runAuditId.slice(0, 8)}
+            </div>
+          )}
         </div>
       </div>
     );
