@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   Loader2,
   Circle,
-  TrendingUp,
   UploadCloud,
   Plus,
   X,
