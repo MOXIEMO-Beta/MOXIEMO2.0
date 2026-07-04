@@ -23,6 +23,8 @@ import {
   FileText,
   Wand2,
 } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { RefreshCw, Copy as CopyIcon, Check as CheckIcon } from "lucide-react";
 
 type BrandTab = "welcome" | "audit" | "kit" | "assets";
 type AuditStep = "prompt" | "running" | "results";
@@ -50,76 +52,145 @@ async function copyToClipboard(text: string) {
   } catch { return false; }
 }
 
-async function createShareLink(document_type: ShareDocumentType, source_id: string | null | undefined, opts?: { rotate?: boolean }) {
-  if (!source_id) {
-    toast({ title: "Nothing to share yet", description: "Generate this document first, then try again.", variant: "destructive" });
-    return null;
-  }
+async function mintShareLink(document_type: ShareDocumentType, source_id: string, opts?: { rotate?: boolean }) {
   const { data, error } = await supabase.functions.invoke("generate-share-token", {
     body: { document_type, source_id, rotate: !!opts?.rotate },
   });
-  if (error || !data?.shareUrl) {
-    toast({ title: "Could not create share link", description: error?.message ?? "Please try again.", variant: "destructive" });
-    return null;
-  }
-  const copied = await copyToClipboard(data.shareUrl);
-  toast({
-    title: copied
-      ? (opts?.rotate ? "✓ New share link copied to clipboard" : "✓ Share link copied to clipboard")
-      : (opts?.rotate ? "New share link ready" : "Share link ready"),
-    description: copied
-      ? `Paste anywhere to share. Link:\n${data.shareUrl}`
-      : `Copy this link to share:\n${data.shareUrl}`,
-  });
+  if (error || !data?.shareUrl) throw new Error(error?.message || "Could not create share link");
   return data.shareUrl as string;
-}
-
-async function revokeShareLink(document_type: ShareDocumentType, source_id: string | null | undefined) {
-  if (!source_id) return;
-  const { error } = await supabase.functions.invoke("revoke-share-token", {
-    body: { document_type, source_id },
-  });
-  if (error) {
-    toast({ title: "Could not revoke link", description: error.message, variant: "destructive" });
-    return;
-  }
-  toast({ title: "Share link revoked", description: "The previous link no longer works." });
 }
 
 function ShareControls({
   documentType, sourceId, dark = false,
 }: { documentType: ShareDocumentType; sourceId: string | null | undefined; dark?: boolean }) {
-  const [busy, setBusy] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [url, setUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [rotating, setRotating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const baseStyle: React.CSSProperties = dark
     ? { border: "1px solid rgba(255,255,255,0.15)", color: "#fff", borderRadius: 20, padding: "6px 14px", fontSize: 12, background: "transparent", cursor: "pointer" }
     : { border: `1px solid ${BORDER}`, borderRadius: 20, padding: "6px 14px", fontSize: 12, background: "transparent", color: INK, cursor: "pointer", fontWeight: 500 };
-  const rotateStyle: React.CSSProperties = { ...baseStyle, padding: "6px 10px", opacity: 0.85 };
+
+  const handleOpenChange = async (next: boolean) => {
+    if (next && !sourceId) {
+      toast({ title: "Nothing to share yet", description: "Generate this document first, then try again.", variant: "destructive" });
+      return;
+    }
+    setOpen(next);
+    if (next && !url && sourceId) {
+      setLoading(true);
+      setError(null);
+      try {
+        const link = await mintShareLink(documentType, sourceId);
+        setUrl(link);
+      } catch (e: any) {
+        setError(e?.message || "Could not create share link");
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (!next) { setCopied(false); }
+  };
+
+  const handleCopy = async () => {
+    if (!url) return;
+    const ok = await copyToClipboard(url);
+    if (ok) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    }
+  };
+
+  const handleRotate = async () => {
+    if (!sourceId) return;
+    if (!confirm("Replace this link? The old one stops working immediately.")) return;
+    setRotating(true);
+    setError(null);
+    try {
+      await supabase.functions.invoke("revoke-share-token", { body: { document_type: documentType, source_id: sourceId } });
+      const link = await mintShareLink(documentType, sourceId, { rotate: true });
+      setUrl(link);
+      setCopied(false);
+    } catch (e: any) {
+      setError(e?.message || "Could not replace link");
+    } finally {
+      setRotating(false);
+    }
+  };
+
   return (
-    <span style={{ display: "inline-flex", gap: 4 }}>
-      <button
-        type="button"
-        disabled={busy}
-        onClick={async () => { setBusy(true); try { await createShareLink(documentType, sourceId); } finally { setBusy(false); } }}
-        style={baseStyle}
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <button type="button" style={baseStyle}>Share Link</button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        sideOffset={8}
+        className="p-0"
+        style={{ width: 380, background: "#fff", color: INK, border: `1px solid ${BORDER}`, borderRadius: 12, boxShadow: "0 10px 30px rgba(14,15,16,0.12)" }}
+        onOpenAutoFocus={(e) => { e.preventDefault(); setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select(); }, 0); }}
       >
-        {busy ? "Working…" : "Share Link"}
-      </button>
-      <button
-        type="button"
-        title="Revoke previous link and create a new one"
-        aria-label="Rotate share link"
-        disabled={busy}
-        onClick={async () => {
-          if (!sourceId) return;
-          if (!confirm("Revoke the current share link and create a new one? The old link will stop working immediately.")) return;
-          setBusy(true);
-          try { await createShareLink(documentType, sourceId, { rotate: true }); } finally { setBusy(false); }
-        }}
-        style={rotateStyle}
-      >
-        ↻
-      </button>
-    </span>
+        <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 14, fontWeight: 600 }}>Share link</div>
+          <button type="button" aria-label="Close" onClick={() => setOpen(false)} style={{ background: "transparent", border: 0, cursor: "pointer", color: MUTED, padding: 4, display: "flex" }}>
+            <X size={16} />
+          </button>
+        </div>
+        <div style={{ padding: "0 16px 12px", fontSize: 12, color: MUTED, lineHeight: 1.45 }}>
+          Anyone with this link can view. Read-only, no login.
+        </div>
+        <div style={{ padding: "0 16px 14px", display: "flex", gap: 8 }}>
+          <input
+            ref={inputRef}
+            readOnly
+            value={loading ? "Creating link…" : (url ?? (error ? "" : ""))}
+            placeholder={error ? "Failed to load" : ""}
+            onKeyDown={(e) => { if (e.key === "Escape") setOpen(false); }}
+            style={{ flex: 1, minWidth: 0, border: `1px solid ${BORDER}`, borderRadius: 8, padding: "8px 10px", fontSize: 12, color: INK, background: "#FAF9F6", outline: "none" }}
+          />
+          <button
+            type="button"
+            onClick={handleCopy}
+            disabled={!url || loading}
+            style={{
+              border: `1px solid ${copied ? GREEN : BORDER}`,
+              color: copied ? GREEN : INK,
+              background: "transparent",
+              borderRadius: 8, padding: "0 12px", fontSize: 12, fontWeight: 500,
+              cursor: url ? "pointer" : "not-allowed", display: "inline-flex", alignItems: "center", gap: 6,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {copied ? <><CheckIcon size={14} /> Copied</> : <><CopyIcon size={14} /> Copy</>}
+          </button>
+        </div>
+        {error && (
+          <div style={{ padding: "0 16px 12px", fontSize: 12, color: CORAL }}>{error}</div>
+        )}
+        <div style={{ borderTop: `1px solid ${BORDER}` }} />
+        <div style={{ padding: "12px 16px 14px", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: INK }}>Replace this link</div>
+            <div style={{ fontSize: 11, color: MUTED, marginTop: 2, lineHeight: 1.4 }}>
+              Mints a new link. The old one stops working.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleRotate}
+            disabled={rotating || loading || !sourceId}
+            style={{ background: "transparent", border: 0, color: CORAL, fontSize: 12, fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, padding: 4, whiteSpace: "nowrap" }}
+          >
+            <RefreshCw size={14} style={rotating ? { animation: "brand-hub-spin 1s linear infinite" } : undefined} />
+            {rotating ? "Replacing…" : "Rotate"}
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
