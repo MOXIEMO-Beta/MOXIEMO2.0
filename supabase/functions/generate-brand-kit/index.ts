@@ -151,14 +151,9 @@ function validateKit(kit: any): string | null {
   if (!Array.isArray(kit?.key_messages) || kit.key_messages.length < 3) problems.push("key_messages");
   push(require("pillars.primary", kit?.pillars?.primary));
   if (!Array.isArray(kit?.pillars?.supporting) || kit.pillars.supporting.length < 2) problems.push("pillars.supporting");
-  // Enrichment sections (positioning / values / tone) are additive. We warn
-  // when missing but do NOT hard-fail the kit — client-side derivation from
-  // enhanced_foundation acts as a safety net.
-  push(require("positioning.statement", kit?.positioning?.statement));
-  if (!Array.isArray(kit?.values) || kit.values.length < 1) problems.push("values");
-  if (!kit?.tone || (!Array.isArray(kit?.tone?.words_to_use) && !Array.isArray(kit?.tone?.tone_by_platform))) {
-    problems.push("tone");
-  }
+  // Enrichment sections (positioning / values / tone) are additive: the
+  // client derives them from enhanced_foundation when missing, so we do NOT
+  // hard-fail the kit if the model omits them.
   return problems.length ? problems.join(", ") : null;
 }
 
