@@ -769,7 +769,16 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
           Rendered only when the caller passes generated kit content so the
           exported PDF matches the live Brand Kit view section-for-section. */}
       {data.kit && (
-        <StrategyPages kit={data.kit} headingFam={headingFam} bodyFam={bodyFam} bodyBoldFam={bodyBoldFam} primary={primary} accent={accent} coverInk={coverInk} />
+        <StrategyPages
+          kit={data.kit}
+          headingFam={headingFam}
+          bodyFam={bodyFam}
+          bodyBoldFam={bodyBoldFam}
+          primary={primary}
+          accent={accent}
+          coverInk={coverInk}
+          enrichment={deriveEnrichment(data.kit, { enhanced_foundation: data.enhancedFoundation })}
+        />
       )}
 
       {/* Imagery showcase — optional, only when user uploaded images */}
