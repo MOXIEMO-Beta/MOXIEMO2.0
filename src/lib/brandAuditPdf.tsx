@@ -67,7 +67,7 @@ const s = StyleSheet.create({
   h1: { fontSize: 22, color: C.ink, fontFamily: "Helvetica-Bold", letterSpacing: -0.4, marginBottom: 4 },
   h2: { fontSize: 16, color: C.ink, fontFamily: "Helvetica-Bold", marginBottom: 10 },
   body: { fontSize: 10.5, color: C.ink, lineHeight: 1.55 },
-  bodySoft: { fontSize: 10.5, color: C.body ?? "#3c3f50", lineHeight: 1.55 },
+  bodySoft: { fontSize: 10.5, color: "#3c3f50", lineHeight: 1.55 },
   small: { fontSize: 9, color: C.muted },
   card: { backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 16, marginBottom: 12 },
   chip: { fontSize: 8, fontFamily: "Helvetica-Bold", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, borderWidth: 1, textTransform: "uppercase", letterSpacing: 1.2 },
