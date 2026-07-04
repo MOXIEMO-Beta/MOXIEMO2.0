@@ -1,5 +1,6 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet, Image, pdf } from "@react-pdf/renderer";
+import { deriveEnrichment } from "./brandKitEnrichment";
 
 export type BrandKitData = {
   siteName: string;
@@ -21,7 +22,17 @@ export type BrandKitData = {
     icp?: { revenue_floor?: string; business_type?: string; core_pain?: string; transformation?: string };
     key_messages?: string[];
     pillars?: { primary?: string; supporting?: string[] };
+    positioning?: { statement?: string; who?: string; problem?: string; solution?: string; result?: string };
+    values?: { name?: string; filter?: string }[];
+    tone?: {
+      words_to_use?: string[];
+      words_to_avoid?: string[];
+      tone_by_platform?: { platform?: string; descriptor?: string }[];
+    };
   } | null;
+  // Optional strategy.enhanced_foundation for deriving enrichment when the
+  // kit_json lacks the newer positioning/values/tone fields.
+  enhancedFoundation?: any;
 };
 
 const C = {
