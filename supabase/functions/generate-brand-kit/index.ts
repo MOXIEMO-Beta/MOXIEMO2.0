@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { sanitizeDashesDeep } from "../_shared/sanitize-dashes.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -216,7 +217,7 @@ serve(async (req) => {
     };
 
     const raw = await callAnthropic(payload);
-    const kit = parseModel(raw);
+    const kit = sanitizeDashesDeep(parseModel(raw));
     const problem = validateKit(kit);
     if (problem) {
       return new Response(JSON.stringify({ error: "invalid_kit", detail: problem, raw }), {
