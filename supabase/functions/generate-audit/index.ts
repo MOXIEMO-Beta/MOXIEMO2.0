@@ -502,6 +502,8 @@ function validate(report: any, payload: any): ValidationFailure[] {
 
   // signal contradictions
   const blogPresent = payload?.signals?.content_consistency?.blog_present;
+  const blogReadableSig = payload?.signals?.content_consistency?.blog_readable;
+  const logoPresentSig = payload?.signals?.visual_identity?.logo_present;
   const faceSignals = payload?.signals?.face_of_the_brand ?? {};
   const faceVisible: boolean | undefined = typeof faceSignals.face_visible === "boolean"
     ? faceSignals.face_visible
@@ -512,11 +514,19 @@ function validate(report: any, payload: any): ValidationFailure[] {
     const allText = [s?.whats_working, s?.whats_holding_back, s?.fix_first, s?.competitor_framing]
       .filter((x) => typeof x === "string").join(" ").toLowerCase();
     if (s?.label === "Content & Consistency") {
-      if (blogPresent === true && allText.includes("no blog")) {
+      if (blogPresent === true && /(no blog|no published content|no recurring content)/.test(allText)) {
         addFailure(issues, s.label, "copy", "contradicts signal: blog_present true but text claims no blog");
       }
       if (blogPresent === false && /active blog/.test(allText)) {
         addFailure(issues, s.label, "copy", "contradicts signal: blog_present false but text praises active blog");
+      }
+      if (blogPresent === true && blogReadableSig === false && /\bno (?:blog|posts?|published content)\b/.test(allText)) {
+        addFailure(issues, s.label, "copy", "contradicts signal: /blog exists but posts were unreadable — do not call it absent");
+      }
+    }
+    if (s?.label === "Visual Identity") {
+      if (logoPresentSig === true && /(no logo|logo is (?:not|missing|absent)|no visual logo|brand name in text form only|text-only logo)/.test(allText)) {
+        addFailure(issues, s.label, "copy", "contradicts signal: logo_present true but text claims no logo");
       }
     }
     if (s?.label === "The Face of the Brand") {
