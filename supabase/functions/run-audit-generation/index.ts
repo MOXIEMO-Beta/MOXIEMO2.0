@@ -114,12 +114,6 @@ function deriveGapHero(report: any, signals: any, strategyFoundation: any): { st
   return { strategy_says, site_says, gap_verdict };
 }
 
-// Legacy stub kept to avoid diff churn below.
-function __unused_deriveGapHero_tail() {
-
-  return null;
-}
-
 async function runGeneration(audit_id: string) {
   const t0 = Date.now();
   const supabase = createClient(
