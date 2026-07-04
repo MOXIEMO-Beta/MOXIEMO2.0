@@ -103,13 +103,82 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 function Field({ label, value }: { label: string; value: any }) {
   if (!value) return null;
-  const text = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  const parsed = parseMaybeJson(value);
+  if (parsed == null || (typeof parsed === "string" && !parsed.trim())) return null;
   return (
-    <div style={{ marginBottom: 12 }}>
-      <div style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 14, color: INK, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{text}</div>
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{label}</div>
+      <FieldValue value={parsed} />
     </div>
   );
+}
+
+function parseMaybeJson(v: any): any {
+  if (typeof v !== "string") return v;
+  const s = v.trim();
+  if ((s.startsWith("[") && s.endsWith("]")) || (s.startsWith("{") && s.endsWith("}"))) {
+    try { return JSON.parse(s); } catch { return v; }
+  }
+  return v;
+}
+
+function FieldValue({ value }: { value: any }) {
+  if (value == null) return null;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return (
+      <div style={{ fontSize: 14, color: INK, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{String(value)}</div>
+    );
+  }
+  if (Array.isArray(value)) {
+    if (value.length === 0) return null;
+    // Array of primitives → chips/list
+    if (value.every((v) => typeof v === "string" || typeof v === "number")) {
+      return (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {value.map((v, i) => (
+            <span key={i} style={{ background: "#F0EFEC", borderRadius: 20, padding: "4px 12px", fontSize: 13, color: INK }}>{String(v)}</span>
+          ))}
+        </div>
+      );
+    }
+    // Array of objects → name/description blocks
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {value.map((v, i) => <FieldValue key={i} value={v} />)}
+      </div>
+    );
+  }
+  if (typeof value === "object") {
+    const name = value.name ?? value.title ?? value.label ?? value.heading;
+    const desc = value.description ?? value.body ?? value.detail ?? value.text ?? value.summary;
+    const known = new Set(["name","title","label","heading","description","body","detail","text","summary"]);
+    const extras = Object.entries(value).filter(([k, v]) => !known.has(k) && v != null && v !== "");
+    if (name || desc) {
+      return (
+        <div style={{ borderLeft: `2px solid ${BORDER}`, paddingLeft: 12 }}>
+          {name && <div style={{ fontSize: 14, fontWeight: 700, color: INK, marginBottom: 4 }}>{String(name)}</div>}
+          {desc && <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{String(desc)}</div>}
+          {extras.map(([k, v]) => (
+            <div key={k} style={{ marginTop: 6 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{k.replace(/_/g, " ")}</div>
+              <FieldValue value={v} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {Object.entries(value).filter(([, v]) => v != null && v !== "").map(([k, v]) => (
+          <div key={k}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: FAINT, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 2 }}>{k.replace(/_/g, " ")}</div>
+            <FieldValue value={v} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
 }
 
 function SharedAudit({ doc }: { doc: any }) {
