@@ -135,8 +135,9 @@ function Radar({ sections, size = 260 }: { sections: AuditSection[]; size?: numb
 function CoverPage({ data, band }: { data: AuditResponse; band: string }) {
   const st = scoreStatus(data.brand_audit_score);
   const pill = statusPill(st);
+  const named = (data.prepared_for ?? "").toString().trim();
   const brand = (data.inputs?.brand_name ?? data.report?.what_we_found?.brand_name ?? "").toString().trim();
-  const preparedFor = brand || "Founder";
+  const preparedFor = named || brand || "Founder";
   const dateStr = new Date().toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" });
   return (
     <Page size="A4" style={{ backgroundColor: C.ink, color: C.white, padding: 0 }}>
