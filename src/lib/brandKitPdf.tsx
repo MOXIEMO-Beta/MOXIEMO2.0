@@ -591,11 +591,12 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
           </Text>
         </View>
 
-        {/* Two supporting versions side by side */}
+        {/* Two supporting versions side by side. Reversed slot always falls
+            back to the primary mark on the brand field — never a placeholder. */}
         <View style={{ flexDirection: "row", gap: 12, marginTop: 18 }}>
           {[
-            { label: "GRAYSCALE", caption: "Use when color is not available.", bg: C.white, ink: C.ink, src: data.logoGrayscale || data.logo, isReversed: false },
-            { label: "REVERSED", caption: "Use on dark or brand-colored fields.", bg: primary, ink: coverInk, src: data.logoReversed, isReversed: true },
+            { label: "GRAYSCALE", caption: "Use when color is not available.", bg: C.white, ink: C.ink, src: data.logoGrayscale || data.logo },
+            { label: "REVERSED", caption: "Use on dark or brand-colored fields.", bg: primary, ink: coverInk, src: data.logoReversed || data.logo },
           ].map((v, i) => (
             <View key={i} style={{ flex: 1 }}>
               <View
@@ -613,11 +614,7 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
               >
                 {v.src ? (
                   <Image src={v.src} style={{ maxWidth: 120, maxHeight: 90, objectFit: "contain" }} />
-                ) : (
-                  <Text style={{ color: v.ink, opacity: 0.6, fontFamily: bodyFam, fontSize: 9, textAlign: "center" }}>
-                    {v.isReversed ? "Add a white version to fill this slot." : "Not provided."}
-                  </Text>
-                )}
+                ) : null}
               </View>
               <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginTop: 8 }}>
                 {v.label}
