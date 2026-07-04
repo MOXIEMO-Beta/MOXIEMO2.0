@@ -135,6 +135,7 @@ function StrategyPages({ kit, headingFam, bodyFam, bodyBoldFam, primary, accent,
   primary: string;
   accent: string;
   coverInk: string;
+  enrichment?: ReturnType<typeof deriveEnrichment>;
 }) {
   const arche = kit.archetype ?? {};
   const voice = kit.voice ?? {};
@@ -289,6 +290,19 @@ function StrategyPages({ kit, headingFam, bodyFam, bodyBoldFam, primary, accent,
         </View>
         <Footer />
       </Page>
+
+      {/* Enrichment pages — Positioning, Values, Tone */}
+      {arguments[0]?.enrichment ? (
+        <EnrichmentPages
+          enrichment={arguments[0].enrichment}
+          headingFam={headingFam}
+          bodyFam={bodyFam}
+          bodyBoldFam={bodyBoldFam}
+          primary={primary}
+          accent={accent}
+          coverInk={coverInk}
+        />
+      ) : null}
     </>
   );
 }
