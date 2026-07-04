@@ -29,6 +29,7 @@ function deriveGapHero(report: any, signals: any, strategyFoundation: any): { st
   const sf = strategyFoundation ?? {};
   const ef = (sf.enhanced_foundation && typeof sf.enhanced_foundation === "object") ? sf.enhanced_foundation : {};
   const period = (s: string) => (s && !/[.!?]$/.test(s) ? s + "." : s);
+  const stripDashes = (s: string) => String(s).replace(/\s*[—–]\s*/g, ", ");
   const capSentences = (s: string, max = 3) => {
     const parts = String(s).trim().split(/(?<=[.!?])\s+/).filter(Boolean);
     return parts.slice(0, max).join(" ").trim();
@@ -36,28 +37,24 @@ function deriveGapHero(report: any, signals: any, strategyFoundation: any): { st
 
   // strategy_says — a holistic PROMISE, not the raw ICP paragraph.
   // Prefer transformation + differentiation, then positioning statement.
-  const transformation = String(sf.transformation ?? ef?.transformation ?? "").trim().replace(/\.$/, "");
-  const differentiation = String(sf.differentiation ?? ef?.differentiation ?? "").trim().replace(/\.$/, "");
-  const positioning = String(ef?.positioning?.statement ?? ef?.positioning_statement ?? "").trim();
-  const idealClient = String(sf.ideal_client ?? "").trim().replace(/\.$/, "");
+  const transformation = stripDashes(String(sf.transformation ?? ef?.transformation ?? "").trim().replace(/\.$/, ""));
+  const differentiation = stripDashes(String(sf.differentiation ?? ef?.differentiation ?? "").trim().replace(/\.$/, ""));
+  const positioning = stripDashes(String(ef?.positioning?.statement ?? ef?.positioning_statement ?? "").trim());
   const brandName = String(sf.business_name ?? "Your brand").trim();
 
+  // strategy_says = the PROMISE only. Never append the ICP paragraph.
   let strategy_says = "";
   const parts: string[] = [];
-  if (transformation && idealClient) {
-    parts.push(period(`${brandName} promises ${transformation} for ${idealClient}`));
-  } else if (transformation) {
+  if (transformation) {
     parts.push(period(`${brandName} promises ${transformation}`));
   } else if (positioning) {
     parts.push(period(positioning));
-  } else if (idealClient) {
-    parts.push(period(`Built for ${idealClient}`));
   }
   if (differentiation) parts.push(period(differentiation));
   if (parts.length === 0) {
     strategy_says = "Your strategy is not yet fully documented in MOXIEMO, so the report reads your site on its own terms.";
   } else {
-    strategy_says = capSentences(parts.join(" "), 3);
+    strategy_says = stripDashes(capSentences(parts.join(" "), 3));
   }
 
   // site_says — a whole-site impression from the scrape. Must NOT copy the
@@ -70,33 +67,34 @@ function deriveGapHero(report: any, signals: any, strategyFoundation: any): { st
   const pos = signals?.positioning ?? {};
   const renderOk = signals?.render_ok !== false;
 
-  const impressionBits: string[] = [];
+  const impressionParts: string[] = [];
   const founderVisible = face?.face_visible || face?.founder_named_in_text || face?.named_founder_on_site;
   const hasStory = title || metaDesc;
   if (renderOk && hasStory) {
     if (founderVisible) {
-      impressionBits.push(`A founder-led site with a clear surface story${metaDesc ? `, framed as "${metaDesc.replace(/"/g, "'")}"` : ""}`);
+      impressionParts.push(`Your site reads as a founder-led presence with a clear surface story${metaDesc ? `, framed as "${metaDesc.replace(/"/g, "'")}"` : ""}`);
     } else {
-      impressionBits.push(`Reads as ${title ? `"${title.replace(/"/g, "'")}"` : "a capability page"}, without a distinct founder voice`);
+      impressionParts.push(`Your site reads as ${title ? `"${title.replace(/"/g, "'")}"` : "a capability page"}, without a distinct founder voice`);
     }
   } else if (!renderOk) {
-    impressionBits.push("Your live site could not be fully read on this pass, most likely because it is a JavaScript-rendered site");
+    impressionParts.push("Your live site could not be fully read on this pass, most likely because it is a JavaScript-rendered site");
   } else {
-    impressionBits.push("Your site reads as a generic capability list, without a distinct point of view");
+    impressionParts.push("Your site reads as a generic capability list without a distinct point of view");
   }
 
   const gaps: string[] = [];
   const hasDiff = pos?.differentiation_present === true || (pos?.stance_detail && String(pos.stance_detail).length > 20);
   if (!hasDiff) gaps.push("no differentiation statement");
   if (cc?.blog_present === false) gaps.push("no published content");
-  if (cc?.waitlist_present === true) gaps.push("still gated by a waitlist");
+  if (cc?.waitlist_present === true) gaps.push("it is still gated by a waitlist");
+  // Merge into ONE clean flowing sentence so we never leave a lowercase fragment.
+  let firstSentence = impressionParts[0] || "Your site reads as a generic capability list";
   if (gaps.length > 0) {
-    impressionBits.push(`${gaps.slice(0, 2).join(" and ")}, so the market cannot yet verify the promise`);
+    firstSentence = `${firstSentence}, and ${gaps.slice(0, 2).join(" and ")}, so the market cannot yet verify the promise`;
   } else if (renderOk && hasStory) {
-    impressionBits.push("the specifics of what the visitor gets — and why here — are still implied rather than named");
+    firstSentence = `${firstSentence}, and the specifics of what the visitor gets, and why here, are still implied rather than named`;
   }
-
-  const site_says = capSentences(impressionBits.map(period).join(" "), 3);
+  const site_says = stripDashes(period(firstSentence));
 
   // gap_verdict — the one-line most-important move.
   let gap_verdict = "";
@@ -109,7 +107,7 @@ function deriveGapHero(report: any, signals: any, strategyFoundation: any): { st
   } else {
     gap_verdict = "Close the gap between what you know and what your brand says first";
   }
-  gap_verdict = period(gap_verdict);
+  gap_verdict = stripDashes(period(gap_verdict));
 
   return { strategy_says, site_says, gap_verdict };
 }
