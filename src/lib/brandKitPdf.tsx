@@ -661,29 +661,39 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
           <Text style={s.sub}>Lead with primary. Build with secondary. Accent for moments that need attention.</Text>
         </View>
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 48 }}>
+        <View style={{ paddingHorizontal: 48 }}>
           {(() => {
-            // 2-col x 3-row even grid. Every block is the same size.
+            // Full-width stacked swatches. Height adapts so the page fills
+            // whether we have 2, 3, or up to 6 colors — no dead space below.
             const cols = data.colors.slice(0, 6);
+            const n = Math.max(cols.length, 1);
+            // Available vertical space on A4 after header + footer ≈ 590pt.
+            const rowHeight = Math.max(90, Math.min(200, Math.floor(590 / n) - 8));
             return cols.map((c, i) => {
               const ink = contrastOn(c.hex);
               return (
                 <View
                   key={c.hex + i}
                   style={{
-                    width: "50%",
-                    height: 165,
+                    width: "100%",
+                    height: rowHeight,
                     backgroundColor: c.hex,
-                    padding: 18,
+                    padding: 20,
+                    marginBottom: 8,
+                    borderWidth: 1,
+                    borderColor: "rgba(0,0,0,0.12)",
+                    borderRadius: 4,
+                    flexDirection: "row",
+                    alignItems: "center",
                     justifyContent: "space-between",
                   }}
                   wrap={false}
                 >
-                  <Text style={{ fontSize: 8, color: ink, letterSpacing: 2, fontFamily: "Helvetica-Bold", opacity: 0.85 }}>
+                  <Text style={{ fontSize: 9, color: ink, letterSpacing: 2, fontFamily: "Helvetica-Bold", opacity: 0.85 }}>
                     {(c.role || `TONE ${String.fromCharCode(64 + i + 1)}`).toUpperCase()}
                   </Text>
-                  <View>
-                    <Text style={{ fontSize: 20, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={{ fontSize: 22, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
                       {c.hex.toUpperCase()}
                     </Text>
                     <Text style={{ fontSize: 9, color: ink, opacity: 0.85, marginTop: 2, fontFamily: bodyFam }}>
