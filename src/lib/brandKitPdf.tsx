@@ -1,6 +1,47 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet, Image, pdf } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image, Font, pdf } from "@react-pdf/renderer";
 import { deriveEnrichment } from "./brandKitEnrichment";
+
+// Disable auto-hyphenation across the whole PDF. Prevents mid-word breaks
+// like "op-erationally" inside card body copy.
+Font.registerHyphenationCallback((word) => [word]);
+
+// Convert an image URL / data URL to a desaturated (true grayscale) data URL
+// using a canvas. Runs in the browser at PDF-generation time.
+async function toGrayscaleDataUrl(src: string): Promise<string | null> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new window.Image();
+      el.crossOrigin = "anonymous";
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = src;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    // Native canvas filter — supported in all evergreen browsers.
+    (ctx as any).filter = "grayscale(100%)";
+    ctx.drawImage(img, 0, 0);
+    // Fallback pixel pass in case filter was ignored.
+    try {
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const px = data.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        px[i] = px[i + 1] = px[i + 2] = g;
+      }
+      ctx.putImageData(data, 0, 0);
+    } catch {
+      // cross-origin taint — filter path still applied.
+    }
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+}
 
 export type BrandKitData = {
   siteName: string;
@@ -230,7 +271,7 @@ function StrategyPages(props: {
                 <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
                   0{i + 1}  ·  {label.toUpperCase()}
                 </Text>
-                <Text style={{ fontSize: 13, color: C.ink, fontFamily: bodyBoldFam, lineHeight: 1.45 }}>
+                <Text style={{ fontSize: 12, color: C.ink, fontFamily: bodyFam, lineHeight: 1.5 }}>
                   {value?.trim() ? value : "Not provided."}
                 </Text>
               </View>
@@ -355,7 +396,7 @@ function EnrichmentPages({ enrichment, headingFam, bodyFam, bodyBoldFam, primary
                   <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
                     0{i + 1}  ·  {label.toUpperCase()}
                   </Text>
-                  <Text style={{ fontSize: 12, color: C.ink, fontFamily: bodyBoldFam, lineHeight: 1.5 }}>{value}</Text>
+                  <Text style={{ fontSize: 11, color: C.ink, fontFamily: bodyFam, lineHeight: 1.55 }}>{value}</Text>
                 </View>
               </View>
             ))}
@@ -437,7 +478,7 @@ function EnrichmentPages({ enrichment, headingFam, bodyFam, bodyBoldFam, primary
             {tone.tone_by_platform.map((t, i) => (
               <View key={t.platform + i} style={{ flex: 1, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 14, minHeight: 100 }} wrap={false}>
                 <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>{t.platform.toUpperCase()}</Text>
-                <Text style={{ fontSize: 12, color: C.ink, fontFamily: bodyBoldFam, lineHeight: 1.5 }}>{t.descriptor}</Text>
+                <Text style={{ fontSize: 11, color: C.ink, fontFamily: bodyFam, lineHeight: 1.55 }}>{t.descriptor}</Text>
               </View>
             ))}
           </View>
@@ -526,7 +567,7 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
           <View
             style={{
               backgroundColor: C.paper,
-              height: 280,
+              height: 230,
               borderRadius: 4,
               alignItems: "center",
               justifyContent: "center",
@@ -537,7 +578,7 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
             }}
           >
             {data.logo ? (
-              <Image src={data.logo} style={{ maxWidth: 360, maxHeight: 230, objectFit: "contain" }} />
+              <Image src={data.logo} style={{ maxWidth: 360, maxHeight: 190, objectFit: "contain" }} />
             ) : (
               <Text style={{ color: C.muted, fontFamily: bodyFam, fontSize: 10 }}>Logo not provided.</Text>
             )}
@@ -550,11 +591,12 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
           </Text>
         </View>
 
-        {/* Two supporting versions side by side */}
+        {/* Two supporting versions side by side. Reversed slot always falls
+            back to the primary mark on the brand field — never a placeholder. */}
         <View style={{ flexDirection: "row", gap: 12, marginTop: 18 }}>
           {[
-            { label: "GRAYSCALE", caption: "Use when color is not available.", bg: C.white, ink: C.ink, src: data.logoGrayscale || data.logo, isReversed: false },
-            { label: "REVERSED", caption: "Use on dark or brand-colored fields.", bg: primary, ink: coverInk, src: data.logoReversed, isReversed: true },
+            { label: "GRAYSCALE", caption: "Use when color is not available.", bg: C.white, ink: C.ink, src: data.logoGrayscale || data.logo },
+            { label: "REVERSED", caption: "Use on dark or brand-colored fields.", bg: primary, ink: coverInk, src: data.logoReversed || data.logo },
           ].map((v, i) => (
             <View key={i} style={{ flex: 1 }}>
               <View
@@ -572,11 +614,7 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
               >
                 {v.src ? (
                   <Image src={v.src} style={{ maxWidth: 120, maxHeight: 90, objectFit: "contain" }} />
-                ) : (
-                  <Text style={{ color: v.ink, opacity: 0.6, fontFamily: bodyFam, fontSize: 9, textAlign: "center" }}>
-                    {v.isReversed ? "Add a white version to fill this slot." : "Not provided."}
-                  </Text>
-                )}
+                ) : null}
               </View>
               <Text style={{ fontSize: 8, color: C.coral, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginTop: 8 }}>
                 {v.label}
@@ -623,29 +661,39 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
           <Text style={s.sub}>Lead with primary. Build with secondary. Accent for moments that need attention.</Text>
         </View>
 
-        <View style={{ flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 48 }}>
+        <View style={{ paddingHorizontal: 48 }}>
           {(() => {
-            // 2-col x 3-row even grid. Every block is the same size.
+            // Full-width stacked swatches. Height adapts so the page fills
+            // whether we have 2, 3, or up to 6 colors — no dead space below.
             const cols = data.colors.slice(0, 6);
+            const n = Math.max(cols.length, 1);
+            // Available vertical space on A4 after header + footer ≈ 590pt.
+            const rowHeight = Math.max(90, Math.min(200, Math.floor(590 / n) - 8));
             return cols.map((c, i) => {
               const ink = contrastOn(c.hex);
               return (
                 <View
                   key={c.hex + i}
                   style={{
-                    width: "50%",
-                    height: 165,
+                    width: "100%",
+                    height: rowHeight,
                     backgroundColor: c.hex,
-                    padding: 18,
+                    padding: 20,
+                    marginBottom: 8,
+                    borderWidth: 1,
+                    borderColor: "rgba(0,0,0,0.12)",
+                    borderRadius: 4,
+                    flexDirection: "row",
+                    alignItems: "center",
                     justifyContent: "space-between",
                   }}
                   wrap={false}
                 >
-                  <Text style={{ fontSize: 8, color: ink, letterSpacing: 2, fontFamily: "Helvetica-Bold", opacity: 0.85 }}>
+                  <Text style={{ fontSize: 9, color: ink, letterSpacing: 2, fontFamily: "Helvetica-Bold", opacity: 0.85 }}>
                     {(c.role || `TONE ${String.fromCharCode(64 + i + 1)}`).toUpperCase()}
                   </Text>
-                  <View>
-                    <Text style={{ fontSize: 20, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={{ fontSize: 22, color: ink, fontFamily: headingFam, letterSpacing: -0.4 }}>
                       {c.hex.toUpperCase()}
                     </Text>
                     <Text style={{ fontSize: 9, color: ink, opacity: 0.85, marginTop: 2, fontFamily: bodyFam }}>
@@ -916,7 +964,15 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
 }
 
 export async function generateBrandKitPdf(data: BrandKitData): Promise<Blob> {
-  return await pdf(<BrandKitDoc data={data} />).toBlob();
+  // Auto-derive a real grayscale mark from the primary logo when the caller
+  // did not supply a dedicated grayscale asset. This runs in-browser via
+  // canvas so the exported PDF always shows a truly desaturated variant.
+  let prepared = data;
+  if (data.logo && !data.logoGrayscale) {
+    const gray = await toGrayscaleDataUrl(data.logo);
+    if (gray) prepared = { ...data, logoGrayscale: gray };
+  }
+  return await pdf(<BrandKitDoc data={prepared} />).toBlob();
 }
 
 export async function blobToBase64(blob: Blob): Promise<string> {
