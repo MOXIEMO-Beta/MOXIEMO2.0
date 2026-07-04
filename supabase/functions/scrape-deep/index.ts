@@ -123,7 +123,7 @@ serve(async (req) => {
 
     // 1. Primary scrape (cached)
     const raw = await getOrScrape(url);
-    const facts = await deterministicFacts(raw);
+    const facts = await deterministicFacts(raw, inputs?.brand_name);
 
     // 2. Competitors light scrape (parallel)
     const competitors: string[] = Array.isArray(inputs?.competitors)
@@ -169,6 +169,7 @@ serve(async (req) => {
       content_consistency: {
         ...(baseSignals.content_consistency ?? {}),
         blog_present: facts.blog_present,
+        blog_readable: facts.blog_readable,
         blog_post_links: facts.blog_post_links,
         blog_recency: facts.blog_latest_date ?? baseSignals.content_consistency?.blog_recency ?? null,
         newsletter_capture: facts.newsletter_capture,
