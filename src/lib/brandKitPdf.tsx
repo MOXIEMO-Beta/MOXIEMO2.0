@@ -1,5 +1,6 @@
 import React from "react";
 import { Document, Page, Text, View, StyleSheet, Image, pdf } from "@react-pdf/renderer";
+import { deriveEnrichment } from "./brandKitEnrichment";
 
 export type BrandKitData = {
   siteName: string;
@@ -21,7 +22,17 @@ export type BrandKitData = {
     icp?: { revenue_floor?: string; business_type?: string; core_pain?: string; transformation?: string };
     key_messages?: string[];
     pillars?: { primary?: string; supporting?: string[] };
+    positioning?: { statement?: string; who?: string; problem?: string; solution?: string; result?: string };
+    values?: { name?: string; filter?: string }[];
+    tone?: {
+      words_to_use?: string[];
+      words_to_avoid?: string[];
+      tone_by_platform?: { platform?: string; descriptor?: string }[];
+    };
   } | null;
+  // Optional strategy.enhanced_foundation for deriving enrichment when the
+  // kit_json lacks the newer positioning/values/tone fields.
+  enhancedFoundation?: any;
 };
 
 const C = {
@@ -116,7 +127,7 @@ function BrandKitDoc({ data }: { data: BrandKitData }) {
   return <BrandKitDocInner data={data} />;
 }
 
-function StrategyPages({ kit, headingFam, bodyFam, bodyBoldFam, primary, accent, coverInk }: {
+function StrategyPages(props: {
   kit: NonNullable<BrandKitData["kit"]>;
   headingFam: string;
   bodyFam: string;
@@ -124,7 +135,9 @@ function StrategyPages({ kit, headingFam, bodyFam, bodyBoldFam, primary, accent,
   primary: string;
   accent: string;
   coverInk: string;
+  enrichment?: ReturnType<typeof deriveEnrichment>;
 }) {
+  const { kit, headingFam, bodyFam, bodyBoldFam, primary, accent, coverInk, enrichment } = props;
   const arche = kit.archetype ?? {};
   const voice = kit.voice ?? {};
   const icp = kit.icp ?? {};
@@ -278,6 +291,159 @@ function StrategyPages({ kit, headingFam, bodyFam, bodyBoldFam, primary, accent,
         </View>
         <Footer />
       </Page>
+
+      {enrichment ? (
+        <EnrichmentPages
+          enrichment={enrichment}
+          headingFam={headingFam}
+          bodyFam={bodyFam}
+          bodyBoldFam={bodyBoldFam}
+          primary={primary}
+          accent={accent}
+          coverInk={coverInk}
+        />
+      ) : null}
+    </>
+  );
+}
+
+function EnrichmentPages({ enrichment, headingFam, bodyFam, bodyBoldFam, primary, accent, coverInk }: {
+  enrichment: ReturnType<typeof deriveEnrichment>;
+  headingFam: string;
+  bodyFam: string;
+  bodyBoldFam: string;
+  primary: string;
+  accent: string;
+  coverInk: string;
+}) {
+  const p = enrichment.positioning;
+  const values = enrichment.values ?? [];
+  const tone = enrichment.tone ?? { words_to_use: [], words_to_avoid: [], tone_by_platform: [] };
+  const posCells: [string, string][] = p
+    ? [
+        ["Who", p.who || "Not provided."],
+        ["Problem", p.problem || "Not provided."],
+        ["Solution", p.solution || "Not provided."],
+        ["Result", p.result || "Not provided."],
+      ]
+    : [];
+
+  return (
+    <>
+      {/* Positioning */}
+      {p ? (
+        <Page size="A4" style={s.page}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+            <Text style={s.eyebrow}>07  ·  POSITIONING</Text>
+            <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>WHERE YOU STAND</Text>
+          </View>
+          <View style={s.divider} />
+          <Text style={{ fontSize: 32, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>Where you stand.</Text>
+          <Text style={{ fontSize: 11, color: C.muted, marginBottom: 18, lineHeight: 1.5, fontFamily: bodyFam }}>
+            The distilled promise of your brand, and the four pieces it rests on.
+          </Text>
+          {p.statement ? (
+            <View style={{ backgroundColor: C.ink, padding: 22, borderRadius: 4, marginBottom: 22 }}>
+              <Text style={{ fontSize: 9, color: accent, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>POSITIONING STATEMENT</Text>
+              <Text style={{ fontSize: 15, color: C.white, fontFamily: bodyFam, lineHeight: 1.55 }}>{p.statement}</Text>
+            </View>
+          ) : null}
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            {posCells.map(([label, value], i) => (
+              <View key={label} style={{ width: "50%", padding: 6 }} wrap={false}>
+                <View style={{ backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 16, minHeight: 110 }}>
+                  <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
+                    0{i + 1}  ·  {label.toUpperCase()}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: C.ink, fontFamily: bodyBoldFam, lineHeight: 1.5 }}>{value}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          <Footer />
+        </Page>
+      ) : null}
+
+      {/* Values */}
+      {values.length ? (
+        <Page size="A4" style={s.page}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+            <Text style={s.eyebrow}>08  ·  VALUES</Text>
+            <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>HOW YOU DECIDE</Text>
+          </View>
+          <View style={s.divider} />
+          <Text style={{ fontSize: 32, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>How you decide.</Text>
+          <Text style={{ fontSize: 11, color: C.muted, marginBottom: 18, lineHeight: 1.5, fontFamily: bodyFam }}>
+            Every value is a decision filter. When you are not sure, ask the question.
+          </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+            {values.map((v, i) => (
+              <View key={v.name + i} style={{ width: "50%", padding: 6 }} wrap={false}>
+                <View style={{ backgroundColor: C.white, borderLeftWidth: 3, borderLeftColor: accent, borderRadius: 4, padding: 16, minHeight: 120 }}>
+                  <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
+                    0{i + 1}  ·  VALUE
+                  </Text>
+                  <Text style={{ fontSize: 15, color: C.ink, fontFamily: headingFam, letterSpacing: -0.3, marginBottom: 8 }}>{v.name}</Text>
+                  {v.filter ? (
+                    <Text style={{ fontSize: 10, color: C.muted, fontFamily: bodyFam, lineHeight: 1.5, fontStyle: "italic" }}>{v.filter}</Text>
+                  ) : null}
+                </View>
+              </View>
+            ))}
+          </View>
+          <Footer />
+        </Page>
+      ) : null}
+
+      {/* Tone */}
+      {(tone.words_to_use.length || tone.words_to_avoid.length || tone.tone_by_platform.length) ? (
+        <Page size="A4" style={s.page}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 14 }}>
+            <Text style={s.eyebrow}>09  ·  TONE</Text>
+            <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 1.5 }}>WORDS & RHYTHM</Text>
+          </View>
+          <View style={s.divider} />
+          <Text style={{ fontSize: 32, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>Words and rhythm.</Text>
+          <Text style={{ fontSize: 11, color: C.muted, marginBottom: 18, lineHeight: 1.5, fontFamily: bodyFam }}>
+            The exact language that carries your voice, and how it shifts across channels.
+          </Text>
+
+          <View style={{ flexDirection: "row", gap: 14, marginBottom: 22 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 10 }}>WORDS TO USE</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                {tone.words_to_use.length ? tone.words_to_use.map((w, i) => (
+                  <Text key={i} style={{ fontSize: 10, color: accent, backgroundColor: "#FEF1EE", borderRadius: 12, padding: "3px 10px", fontFamily: bodyBoldFam }}>{w}</Text>
+                )) : <Text style={{ fontSize: 10, color: C.muted, fontFamily: bodyFam }}>Not provided.</Text>}
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 10 }}>WORDS TO AVOID</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                {tone.words_to_avoid.length ? tone.words_to_avoid.map((w, i) => (
+                  <Text key={i} style={{ fontSize: 10, color: C.muted, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: "3px 10px", textDecoration: "line-through" }}>{w}</Text>
+                )) : <Text style={{ fontSize: 10, color: C.muted, fontFamily: bodyFam }}>Not provided.</Text>}
+              </View>
+            </View>
+          </View>
+
+          <View style={{ marginTop: 6, marginBottom: 14, flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: C.ink, opacity: 0.8 }} />
+            <Text style={{ fontSize: 8, color: C.muted, letterSpacing: 3, fontFamily: "Helvetica-Bold" }}>TONE BY PLATFORM</Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: C.ink, opacity: 0.8 }} />
+          </View>
+
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            {tone.tone_by_platform.map((t, i) => (
+              <View key={t.platform + i} style={{ flex: 1, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 14, minHeight: 100 }} wrap={false}>
+                <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>{t.platform.toUpperCase()}</Text>
+                <Text style={{ fontSize: 12, color: C.ink, fontFamily: bodyBoldFam, lineHeight: 1.5 }}>{t.descriptor}</Text>
+              </View>
+            ))}
+          </View>
+          <Footer />
+        </Page>
+      ) : null}
     </>
   );
 }
@@ -603,7 +769,16 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
           Rendered only when the caller passes generated kit content so the
           exported PDF matches the live Brand Kit view section-for-section. */}
       {data.kit && (
-        <StrategyPages kit={data.kit} headingFam={headingFam} bodyFam={bodyFam} bodyBoldFam={bodyBoldFam} primary={primary} accent={accent} coverInk={coverInk} />
+        <StrategyPages
+          kit={data.kit}
+          headingFam={headingFam}
+          bodyFam={bodyFam}
+          bodyBoldFam={bodyBoldFam}
+          primary={primary}
+          accent={accent}
+          coverInk={coverInk}
+          enrichment={deriveEnrichment(data.kit, { enhanced_foundation: data.enhancedFoundation })}
+        />
       )}
 
       {/* Imagery showcase — optional, only when user uploaded images */}

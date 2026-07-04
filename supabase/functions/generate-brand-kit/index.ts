@@ -54,6 +54,23 @@ SCHEMA (return exactly these fields, all required, none null)
   "pillars": {
     "primary": "String, the single lead content pillar. Draw from enhanced_foundation.contentPillars primary if present, otherwise infer from differentiation.",
     "supporting": ["Three to four supporting pillar labels. Title case is fine. Never invent generic ones like 'Industry News'. Each must map to something the founder actually cares about per the strategy."]
+  },
+  "positioning": {
+    "statement": "String, one to two crisp sentences, sentence case. The distilled promise of the brand. Draw from strategy.positioning or enhanced_foundation.positioningStatement. Never a run on. Never contain an em dash.",
+    "who": "String, one line, sentence case. The specific person this brand is built for. Draw from enhanced_foundation.positioningBreakdown.idealClient or strategy.ideal_client.",
+    "problem": "String, one to two lines, sentence case. The sharpest problem this brand solves. Draw from positioningBreakdown.painPoint or strategy.pain_point.",
+    "solution": "String, one to two lines, sentence case. The unique approach or method the brand uses. Draw from positioningBreakdown.uniqueApproach or positioningBreakdown.method.",
+    "result": "String, one to two lines, sentence case. The transformation or outcome the buyer gets. Draw from positioningBreakdown.outcome or transformation or strategy.transformation."
+  },
+  "values": [
+    "Exactly the four core values from enhanced_foundation.coreValues (or the strategy's coreValues under any structure). Each item: { \"name\": short title case value like 'Strategy Before Speed', \"filter\": one sentence decision filter question the value asks (e.g. 'Does this reinforce the strategic foundation, or shortcut to execution?'). Name plus filter only. Never invent values not in the strategy. If fewer than four exist, return only what exists, in strategy order.}"
+  ],
+  "tone": {
+    "words_to_use": ["Six to ten short lowercase or title case words or phrases the brand uses. Pull directly from enhanced_foundation.voiceGuidelines.vocabulary.use. Never invent."],
+    "words_to_avoid": ["Four to eight short items the brand does not use. Pull from voiceGuidelines.vocabulary.avoid. Never invent."],
+    "tone_by_platform": [
+      "Exactly three cards, one per platform. Each item: { \"platform\": one of 'Email', 'LinkedIn', 'Podcast', \"descriptor\": one short line describing the tone in that channel, sentence case, drawn from voiceGuidelines.toneByPlatform.{email|linkedin|podcast}.tone (or .mode). If a channel is missing from the strategy, use the closest available voice signal, never leave blank.}"
+    ]
   }
 }
 
@@ -134,6 +151,9 @@ function validateKit(kit: any): string | null {
   if (!Array.isArray(kit?.key_messages) || kit.key_messages.length < 3) problems.push("key_messages");
   push(require("pillars.primary", kit?.pillars?.primary));
   if (!Array.isArray(kit?.pillars?.supporting) || kit.pillars.supporting.length < 2) problems.push("pillars.supporting");
+  // Enrichment sections (positioning / values / tone) are additive: the
+  // client derives them from enhanced_foundation when missing, so we do NOT
+  // hard-fail the kit if the model omits them.
   return problems.length ? problems.join(", ") : null;
 }
 

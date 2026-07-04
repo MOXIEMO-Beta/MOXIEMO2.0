@@ -6,6 +6,7 @@ import { downloadStrategyPdf } from "@/lib/strategyPdf";
 import { downloadAuditPdf } from "@/lib/brandAuditPdf";
 import { generateBrandKitPdf, type BrandKitData } from "@/lib/brandKitPdf";
 import { buildReportData } from "@/lib/reportDataBinding";
+import { deriveEnrichment } from "@/lib/brandKitEnrichment";
 import { BrandAuditReport, type AuditResponse } from "@/components/audit/BrandAuditReport";
 import {
   ShieldCheck,
@@ -1161,6 +1162,13 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
     ? kit.pillars.supporting
     : ["Founder Wins & Beta Stories", "Platform Transparency & Product Updates", "Founder Efficiency Hacks", "Market Positioning & Differentiation"];
 
+  // Enrichment sections (Positioning / Values / Tone) — derived structure-agnostically
+  // from the kit's own fields when present, otherwise from strategy.enhanced_foundation.
+  const enrichment = deriveEnrichment(kit, strategy);
+  const positioning = enrichment.positioning;
+  const values = enrichment.values;
+  const tone = enrichment.tone;
+
   const [dlBusy, setDlBusy] = useState(false);
   const handleDownload = async () => {
     setDlBusy(true);
@@ -1173,6 +1181,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         fonts: { heading: fontName, body: fonts?.[1] || fontName },
         imagery: [],
         kit: kit ?? null,
+        enhancedFoundation: strategy?.enhanced_foundation ?? null,
       };
       const blob = await generateBrandKitPdf(data);
       const url = URL.createObjectURL(blob);
@@ -1276,6 +1285,103 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
           </div>
         </KitCard>
       </div>
+
+      {/* Enrichment: Positioning / Values / Tone — additive strategy-depth pages */}
+      {positioning ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+          <KitCard fullWidth>
+            <CopyPill />
+            <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", color: FAINT, letterSpacing: "0.1em", marginBottom: 6 }}>
+              07 · Positioning
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: INK, marginBottom: 6 }}>Where you stand.</div>
+            {positioning.statement ? (
+              <div style={{ background: INK, color: "#fff", borderRadius: 10, padding: "14px 18px", fontSize: 14, lineHeight: 1.55, marginBottom: 14 }}>
+                {positioning.statement}
+              </div>
+            ) : null}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {[
+                ["Who", positioning.who],
+                ["Problem", positioning.problem],
+                ["Solution", positioning.solution],
+                ["Result", positioning.result],
+              ].map(([label, val]) => (
+                <div key={label} style={{ background: "#F7F5F1", borderRadius: 8, padding: "12px 14px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT, letterSpacing: "0.06em", marginBottom: 4 }}>{label}</div>
+                  <div style={{ fontSize: 13, color: INK, lineHeight: 1.5 }}>{val || "Not provided."}</div>
+                </div>
+              ))}
+            </div>
+          </KitCard>
+        </div>
+      ) : null}
+
+      {values.length ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+          <KitCard fullWidth>
+            <CopyPill />
+            <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", color: FAINT, letterSpacing: "0.1em", marginBottom: 6 }}>
+              08 · Values
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: INK, marginBottom: 4 }}>How you decide.</div>
+            <div style={{ fontSize: 12, color: FAINT, marginBottom: 12 }}>Every value is a decision filter. When you are not sure, ask the question.</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {values.map((v, i) => (
+                <div key={v.name + i} style={{ background: "#FAFAF8", borderLeft: `3px solid ${CORAL}`, borderRadius: 8, padding: "12px 14px" }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: INK, marginBottom: 6 }}>{v.name}</div>
+                  {v.filter ? (
+                    <div style={{ fontSize: 12, color: MUTED, fontStyle: "italic", lineHeight: 1.5 }}>{v.filter}</div>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </KitCard>
+        </div>
+      ) : null}
+
+      {(tone.words_to_use.length || tone.words_to_avoid.length || tone.tone_by_platform.length) ? (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 12 }}>
+          <KitCard fullWidth>
+            <CopyPill />
+            <div style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", color: FAINT, letterSpacing: "0.1em", marginBottom: 6 }}>
+              09 · Tone
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: INK, marginBottom: 12 }}>Words and rhythm.</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT, letterSpacing: "0.08em", marginBottom: 8 }}>Words to use</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {tone.words_to_use.map((w, i) => (
+                    <span key={i} style={{ background: "#FEF1EE", color: CORAL, borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 500 }}>{w}</span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT, letterSpacing: "0.08em", marginBottom: 8 }}>Words to avoid</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {tone.words_to_avoid.map((w, i) => (
+                    <span key={i} style={{ background: "#F0EFEC", color: FAINT, borderRadius: 20, padding: "4px 12px", fontSize: 12, textDecoration: "line-through" }}>{w}</span>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {tone.tone_by_platform.length ? (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT, letterSpacing: "0.08em", marginBottom: 8 }}>Tone by platform</div>
+                <div style={{ display: "grid", gridTemplateColumns: `repeat(${tone.tone_by_platform.length}, 1fr)`, gap: 10 }}>
+                  {tone.tone_by_platform.map((t, i) => (
+                    <div key={t.platform + i} style={{ background: "#F7F5F1", borderRadius: 8, padding: "12px 14px" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: CORAL, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>{t.platform}</div>
+                      <div style={{ fontSize: 13, color: INK, lineHeight: 1.5 }}>{t.descriptor}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : null}
+          </KitCard>
+        </div>
+      ) : null}
 
       <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", color: FAINT, letterSpacing: "0.12em", marginTop: 6 }}>Part II — Visual Direction</div>
 
@@ -1412,6 +1518,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         fonts: { heading: profile?.brand_fonts?.[0] || "Helvetica", body: profile?.brand_fonts?.[1] || profile?.brand_fonts?.[0] || "Helvetica" },
         imagery: [],
         kit: latestKit?.kit_json ?? null,
+        enhancedFoundation: strategy?.enhanced_foundation ?? null,
       };
       const blob = await generateBrandKitPdf(data);
       const url = URL.createObjectURL(blob);
