@@ -1162,6 +1162,13 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
     ? kit.pillars.supporting
     : ["Founder Wins & Beta Stories", "Platform Transparency & Product Updates", "Founder Efficiency Hacks", "Market Positioning & Differentiation"];
 
+  // Enrichment sections (Positioning / Values / Tone) — derived structure-agnostically
+  // from the kit's own fields when present, otherwise from strategy.enhanced_foundation.
+  const enrichment = deriveEnrichment(kit, strategy);
+  const positioning = enrichment.positioning;
+  const values = enrichment.values;
+  const tone = enrichment.tone;
+
   const [dlBusy, setDlBusy] = useState(false);
   const handleDownload = async () => {
     setDlBusy(true);
@@ -1174,6 +1181,7 @@ function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAss
         fonts: { heading: fontName, body: fonts?.[1] || fontName },
         imagery: [],
         kit: kit ?? null,
+        enhancedFoundation: strategy?.enhanced_foundation ?? null,
       };
       const blob = await generateBrandKitPdf(data);
       const url = URL.createObjectURL(blob);
