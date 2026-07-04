@@ -769,10 +769,42 @@ function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: st
   }, [latestAuditId]);
 
   const handleDownload = async () => {
-    if (!auditData) { toast({ title: "Run an audit first", variant: "destructive" }); return; }
+  const handleDownload = async () => {
     setDlBusy(true);
     try {
-      await downloadAuditPdf(auditData);
+      // Always resolve the newest ready audit for this user at click time so
+      // the PDF can never be rendered from a stale in-memory row. Falls back
+      // to `latestAuditId` if the freshness query fails for any reason.
+      let targetId = latestAuditId ?? null;
+      const { data: authData } = await supabase.auth.getUser();
+      const uid = authData?.user?.id ?? null;
+      if (uid) {
+        const { data: newest } = await supabase
+          .from("audits")
+          .select("id")
+          .eq("user_id", uid)
+          .eq("status", "ready")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (newest?.id) targetId = newest.id;
+      }
+      if (!targetId) { toast({ title: "Run an audit first", variant: "destructive" }); return; }
+      const { data: row, error } = await supabase
+        .from("audits")
+        .select("status, brand_audit_score, report, inputs, stage, posture")
+        .eq("id", targetId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!row || !row.report) throw new Error("Audit report not available yet.");
+      await downloadAuditPdf({
+        status: row.status as any,
+        brand_audit_score: row.brand_audit_score ?? 0,
+        report: row.report as any,
+        inputs: row.inputs as any,
+        stage: row.stage ?? null,
+        posture: row.posture ?? null,
+      });
     } catch (e: any) {
       toast({ title: "PDF export failed", description: e?.message ?? String(e), variant: "destructive" });
     } finally { setDlBusy(false); }
@@ -1384,10 +1416,25 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
     } finally { setBusy(null); }
   };
   const dlAudit = async () => {
-    if (!latestAuditId) { toast({ title: "Run a Brand Audit first", variant: "destructive" }); return; }
     setBusy("audit");
     try {
-      const { data: row, error } = await supabase.from("audits").select("status, brand_audit_score, report, inputs, stage, posture").eq("id", latestAuditId).maybeSingle();
+      // Resolve the newest ready audit at click time — the parent's
+      // `latestAuditId` may be stale if a fresh run just finished on another
+      // tab or before this component remounted.
+      let targetId = latestAuditId ?? null;
+      if (userId) {
+        const { data: newest } = await supabase
+          .from("audits")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("status", "ready")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (newest?.id) targetId = newest.id;
+      }
+      if (!targetId) { toast({ title: "Run a Brand Audit first", variant: "destructive" }); return; }
+      const { data: row, error } = await supabase.from("audits").select("status, brand_audit_score, report, inputs, stage, posture").eq("id", targetId).maybeSingle();
       if (error) throw error;
       if (!row || !row.report) throw new Error("Audit report not available yet.");
       await downloadAuditPdf({
