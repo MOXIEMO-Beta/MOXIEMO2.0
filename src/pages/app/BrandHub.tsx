@@ -276,6 +276,7 @@ export default function BrandHub() {
             profile={profile}
             setProfile={setProfile}
             userId={user?.id}
+            strategy={strategy}
             goAssets={() => setTab("assets")}
             latestAuditId={latestAuditId}
             onNewAudit={(id) => setLatestAuditId(id)}
