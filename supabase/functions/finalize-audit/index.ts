@@ -25,6 +25,18 @@ serve(async (req) => {
     const url: string = body?.url ?? "";
     const payload = body?.payload ?? {};
     const lead = body?.lead ?? {};
+    // Explicitly-passed strategy context (in-app signed-in path). Preferred over
+    // the silent auth.uid() hoist because the caller can guarantee the row was
+    // just loaded from the DB and the foundation is really present.
+    const explicitStrategyFoundation = payload?.strategy_foundation ?? body?.strategy_foundation ?? null;
+    const explicitStrategyId: string | null =
+      (typeof payload?.strategy_id === "string" && payload.strategy_id) ||
+      (typeof body?.strategy_id === "string" && body.strategy_id) ||
+      null;
+    const explicitIdealClient: string | null =
+      (typeof payload?.ideal_client === "string" && payload.ideal_client) ||
+      (typeof body?.ideal_client === "string" && body.ideal_client) ||
+      null;
 
     const domain = normalizeDomain(url);
 
@@ -46,7 +58,13 @@ serve(async (req) => {
         const sub = userData?.user?.id;
         if (sub) {
           userId = sub;
-          const { data: strat } = await supabase
+          // Only hit the strategies table when the caller did NOT pass an
+          // explicit foundation. Explicit wins.
+          if (explicitStrategyFoundation) {
+            strategyFoundation = explicitStrategyFoundation;
+            strategyId = explicitStrategyId;
+          } else {
+            const { data: strat } = await supabase
             .from("strategies")
             .select("id, enhanced_foundation, business_name, ideal_client, pain_point, differentiation, voice_attributes, transformation")
             .eq("user_id", sub)
@@ -63,11 +81,24 @@ serve(async (req) => {
               transformation: strat.transformation ?? null,
             };
           }
+          }
         }
       } catch (e) {
         // Auth failure must not break the public flow. Log and continue as anon.
         console.warn("[finalize-audit] optional auth resolution failed:", String(e));
       }
+    }
+
+    // Even when there's no auth header (or auth resolution didn't yield a
+    // user), still honor an explicitly-passed foundation. This is a wiring
+    // safety net so Vera can never be starved of ICP just because a token
+    // wasn't forwarded.
+    if (!strategyFoundation && explicitStrategyFoundation) {
+      strategyFoundation = explicitStrategyFoundation;
+      strategyId = explicitStrategyId;
+    }
+    if (strategyFoundation && explicitIdealClient && !strategyFoundation.ideal_client) {
+      strategyFoundation.ideal_client = explicitIdealClient;
     }
 
     // Derive stage and posture once, store on the row, and pass into Vera.
