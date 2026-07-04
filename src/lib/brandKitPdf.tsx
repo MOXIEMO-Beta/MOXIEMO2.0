@@ -567,7 +567,7 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
           <View
             style={{
               backgroundColor: C.paper,
-              height: 280,
+              height: 230,
               borderRadius: 4,
               alignItems: "center",
               justifyContent: "center",
@@ -578,7 +578,7 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
             }}
           >
             {data.logo ? (
-              <Image src={data.logo} style={{ maxWidth: 360, maxHeight: 230, objectFit: "contain" }} />
+              <Image src={data.logo} style={{ maxWidth: 360, maxHeight: 190, objectFit: "contain" }} />
             ) : (
               <Text style={{ color: C.muted, fontFamily: bodyFam, fontSize: 10 }}>Logo not provided.</Text>
             )}
@@ -964,7 +964,15 @@ function BrandKitDocInner({ data }: { data: BrandKitData }) {
 }
 
 export async function generateBrandKitPdf(data: BrandKitData): Promise<Blob> {
-  return await pdf(<BrandKitDoc data={data} />).toBlob();
+  // Auto-derive a real grayscale mark from the primary logo when the caller
+  // did not supply a dedicated grayscale asset. This runs in-browser via
+  // canvas so the exported PDF always shows a truly desaturated variant.
+  let prepared = data;
+  if (data.logo && !data.logoGrayscale) {
+    const gray = await toGrayscaleDataUrl(data.logo);
+    if (gray) prepared = { ...data, logoGrayscale: gray };
+  }
+  return await pdf(<BrandKitDoc data={prepared} />).toBlob();
 }
 
 export async function blobToBase64(blob: Blob): Promise<string> {
