@@ -3,10 +3,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
+import { sanitizeDashesDeep } from "../_shared/sanitize-dashes.ts";
 
 const SYSTEM = `You are MOXIEMO's strategy synthesizer. Read a discovery conversation transcript and extract a complete marketing strategy.
 You will save BOTH a base strategy AND an expanded "enhanced_foundation" object that deepens the output (Sprint 1: positioning breakdown, brand archetype, core values, competitive positioning, detailed voice guidelines).
-Be specific and grounded in the transcript — never generic. Every example, value, and word should feel derived from what the user actually said.`;
+Be specific and grounded in the transcript, never generic. Every example, value, and word should feel derived from what the user actually said.
+Never use em-dashes. Use commas or periods instead.`;
 
 const SYSTEM_LANE2 = `You are MOXIEMO's strategy synthesizer for a SERVICE-BASED BUSINESS or MARKETPLACE (not a solo expertise practice). Read the discovery transcript and extract a complete marketing strategy for the BUSINESS BRAND — never frame anything around personal thought leadership, founder authority, or solo expertise.
 
@@ -656,7 +658,8 @@ ${transcript}`,
         console.error("strength scoring failed", e);
       }
       parsed.strategy_lane = isLane2 ? "service" : "expertise";
-      return parsed;
+      // Brand rule: never persist em/en dashes in generated strategy copy.
+      return sanitizeDashesDeep(parsed);
     };
 
     // Single attempt: open the Anthropic streaming call, drain it (forwarding
