@@ -6,6 +6,7 @@ import { downloadStrategyPdf } from "@/lib/strategyPdf";
 import { downloadAuditPdf } from "@/lib/brandAuditPdf";
 import { generateBrandKitPdf, type BrandKitData } from "@/lib/brandKitPdf";
 import { buildReportData } from "@/lib/reportDataBinding";
+import { deriveEnrichment } from "@/lib/brandKitEnrichment";
 import { BrandAuditReport, type AuditResponse } from "@/components/audit/BrandAuditReport";
 import {
   ShieldCheck,
