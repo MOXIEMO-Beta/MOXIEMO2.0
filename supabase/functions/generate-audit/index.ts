@@ -757,6 +757,10 @@ function applySignalSafeRewrite(report: any, payload: any): { changed: boolean; 
     ? face.face_visible
     : (face.about_person_section === true || face.bylines === true) ? true : undefined;
   const blogPresent: boolean | undefined = typeof cc.blog_present === "boolean" ? cc.blog_present : undefined;
+  const blogReadable: boolean | undefined = typeof cc.blog_readable === "boolean" ? cc.blog_readable : undefined;
+  const vis = payload?.signals?.visual_identity ?? {};
+  const logoPresent: boolean | undefined = typeof vis.logo_present === "boolean" ? vis.logo_present : undefined;
+  const logoKind: string | undefined = typeof vis.logo_kind === "string" ? vis.logo_kind : undefined;
 
   let changed = false;
   for (const s of report.sections) {
@@ -790,13 +794,30 @@ function applySignalSafeRewrite(report: any, payload: any): { changed: boolean; 
         changed = true;
         notes.push("Content & Consistency rewritten to signal-safe version (blog_present false).");
       }
-      if (blogPresent === true && /no blog/.test(allText)) {
+      if (blogPresent === true && /(no blog|no published content|no recurring content)/.test(allText)) {
         s.whats_working = "A blog exists on the site and is published, which gives the brand a recurring surface to build on.";
-        s.whats_holding_back = "The blog is present but the cadence and through-line across posts are not consistent enough to compound.";
-        s.fix_first = "Set a weekly cadence on the existing blog and anchor every post to one of three named themes.";
+        s.whats_holding_back = blogReadable === false
+          ? "You have a blog, but its posts could not be read in this scan, so the cadence and through-line across posts are not verifiable here."
+          : "The blog is present but the cadence and through-line across posts are not consistent enough to compound.";
+        s.fix_first = blogReadable === false
+          ? "Confirm the blog index renders for a first-time visitor, and anchor every post to one of three named themes on a weekly cadence."
+          : "Set a weekly cadence on the existing blog and anchor every post to one of three named themes.";
         s.competitor_framing = "";
         changed = true;
         notes.push("Content & Consistency rewritten to signal-safe version (blog_present true).");
+      }
+    }
+    if (s?.label === "Visual Identity" && logoPresent === true) {
+      const allText = [s.whats_working, s.whats_holding_back, s.fix_first].filter((x: any) => typeof x === "string").join(" ").toLowerCase();
+      if (/(no logo|logo is (?:not|missing|absent)|no visual logo|brand name in text form only|wordmark only|text-only logo)/.test(allText)) {
+        s.whats_working = logoKind === "wordmark"
+          ? "A wordmark logo is present in the header, which anchors the visual identity across pages."
+          : "A logo lockup is present in the header and repeats across pages, which anchors the visual identity.";
+        s.whats_holding_back = "The logo is in place, but the surrounding system — palette discipline, type pairing, and imagery direction — is not consistently expressed.";
+        s.fix_first = "Codify the palette, type pairing, and imagery rules into a one-page visual system, and apply it uniformly to the site and social surfaces.";
+        s.competitor_framing = "";
+        changed = true;
+        notes.push("Visual Identity rewritten to signal-safe version (logo_present true).");
       }
     }
   }
