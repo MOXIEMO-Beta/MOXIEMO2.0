@@ -1518,6 +1518,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         fonts: { heading: profile?.brand_fonts?.[0] || "Helvetica", body: profile?.brand_fonts?.[1] || profile?.brand_fonts?.[0] || "Helvetica" },
         imagery: [],
         kit: latestKit?.kit_json ?? null,
+        enhancedFoundation: strategy?.enhanced_foundation ?? null,
       };
       const blob = await generateBrandKitPdf(data);
       const url = URL.createObjectURL(blob);
