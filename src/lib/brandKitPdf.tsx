@@ -271,7 +271,7 @@ function StrategyPages(props: {
                 <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
                   0{i + 1}  ·  {label.toUpperCase()}
                 </Text>
-                <Text style={{ fontSize: 13, color: C.ink, fontFamily: bodyBoldFam, lineHeight: 1.45 }}>
+                <Text style={{ fontSize: 12, color: C.ink, fontFamily: bodyFam, lineHeight: 1.5 }}>
                   {value?.trim() ? value : "Not provided."}
                 </Text>
               </View>
@@ -396,7 +396,7 @@ function EnrichmentPages({ enrichment, headingFam, bodyFam, bodyBoldFam, primary
                   <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
                     0{i + 1}  ·  {label.toUpperCase()}
                   </Text>
-                  <Text style={{ fontSize: 12, color: C.ink, fontFamily: bodyBoldFam, lineHeight: 1.5 }}>{value}</Text>
+                  <Text style={{ fontSize: 11, color: C.ink, fontFamily: bodyFam, lineHeight: 1.55 }}>{value}</Text>
                 </View>
               </View>
             ))}
@@ -478,7 +478,7 @@ function EnrichmentPages({ enrichment, headingFam, bodyFam, bodyBoldFam, primary
             {tone.tone_by_platform.map((t, i) => (
               <View key={t.platform + i} style={{ flex: 1, backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 14, minHeight: 100 }} wrap={false}>
                 <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>{t.platform.toUpperCase()}</Text>
-                <Text style={{ fontSize: 12, color: C.ink, fontFamily: bodyBoldFam, lineHeight: 1.5 }}>{t.descriptor}</Text>
+                <Text style={{ fontSize: 11, color: C.ink, fontFamily: bodyFam, lineHeight: 1.55 }}>{t.descriptor}</Text>
               </View>
             ))}
           </View>
