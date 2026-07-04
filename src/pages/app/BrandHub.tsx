@@ -413,13 +413,14 @@ function WelcomeCard({
 
 /* -------------------- Brand Audit -------------------- */
 function AuditPanel({
-  step, setStep, profile, setProfile, userId, goAssets, latestAuditId, onNewAudit,
+  step, setStep, profile, setProfile, userId, strategy, goAssets, latestAuditId, onNewAudit,
 }: {
   step: AuditStep;
   setStep: (s: AuditStep) => void;
   profile: any;
   setProfile: (p: any) => void;
   userId?: string;
+  strategy?: any;
   goAssets: () => void;
   latestAuditId?: string | null;
   onNewAudit?: (id: string) => void;
@@ -454,15 +455,61 @@ function AuditPanel({
       // Gate 1 (Strategy foundation loaded) is already true — profile+strategy
       // were fetched on Brand Hub mount before this panel could render.
 
-      // Gate 2: Website scraped and read.
-      const scrape = await supabase.functions.invoke("scrape-initial", { body: { url: websiteUrl } });
+      // Gate 2: Real deep scrape (same edge function the public /brand-audit
+      // tool uses). This produces a full `payload` with signals, competitor
+      // signals, model_type, low_data flag, and render_meta — the things Vera
+      // needs to actually judge the brand. Pass through inputs derived from
+      // the signed-in user's strategy so scrape-deep's extractor and the
+      // findability probe have real context.
+      const derivedInputs = {
+        website: websiteUrl,
+        brand_name:
+          strategy?.business_name ||
+          profile?.business_name ||
+          profile?.full_name ||
+          "",
+        what_you_do: strategy?.pain_point || strategy?.transformation || "",
+        who_you_serve: strategy?.ideal_client || "",
+        differentiator: strategy?.differentiation || "",
+        competitors: Array.isArray(strategy?.competitors) ? strategy.competitors : [],
+        goal: "",
+        location: "",
+        reach: "",
+      };
+      const scrape = await supabase.functions.invoke("scrape-deep", {
+        body: { url: websiteUrl, inputs: derivedInputs },
+      });
       if (!stillCurrent()) return;
       if (scrape.error) throw new Error(scrape.error.message || "Website scrape failed");
+      const scrapePayload: any = scrape.data ?? { inputs: derivedInputs };
 
-      // Gate 3: kickoff the audit generation pipeline.
+      // Build the explicit strategy_foundation object the finalize-audit
+      // function will prefer over the silent auth.uid() lookup.
+      const strategyFoundation = strategy
+        ? {
+            enhanced_foundation: strategy.enhanced_foundation ?? null,
+            business_name: strategy.business_name ?? null,
+            ideal_client: strategy.ideal_client ?? null,
+            pain_point: strategy.pain_point ?? null,
+            differentiation: strategy.differentiation ?? null,
+            voice_attributes: strategy.voice_attributes ?? null,
+            transformation: strategy.transformation ?? null,
+          }
+        : null;
+
+      // Gate 3: kickoff the audit generation pipeline with the full payload
+      // AND the explicit strategy foundation so Vera never runs blind.
       setRunPhase("kickoff");
       const finalize = await supabase.functions.invoke("finalize-audit", {
-        body: { url: websiteUrl, payload: { inputs: { website: websiteUrl } } },
+        body: {
+          url: websiteUrl,
+          payload: {
+            ...scrapePayload,
+            strategy_id: strategy?.id ?? null,
+            strategy_foundation: strategyFoundation,
+            ideal_client: strategy?.ideal_client ?? null,
+          },
+        },
       });
       if (!stillCurrent()) return;
       if (finalize.error) throw new Error(finalize.error.message || "Could not start audit");
