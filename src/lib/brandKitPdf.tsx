@@ -1,6 +1,47 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet, Image, pdf } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Image, Font, pdf } from "@react-pdf/renderer";
 import { deriveEnrichment } from "./brandKitEnrichment";
+
+// Disable auto-hyphenation across the whole PDF. Prevents mid-word breaks
+// like "op-erationally" inside card body copy.
+Font.registerHyphenationCallback((word) => [word]);
+
+// Convert an image URL / data URL to a desaturated (true grayscale) data URL
+// using a canvas. Runs in the browser at PDF-generation time.
+async function toGrayscaleDataUrl(src: string): Promise<string | null> {
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new window.Image();
+      el.crossOrigin = "anonymous";
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = src;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    // Native canvas filter — supported in all evergreen browsers.
+    (ctx as any).filter = "grayscale(100%)";
+    ctx.drawImage(img, 0, 0);
+    // Fallback pixel pass in case filter was ignored.
+    try {
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const px = data.data;
+      for (let i = 0; i < px.length; i += 4) {
+        const g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+        px[i] = px[i + 1] = px[i + 2] = g;
+      }
+      ctx.putImageData(data, 0, 0);
+    } catch {
+      // cross-origin taint — filter path still applied.
+    }
+    return canvas.toDataURL("image/png");
+  } catch {
+    return null;
+  }
+}
 
 export type BrandKitData = {
   siteName: string;
