@@ -276,6 +276,7 @@ export default function BrandHub() {
             profile={profile}
             setProfile={setProfile}
             userId={user?.id}
+            strategy={strategy}
             goAssets={() => setTab("assets")}
             latestAuditId={latestAuditId}
             onNewAudit={(id) => setLatestAuditId(id)}
@@ -412,13 +413,14 @@ function WelcomeCard({
 
 /* -------------------- Brand Audit -------------------- */
 function AuditPanel({
-  step, setStep, profile, setProfile, userId, goAssets, latestAuditId, onNewAudit,
+  step, setStep, profile, setProfile, userId, strategy, goAssets, latestAuditId, onNewAudit,
 }: {
   step: AuditStep;
   setStep: (s: AuditStep) => void;
   profile: any;
   setProfile: (p: any) => void;
   userId?: string;
+  strategy?: any;
   goAssets: () => void;
   latestAuditId?: string | null;
   onNewAudit?: (id: string) => void;
@@ -453,15 +455,61 @@ function AuditPanel({
       // Gate 1 (Strategy foundation loaded) is already true — profile+strategy
       // were fetched on Brand Hub mount before this panel could render.
 
-      // Gate 2: Website scraped and read.
-      const scrape = await supabase.functions.invoke("scrape-initial", { body: { url: websiteUrl } });
+      // Gate 2: Real deep scrape (same edge function the public /brand-audit
+      // tool uses). This produces a full `payload` with signals, competitor
+      // signals, model_type, low_data flag, and render_meta — the things Vera
+      // needs to actually judge the brand. Pass through inputs derived from
+      // the signed-in user's strategy so scrape-deep's extractor and the
+      // findability probe have real context.
+      const derivedInputs = {
+        website: websiteUrl,
+        brand_name:
+          strategy?.business_name ||
+          profile?.business_name ||
+          profile?.full_name ||
+          "",
+        what_you_do: strategy?.pain_point || strategy?.transformation || "",
+        who_you_serve: strategy?.ideal_client || "",
+        differentiator: strategy?.differentiation || "",
+        competitors: Array.isArray(strategy?.competitors) ? strategy.competitors : [],
+        goal: "",
+        location: "",
+        reach: "",
+      };
+      const scrape = await supabase.functions.invoke("scrape-deep", {
+        body: { url: websiteUrl, inputs: derivedInputs },
+      });
       if (!stillCurrent()) return;
       if (scrape.error) throw new Error(scrape.error.message || "Website scrape failed");
+      const scrapePayload: any = scrape.data ?? { inputs: derivedInputs };
 
-      // Gate 3: kickoff the audit generation pipeline.
+      // Build the explicit strategy_foundation object the finalize-audit
+      // function will prefer over the silent auth.uid() lookup.
+      const strategyFoundation = strategy
+        ? {
+            enhanced_foundation: strategy.enhanced_foundation ?? null,
+            business_name: strategy.business_name ?? null,
+            ideal_client: strategy.ideal_client ?? null,
+            pain_point: strategy.pain_point ?? null,
+            differentiation: strategy.differentiation ?? null,
+            voice_attributes: strategy.voice_attributes ?? null,
+            transformation: strategy.transformation ?? null,
+          }
+        : null;
+
+      // Gate 3: kickoff the audit generation pipeline with the full payload
+      // AND the explicit strategy foundation so Vera never runs blind.
       setRunPhase("kickoff");
       const finalize = await supabase.functions.invoke("finalize-audit", {
-        body: { url: websiteUrl, payload: { inputs: { website: websiteUrl } } },
+        body: {
+          url: websiteUrl,
+          payload: {
+            ...scrapePayload,
+            strategy_id: strategy?.id ?? null,
+            strategy_foundation: strategyFoundation,
+            ideal_client: strategy?.ideal_client ?? null,
+          },
+        },
       });
       if (!stillCurrent()) return;
       if (finalize.error) throw new Error(finalize.error.message || "Could not start audit");
@@ -1250,6 +1298,49 @@ function CopyPill() {
 /* -------------------- Brand Assets -------------------- */
 function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId, userId, profile, strategy, latestKit }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null; userId?: string | null; profile?: any; strategy?: any; latestKit?: { id: string; kit_json: any } | null }) {
   const [busy, setBusy] = useState<null | "strategy" | "kit" | "audit">(null);
+  // Load the real latest audit row so the "Brand Audit Report" card can never
+  // show fabricated headline data. If no audit exists yet, `latestAudit`
+  // stays null and the card renders an empty state.
+  const [latestAudit, setLatestAudit] = useState<{
+    created_at: string | null;
+    score: number | null;
+    strongest: { title: string; score: number } | null;
+    weakest: { title: string; score: number } | null;
+  } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!latestAuditId) { setLatestAudit(null); return; }
+      const { data } = await supabase
+        .from("audits")
+        .select("created_at, brand_audit_score, report")
+        .eq("id", latestAuditId)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const sections: Array<{ title?: string; score?: number }> = Array.isArray((data.report as any)?.sections)
+        ? (data.report as any).sections
+        : [];
+      const scored = sections
+        .filter((s) => typeof s?.score === "number" && typeof s?.title === "string")
+        .map((s) => ({ title: s.title as string, score: s.score as number }));
+      let strongest: { title: string; score: number } | null = null;
+      let weakest: { title: string; score: number } | null = null;
+      for (const s of scored) {
+        if (!strongest || s.score > strongest.score) strongest = s;
+        if (!weakest || s.score < weakest.score) weakest = s;
+      }
+      setLatestAudit({
+        created_at: (data.created_at as string) ?? null,
+        score: (data.brand_audit_score as number) ?? null,
+        strongest,
+        weakest,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [latestAuditId]);
+  const auditDateLabel = latestAudit?.created_at
+    ? new Date(latestAudit.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
   const dlStrategy = async () => {
     if (!userId) { toast({ title: "Sign in required", variant: "destructive" }); return; }
     setBusy("strategy");
@@ -1377,30 +1468,50 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         iconColor="#16A34A"
         Icon={ClipboardCheck}
         title="Brand Audit Report"
-        description="Latest: Jun 26, 2026 · Score 71/100 · 3 audits total, score trend: 58 → 64 → 71"
-        meta={<span style={{ background: "#F0FDF4", color: "#16A34A", borderRadius: 4, padding: "3px 8px", fontSize: 10, fontWeight: 600 }}>+7 from last run</span>}
-        body={
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div style={{ background: "#F0FDF4", borderRadius: 8, padding: "8px 10px" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Strongest Section</div>
-              <div style={{ fontSize: 12, color: "#16A34A", fontWeight: 600, marginTop: 2 }}>Positioning Clarity · 88/100</div>
-            </div>
-            <div style={{ background: "#FEF1EE", borderRadius: 8, padding: "8px 10px" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Critical Gap</div>
-              <div style={{ fontSize: 12, color: CORAL, fontWeight: 600, marginTop: 2 }}>Content-Strategy Alignment · 44/100</div>
-            </div>
-          </div>
+        description={
+          latestAudit && latestAudit.score != null && auditDateLabel
+            ? `Latest: ${auditDateLabel} · Score ${latestAudit.score}/100`
+            : "No audit yet — run your first Brand Audit to see your score and section breakdown here."
         }
-        bodyNote="Next audit recommended: Sep 26, 2026 · Each run saved separately"
+        meta={null}
+        body={
+          latestAudit && (latestAudit.strongest || latestAudit.weakest) ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {latestAudit.strongest && (
+                <div style={{ background: "#F0FDF4", borderRadius: 8, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Strongest Section</div>
+                  <div style={{ fontSize: 12, color: "#16A34A", fontWeight: 600, marginTop: 2 }}>
+                    {latestAudit.strongest.title} · {latestAudit.strongest.score}/100
+                  </div>
+                </div>
+              )}
+              {latestAudit.weakest && (
+                <div style={{ background: "#FEF1EE", borderRadius: 8, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Critical Gap</div>
+                  <div style={{ fontSize: 12, color: CORAL, fontWeight: 600, marginTop: 2 }}>
+                    {latestAudit.weakest.title} · {latestAudit.weakest.score}/100
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null
+        }
+        bodyNote={latestAudit ? "Each run saved separately" : ""}
         footer={
-          <>
-            <PrimaryPill onClick={dlAudit} disabled={busy === "audit"}>{busy === "audit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
-            <button style={pill()}>View All Runs</button>
-            <ShareControls documentType="brand-audit" sourceId={latestAuditId} />
-            <button style={pill()} onClick={goAuditResults}>Open Full Report</button>
-            <button style={pill(true)} onClick={goAuditPrompt}>↺ Re-run Audit</button>
-            <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Audit tab</span>
-          </>
+          latestAudit ? (
+            <>
+              <PrimaryPill onClick={dlAudit} disabled={busy === "audit"}>{busy === "audit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
+              <ShareControls documentType="brand-audit" sourceId={latestAuditId} />
+              <button style={pill()} onClick={goAuditResults}>Open Full Report</button>
+              <button style={pill(true)} onClick={goAuditPrompt}>↺ Re-run Audit</button>
+              <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Audit tab</span>
+            </>
+          ) : (
+            <>
+              <PrimaryPill onClick={goAuditPrompt}>Run your first audit</PrimaryPill>
+              <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Audit tab</span>
+            </>
+          )
         }
       />
     </div>
