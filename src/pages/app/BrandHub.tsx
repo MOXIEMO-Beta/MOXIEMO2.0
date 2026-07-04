@@ -1468,30 +1468,50 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         iconColor="#16A34A"
         Icon={ClipboardCheck}
         title="Brand Audit Report"
-        description="Latest: Jun 26, 2026 · Score 71/100 · 3 audits total, score trend: 58 → 64 → 71"
-        meta={<span style={{ background: "#F0FDF4", color: "#16A34A", borderRadius: 4, padding: "3px 8px", fontSize: 10, fontWeight: 600 }}>+7 from last run</span>}
-        body={
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div style={{ background: "#F0FDF4", borderRadius: 8, padding: "8px 10px" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Strongest Section</div>
-              <div style={{ fontSize: 12, color: "#16A34A", fontWeight: 600, marginTop: 2 }}>Positioning Clarity · 88/100</div>
-            </div>
-            <div style={{ background: "#FEF1EE", borderRadius: 8, padding: "8px 10px" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Critical Gap</div>
-              <div style={{ fontSize: 12, color: CORAL, fontWeight: 600, marginTop: 2 }}>Content-Strategy Alignment · 44/100</div>
-            </div>
-          </div>
+        description={
+          latestAudit && latestAudit.score != null && auditDateLabel
+            ? `Latest: ${auditDateLabel} · Score ${latestAudit.score}/100`
+            : "No audit yet — run your first Brand Audit to see your score and section breakdown here."
         }
-        bodyNote="Next audit recommended: Sep 26, 2026 · Each run saved separately"
+        meta={null}
+        body={
+          latestAudit && (latestAudit.strongest || latestAudit.weakest) ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {latestAudit.strongest && (
+                <div style={{ background: "#F0FDF4", borderRadius: 8, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Strongest Section</div>
+                  <div style={{ fontSize: 12, color: "#16A34A", fontWeight: 600, marginTop: 2 }}>
+                    {latestAudit.strongest.title} · {latestAudit.strongest.score}/100
+                  </div>
+                </div>
+              )}
+              {latestAudit.weakest && (
+                <div style={{ background: "#FEF1EE", borderRadius: 8, padding: "8px 10px" }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Critical Gap</div>
+                  <div style={{ fontSize: 12, color: CORAL, fontWeight: 600, marginTop: 2 }}>
+                    {latestAudit.weakest.title} · {latestAudit.weakest.score}/100
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : null
+        }
+        bodyNote={latestAudit ? "Each run saved separately" : ""}
         footer={
-          <>
-            <PrimaryPill onClick={dlAudit} disabled={busy === "audit"}>{busy === "audit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
-            <button style={pill()}>View All Runs</button>
-            <ShareControls documentType="brand-audit" sourceId={latestAuditId} />
-            <button style={pill()} onClick={goAuditResults}>Open Full Report</button>
-            <button style={pill(true)} onClick={goAuditPrompt}>↺ Re-run Audit</button>
-            <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Audit tab</span>
-          </>
+          latestAudit ? (
+            <>
+              <PrimaryPill onClick={dlAudit} disabled={busy === "audit"}>{busy === "audit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
+              <ShareControls documentType="brand-audit" sourceId={latestAuditId} />
+              <button style={pill()} onClick={goAuditResults}>Open Full Report</button>
+              <button style={pill(true)} onClick={goAuditPrompt}>↺ Re-run Audit</button>
+              <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Audit tab</span>
+            </>
+          ) : (
+            <>
+              <PrimaryPill onClick={goAuditPrompt}>Run your first audit</PrimaryPill>
+              <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Audit tab</span>
+            </>
+          )
         }
       />
     </div>
