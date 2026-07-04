@@ -21,6 +21,85 @@ declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void } | undefined;
 
 const OUTER_TIMEOUT_MS = 150_000;
 
+// Derive the three gap-hero fields (strategy_says / site_says / gap_verdict)
+// deterministically from the founder's own strategy foundation and the scraped
+// signals + Vera's report. Stored on report.gap_hero so both surfaces (in-app
+// and PDF) can read them without any generation rewrite.
+function deriveGapHero(report: any, signals: any, strategyFoundation: any): { strategy_says: string; site_says: string; gap_verdict: string } {
+  const sf = strategyFoundation ?? {};
+  const ef = (sf.enhanced_foundation && typeof sf.enhanced_foundation === "object") ? sf.enhanced_foundation : {};
+  const clip = (s: string, n = 240) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
+  const period = (s: string) => (s && !/[.!?]$/.test(s) ? s + "." : s);
+
+  // strategy_says — distilled from enhanced_foundation / structured strategy.
+  let strategy_says = "";
+  const positioning = String(ef?.positioning?.statement ?? ef?.positioning_statement ?? "").trim();
+  const archetype = String(ef?.archetype?.primary ?? "").trim();
+  const transformation = String(sf.transformation ?? ef?.transformation ?? "").trim();
+  const differentiation = String(sf.differentiation ?? ef?.differentiation ?? "").trim();
+  const idealClient = String(sf.ideal_client ?? "").trim();
+  const painPoint = String(sf.pain_point ?? "").trim();
+  if (positioning) {
+    strategy_says = period(positioning);
+    if (archetype && strategy_says.length + archetype.length < 240) {
+      strategy_says += ` Archetype: ${archetype}.`;
+    } else if (transformation && strategy_says.length + transformation.length < 260) {
+      strategy_says += ` ${period(transformation)}`;
+    }
+  } else if (idealClient || differentiation || transformation || painPoint) {
+    const parts: string[] = [];
+    if (idealClient) parts.push(period(`Built for ${idealClient.replace(/\.$/, "")}`));
+    if (differentiation) parts.push(period(differentiation));
+    else if (transformation) parts.push(period(transformation));
+    else if (painPoint) parts.push(period(`Solving ${painPoint.replace(/\.$/, "")}`));
+    strategy_says = parts.slice(0, 2).join(" ").trim();
+  } else {
+    strategy_says = "Your strategy is not yet fully documented in MOXIEMO, so the report reads your site on its own terms.";
+  }
+  strategy_says = clip(strategy_says);
+
+  // site_says — read from the actual scraped signals, then fall back to Vera's
+  // positioning-section read of what's holding the site back.
+  let site_says = "";
+  const seo = signals?.seo ?? {};
+  const title = String(seo.title ?? "").trim();
+  const metaDesc = String(seo.meta_description ?? "").trim();
+  const positioningSection = Array.isArray(report?.sections)
+    ? report.sections.find((s: any) => s?.label === "Positioning & Differentiation")
+    : null;
+  const whatHolds = String(positioningSection?.whats_holding_back ?? "").trim();
+  const renderOk = signals?.render_ok !== false;
+  if (renderOk && (title || metaDesc)) {
+    const bits: string[] = [];
+    if (title) bits.push(`Your site leads with "${clip(title, 120)}".`);
+    if (metaDesc) bits.push(clip(metaDesc, 180));
+    site_says = bits.join(" ").trim();
+  } else if (whatHolds) {
+    site_says = clip(whatHolds);
+  } else if (!renderOk) {
+    site_says = "Your live site could not be fully read on this pass, most likely because it is a JavaScript-rendered site.";
+  } else {
+    site_says = "Your site reads as a generic capability list, without a distinct point of view.";
+  }
+  site_says = period(site_says);
+
+  // gap_verdict — the one-line most-important move. Use advisor focus first
+  // sentence, then priority_fixes rank 1, then a safe default.
+  let gap_verdict = "";
+  const focus = String(report?.advisor_overview?.focus ?? "").trim();
+  const firstFix = String(report?.priority_fixes?.[0]?.move ?? "").trim();
+  if (focus) {
+    gap_verdict = focus.split(/(?<=[.!?])\s+/)[0].trim();
+  } else if (firstFix) {
+    gap_verdict = firstFix;
+  } else {
+    gap_verdict = "Close the gap between what you know and what your brand says first";
+  }
+  gap_verdict = period(clip(gap_verdict, 200));
+
+  return { strategy_says, site_says, gap_verdict };
+}
+
 async function runGeneration(audit_id: string) {
   const t0 = Date.now();
   const supabase = createClient(
@@ -139,9 +218,13 @@ async function runGeneration(audit_id: string) {
 
     step = "persist_result";
     if (genData?.status === "ready") {
+      const reportWithGap = {
+        ...genData.report,
+        gap_hero: deriveGapHero(genData.report, storedSignals, strategy_foundation),
+      };
       await writeTerminal({
         status: "ready",
-        report: genData.report,
+        report: reportWithGap,
         brand_audit_score: genData.brand_audit_score,
         review_reason: null,
         raw_report: genData.raw_report ?? null,
