@@ -241,12 +241,13 @@ export async function scrapePrimary(inputUrl: string): Promise<RawScrape> {
 
 export type DeterministicFacts = {
   logo_present: boolean;
-  logo_kind: "image" | "wordmark" | null;
+  logo_kind: "image" | "svg" | "wordmark" | null;
   colors: string[];
   fonts: string[];
   imagery: "stock_likely" | "custom_likely" | "unknown";
   social_links: string[];
   blog_present: boolean;
+  blog_readable: boolean;
   blog_post_links: string[];
   blog_latest_date: string | null;
   newsletter_capture: boolean;
@@ -261,6 +262,7 @@ export type DeterministicFacts = {
     title: string | null;
     meta_description: string | null;
     sitemap_present: boolean;
+    sitemap_has_blog: boolean;
     structured_data: boolean;
   };
   total_word_count: number;
@@ -294,24 +296,60 @@ function extractFonts(html: string): string[] {
   return [...families].slice(0, 8);
 }
 
-export async function deterministicFacts(raw: RawScrape): Promise<DeterministicFacts> {
+export async function deterministicFacts(raw: RawScrape, brandName?: string): Promise<DeterministicFacts> {
   const html = raw.homepage_html || "";
   const allText = raw.pages.map((p) => p.text).join("\n");
   const allHtml = html; // homepage only is fine for visual facts
 
-  // Logo detection: image first, then styled text wordmark fallback.
-  const hasImageLogo =
-    /<img[^>]*(?:class|id|alt)=["'][^"']*logo[^"']*["']/i.test(html) ||
+  // Logo detection. Treat any of these as a logo:
+  //   - <a href="/"> (or site root) wrapping an <img> or <svg>
+  //   - <img> whose alt or src contains the brand name or the word "logo"
+  //   - <svg> inside header/nav
+  //   - og:image or favicon <link rel="icon">
+  //   - class-based wordmark fallback
+  // Only false when the header DOM was captured and none of the above exist.
+  const brandToken = (brandName || "").trim().toLowerCase().split(/\s+/)[0] || "";
+  const headerMatch = html.match(/<(header|nav)[\s\S]*?<\/\1>/i);
+  const headerBlock = headerMatch?.[0] ?? "";
+
+  // 1. Header/nav <a href="/"> wrapping an <img> or <svg>
+  const rootAnchorRe = /<a[^>]+href=["'](?:\/|https?:\/\/[^"']*\/?)["'][^>]*>[\s\S]{0,400}?<(?:img|svg)\b[\s\S]{0,400}?<\/a>/i;
+  const hasRootAnchorLogo = rootAnchorRe.test(headerBlock) || rootAnchorRe.test(html.slice(0, 8000));
+
+  // 2. <img> whose alt or src contains "logo" or the brand token
+  const imgTags = [...html.matchAll(/<img\b[^>]*>/gi)].map((m) => m[0]);
+  const hasBrandOrLogoImg = imgTags.some((tag) => {
+    const alt = tag.match(/alt=["']([^"']*)["']/i)?.[1]?.toLowerCase() ?? "";
+    const src = tag.match(/src=["']([^"']*)["']/i)?.[1]?.toLowerCase() ?? "";
+    if (/logo/.test(alt) || /logo/.test(src)) return true;
+    if (brandToken && brandToken.length >= 3 && (alt.includes(brandToken) || src.includes(brandToken))) return true;
+    return false;
+  });
+  const hasClassIdLogoImg =
+    /<img[^>]*(?:class|id)=["'][^"']*logo[^"']*["']/i.test(html) ||
     /<svg[^>]*(?:class|id|aria-label)=["'][^"']*logo[^"']*["']/i.test(html);
-  // Heuristic wordmark: an anchor/header element near the top that contains
-  // only short text (likely the brand name) wrapped with class names like
-  // logo/wordmark/brand.
+
+  // 3. <svg> inside header/nav
+  const hasHeaderSvg = /<svg\b/i.test(headerBlock);
+
+  // 4. og:image or favicon
+  const hasOgImage = /<meta[^>]*property=["']og:image["'][^>]*content=["'][^"']+["']/i.test(html);
+  const hasFavicon = /<link[^>]*rel=["'][^"']*icon[^"']*["'][^>]*href=["'][^"']+["']/i.test(html);
+
+  const hasImageLogo = hasRootAnchorLogo || hasBrandOrLogoImg || hasClassIdLogoImg;
+  const hasSvgLogo = !hasImageLogo && hasHeaderSvg;
+
+  // Wordmark fallback (only when no img/svg logo found)
   const wordmarkRe = /<(?:a|div|span)[^>]*class=["'][^"']*(?:wordmark|brand|site-?title|logo)[^"']*["'][^>]*>([\s\S]{0,120}?)<\/(?:a|div|span)>/i;
-  const wordmarkMatch = !hasImageLogo ? html.match(wordmarkRe) : null;
+  const wordmarkMatch = (!hasImageLogo && !hasSvgLogo) ? html.match(wordmarkRe) : null;
   const wordmarkText = wordmarkMatch ? htmlToText(wordmarkMatch[1]) : "";
-  const hasWordmark = !hasImageLogo && wordmarkText.length > 0 && wordmarkText.length <= 40 && !/<img/i.test(wordmarkMatch?.[0] ?? "");
-  const logo_present = hasImageLogo || hasWordmark;
-  const logo_kind: "image" | "wordmark" | null = hasImageLogo ? "image" : hasWordmark ? "wordmark" : null;
+  const hasWordmark = wordmarkText.length > 0 && wordmarkText.length <= 40 && !/<img/i.test(wordmarkMatch?.[0] ?? "");
+
+  const hasIconOnly = !hasImageLogo && !hasSvgLogo && !hasWordmark && (hasOgImage || hasFavicon);
+
+  const logo_present = hasImageLogo || hasSvgLogo || hasWordmark || hasIconOnly;
+  const logo_kind: "image" | "svg" | "wordmark" | null =
+    hasImageLogo ? "image" : hasSvgLogo ? "svg" : hasWordmark ? "wordmark" : hasIconOnly ? "image" : null;
 
   const colors = extractColors(allHtml);
   const fonts = extractFonts(allHtml);
@@ -340,10 +378,16 @@ export async function deterministicFacts(raw: RawScrape): Promise<DeterministicF
   const dateRe = /(\b\d{4}-\d{2}-\d{2}\b)|(\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},\s*\d{4}\b)/gi;
   const blogDates = blogPage ? Array.from(blogPage.text.matchAll(dateRe)).map((m) => m[0]) : [];
   const blog_latest_date: string | null = blogDates[0] ?? null;
-  // Real blog = at least 2 post links OR (blog page + at least one date).
-  const blog_present =
+  // Blog rendered readably = post links or dates present on the /blog page.
+  const blog_readable =
     blog_post_links.length >= 2 ||
     (!!blogPage && blogDates.length >= 1);
+  // Blog is PRESENT if any of: it's linked from the captured DOM, listed in
+  // sitemap, or its posts rendered. An unrendered SPA shell at /blog is NOT
+  // absence — only "no /blog link anywhere and no sitemap entry" is absence.
+  const linksToBlog =
+    /href=["'](?:https?:\/\/[^"']*)?\/blog(?:\/[^"']*)?["']/i.test(html) ||
+    raw.links.some((l) => /\/blog(?:\/|$|\?)/i.test(l));
 
   // Distinguish waitlist signup from a true newsletter capture.
   const allTextLower = (allText + " " + html).toLowerCase();
@@ -375,15 +419,23 @@ export async function deterministicFacts(raw: RawScrape): Promise<DeterministicF
   };
 
   let sitemap_present = false;
+  let sitemap_has_blog = false;
   try {
     const r = await fetch(`${raw.origin}/sitemap.xml`, { signal: AbortSignal.timeout(4000) });
     sitemap_present = r.ok;
+    if (r.ok) {
+      const smText = await r.text();
+      sitemap_has_blog = /\/blog(?:\/|<|\?|$)/i.test(smText);
+    }
   } catch { /* ignore */ }
+
+  const blog_present = blog_readable || linksToBlog || sitemap_has_blog;
 
   const seo = {
     title: pickTitle(html),
     meta_description: pickMeta(html, "description"),
     sitemap_present,
+    sitemap_has_blog,
     structured_data: /application\/ld\+json/i.test(html),
   };
 
@@ -392,7 +444,7 @@ export async function deterministicFacts(raw: RawScrape): Promise<DeterministicF
   return {
     logo_present, logo_kind, colors, fonts, imagery,
     social_links: raw.social_links.slice(0, 10),
-    blog_present, blog_post_links, blog_latest_date,
+    blog_present, blog_readable, blog_post_links, blog_latest_date,
     newsletter_capture, waitlist_present,
     named_person, seo, total_word_count,
   };
