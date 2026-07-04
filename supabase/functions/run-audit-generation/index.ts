@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { deriveFraming } from "../_shared/audit-framing.ts";
+import { sanitizeDashesDeep } from "../_shared/sanitize-dashes.ts";
 
 function cleanCompetitorDomain(input: string): string {
   let s = (input || "").trim().toLowerCase();
@@ -230,10 +231,11 @@ async function runGeneration(audit_id: string) {
 
     step = "persist_result";
     if (genData?.status === "ready") {
-      const reportWithGap = {
+      const sanitizedReport = sanitizeDashesDeep(genData.report);
+      const reportWithGap = sanitizeDashesDeep({
         ...genData.report,
-        gap_hero: deriveGapHero(genData.report, storedSignals, strategy_foundation),
-      };
+        gap_hero: deriveGapHero(sanitizedReport, storedSignals, strategy_foundation),
+      });
       await writeTerminal({
         status: "ready",
         report: reportWithGap,
