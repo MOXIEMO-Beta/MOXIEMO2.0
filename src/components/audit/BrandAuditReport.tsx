@@ -66,6 +66,8 @@ export type AuditResponse = {
   } | null;
   stage?: string | null;
   posture?: string | null;
+  /** Optional. Full name of the signed-in user for the PDF cover "Prepared for" line. */
+  prepared_for?: string | null;
 };
 
 // ─── Design tokens (matches Strategy + Kit PDFs) ─────────────────────

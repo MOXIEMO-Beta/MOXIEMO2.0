@@ -796,6 +796,15 @@ function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: st
         .maybeSingle();
       if (error) throw error;
       if (!row || !row.report) throw new Error("Audit report not available yet.");
+      let preparedFor: string | null = null;
+      if (uid) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("full_name")
+          .eq("id", uid)
+          .maybeSingle();
+        preparedFor = (prof?.full_name ?? null) as string | null;
+      }
       await downloadAuditPdf({
         status: row.status as any,
         brand_audit_score: row.brand_audit_score ?? 0,
@@ -803,6 +812,7 @@ function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: st
         inputs: row.inputs as any,
         stage: row.stage ?? null,
         posture: row.posture ?? null,
+        prepared_for: preparedFor,
       });
     } catch (e: any) {
       toast({ title: "PDF export failed", description: e?.message ?? String(e), variant: "destructive" });
@@ -1443,6 +1453,7 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         inputs: row.inputs as any,
         stage: row.stage ?? null,
         posture: row.posture ?? null,
+        prepared_for: (profile?.full_name ?? null) as string | null,
       });
     } catch (e: any) {
       toast({ title: "Could not export audit PDF", description: e?.message ?? String(e), variant: "destructive" });

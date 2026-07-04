@@ -28,63 +28,77 @@ const OUTER_TIMEOUT_MS = 150_000;
 function deriveGapHero(report: any, signals: any, strategyFoundation: any): { strategy_says: string; site_says: string; gap_verdict: string } {
   const sf = strategyFoundation ?? {};
   const ef = (sf.enhanced_foundation && typeof sf.enhanced_foundation === "object") ? sf.enhanced_foundation : {};
-  const clip = (s: string, n = 240) => (s.length > n ? s.slice(0, n - 1).trimEnd() + "…" : s);
   const period = (s: string) => (s && !/[.!?]$/.test(s) ? s + "." : s);
+  const capSentences = (s: string, max = 3) => {
+    const parts = String(s).trim().split(/(?<=[.!?])\s+/).filter(Boolean);
+    return parts.slice(0, max).join(" ").trim();
+  };
 
-  // strategy_says — distilled from enhanced_foundation / structured strategy.
-  let strategy_says = "";
+  // strategy_says — a holistic PROMISE, not the raw ICP paragraph.
+  // Prefer transformation + differentiation, then positioning statement.
+  const transformation = String(sf.transformation ?? ef?.transformation ?? "").trim().replace(/\.$/, "");
+  const differentiation = String(sf.differentiation ?? ef?.differentiation ?? "").trim().replace(/\.$/, "");
   const positioning = String(ef?.positioning?.statement ?? ef?.positioning_statement ?? "").trim();
-  const archetype = String(ef?.archetype?.primary ?? "").trim();
-  const transformation = String(sf.transformation ?? ef?.transformation ?? "").trim();
-  const differentiation = String(sf.differentiation ?? ef?.differentiation ?? "").trim();
-  const idealClient = String(sf.ideal_client ?? "").trim();
-  const painPoint = String(sf.pain_point ?? "").trim();
-  if (positioning) {
-    strategy_says = period(positioning);
-    if (archetype && strategy_says.length + archetype.length < 240) {
-      strategy_says += ` Archetype: ${archetype}.`;
-    } else if (transformation && strategy_says.length + transformation.length < 260) {
-      strategy_says += ` ${period(transformation)}`;
-    }
-  } else if (idealClient || differentiation || transformation || painPoint) {
-    const parts: string[] = [];
-    if (idealClient) parts.push(period(`Built for ${idealClient.replace(/\.$/, "")}`));
-    if (differentiation) parts.push(period(differentiation));
-    else if (transformation) parts.push(period(transformation));
-    else if (painPoint) parts.push(period(`Solving ${painPoint.replace(/\.$/, "")}`));
-    strategy_says = parts.slice(0, 2).join(" ").trim();
-  } else {
-    strategy_says = "Your strategy is not yet fully documented in MOXIEMO, so the report reads your site on its own terms.";
-  }
-  strategy_says = clip(strategy_says);
+  const idealClient = String(sf.ideal_client ?? "").trim().replace(/\.$/, "");
+  const brandName = String(sf.business_name ?? "Your brand").trim();
 
-  // site_says — read from the actual scraped signals, then fall back to Vera's
-  // positioning-section read of what's holding the site back.
-  let site_says = "";
+  let strategy_says = "";
+  const parts: string[] = [];
+  if (transformation && idealClient) {
+    parts.push(period(`${brandName} promises ${transformation} for ${idealClient}`));
+  } else if (transformation) {
+    parts.push(period(`${brandName} promises ${transformation}`));
+  } else if (positioning) {
+    parts.push(period(positioning));
+  } else if (idealClient) {
+    parts.push(period(`Built for ${idealClient}`));
+  }
+  if (differentiation) parts.push(period(differentiation));
+  if (parts.length === 0) {
+    strategy_says = "Your strategy is not yet fully documented in MOXIEMO, so the report reads your site on its own terms.";
+  } else {
+    strategy_says = capSentences(parts.join(" "), 3);
+  }
+
+  // site_says — a whole-site impression from the scrape. Must NOT copy the
+  // Positioning section's holding-back line.
   const seo = signals?.seo ?? {};
   const title = String(seo.title ?? "").trim();
   const metaDesc = String(seo.meta_description ?? "").trim();
-  const positioningSection = Array.isArray(report?.sections)
-    ? report.sections.find((s: any) => s?.label === "Positioning & Differentiation")
-    : null;
-  const whatHolds = String(positioningSection?.whats_holding_back ?? "").trim();
+  const cc = signals?.content_consistency ?? {};
+  const face = signals?.face_of_the_brand ?? {};
+  const pos = signals?.positioning ?? {};
   const renderOk = signals?.render_ok !== false;
-  if (renderOk && (title || metaDesc)) {
-    const bits: string[] = [];
-    if (title) bits.push(`Your site leads with "${clip(title, 120)}".`);
-    if (metaDesc) bits.push(clip(metaDesc, 180));
-    site_says = bits.join(" ").trim();
-  } else if (whatHolds) {
-    site_says = clip(whatHolds);
-  } else if (!renderOk) {
-    site_says = "Your live site could not be fully read on this pass, most likely because it is a JavaScript-rendered site.";
-  } else {
-    site_says = "Your site reads as a generic capability list, without a distinct point of view.";
-  }
-  site_says = period(site_says);
 
-  // gap_verdict — the one-line most-important move. Use advisor focus first
-  // sentence, then priority_fixes rank 1, then a safe default.
+  const impressionBits: string[] = [];
+  const founderVisible = face?.face_visible || face?.founder_named_in_text || face?.named_founder_on_site;
+  const hasStory = title || metaDesc;
+  if (renderOk && hasStory) {
+    if (founderVisible) {
+      impressionBits.push(`A founder-led site with a clear surface story${metaDesc ? `, framed as "${metaDesc.replace(/"/g, "'")}"` : ""}`);
+    } else {
+      impressionBits.push(`Reads as ${title ? `"${title.replace(/"/g, "'")}"` : "a capability page"}, without a distinct founder voice`);
+    }
+  } else if (!renderOk) {
+    impressionBits.push("Your live site could not be fully read on this pass, most likely because it is a JavaScript-rendered site");
+  } else {
+    impressionBits.push("Your site reads as a generic capability list, without a distinct point of view");
+  }
+
+  const gaps: string[] = [];
+  const hasDiff = pos?.differentiation_present === true || (pos?.stance_detail && String(pos.stance_detail).length > 20);
+  if (!hasDiff) gaps.push("no differentiation statement");
+  if (cc?.blog_present === false) gaps.push("no published content");
+  if (cc?.waitlist_present === true) gaps.push("still gated by a waitlist");
+  if (gaps.length > 0) {
+    impressionBits.push(`${gaps.slice(0, 2).join(" and ")}, so the market cannot yet verify the promise`);
+  } else if (renderOk && hasStory) {
+    impressionBits.push("the specifics of what the visitor gets — and why here — are still implied rather than named");
+  }
+
+  const site_says = capSentences(impressionBits.map(period).join(" "), 3);
+
+  // gap_verdict — the one-line most-important move.
   let gap_verdict = "";
   const focus = String(report?.advisor_overview?.focus ?? "").trim();
   const firstFix = String(report?.priority_fixes?.[0]?.move ?? "").trim();
@@ -95,7 +109,7 @@ function deriveGapHero(report: any, signals: any, strategyFoundation: any): { st
   } else {
     gap_verdict = "Close the gap between what you know and what your brand says first";
   }
-  gap_verdict = period(clip(gap_verdict, 200));
+  gap_verdict = period(gap_verdict);
 
   return { strategy_says, site_says, gap_verdict };
 }
