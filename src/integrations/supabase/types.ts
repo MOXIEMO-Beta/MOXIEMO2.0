@@ -1654,6 +1654,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      sanitize_dashes_text: { Args: { t: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
