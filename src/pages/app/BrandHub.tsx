@@ -1298,6 +1298,49 @@ function CopyPill() {
 /* -------------------- Brand Assets -------------------- */
 function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId, userId, profile, strategy, latestKit }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null; userId?: string | null; profile?: any; strategy?: any; latestKit?: { id: string; kit_json: any } | null }) {
   const [busy, setBusy] = useState<null | "strategy" | "kit" | "audit">(null);
+  // Load the real latest audit row so the "Brand Audit Report" card can never
+  // show fabricated headline data. If no audit exists yet, `latestAudit`
+  // stays null and the card renders an empty state.
+  const [latestAudit, setLatestAudit] = useState<{
+    created_at: string | null;
+    score: number | null;
+    strongest: { title: string; score: number } | null;
+    weakest: { title: string; score: number } | null;
+  } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!latestAuditId) { setLatestAudit(null); return; }
+      const { data } = await supabase
+        .from("audits")
+        .select("created_at, brand_audit_score, report")
+        .eq("id", latestAuditId)
+        .maybeSingle();
+      if (cancelled || !data) return;
+      const sections: Array<{ title?: string; score?: number }> = Array.isArray((data.report as any)?.sections)
+        ? (data.report as any).sections
+        : [];
+      const scored = sections
+        .filter((s) => typeof s?.score === "number" && typeof s?.title === "string")
+        .map((s) => ({ title: s.title as string, score: s.score as number }));
+      let strongest: { title: string; score: number } | null = null;
+      let weakest: { title: string; score: number } | null = null;
+      for (const s of scored) {
+        if (!strongest || s.score > strongest.score) strongest = s;
+        if (!weakest || s.score < weakest.score) weakest = s;
+      }
+      setLatestAudit({
+        created_at: (data.created_at as string) ?? null,
+        score: (data.brand_audit_score as number) ?? null,
+        strongest,
+        weakest,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [latestAuditId]);
+  const auditDateLabel = latestAudit?.created_at
+    ? new Date(latestAudit.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
   const dlStrategy = async () => {
     if (!userId) { toast({ title: "Sign in required", variant: "destructive" }); return; }
     setBusy("strategy");
