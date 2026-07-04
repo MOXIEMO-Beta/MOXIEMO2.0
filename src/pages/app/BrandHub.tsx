@@ -769,7 +769,6 @@ function AuditResults({ domain, setStep, goAssets, latestAuditId }: { domain: st
   }, [latestAuditId]);
 
   const handleDownload = async () => {
-  const handleDownload = async () => {
     setDlBusy(true);
     try {
       // Always resolve the newest ready audit for this user at click time so
