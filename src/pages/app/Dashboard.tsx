@@ -297,7 +297,14 @@ export default function Dashboard() {
     { label: "Hours saved", value: hoursSaved.toFixed(1), delta: "All-time", icon: Clock, tint: CORAL_TINT, color: CORAL },
     { label: "Pieces generated", value: String(totalGenerated), delta: totalGenerated > 0 ? "All-time" : "None yet", icon: Zap, tint: SAGE_TINT, color: SAGE_LABEL },
     { label: "Alignment", value: `${alignment}%`, delta: "Strategy strength", icon: Target, tint: TAUPE_TINT, color: TAUPE_LABEL },
-    { label: "Best post", value: bestPost ? String(bestPost.impressions) : "-", delta: bestPost ? "Impressions" : "No Page data yet", icon: TrendingUp, tint: "#EFF3F8", color: NAVY },
+    {
+      label: "Best post",
+      value: pageTopPost ? String(pageTopPost.impressions) : (pageHasData === false ? "0" : "0"),
+      delta: pageTopPost ? "Impressions on top Page post" : (pageHasData === false ? "No Page posts yet" : "Loading"),
+      icon: TrendingUp,
+      tint: "#EFF3F8",
+      color: NAVY,
+    },
   ];
 
   // ---------- focus items ----------
