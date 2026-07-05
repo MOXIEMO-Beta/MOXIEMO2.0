@@ -31,6 +31,19 @@ type TopPost = {
   engagementPct: number | null;
 };
 
+type Diagnostic = {
+  posts_list_url?: string;
+  posts_list_status?: number;
+  posts_list_count?: number;
+  posts_list_body?: string;
+  posts_in_window?: number;
+  posts_after_type_filter?: number;
+  per_share_attempted?: number;
+  per_share_ok?: number;
+  per_share_sample_error?: string;
+  note?: string;
+};
+
 function liHeaders(token: string) {
   return {
     Authorization: `Bearer ${token}`,
@@ -150,30 +163,75 @@ Deno.serve(async (req) => {
     // /rest/posts returns the org's posts; then pull per-share stats.
     // Filter posts to the selected window by createdAt/publishedAt.
     let topPosts: TopPost[] = [];
+    const diag: Diagnostic = {};
     try {
-      const postsUrl = `https://api.linkedin.com/rest/posts?q=author&author=${encodeURIComponent(orgUrn)}&count=20&sortBy=LAST_MODIFIED`;
+      const postsUrl = `https://api.linkedin.com/rest/posts?q=author&author=${encodeURIComponent(orgUrn)}&count=25&sortBy=LAST_MODIFIED`;
+      diag.posts_list_url = postsUrl;
       const postsRes = await fetch(postsUrl, { headers: liHeaders(token) });
-      if (postsRes.ok) {
+      diag.posts_list_status = postsRes.status;
+      if (!postsRes.ok) {
+        const body = await postsRes.text();
+        diag.posts_list_body = body.slice(0, 800);
+        console.warn("linkedin posts listing failed", postsRes.status, body.slice(0, 400));
+        if (postsRes.status === 403) {
+          diag.note = "Posts listing returned 403. The Page token likely lacks r_organization_social. Reconnect the Page with that scope.";
+        }
+      } else {
         const postsJson = await postsRes.json();
         const els: Array<Record<string, unknown>> = postsJson?.elements ?? [];
+        diag.posts_list_count = els.length;
+        console.log("linkedin posts listing", { status: postsRes.status, count: els.length });
         const inWindow = (p: Record<string, unknown>): boolean => {
           if (windowDays <= 0) return true;
           const ts = Number(p["publishedAt"] ?? p["createdAt"] ?? p["firstPublishedAt"] ?? 0);
           if (!Number.isFinite(ts) || ts <= 0) return true; // keep if unknown
           return ts >= startMs && ts <= now;
         };
-        const filtered = els.filter(inWindow);
+        const windowed = els.filter(inWindow);
+        diag.posts_in_window = windowed.length;
+        // Skip ARTICLE / NEWSLETTER — they have no share statistics.
+        const isSupported = (p: Record<string, unknown>): boolean => {
+          const contentType = String(
+            (p as { postType?: string }).postType ??
+            (p as { contentType?: string }).contentType ??
+            "",
+          ).toUpperCase();
+          if (contentType === "ARTICLE" || contentType === "NEWSLETTER") return false;
+          const content = (p as { content?: Record<string, unknown> }).content ?? {};
+          if (content && (("article" in content) || ("newsletter" in content))) return false;
+          return true;
+        };
+        const filtered = windowed.filter(isSupported);
+        diag.posts_after_type_filter = filtered.length;
         const urns = filtered.map((p) => String(p["id"] ?? "")).filter(Boolean);
         const textByUrn = new Map<string, string>();
         for (const p of filtered) textByUrn.set(String(p["id"] ?? ""), firstText(p));
 
         // Per-share stats: query one URN at a time (simple and reliable).
-        const perShareLimit = Math.min(urns.length, 12);
+        const perShareLimit = Math.min(urns.length, 15);
+        diag.per_share_attempted = perShareLimit;
+        let perShareOk = 0;
+        let sampleErr = "";
         const results = await Promise.all(
           urns.slice(0, perShareLimit).map(async (urn) => {
-            const url = `https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(orgUrn)}&shares=List(${encodeURIComponent(urn)})${timeIntervalsParam}`;
+            // Pick the correct filter param based on URN type.
+            // ugcPost URNs -> ugcPosts=List(...), share URNs -> shares=List(...).
+            const isUgc = urn.includes(":ugcPost:");
+            const filterParam = isUgc
+              ? `ugcPosts=List(${encodeURIComponent(urn)})`
+              : `shares=List(${encodeURIComponent(urn)})`;
+            // Do NOT include timeIntervals on per-share calls — lifetime per-post
+            // stats are what we rank on; time filter already applied by post date.
+            const url = `https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(orgUrn)}&${filterParam}`;
             const r = await fetch(url, { headers: liHeaders(token) });
-            if (!r.ok) return null;
+            if (!r.ok) {
+              if (!sampleErr) {
+                const b = await r.text().catch(() => "");
+                sampleErr = `status=${r.status} urn=${urn} body=${b.slice(0, 200)}`;
+              }
+              return null;
+            }
+            perShareOk++;
             const j = await r.json();
             const arr: Array<Record<string, unknown>> = Array.isArray(j?.elements) ? j.elements : [];
             const s: Stats = {};
@@ -203,13 +261,17 @@ Deno.serve(async (req) => {
             } as TopPost;
           }),
         );
+        diag.per_share_ok = perShareOk;
+        if (sampleErr) diag.per_share_sample_error = sampleErr;
         topPosts = results
           .filter((x): x is TopPost => !!x && x.impressions > 0)
           .sort((a, b) => b.impressions - a.impressions)
           .slice(0, 5);
+        console.log("linkedin per-share stats", { attempted: perShareLimit, ok: perShareOk, topPosts: topPosts.length });
       }
-    } catch (_) {
-      // Best-effort. Aggregate stats are already returned.
+    } catch (e) {
+      diag.note = `top-posts exception: ${String(e).slice(0, 200)}`;
+      console.error("linkedin top-posts exception", e);
     }
 
     return new Response(
@@ -229,6 +291,7 @@ Deno.serve(async (req) => {
           engagementPct,
         },
         topPosts,
+        diagnostic: diag,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
