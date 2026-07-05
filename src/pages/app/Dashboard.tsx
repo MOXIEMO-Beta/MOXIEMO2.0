@@ -499,7 +499,11 @@ export default function Dashboard() {
 
   const archetype = strategy?.enhanced_foundation?.brandArchetype?.name || strategy?.enhanced_foundation?.brandArchetype?.icon || null;
   const idealClient = strategy?.ideal_client || strategy?.enhanced_foundation?.idealClient?.title || null;
-  const voiceCount = Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes.length : 0;
+  const voiceAttrs: string[] = Array.isArray(strategy?.voice_attributes)
+    ? strategy.voice_attributes
+        .map((v: any) => (typeof v === "string" ? v : v?.name ?? v?.attribute ?? v?.label ?? ""))
+        .filter(Boolean)
+    : [];
   const strengthScore = strategy?.strength_score ?? 0;
 
   const smartGoals = [
