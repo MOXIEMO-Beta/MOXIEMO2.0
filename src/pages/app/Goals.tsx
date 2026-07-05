@@ -11,24 +11,33 @@ type GoalEntry = {
   id: string;
   user_id: string;
   week_of: string;
-  paying_users: number;
-  discovery_calls: number;
-  posts_published: number;
-  email_opens: number;
+  paying_users: number | null;
+  mrr: number | null;
+  retention_pct: number | null;
+  testimonials: number | null;
+  discovery_calls: number | null;
+  posts_published: number | null;
+  email_opens: number | null;
   notes: string | null;
+  created_at?: string;
 };
 
 type Strategy = {
   success_definition: string | null;
   business_goal: string | null;
   strength_score: number | null;
-  content_pillars: any;
+  content_pillars: unknown;
+  created_at: string | null;
 };
 
 const CORAL = "#E85A46";
-const CORAL_LIGHT = "#FF6B5C";
+const CORAL_LIGHT = "#FF8A6B";
+const NAVY = "hsl(var(--brand-navy))";
+const CORAL_TINT = "#F4C9BC";
+const CORAL_TINT_SOFT = "#F4D9CF";
+const LABEL_MUTED = "#AEB9C9";
 const INK = "#15171C";
-const CONFETTI_COLORS = ["#E85A46", "#FF6B5C", "#B8C5A6", "#D97706", "#0A66C2", "#15171C", "#F4B0A3"];
+const CONFETTI_COLORS = ["#E85A46", "#FF8A6B", "#14243D", "#F4C9BC", "#AEB9C9", "#FFFFFF"];
 
 function brandFire() {
   confetti({
@@ -48,11 +57,52 @@ function startOfWeekISO(d = new Date()): string {
   return date.toISOString().slice(0, 10);
 }
 
-function weekOfYear(d = new Date()): number {
-  const start = new Date(d.getFullYear(), 0, 1);
-  const diff = (d.getTime() - start.getTime()) / 86400000;
-  return Math.floor(diff / 7) + 1;
+function weeksSince(startIso: string | null | undefined): number {
+  if (!startIso) return 1;
+  const start = new Date(startIso);
+  if (isNaN(start.getTime())) return 1;
+  const now = new Date();
+  const days = Math.floor((now.getTime() - start.getTime()) / 86_400_000);
+  const n = Math.floor(days / 7) + 1;
+  return Math.min(52, Math.max(1, n));
 }
+
+function lastReported<K extends keyof GoalEntry>(entries: GoalEntry[], key: K): number | null {
+  for (const e of entries) {
+    const v = e[key];
+    if (typeof v === "number" && !isNaN(v)) return v;
+  }
+  return null;
+}
+
+function fmtMoney(n: number | null): string {
+  if (n === null || n === undefined) return "Not reported";
+  return `$${n.toLocaleString()}`;
+}
+function fmtInt(n: number | null): string {
+  if (n === null || n === undefined) return "Not reported";
+  return String(n);
+}
+function fmtPct(n: number | null): string {
+  if (n === null || n === undefined) return "Not reported";
+  return `${n}%`;
+}
+
+type Field = {
+  key: "paying_users" | "mrr" | "retention_pct" | "testimonials" | "discovery_calls";
+  label: string;
+  hint: string;
+  prefix?: string;
+  suffix?: string;
+};
+
+const FIELDS: Field[] = [
+  { key: "paying_users", label: "Paying users", hint: "Total count today." },
+  { key: "mrr", label: "MRR this month", hint: "Dollars, entered directly.", prefix: "$" },
+  { key: "retention_pct", label: "Retention", hint: "Percent still active.", suffix: "%" },
+  { key: "testimonials", label: "Testimonials", hint: "Wow moments captured." },
+  { key: "discovery_calls", label: "Discovery calls", hint: "Booked this period." },
+];
 
 export default function Goals() {
   const { user } = useAuth();
@@ -62,15 +112,11 @@ export default function Goals() {
   const [engine, setEngine] = useState({ pieces: 0, drafts: 0, pillarsCovered: 0, pillarsTotal: 5 });
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [payingInput, setPayingInput] = useState<string>("");
-  const [callsInput, setCallsInput] = useState<string>("");
-  const [noteInput, setNoteInput] = useState<string>("");
+  const [inputs, setInputs] = useState<Record<Field["key"], string>>({
+    paying_users: "", mrr: "", retention_pct: "", testimonials: "", discovery_calls: "",
+  });
 
   const currentWeek = useMemo(() => startOfWeekISO(), []);
-  const currentEntry = useMemo(() => entries.find((e) => e.week_of === currentWeek), [entries, currentWeek]);
-  const lastEntry = useMemo(() => entries.find((e) => e.week_of !== currentWeek), [entries, currentWeek]);
-  const weekNum = weekOfYear();
-  const yearPct = Math.min(100, Math.round((weekNum / 52) * 100));
 
   useEffect(() => {
     if (!user) return;
@@ -79,8 +125,8 @@ export default function Goals() {
       setLoading(true);
       const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
       const [stratRes, entriesRes, postsRes] = await Promise.all([
-        supabase.from("strategies").select("success_definition, business_goal, strength_score, content_pillars").eq("user_id", user.id).maybeSingle(),
-        supabase.from("goal_entries").select("*").eq("user_id", user.id).order("week_of", { ascending: false }).limit(8),
+        supabase.from("strategies").select("success_definition, business_goal, strength_score, content_pillars, created_at").eq("user_id", user.id).maybeSingle(),
+        supabase.from("goal_entries").select("*").eq("user_id", user.id).order("week_of", { ascending: false }).limit(24),
         supabase.from("social_posts").select("id, status, pillar, created_at").eq("user_id", user.id).gte("created_at", weekStart.toISOString()),
       ]);
       if (cancelled) return;
@@ -93,49 +139,60 @@ export default function Goals() {
       setStrategy(strat);
       setEntries(ents);
       setEngine({ pieces: posts.length, drafts, pillarsCovered, pillarsTotal });
-      // Pre-fill from last week's entry
-      const last = ents.find((e) => e.week_of !== currentWeek);
-      if (last) {
-        setPayingInput(String(last.paying_users ?? 0));
-        setCallsInput(String(last.discovery_calls ?? 0));
+
+      const next: Record<Field["key"], string> = { paying_users: "", mrr: "", retention_pct: "", testimonials: "", discovery_calls: "" };
+      for (const f of FIELDS) {
+        const v = lastReported(ents, f.key);
+        next[f.key] = v === null ? "" : String(v);
       }
-      const thisWeek = ents.find((e) => e.week_of === currentWeek);
-      if (thisWeek) {
-        setPayingInput(String(thisWeek.paying_users ?? 0));
-        setCallsInput(String(thisWeek.discovery_calls ?? 0));
-        setNoteInput(thisWeek.notes ?? "");
-        setSaved(true);
-      }
+      setInputs(next);
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [user, currentWeek]);
+  }, [user]);
 
-  async function saveWeek() {
+  const weekNum = useMemo(() => weeksSince(strategy?.created_at ?? null), [strategy]);
+  const yearPct = Math.min(100, Math.round((weekNum / 52) * 100));
+
+  const payingNow = useMemo(() => lastReported(entries, "paying_users"), [entries]);
+  const mrrNow = useMemo(() => lastReported(entries, "mrr"), [entries]);
+  const retentionNow = useMemo(() => lastReported(entries, "retention_pct"), [entries]);
+  const testimonialsNow = useMemo(() => lastReported(entries, "testimonials"), [entries]);
+
+  async function saveNumbers() {
     if (!user) return;
     setSaving(true);
     try {
-      const paying = parseInt(payingInput || "0", 10);
-      const calls = parseInt(callsInput || "0", 10);
+      const parse = (s: string): number | null => {
+        if (s.trim() === "") return null;
+        const n = parseInt(s, 10);
+        return isNaN(n) ? null : n;
+      };
       const payload = {
         user_id: user.id,
         week_of: currentWeek,
-        paying_users: isNaN(paying) ? 0 : paying,
-        discovery_calls: isNaN(calls) ? 0 : calls,
-        posts_published: currentEntry?.posts_published ?? 0,
-        email_opens: currentEntry?.email_opens ?? 0,
-        notes: noteInput.trim() ? noteInput.trim() : null,
+        paying_users: parse(inputs.paying_users),
+        mrr: parse(inputs.mrr),
+        retention_pct: parse(inputs.retention_pct),
+        testimonials: parse(inputs.testimonials),
+        discovery_calls: parse(inputs.discovery_calls),
       };
-      const { data, error } = await supabase.from("goal_entries").upsert(payload, { onConflict: "user_id,week_of" }).select().single();
+      const { data, error } = await supabase
+        .from("goal_entries")
+        .upsert(payload, { onConflict: "user_id,week_of" })
+        .select()
+        .single();
       if (error) throw error;
+      const saved = data as GoalEntry;
       setEntries((prev) => {
         const others = prev.filter((e) => e.week_of !== currentWeek);
-        return [data as GoalEntry, ...others].sort((a, b) => (a.week_of < b.week_of ? 1 : -1)).slice(0, 8);
+        return [saved, ...others].sort((a, b) => (a.week_of < b.week_of ? 1 : -1)).slice(0, 24);
       });
       setSaved(true);
       brandFire();
-    } catch (e: any) {
-      toast.error("Could not save", { description: e?.message ?? "Try again." });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Try again.";
+      toast.error("Could not save", { description: msg });
     } finally {
       setSaving(false);
     }
@@ -154,7 +211,6 @@ export default function Goals() {
   }
 
   const hasStrategy = !!strategy?.success_definition;
-  const payingUsersNow = currentEntry?.paying_users ?? 0;
   const strength = strategy?.strength_score ?? 0;
 
   if (!hasStrategy) {
@@ -170,11 +226,14 @@ export default function Goals() {
   }
 
   const smartCards = [
-    { category: "Growth", pill: { label: "You report", tone: "amber" as const }, title: "Reach $80K MRR", target: "$80K", now: `$${(payingUsersNow * 20).toLocaleString()}`, meta: "Jun 2027", lever: "Grows when paying users climb." },
-    { category: "Conversion", pill: { label: "MOXIEMO tracks", tone: "green" as const }, title: "Audit lead to paid trial", target: "15%", now: "0%", meta: "Brand Audit", lever: "Improve when audit CTA converts." },
-    { category: "Retention", pill: { label: "You report", tone: "amber" as const }, title: "Hold cohort retention", target: "85%", now: "—", meta: "Month 1", lever: "Report monthly once cohorts land." },
-    { category: "Advocacy", pill: { label: "You report", tone: "amber" as const }, title: "Wow testimonials and referrals", target: "20", now: "0", meta: "Founding", lever: "Ask happy founders to write one." },
-  ];
+    { category: "Growth", pill: "you", title: "Reach $80K MRR", target: "$80K", now: fmtMoney(mrrNow), meta: "Jun 2027", lever: "Enter MRR each month, it never derives from user count." },
+    { category: "Conversion", pill: "moxie", title: "Audit lead to paid trial", target: "15%", now: "0%", meta: "Brand Audit", lever: "Improves when audit CTA converts." },
+    { category: "Retention", pill: "you", title: "Hold cohort retention", target: "85%", now: fmtPct(retentionNow), meta: "Month 1", lever: "Report monthly once cohorts land." },
+    { category: "Advocacy", pill: "you", title: "Wow testimonials and referrals", target: "20", now: fmtInt(testimonialsNow), meta: "Founding", lever: "Ask happy founders to write one." },
+  ] as const;
+
+  const payingProgress = payingNow ?? 0;
+  const payingPct = Math.min(100, (payingProgress / 500) * 100);
 
   return (
     <div className="w-full p-6 md:p-10 space-y-8">
@@ -190,42 +249,54 @@ export default function Goals() {
         </div>
       </header>
 
-      {/* NORTH STAR HERO */}
-      <section className="relative overflow-hidden rounded-2xl p-8 md:p-10 shadow-[0_18px_40px_-18px_rgba(232,90,70,0.55)]"
-        style={{ background: `linear-gradient(135deg, ${CORAL_LIGHT} 0%, ${CORAL} 100%)` }}>
-        <div className="absolute top-4 right-6 text-white/25 text-4xl select-none pointer-events-none">✦</div>
-        <div className="absolute bottom-8 right-16 text-white/20 text-2xl select-none pointer-events-none">✦</div>
-        <div className="absolute top-16 right-24 text-white/15 text-xl select-none pointer-events-none">✦</div>
+      {/* NORTH STAR HERO — NAVY */}
+      <section
+        className="relative overflow-hidden rounded-2xl p-8 md:p-10 shadow-[0_18px_40px_-18px_rgba(20,36,61,0.55)]"
+        style={{ background: NAVY }}
+      >
+        <div className="absolute top-4 right-6 text-white/15 text-4xl select-none pointer-events-none">✦</div>
+        <div className="absolute bottom-8 right-16 text-white/10 text-2xl select-none pointer-events-none">✦</div>
+        <div className="absolute top-16 right-24 text-white/10 text-xl select-none pointer-events-none">✦</div>
 
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <span className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: "#4A1B0C" }}>★ North star</span>
-          <span className="text-[11px] uppercase tracking-wider font-semibold rounded-full px-2.5 py-1 text-white/95" style={{ background: "rgba(21,23,28,0.35)" }}>◔ You report this</span>
+          <span className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: CORAL_LIGHT }}>★ North star</span>
+          <span
+            className="text-[11px] uppercase tracking-wider font-semibold rounded-full px-2.5 py-1"
+            style={{ background: "rgba(255,255,255,0.12)", color: CORAL_TINT_SOFT }}
+          >
+            ◔ You report this
+          </span>
         </div>
-        <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight" style={{ color: INK }}>
+        <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight" style={{ color: "#FFFFFF" }}>
           500 paying users in 12 months
         </h2>
-        <p className="mt-2 text-sm md:text-base font-medium" style={{ color: "#6E2412" }}>
+        <p className="mt-2 text-sm md:text-base font-medium" style={{ color: CORAL_TINT }}>
           $80K MRR · $960K ARR · by June 2027
         </p>
 
         {/* Milestone bar */}
         <div className="mt-6">
-          <div className="relative h-3 rounded-full bg-white/30 overflow-hidden">
-            <div className="h-full rounded-full" style={{ width: `${Math.min(100, (payingUsersNow / 500) * 100)}%`, background: INK }} />
+          <div className="relative h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.14)" }}>
+            <div className="h-full rounded-full transition-all" style={{ width: `${payingPct}%`, background: CORAL }} />
             {[10, 30, 60].map((t) => (
-              <div key={t} className="absolute top-0 bottom-0 w-px bg-white/50" style={{ left: `${t}%` }} />
+              <div key={t} className="absolute top-0 bottom-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.4)" }} />
             ))}
           </div>
-          <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: "#4A1B0C" }}>
+          <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: LABEL_MUTED }}>
             <span>0</span><span>50</span><span>150</span><span>300</span><span>500 🎉</span>
           </div>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-xs md:text-sm max-w-md" style={{ color: "#4A1B0C" }}>
-            Lever: every paying user pulls MRR forward. Log wins as they close.
+          <p className="text-xs md:text-sm max-w-md flex items-center gap-2" style={{ color: LABEL_MUTED }}>
+            <span style={{ color: CORAL_LIGHT }}>→</span>
+            Lever: every paying user pulls the North Star forward. Log wins as they close.
           </p>
-          <button onClick={brandFire} className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition" style={{ background: INK }}>
+          <button
+            onClick={brandFire}
+            className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
+            style={{ background: CORAL }}
+          >
             🎉 Log a win
           </button>
         </div>
@@ -237,11 +308,13 @@ export default function Goals() {
           <article key={c.title} className="rounded-xl bg-card border border-border p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">{c.category}</span>
-              <span className="text-[10px] font-semibold rounded-full px-2 py-0.5"
-                style={c.pill.tone === "green"
+              <span
+                className="text-[10px] font-semibold rounded-full px-2 py-0.5"
+                style={c.pill === "moxie"
                   ? { background: "#EAF7EF", color: "#16A34A" }
-                  : { background: "#FEF3E2", color: "#D97706" }}>
-                {c.pill.tone === "green" ? "✓ " : "◔ "}{c.pill.label}
+                  : { background: "#FEF3E2", color: "#D97706" }}
+              >
+                {c.pill === "moxie" ? "✓ MOXIEMO tracks" : "◔ You report"}
               </span>
             </div>
             <h3 className="font-display font-semibold text-base text-foreground mb-4 leading-snug">{c.title}</h3>
@@ -267,8 +340,8 @@ export default function Goals() {
       {/* SECONDARY GOALS STRIP */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {[
-          { title: "Publication features", value: "0 of 4–6" },
-          { title: "Platform awards", value: "0 of 3–4" },
+          { title: "Publication features", value: "0 of 4 to 6" },
+          { title: "Platform awards", value: "0 of 3 to 4" },
           { title: "Social growth", value: "Baseline from zero" },
         ].map((t) => (
           <div key={t.title} className="rounded-[10px] p-4" style={{ background: "#F7F6F3" }}>
@@ -299,7 +372,7 @@ export default function Goals() {
         </div>
       </section>
 
-      {/* WEEKLY CHECK-IN */}
+      {/* UPDATE YOUR NUMBERS */}
       <section
         className="rounded-xl p-6 md:p-8 border transition-colors"
         style={saved
@@ -311,60 +384,54 @@ export default function Goals() {
             <div className="text-3xl mb-2">🎉</div>
             <h3 className="font-display text-2xl font-semibold text-foreground mb-1">Week {weekNum} is in the books!</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              Streak going. Come back next Monday and keep the numbers honest.
+              Numbers saved. Come back anytime to update any field.
             </p>
             <button
               onClick={() => setSaved(false)}
               className="rounded-lg px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition"
               style={{ background: CORAL }}
             >
-              Log another number
+              Update numbers again
             </button>
           </div>
         ) : (
           <div>
-            <div className="text-[11px] uppercase tracking-[0.25em] font-bold mb-2" style={{ color: CORAL }}>Weekly check-in</div>
-            <h3 className="font-display text-xl font-semibold text-foreground mb-1">Two numbers. Two minutes.</h3>
+            <div className="text-[11px] uppercase tracking-[0.25em] font-bold mb-2" style={{ color: CORAL }}>Update your numbers</div>
+            <h3 className="font-display text-xl font-semibold text-foreground mb-1">One field per goal you report.</h3>
             <p className="text-sm text-muted-foreground mb-5">
-              We pre-filled last week to save typing. Adjust or skip. Both fields optional.
+              Each field is pre-filled with your last reported value. Update what changed, leave the rest. Every field is optional.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <label className="block">
-                <span className="text-xs font-medium text-foreground">Paying users</span>
-                <input
-                  type="number" min={0} value={payingInput}
-                  onChange={(e) => setPayingInput(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[--ring]"
-                  placeholder="0"
-                />
-              </label>
-              <label className="block">
-                <span className="text-xs font-medium text-foreground">Discovery calls booked</span>
-                <input
-                  type="number" min={0} value={callsInput}
-                  onChange={(e) => setCallsInput(e.target.value)}
-                  className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-[--ring]"
-                  placeholder="0"
-                />
-              </label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
+              {FIELDS.map((f) => (
+                <label key={f.key} className="block">
+                  <span className="text-xs font-medium text-foreground">{f.label}</span>
+                  <div className="relative mt-1">
+                    {f.prefix && (
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.prefix}</span>
+                    )}
+                    <input
+                      type="number" min={0}
+                      value={inputs[f.key]}
+                      onChange={(e) => setInputs((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                      className="block w-full rounded-lg border border-border bg-background py-2 text-base focus:outline-none focus:ring-2 focus:ring-[--ring]"
+                      style={{ paddingLeft: f.prefix ? 24 : 12, paddingRight: f.suffix ? 28 : 12 }}
+                      placeholder=""
+                    />
+                    {f.suffix && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.suffix}</span>
+                    )}
+                  </div>
+                  <span className="mt-1 block text-[11px] text-muted-foreground">{f.hint}</span>
+                </label>
+              ))}
             </div>
-            <label className="block mb-5">
-              <span className="text-xs font-medium text-foreground">Note (optional)</span>
-              <textarea
-                value={noteInput}
-                onChange={(e) => setNoteInput(e.target.value)}
-                rows={2}
-                className="mt-1 block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-[--ring]"
-                placeholder="What moved this week?"
-              />
-            </label>
             <button
-              onClick={saveWeek}
+              onClick={saveNumbers}
               disabled={saving}
               className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
               style={{ background: CORAL }}
             >
-              {saving ? "Saving..." : "Save week"}
+              {saving ? "Saving..." : "Save numbers"}
             </button>
           </div>
         )}

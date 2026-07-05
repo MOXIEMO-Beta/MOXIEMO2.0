@@ -865,9 +865,12 @@ export type Database = {
           discovery_calls: number
           email_opens: number
           id: string
+          mrr: number | null
           notes: string | null
           paying_users: number
           posts_published: number
+          retention_pct: number | null
+          testimonials: number | null
           updated_at: string
           user_id: string
           week_of: string
@@ -877,9 +880,12 @@ export type Database = {
           discovery_calls?: number
           email_opens?: number
           id?: string
+          mrr?: number | null
           notes?: string | null
           paying_users?: number
           posts_published?: number
+          retention_pct?: number | null
+          testimonials?: number | null
           updated_at?: string
           user_id: string
           week_of: string
@@ -889,9 +895,12 @@ export type Database = {
           discovery_calls?: number
           email_opens?: number
           id?: string
+          mrr?: number | null
           notes?: string | null
           paying_users?: number
           posts_published?: number
+          retention_pct?: number | null
+          testimonials?: number | null
           updated_at?: string
           user_id?: string
           week_of?: string
