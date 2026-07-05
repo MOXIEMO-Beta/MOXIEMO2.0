@@ -866,6 +866,7 @@ export type Database = {
           email_opens: number
           id: string
           notes: string | null
+          paying_users: number
           posts_published: number
           updated_at: string
           user_id: string
@@ -877,6 +878,7 @@ export type Database = {
           email_opens?: number
           id?: string
           notes?: string | null
+          paying_users?: number
           posts_published?: number
           updated_at?: string
           user_id: string
@@ -888,6 +890,7 @@ export type Database = {
           email_opens?: number
           id?: string
           notes?: string | null
+          paying_users?: number
           posts_published?: number
           updated_at?: string
           user_id?: string

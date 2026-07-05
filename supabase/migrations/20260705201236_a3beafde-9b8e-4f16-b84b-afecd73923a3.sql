@@ -1,0 +1,1 @@
+ALTER TABLE public.goal_entries ADD COLUMN IF NOT EXISTS paying_users integer NOT NULL DEFAULT 0;
