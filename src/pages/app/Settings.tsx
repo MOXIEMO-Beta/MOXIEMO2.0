@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowRight, Shield, Linkedin, Facebook, Instagram, Mail, Calendar as CalIcon, Lightbulb, Megaphone, Sparkles, FileText } from "lucide-react";
-import { LinkedInAnalyticsProbe } from "@/components/LinkedInAnalyticsProbe";
 
 type SocialConn = {
   id: string;
@@ -145,9 +144,6 @@ export default function Settings() {
     }
   }, [user]);
 
-  const linkedin = connections.find(
-    (c) => c.platform === "linkedin" && (c.connection_type ?? "personal") === "personal",
-  );
   const companyPages = connections.filter(
     (c) => c.platform === "linkedin" && c.connection_type === "company",
   );
@@ -195,40 +191,6 @@ export default function Settings() {
       window.history.replaceState({}, "", cleanUrl);
     }
   }, [user]);
-
-  async function connectLinkedIn() {
-    if (!user) return;
-    setConnecting("linkedin");
-    try {
-      // Only these origins are registered as LinkedIn OAuth redirect URIs.
-      // On any other origin (e.g. Lovable editor preview) we fall back to the
-      // primary production callback so LinkedIn's exact-match check passes.
-      const ALLOWED_ORIGINS = new Set([
-        "https://buildwithmoxiemo.com",
-        "https://moxie-grow-platform.lovable.app",
-      ]);
-      const origin = window.location.origin;
-      const redirect_uri = ALLOWED_ORIGINS.has(origin)
-        ? `${origin}/auth/linkedin/callback`
-        : "https://buildwithmoxiemo.com/auth/linkedin/callback";
-      const { data, error } = await supabase.functions.invoke("social-oauth-start", {
-        body: { platform: "linkedin", user_id: user.id, redirect_uri },
-      });
-      if (error) throw error;
-      const url = (data as any)?.url ?? (data as any)?.authUrl;
-      if (url) window.location.href = url;
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not start connection");
-    } finally { setConnecting(null); }
-  }
-
-  async function disconnectLinkedIn() {
-    if (!user || !linkedin) return;
-    const { error } = await supabase.from("social_connections").delete().eq("id", linkedin.id);
-    if (error) { toast.error(error.message); return; }
-    setConnections((arr) => arr.filter((c) => c.id !== linkedin.id));
-    toast.success("Disconnected");
-  }
 
   function connectCompanyPage() {
     if (!user) return;
