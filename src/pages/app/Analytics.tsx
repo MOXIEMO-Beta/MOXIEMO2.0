@@ -58,6 +58,7 @@ type MemberResp =
       status: "ok";
       profile_name: string | null;
       window_days?: number;
+      window_label?: string;
       impressions: number;
       reach: number;
       reactions: number;
@@ -453,7 +454,11 @@ export default function Analytics() {
                   || orgConn?.organization_name
                   || "LinkedIn Page"}
               </span>
-              <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>{rangeLabel}</span>
+              <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>
+                {memberResp?.status === "ok" && memberResp.window_label
+                  ? memberResp.window_label.charAt(0).toUpperCase() + memberResp.window_label.slice(1)
+                  : rangeLabel}
+              </span>
             </div>
           </div>
           {!orgConn && pageResp?.status === "not_connected" ? (
@@ -583,7 +588,11 @@ export default function Analytics() {
           )}
         </div>
         <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-          Creator analytics from your Build With MOXIEMO® Pages connection, {rangeLabel.toLowerCase()}.
+          Creator analytics from your Build With MOXIEMO® Pages connection,{" "}
+          {memberResp?.status === "ok" && memberResp.window_label
+            ? memberResp.window_label.toLowerCase()
+            : rangeLabel.toLowerCase()}
+          .
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
           <Metric label="Impressions" value={memberImpressionsValue} mutedValue={memberResp?.status !== "ok"} />
