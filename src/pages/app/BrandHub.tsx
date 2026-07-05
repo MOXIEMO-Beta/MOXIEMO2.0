@@ -340,7 +340,7 @@ export default function BrandHub() {
         {tab === "welcome" && (
           <WelcomePanel
             onAudit={() => { setTab("audit"); setAuditStep("prompt"); }}
-            onKit={() => { setTab("kit"); setKitStep("visual"); }}
+            onKit={() => { setTab("kit"); setKitStep(latestKit?.kit_json ? "kit" : "visual"); }}
             onAssets={() => setTab("assets")}
           />
         )}
