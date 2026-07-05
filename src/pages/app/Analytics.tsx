@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Linkedin, User, Clock, TrendingUp, AlertTriangle, ArrowRight, Zap, CircleDot, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,6 +31,26 @@ type SocialConn = {
   platform: string; connection_type: string | null; expires_at: string | null;
   organization_name: string | null; profile_name: string | null;
 };
+
+type PageStats = {
+  impressions: number;
+  reach: number;
+  reactions: number;
+  comments: number;
+  shares: number;
+  clicks: number;
+  engagementPct: number;
+};
+type PageTopPost = {
+  urn: string; text: string; impressions: number; reach: number;
+  reactions: number; comments: number; clicks: number; engagementPct: number | null;
+};
+type PageResp =
+  | { status: "ok"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[] }
+  | { status: "empty"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[] }
+  | { status: "not_connected" }
+  | { status: "reauth_required"; organization_name?: string | null }
+  | { status: "error"; http_status?: number; body?: string; error?: string };
 
 function pillarsOf(s: Strategy | null): string[] {
   const v = s?.content_pillars;
@@ -86,6 +106,9 @@ export default function Analytics() {
   const [posts, setPosts] = useState<SocialPost[]>([]);
   const [analytics, setAnalytics] = useState<SocialAnalytic[]>([]);
   const [connections, setConnections] = useState<SocialConn[]>([]);
+  const [pageResp, setPageResp] = useState<PageResp | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+  const [pageRetryCount, setPageRetryCount] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -107,10 +130,36 @@ export default function Analytics() {
     })();
   }, [user]);
 
+  const fetchPage = useCallback(async () => {
+    setPageLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("linkedin-page-analytics", { method: "POST" });
+      if (error) throw error;
+      setPageResp(data as PageResp);
+    } catch {
+      setPageResp({ status: "error", error: "network" });
+    } finally {
+      setPageLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    void fetchPage();
+  }, [user, fetchPage]);
+
+  // Quiet retry for transient errors (max 2 retries).
+  useEffect(() => {
+    if (pageResp?.status !== "error" || pageRetryCount >= 2) return;
+    const t = setTimeout(() => {
+      setPageRetryCount((c) => c + 1);
+      void fetchPage();
+    }, 4000 * (pageRetryCount + 1));
+    return () => clearTimeout(t);
+  }, [pageResp, pageRetryCount, fetchPage]);
+
   const orgConn = useMemo(() => connections.find((c) => c.connection_type === "company") ?? null, [connections]);
   const personalConn = useMemo(() => connections.find((c) => (c.connection_type ?? "personal") === "personal") ?? null, [connections]);
-  const now = Date.now();
-  const orgExpired = !!orgConn?.expires_at && new Date(orgConn.expires_at).getTime() < now;
 
   // Latest analytics per post
   const analyticsByPost = useMemo(() => {
@@ -134,71 +183,50 @@ export default function Analytics() {
   const strategyStrength = strategy?.strength_score ?? 0;
   const draftsReady = useMemo(() => posts.filter((p) => p.status === "draft").length, [posts]);
 
-  // LinkedIn Page performance
-  const orgPosts = useMemo(
-    () => posts.filter((p) => (p.platforms || []).includes("linkedin") && p.status === "published"),
-    [posts]
-  );
-  const orgStats = useMemo(() => {
-    let impressions = 0, reach = 0, reactions = 0;
-    const rates: number[] = [];
-    let hasData = false;
-    for (const p of orgPosts) {
-      const a = analyticsByPost.get(p.id);
-      if (!a) continue;
-      hasData = true;
-      impressions += a.impressions || 0;
-      reach += a.reach || 0;
-      reactions += (a.likes || 0);
-      if (a.engagement_rate != null) rates.push(Number(a.engagement_rate));
-    }
-    const engagement = rates.length ? Math.round((rates.reduce((s, x) => s + x, 0) / rates.length) * 100) / 100 : 0;
-    return { impressions, reach, engagement, reactions, hasData };
-  }, [orgPosts, analyticsByPost]);
+  // LinkedIn Page performance — sourced from the org statistics endpoint, not MOXIEMO's posts.
+  const pageHasStats = pageResp?.status === "ok" || pageResp?.status === "empty";
+  const pageStats: PageStats = pageHasStats
+    ? (pageResp as { stats: PageStats }).stats
+    : { impressions: 0, reach: 0, reactions: 0, comments: 0, shares: 0, clicks: 0, engagementPct: 0 };
+  const bestPagePosts: PageTopPost[] = pageHasStats
+    ? (pageResp as { topPosts: PageTopPost[] }).topPosts
+    : [];
+  const pageIsLive = pageResp?.status === "ok";
+  const pageIsEmpty = pageResp?.status === "empty";
+  const pageNeedsReauth = pageResp?.status === "reauth_required";
+  const pageIsError = pageResp?.status === "error";
 
-  const bestPosts = useMemo(() => {
-    return [...orgPosts]
-      .map((p) => ({ p, a: analyticsByPost.get(p.id) }))
-      .filter((x) => x.a && (x.a.impressions || 0) > 0)
-      .sort((a, b) => (b.a!.impressions || 0) - (a.a!.impressions || 0))
-      .slice(0, 5);
-  }, [orgPosts, analyticsByPost]);
-
-  // What the data says
+  // What the data says — grounded in live Page stats.
   const insights = useMemo(() => {
     const out: { kind: "up" | "warn"; text: string }[] = [];
-    if (orgStats.hasData) {
-      if (orgStats.engagement >= 5) {
-        out.push({ kind: "up", text: `Page engagement is ${orgStats.engagement}%, above the LinkedIn norm. Your best angle is pulling reactions.` });
-      } else if (orgStats.engagement > 0) {
-        out.push({ kind: "warn", text: `Page engagement is ${orgStats.engagement}%. Tighter hooks on the first two lines will lift this.` });
+    if (pageIsLive) {
+      if (pageStats.engagementPct >= 5) {
+        out.push({ kind: "up", text: `Page engagement is ${pageStats.engagementPct}% against impressions, above the LinkedIn norm.` });
+      } else if (pageStats.engagementPct > 0) {
+        out.push({ kind: "warn", text: `Page engagement is ${pageStats.engagementPct}% against impressions. Tighter hooks on the first two lines will lift this.` });
       }
-      // top pillar
-      const byPillar = new Map<string, number>();
-      for (const { p, a } of orgPosts.map((p) => ({ p, a: analyticsByPost.get(p.id) }))) {
-        if (!a || !p.pillar) continue;
-        byPillar.set(p.pillar, (byPillar.get(p.pillar) || 0) + (a.impressions || 0));
+      if (bestPagePosts[0]) {
+        out.push({ kind: "up", text: `Your top post is pulling ${bestPagePosts[0].impressions} impressions. Rework that angle.` });
       }
-      const topPillar = [...byPillar.entries()].sort((a, b) => b[1] - a[1])[0];
-      if (topPillar) out.push({ kind: "up", text: `${topPillar[0]} posts are producing your strongest reach right now.` });
-    } else if (orgPosts.length > 0) {
-      out.push({ kind: "warn", text: "Posts are live on your Page but analytics have not synced yet. Numbers usually appear within 24 hours." });
+    } else if (pageIsEmpty) {
+      out.push({ kind: "warn", text: "Your Page has no lifetime activity to score yet. Publish two posts this week to unlock real signal." });
     } else {
-      out.push({ kind: "warn", text: "No published Page posts yet. Publish two this week to unlock real signal." });
+      out.push({ kind: "warn", text: "Waiting on live LinkedIn Page numbers to score the pattern." });
     }
     const empty = pillars.filter((p) => !posts.some((post) => post.pillar === p));
     if (empty.length > 0) {
       out.push({ kind: "warn", text: `${empty[0]} has no posts yet. That pillar is going untested.` });
     }
     return out.slice(0, 3);
-  }, [orgStats, orgPosts, analyticsByPost, pillars, posts]);
+  }, [pageIsLive, pageIsEmpty, pageStats, bestPagePosts, pillars, posts]);
 
-  // What to make next
+  // What to make next — leans on empty pillars since Page-side pillar tagging lives in MOXIEMO records only.
   const suggestions = useMemo(() => {
     const out: { text: string; pillar?: string }[] = [];
-    // top-performing pillar
+    // top-performing pillar from MOXIEMO-tagged posts (if we happen to have analytics)
     const byPillar = new Map<string, number>();
-    for (const { p, a } of orgPosts.map((p) => ({ p, a: analyticsByPost.get(p.id) }))) {
+    for (const p of posts) {
+      const a = analyticsByPost.get(p.id);
       if (!a || !p.pillar) continue;
       byPillar.set(p.pillar, (byPillar.get(p.pillar) || 0) + (a.impressions || 0));
     }
@@ -213,7 +241,7 @@ export default function Analytics() {
     }
     if (out.length === 0) out.push({ text: "Set your content pillars in Strategy, then generate your first post." });
     return out.slice(0, 3);
-  }, [orgPosts, analyticsByPost, pillars, posts]);
+  }, [posts, analyticsByPost, pillars]);
 
   const personalPublished = useMemo(
     () => posts.filter((p) => p.status === "published" && (p.platforms || []).includes("linkedin")).length,
@@ -277,43 +305,53 @@ export default function Analytics() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Linkedin size={19} style={{ color: CORAL }} />
             <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
-              {orgConn?.organization_name || "LinkedIn Page"}
+              {(pageHasStats && (pageResp as { organization_name: string | null }).organization_name)
+                || orgConn?.organization_name
+                || "LinkedIn Page"}
             </span>
           </div>
-          {!orgConn ? (
+          {!orgConn && pageResp?.status === "not_connected" ? (
             <Badge tone="pending"><Clock size={12} /> Not connected</Badge>
-          ) : orgExpired ? (
+          ) : pageNeedsReauth ? (
             <button onClick={() => navigate("/app/settings?tab=integrations")}
               style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, padding: "3px 9px", borderRadius: 999, background: WARN_BG, color: WARN_FG, border: "none", cursor: "pointer" }}>
               <RefreshCw size={12} /> Reconnect LinkedIn
             </button>
-          ) : (
+          ) : pageIsLive ? (
             <Badge tone="live"><CircleDot size={8} /> Live from LinkedIn</Badge>
+          ) : pageIsError ? (
+            <Badge tone="pending"><RefreshCw size={12} /> Retrying</Badge>
+          ) : pageLoading ? (
+            <Badge tone="pending"><Clock size={12} /> Loading</Badge>
+          ) : (
+            <Badge tone="pending"><Clock size={12} /> No lifetime activity</Badge>
           )}
         </div>
-        {orgConn && !orgExpired && !orgStats.hasData && orgPosts.length === 0 && (
+        {pageNeedsReauth && (
           <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-            No published Page posts yet. Publish your first post to see impressions, reach, and engagement here.
+            The LinkedIn Page token expired or was revoked. Reconnect to see live Page analytics again.
           </p>
         )}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
-          <Metric label="Impressions" value={orgStats.impressions} />
-          <Metric label="Unique reach" value={orgStats.reach} />
-          <Metric label="Engagement" value={`${orgStats.engagement}%`} />
-          <Metric label="Reactions" value={orgStats.reactions} />
+          <Metric label="Impressions" value={pageStats.impressions} />
+          <Metric label="Unique reach" value={pageStats.reach} />
+          <Metric label="Engagement" value={`${pageStats.engagementPct}%`} sub="of impressions" />
+          <Metric label="Reactions" value={pageStats.reactions} />
+          <Metric label="Comments" value={pageStats.comments} />
+          <Metric label="Clicks" value={pageStats.clicks} />
         </div>
       </Card>
 
       {/* Best posts */}
-      {bestPosts.length > 0 && (
+      {bestPagePosts.length > 0 && (
         <Card style={{ marginBottom: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <Eyebrow>Your best posts</Eyebrow>
             <span style={{ fontSize: 11.5, color: TEXT_MUTED }}>Ranked by impressions</span>
           </div>
-          {bestPosts.map(({ p, a }, i) => (
-            <div key={p.id}
-              style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "0.7rem 0", borderBottom: i < bestPosts.length - 1 ? BORDER : "none" }}>
+          {bestPagePosts.map((tp, i) => (
+            <div key={tp.urn}
+              style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "0.7rem 0", borderBottom: i < bestPagePosts.length - 1 ? BORDER : "none" }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: "#0A66C2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Linkedin size={17} color="#fff" />
               </div>
@@ -321,14 +359,14 @@ export default function Analytics() {
                 <div style={{
                   display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
                   fontSize: 13.5, color: TEXT_PRIMARY, lineHeight: 1.4,
-                }}>{postPreview(p)}</div>
-                {p.pillar && <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 3 }}>{p.pillar}</div>}
+                }}>{tp.text || "Untitled Page post"}</div>
+                <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 3 }}>LinkedIn Page</div>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
-                <div style={{ fontFamily: DISPLAY_FONT, fontSize: 16, fontWeight: 500 }}>{a!.impressions || 0}</div>
+                <div style={{ fontFamily: DISPLAY_FONT, fontSize: 16, fontWeight: 500 }}>{tp.impressions}</div>
                 <div style={{ fontSize: 11, color: TEXT_MUTED }}>impressions</div>
-                {a!.engagement_rate != null && (
-                  <div style={{ fontSize: 11, color: SUCCESS_FG, marginTop: 1 }}>{Number(a!.engagement_rate)}% engaged</div>
+                {tp.engagementPct != null && (
+                  <div style={{ fontSize: 11, color: SUCCESS_FG, marginTop: 1 }}>{tp.engagementPct}% engaged</div>
                 )}
               </div>
             </div>
