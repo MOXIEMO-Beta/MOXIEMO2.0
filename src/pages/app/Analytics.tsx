@@ -63,11 +63,19 @@ type MemberResp =
       reactions: number;
       comments: number;
       engagementPct: number;
+      attempts?: MemberAttempt[];
     }
-  | { status: "pending" }
-  | { status: "reauth_required" }
+  | { status: "reauth_required"; attempts?: MemberAttempt[] }
   | { status: "not_connected" }
-  | { status: "error"; error?: string };
+  | { status: "error"; http_status?: number; error?: string; attempts?: MemberAttempt[] };
+
+type MemberAttempt = {
+  query: string;
+  url: string;
+  status: number;
+  ok: boolean;
+  body?: string;
+};
 
 function pillarsOf(s: Strategy | null): string[] {
   const v = s?.content_pillars;
@@ -336,10 +344,25 @@ export default function Analytics() {
     return out.slice(0, 3);
   }, [topSetStats, pillars, posts]);
 
-  const personalPublished = useMemo(
-    () => posts.filter((p) => p.status === "published" && (p.platforms || []).includes("linkedin")).length,
-    [posts]
-  );
+  const memberAttempts: MemberAttempt[] =
+    memberResp && "attempts" in memberResp && Array.isArray(memberResp.attempts) ? memberResp.attempts : [];
+  const memberImpressionsAttempt = memberAttempts.find((a) => a.query === "IMPRESSION") ?? memberAttempts[0] ?? null;
+  const memberStatusLabel = memberLoading
+    ? "Loading"
+    : memberResp?.status === "ok"
+      ? "200"
+      : memberResp?.status === "reauth_required"
+        ? "401"
+        : memberResp?.status === "not_connected"
+          ? "Not connected"
+          : memberResp?.status === "error" && memberResp.http_status
+            ? String(memberResp.http_status)
+            : memberImpressionsAttempt
+              ? String(memberImpressionsAttempt.status)
+              : "Unavailable";
+  const memberImpressionsValue = memberResp?.status === "ok" ? memberResp.impressions.toLocaleString() : memberStatusLabel;
+  const memberReachValue = memberResp?.status === "ok" ? memberResp.reach.toLocaleString() : memberStatusLabel;
+  const memberEngagementValue = memberResp?.status === "ok" ? `${memberResp.engagementPct}%` : memberStatusLabel;
 
   function goCreate(pillar?: string) {
     const q = pillar ? `?pillar=${encodeURIComponent(pillar)}` : "";
@@ -532,7 +555,7 @@ export default function Analytics() {
         </Card>
       </div>
 
-      {/* Personal profile pending */}
+      {/* Personal profile */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.7rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -556,40 +579,31 @@ export default function Analytics() {
           ) : memberLoading ? (
             <Badge tone="pending"><Clock size={12} /> Loading</Badge>
           ) : (
-            <Badge tone="pending"><Clock size={12} /> Pending LinkedIn approval</Badge>
+            <Badge tone="pending"><AlertTriangle size={12} /> Status {memberStatusLabel}</Badge>
           )}
         </div>
-        {memberResp?.status === "ok" ? (
-          <>
-            <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-              Live creator analytics for your personal profile, {rangeLabel.toLowerCase()}.
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
-              <Metric label="Impressions" value={memberResp.impressions.toLocaleString()} />
-              <Metric label="Unique reach" value={memberResp.reach.toLocaleString()} />
-              <Metric label="Engagement" value={`${memberResp.engagementPct}%`} sub="of impressions" />
-              <Metric label="Reactions" value={memberResp.reactions.toLocaleString()} />
-              <Metric label="Comments" value={memberResp.comments.toLocaleString()} />
-              <Metric label="Posts published" value={personalPublished} />
+        <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
+          Creator analytics from your Build With MOXIEMO® Pages connection, {rangeLabel.toLowerCase()}.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
+          <Metric label="Impressions" value={memberImpressionsValue} mutedValue={memberResp?.status !== "ok"} />
+          <Metric label="Reach" value={memberReachValue} mutedValue={memberResp?.status !== "ok"} />
+          <Metric label="Engagement" value={memberEngagementValue} sub={memberResp?.status === "ok" ? "of impressions" : undefined} mutedValue={memberResp?.status !== "ok"} />
+        </div>
+        {memberResp?.status === "reauth_required" && (
+          <p style={{ fontSize: 12.5, color: WARN_FG, margin: "0.75rem 0 0" }}>
+            Reconnect LinkedIn to read personal profile analytics. LinkedIn tokens expire every 60 days.
+          </p>
+        )}
+        {memberImpressionsAttempt && (
+          <div style={{ marginTop: "0.85rem", background: SURFACE_1, border: BORDER, borderRadius: 10, padding: "0.75rem 0.85rem" }}>
+            <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 4 }}>Member analytics call</div>
+            <div style={{ fontSize: 11.5, color: TEXT_SECONDARY, overflowWrap: "anywhere", lineHeight: 1.45 }}>
+              URL: {memberImpressionsAttempt.url}<br />
+              Status: {memberImpressionsAttempt.status}<br />
+              Body: {memberImpressionsAttempt.body || "No response body"}
             </div>
-          </>
-        ) : memberResp?.status === "reauth_required" ? (
-          <>
-            <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-              Reconnect LinkedIn to read personal profile analytics. LinkedIn tokens expire every 60 days.
-            </p>
-          </>
-        ) : (
-          <>
-            <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-              Personal post analytics load from your Build With MOXIEMO® connection. If this stays pending, reconnect from Settings.
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
-              <Metric label="Posts published" value={personalPublished} />
-              <Metric label="Impressions" value="Pending" mutedValue />
-              <Metric label="Engagement" value="Pending" mutedValue />
-            </div>
-          </>
+          </div>
         )}
       </Card>
 

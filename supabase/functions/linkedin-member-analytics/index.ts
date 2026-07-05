@@ -24,9 +24,10 @@ function liHeaders(token: string) {
 
 type Attempt = {
   query: string;
+  url: string;
   status: number;
   ok: boolean;
-  body_preview?: string;
+  body?: string;
 };
 
 function sumValues(json: unknown): number {
@@ -120,8 +121,8 @@ Deno.serve(async (req) => {
       const url = `${base}&queryType=${q.type}${timeIntervalsParam}`;
       const r = await fetch(url, { headers: liHeaders(token) });
       const bodyText = await r.text();
-      attempts.push({ query: q.type, status: r.status, ok: r.ok, body_preview: bodyText.slice(0, 200) });
-      console.log("member-analytics", { queryType: q.type, status: r.status, days: windowDays });
+      attempts.push({ query: q.type, url, status: r.status, ok: r.ok, body: bodyText.slice(0, 1500) });
+      console.log("member-analytics", { queryType: q.type, url, status: r.status, body: bodyText.slice(0, 1500), days: windowDays });
       if (r.status === 401) { sawAuthError = true; continue; }
       if (!r.ok) continue;
       sawOk = true;
@@ -177,8 +178,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    const firstFailure = attempts.find((a) => !a.ok) ?? attempts[0] ?? null;
     return new Response(
-      JSON.stringify({ status: "pending", attempts }),
+      JSON.stringify({
+        status: "error",
+        http_status: firstFailure?.status ?? 0,
+        error: firstFailure ? `LinkedIn member analytics returned ${firstFailure.status}` : "LinkedIn member analytics returned no response",
+        attempts,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
