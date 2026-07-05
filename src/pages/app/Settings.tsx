@@ -236,7 +236,20 @@ export default function Settings() {
     try {
       const redirect_uri = "https://mqhipuvkdsvapbhrrzjd.supabase.co/functions/v1/social-oauth-pages-callback";
       const clientId = "86swh4fzu3j3vo";
-      const scope = "rw_organization_admin w_organization_social";
+      // Full Community Management scope set provisioned on this app. One
+      // authorization from Karee (admin + member) covers both org and member
+      // analytics.
+      const scope = [
+        "r_organization_social",
+        "r_organization_followers",
+        "r_organization_social_feed",
+        "rw_organization_admin",
+        "w_organization_social",
+        "r_member_postAnalytics",
+        "r_member_profileAnalytics",
+        "r_basicprofile",
+        "w_member_social",
+      ].join(" ");
       const state = btoa(JSON.stringify({
         platform: "linkedin",
         connection_type: "company",

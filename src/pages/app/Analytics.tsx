@@ -53,6 +53,13 @@ type PageResp =
   | { status: "reauth_required"; organization_name?: string | null }
   | { status: "error"; http_status?: number; body?: string; error?: string };
 
+type MemberResp =
+  | { status: "ok"; profile_name: string | null; impressions: number }
+  | { status: "pending" }
+  | { status: "reauth_required" }
+  | { status: "not_connected" }
+  | { status: "error"; error?: string };
+
 function pillarsOf(s: Strategy | null): string[] {
   const v = s?.content_pillars;
   if (!Array.isArray(v)) return [];
@@ -127,6 +134,7 @@ export default function Analytics() {
   const [pageResp, setPageResp] = useState<PageResp | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageRetryCount, setPageRetryCount] = useState(0);
+  const [memberResp, setMemberResp] = useState<MemberResp | null>(null);
   const [range, setRange] = useState<RangeKey>("30");
 
   useEffect(() => {
@@ -171,6 +179,23 @@ export default function Analytics() {
     setPageRetryCount(0);
     void fetchPage();
   }, [user, fetchPage]);
+
+  // Member (personal) analytics — one shot on load; flips card to live on 200.
+  useEffect(() => {
+    if (!user) return;
+    void (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("linkedin-member-analytics", {
+          method: "POST",
+          body: {},
+        });
+        if (error) throw error;
+        setMemberResp(data as MemberResp);
+      } catch {
+        setMemberResp({ status: "error", error: "network" });
+      }
+    })();
+  }, [user]);
 
   // Quiet retry for transient errors (max 2 retries).
   useEffect(() => {
@@ -500,16 +525,34 @@ export default function Analytics() {
               {personalConn?.profile_name ? `${personalConn.profile_name}, personal profile` : "Your personal profile"}
             </span>
           </div>
-          <Badge tone="pending"><Clock size={12} /> Pending LinkedIn approval</Badge>
+          {memberResp?.status === "ok"
+            ? <Badge tone="live"><CircleDot size={11} /> Live from LinkedIn</Badge>
+            : <Badge tone="pending"><Clock size={12} /> Pending LinkedIn approval</Badge>}
         </div>
-        <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-          Personal post analytics and best-post ranking need LinkedIn partner approval. The request is in review. Until it clears, MOXIEMO shows what it published for you.
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
-          <Metric label="Posts published" value={personalPublished} />
-          <Metric label="Impressions" value="Locked" mutedValue />
-          <Metric label="Best post" value="Locked" mutedValue />
-        </div>
+        {memberResp?.status === "ok" ? (
+          <>
+            <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
+              Live creator analytics for your personal profile.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
+              <Metric label="Posts published" value={personalPublished} />
+              <Metric label="Impressions" value={memberResp.impressions.toLocaleString()} />
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
+              {memberResp?.status === "reauth_required"
+                ? "Reconnect LinkedIn to read personal profile analytics."
+                : "Personal post analytics and best-post ranking need LinkedIn partner approval. The request is in review. Until it clears, MOXIEMO shows what it published for you."}
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
+              <Metric label="Posts published" value={personalPublished} />
+              <Metric label="Impressions" value="Locked" mutedValue />
+              <Metric label="Best post" value="Locked" mutedValue />
+            </div>
+          </>
+        )}
       </Card>
 
       {/* Meta coming-soon (quiet) */}

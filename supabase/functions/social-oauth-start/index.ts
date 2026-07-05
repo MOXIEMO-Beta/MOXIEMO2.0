@@ -52,7 +52,15 @@ Deno.serve(async (req) => {
     }
 
     const state = btoa(JSON.stringify({ platform, user_id, redirect_uri: redirectUri }));
-    const scope = "openid profile email w_member_social";
+    const scope = [
+      "openid",
+      "profile",
+      "email",
+      "w_member_social",
+      "r_member_postAnalytics",
+      "r_member_profileAnalytics",
+      "r_basicprofile",
+    ].join(" ");
     const url =
       `https://www.linkedin.com/oauth/v2/authorization` +
       `?response_type=code` +
