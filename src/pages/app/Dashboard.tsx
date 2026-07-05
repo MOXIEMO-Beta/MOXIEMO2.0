@@ -569,7 +569,8 @@ export default function Dashboard() {
             eyebrow="Today"
             title={totalDrafts > 0 ? `Review ${totalDrafts} draft${totalDrafts === 1 ? "" : "s"}` : "Nothing urgent today"}
             sub={totalDrafts > 0 ? "Approve and queue" : "Your engine is caught up"}
-            bg={CORAL}
+            bg={GRAD_TODAY}
+            shadow={SHADOW_TODAY}
             fg="#FFFFFF"
             labelColor="#FFE1D9"
             to={totalDrafts > 0 ? "/app/content" : "/app/content"}
@@ -578,7 +579,8 @@ export default function Dashboard() {
             eyebrow="This week"
             title={`${pillarsCoveredWeek} of ${pillarsTotal} pillars covered`}
             sub="Log your numbers"
-            bg={SAGE}
+            bg={GRAD_WEEK}
+            shadow={SHADOW_WEEK}
             fg={INK}
             labelColor={SAGE_LABEL}
             to="/app/goals"
@@ -587,7 +589,8 @@ export default function Dashboard() {
             eyebrow="This month"
             title={`${payingNow} of 500 users`}
             sub="See your goals"
-            bg={TAUPE}
+            bg={GRAD_MONTH}
+            shadow={SHADOW_MONTH}
             fg={INK}
             labelColor={TAUPE_LABEL}
             to="/app/goals"
@@ -1035,15 +1038,15 @@ function EmptyState({
 }
 
 function RhythmTile({
-  eyebrow, title, sub, bg, fg, labelColor, to,
+  eyebrow, title, sub, bg, fg, labelColor, to, shadow,
 }: {
-  eyebrow: string; title: string; sub: string; bg: string; fg: string; labelColor: string; to: string;
+  eyebrow: string; title: string; sub: string; bg: string; fg: string; labelColor: string; to: string; shadow?: string;
 }) {
   return (
     <Link
       to={to}
-      className="group rounded-2xl p-6 flex flex-col justify-between transition hover:-translate-y-0.5 min-h-[140px]"
-      style={{ background: bg, color: fg }}
+      className="group rounded-2xl p-6 flex flex-col justify-between transition hover:-translate-y-1 min-h-[140px]"
+      style={{ background: bg, color: fg, boxShadow: shadow }}
     >
       <div className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: labelColor }}>{eyebrow}</div>
       <div>
