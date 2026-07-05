@@ -47,6 +47,19 @@ const INK = "#0E0F10";
 const NAVY_MUTED = "#AEB9C9";
 const NAVY_TINT = "#F4C9BC";
 
+// Gradient tokens for the three-color stat row + navy North Star.
+const GRAD_TODAY = "linear-gradient(135deg, #EA6350 0%, #E1503B 100%)";
+const GRAD_WEEK = "linear-gradient(135deg, #BFCBAE 0%, #AEBB9B 100%)";
+const GRAD_MONTH = "linear-gradient(135deg, #E3D6BE 0%, #D6C6A8 100%)";
+const GRAD_NAVY = "linear-gradient(135deg, #1B2A3C 0%, #13202E 100%)";
+const SHADOW_TODAY = "0 12px 28px -12px rgba(226, 83, 60, 0.55)";
+const SHADOW_WEEK = "0 12px 28px -12px rgba(140, 160, 120, 0.45)";
+const SHADOW_MONTH = "0 12px 28px -12px rgba(180, 155, 110, 0.45)";
+const PAPER = "#F4F2ED";
+const HAIRLINE = "#EAE7E1";
+const CARD_SHADOW = "0 1px 2px rgba(21,23,28,0.03)";
+const CARD_SHADOW_HOVER = "0 10px 24px rgba(21,23,28,0.07)";
+
 // ---------- date helpers ----------
 function isToday(dateStr: string | null | undefined): boolean {
   if (!dateStr) return false;
@@ -141,6 +154,10 @@ export default function Dashboard() {
   const [discovery, setDiscovery] = useState<AnyRow>(null);
   const [goalEntries, setGoalEntries] = useState<AnyRow[]>([]);
   const [bestPost, setBestPost] = useState<{ impressions: number; engagement: number; text: string; pillar: string | null } | null>(null);
+  const [pageTopPost, setPageTopPost] = useState<{
+    text: string; impressions: number; reactions: number; comments: number; clicks: number; engagementPct: number | null;
+  } | null>(null);
+  const [pageHasData, setPageHasData] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -182,6 +199,39 @@ export default function Dashboard() {
         console.error("Dashboard data load failed:", e);
       } finally {
         setLoading(false);
+      }
+    })();
+  }, [user]);
+
+  // Live LinkedIn Page leaderboard — powers Best post + "Your marketing is landing".
+  // No dependency on personal analytics; quiet state only if the Page genuinely has none.
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("linkedin-page-analytics", {
+          method: "POST",
+          body: { days: 30 },
+        });
+        if (error) throw error;
+        const resp: any = data;
+        const posts: any[] = Array.isArray(resp?.topPosts) ? resp.topPosts : [];
+        if (posts.length > 0) {
+          const t = posts[0];
+          setPageTopPost({
+            text: (t?.text ?? "").toString(),
+            impressions: Number(t?.impressions ?? 0),
+            reactions: Number(t?.reactions ?? 0),
+            comments: Number(t?.comments ?? 0),
+            clicks: Number(t?.clicks ?? 0),
+            engagementPct: t?.engagementPct ?? null,
+          });
+          setPageHasData(true);
+        } else {
+          setPageHasData(resp?.status === "ok" || resp?.status === "empty" ? false : null);
+        }
+      } catch {
+        setPageHasData(null);
       }
     })();
   }, [user]);
