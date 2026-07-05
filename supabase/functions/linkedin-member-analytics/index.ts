@@ -1,9 +1,9 @@
 // Reads the signed-in member's LinkedIn creator post analytics.
 // Uses the Pages / Community Management (company) token exclusively, since
 // only that LinkedIn app has r_member_postAnalytics + r_member_profileAnalytics
-// provisioned. The old personal Share app no longer carries these scopes,
-// so we never fall back to a personal-app token.
-// Returns pending on 403 (partnerApi gate) with logs.
+// provisioned. Supports an optional { days } window that maps to LinkedIn
+// timeIntervals (DAY granularity); omit for lifetime TOTAL.
+// Returns reauth_required on 401 so the UI can prompt reconnect.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -23,11 +23,25 @@ function liHeaders(token: string) {
 }
 
 type Attempt = {
-  connection_type: string;
+  query: string;
   status: number;
   ok: boolean;
   body_preview?: string;
 };
+
+function sumValues(json: unknown): number {
+  const els: Array<Record<string, unknown>> = Array.isArray(
+    (json as { elements?: unknown })?.elements,
+  )
+    ? ((json as { elements: Array<Record<string, unknown>> }).elements)
+    : [];
+  let total = 0;
+  for (const el of els) {
+    const v = Number((el as { value?: unknown }).value ?? 0);
+    if (Number.isFinite(v)) total += v;
+  }
+  return total;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -47,16 +61,24 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Parse optional window (days). Cap at 90. 0 = lifetime.
+    let windowDays = 0;
+    try {
+      if (req.method === "POST") {
+        const body = await req.json().catch(() => ({}));
+        const raw = Number((body as { days?: unknown })?.days);
+        if (Number.isFinite(raw)) windowDays = Math.max(0, Math.min(90, Math.floor(raw)));
+      }
+    } catch (_) { /* noop */ }
+
     const { data: rows, error: rowsErr } = await supabase
       .from("social_connections")
-      .select("access_token, expires_at, connection_type, profile_name")
+      .select("access_token, expires_at, connection_type, profile_name, organization_name")
       .eq("user_id", userData.user.id)
       .eq("platform", "linkedin");
     if (rowsErr) throw rowsErr;
 
     const conns = (rows ?? []).filter((r) => !!r.access_token);
-    // Only the company (Pages / Community Management) token has the member
-    // analytics scopes provisioned. Ignore any personal-app tokens entirely.
     const companyConns = conns.filter(
       (c) => (c.connection_type ?? "personal") === "company",
     );
@@ -67,81 +89,80 @@ Deno.serve(async (req) => {
       });
     }
 
-    const ordered = companyConns;
+    const conn = companyConns[0];
+    const token = conn.access_token as string;
+    const profileName = conn.profile_name ?? conn.organization_name ?? null;
+
+    // Build LinkedIn timeIntervals when windowDays > 0. TOTAL aggregation
+    // still applies; timeIntervals just bounds the window.
+    const now = Date.now();
+    const dayMs = 86_400_000;
+    const endMs = Math.floor(now / dayMs) * dayMs;
+    const startMs = windowDays > 0 ? endMs - windowDays * dayMs : 0;
+    const timeIntervalsParam = windowDays > 0
+      ? `&timeIntervals=(timeRange:(start:${startMs},end:${endMs}),timeGranularityType:DAY)`
+      : "";
+
+    const base = "https://api.linkedin.com/rest/memberCreatorPostAnalytics?q=me&aggregation=TOTAL";
+    const queries: Array<{ key: "impressions" | "reach" | "reactions" | "comments"; type: string }> = [
+      { key: "impressions", type: "IMPRESSION" },
+      { key: "reach", type: "MEMBERS_REACHED" },
+      { key: "reactions", type: "REACTION" },
+      { key: "comments", type: "COMMENT" },
+    ];
 
     const attempts: Attempt[] = [];
-    let liveJson: unknown = null;
-    let profileName: string | null = null;
+    const results: Record<string, number> = {};
     let sawAuthError = false;
-    let profileAnalyticsJson: unknown = null;
+    let sawOk = false;
 
-    for (const conn of ordered) {
-      const token = conn.access_token as string;
-      const url =
-        "https://api.linkedin.com/rest/memberCreatorPostAnalytics?q=me&queryType=IMPRESSION&aggregation=TOTAL";
+    for (const q of queries) {
+      const url = `${base}&queryType=${q.type}${timeIntervalsParam}`;
       const r = await fetch(url, { headers: liHeaders(token) });
       const bodyText = await r.text();
-      attempts.push({
-        connection_type: conn.connection_type ?? "personal",
-        status: r.status,
-        ok: r.ok,
-        body_preview: bodyText.slice(0, 300),
-      });
-      console.log("member-analytics attempt", {
-        connection_type: conn.connection_type,
-        status: r.status,
-        preview: bodyText.slice(0, 240),
-      });
-      if (r.ok) {
-        try {
-          liveJson = JSON.parse(bodyText);
-        } catch {
-          liveJson = null;
-        }
-        profileName = conn.profile_name ?? null;
-        // Best-effort: also pull member profile analytics (viewers, followers,
-        // search appearances) using the same token. Non-fatal on failure.
-        try {
-          const pUrl =
-            "https://api.linkedin.com/rest/memberProfileAnalytics?q=me&aggregation=TOTAL";
-          const pr = await fetch(pUrl, { headers: liHeaders(token) });
-          const pBody = await pr.text();
-          console.log("member-profile-analytics", {
-            status: pr.status,
-            preview: pBody.slice(0, 240),
-          });
-          if (pr.ok) {
-            try {
-              profileAnalyticsJson = JSON.parse(pBody);
-            } catch {
-              profileAnalyticsJson = null;
-            }
-          }
-        } catch (e) {
-          console.log("member-profile-analytics fetch failed", String(e));
-        }
-        break;
-      }
-      if (r.status === 401) sawAuthError = true;
+      attempts.push({ query: q.type, status: r.status, ok: r.ok, body_preview: bodyText.slice(0, 200) });
+      console.log("member-analytics", { queryType: q.type, status: r.status, days: windowDays });
+      if (r.status === 401) { sawAuthError = true; continue; }
+      if (!r.ok) continue;
+      sawOk = true;
+      try {
+        results[q.key] = sumValues(JSON.parse(bodyText));
+      } catch { results[q.key] = 0; }
     }
 
-    if (liveJson) {
-      const elements: Array<Record<string, unknown>> = Array.isArray(
-        (liveJson as { elements?: unknown }).elements,
-      )
-        ? ((liveJson as { elements: Array<Record<string, unknown>> }).elements)
-        : [];
-      let impressions = 0;
-      for (const el of elements) {
-        const v = Number((el as { value?: unknown }).value ?? 0);
-        if (Number.isFinite(v)) impressions += v;
+    // Best-effort: member profile analytics (viewers, followers, search appearances).
+    let profileAnalyticsJson: unknown = null;
+    try {
+      const pUrl = `https://api.linkedin.com/rest/memberProfileAnalytics?q=me&aggregation=TOTAL${timeIntervalsParam}`;
+      const pr = await fetch(pUrl, { headers: liHeaders(token) });
+      const pBody = await pr.text();
+      console.log("member-profile-analytics", { status: pr.status, days: windowDays });
+      if (pr.status === 401) sawAuthError = true;
+      if (pr.ok) {
+        try { profileAnalyticsJson = JSON.parse(pBody); } catch { profileAnalyticsJson = null; }
       }
+    } catch (e) {
+      console.log("member-profile-analytics fetch failed", String(e));
+    }
+
+    if (sawOk) {
+      const impressions = results.impressions ?? 0;
+      const reach = results.reach ?? 0;
+      const reactions = results.reactions ?? 0;
+      const comments = results.comments ?? 0;
+      const engagementPct = impressions > 0
+        ? Math.round(((reactions + comments) / impressions) * 10000) / 100
+        : 0;
       return new Response(
         JSON.stringify({
           status: "ok",
           profile_name: profileName,
+          window_days: windowDays,
           impressions,
-          raw: liveJson,
+          reach,
+          reactions,
+          comments,
+          engagementPct,
           profile_analytics: profileAnalyticsJson,
           attempts,
         }),
@@ -156,7 +177,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Any 403 (or other non-200) — keep honest pending state; likely partner tier gate.
     return new Response(
       JSON.stringify({ status: "pending", attempts }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
