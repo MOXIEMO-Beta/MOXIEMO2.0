@@ -850,31 +850,30 @@ export default function Dashboard() {
                   </div>
                   <h3 className="font-semibold text-base">Your marketing is landing</h3>
                 </div>
-                {bestPost && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5" style={{ background: "#EAF7EF", color: "#16A34A" }}>
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Live
+                {pageTopPost && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5" style={{ background: "#E4F3E9", color: "#1F9254" }}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 live-dot" /> Live
                   </span>
                 )}
               </div>
-              {bestPost ? (
+              {pageTopPost ? (
                 <div className="space-y-4">
                   <div className="text-sm leading-relaxed" style={{ color: INK }}>
-                    {bestPost.text || "Top LinkedIn Page post"}
+                    {pageTopPost.text ? (pageTopPost.text.length > 140 ? pageTopPost.text.slice(0, 140) + "..." : pageTopPost.text) : "Top LinkedIn Page post"}
                   </div>
                   <div className="flex items-center gap-6">
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Impressions</div>
-                      <div className="font-display text-2xl font-semibold" style={{ color: INK }}>{bestPost.impressions}</div>
+                      <div className="font-display text-2xl font-semibold" style={{ color: INK }}>{pageTopPost.impressions}</div>
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Engagement</div>
                       <div className="font-display text-2xl font-semibold" style={{ color: INK }}>
-                        {bestPost.engagement ? `${(bestPost.engagement * 100).toFixed(1)}%` : "-"}
+                        {pageTopPost.engagementPct != null
+                          ? `${(pageTopPost.engagementPct * 100).toFixed(1)}%`
+                          : `${pageTopPost.reactions + pageTopPost.comments}`}
                       </div>
                     </div>
-                    {bestPost.pillar && (
-                      <span className="ml-auto rounded-full px-3 py-1 text-xs font-medium" style={{ background: SAGE_TINT, color: SAGE_LABEL }}>{bestPost.pillar}</span>
-                    )}
                   </div>
                   <Link to="/app/analytics" className="inline-flex items-center gap-1 text-sm font-medium hover:underline" style={{ color: CORAL }}>
                     See full analytics <ArrowRight className="h-3.5 w-3.5" />
@@ -882,7 +881,9 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground py-4">
-                  No LinkedIn Page data yet. Once posts land, the top performer will show here.
+                  {pageHasData === false
+                    ? "No LinkedIn Page posts in the last 30 days. Publish to your Page and the top performer will land here."
+                    : "Reading your LinkedIn Page leaderboard."}
                 </div>
               )}
             </Card>
