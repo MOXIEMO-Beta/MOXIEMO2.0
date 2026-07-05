@@ -537,35 +537,57 @@ export default function Analytics() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.7rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <User size={18} style={{ color: TEXT_MUTED }} />
-            <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
-              {personalConn?.profile_name ? `${personalConn.profile_name}, personal profile` : "Your personal profile"}
-            </span>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
+                {memberResp?.status === "ok" && memberResp.profile_name
+                  ? `${memberResp.profile_name}, personal profile`
+                  : "Your personal profile"}
+              </span>
+              <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>{rangeLabel}</span>
+            </div>
           </div>
-          {memberResp?.status === "ok"
-            ? <Badge tone="live"><CircleDot size={11} /> Live from LinkedIn</Badge>
-            : <Badge tone="pending"><Clock size={12} /> Pending LinkedIn approval</Badge>}
+          {memberResp?.status === "ok" ? (
+            <Badge tone="live"><CircleDot size={8} /> Live from LinkedIn</Badge>
+          ) : memberResp?.status === "reauth_required" ? (
+            <button onClick={() => navigate("/app/settings?tab=integrations")}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, padding: "3px 9px", borderRadius: 999, background: WARN_BG, color: WARN_FG, border: "none", cursor: "pointer" }}>
+              <RefreshCw size={12} /> Reconnect LinkedIn
+            </button>
+          ) : memberLoading ? (
+            <Badge tone="pending"><Clock size={12} /> Loading</Badge>
+          ) : (
+            <Badge tone="pending"><Clock size={12} /> Pending LinkedIn approval</Badge>
+          )}
         </div>
         {memberResp?.status === "ok" ? (
           <>
             <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-              Live creator analytics for your personal profile.
+              Live creator analytics for your personal profile, {rangeLabel.toLowerCase()}.
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
-              <Metric label="Posts published" value={personalPublished} />
               <Metric label="Impressions" value={memberResp.impressions.toLocaleString()} />
+              <Metric label="Unique reach" value={memberResp.reach.toLocaleString()} />
+              <Metric label="Engagement" value={`${memberResp.engagementPct}%`} sub="of impressions" />
+              <Metric label="Reactions" value={memberResp.reactions.toLocaleString()} />
+              <Metric label="Comments" value={memberResp.comments.toLocaleString()} />
+              <Metric label="Posts published" value={personalPublished} />
             </div>
+          </>
+        ) : memberResp?.status === "reauth_required" ? (
+          <>
+            <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
+              Reconnect LinkedIn to read personal profile analytics. LinkedIn tokens expire every 60 days.
+            </p>
           </>
         ) : (
           <>
             <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-              {memberResp?.status === "reauth_required"
-                ? "Reconnect LinkedIn to read personal profile analytics."
-                : "Personal post analytics and best-post ranking need LinkedIn partner approval. The request is in review. Until it clears, MOXIEMO shows what it published for you."}
+              Personal post analytics load from your Build With MOXIEMO® connection. If this stays pending, reconnect from Settings.
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
               <Metric label="Posts published" value={personalPublished} />
-              <Metric label="Impressions" value="Locked" mutedValue />
-              <Metric label="Best post" value="Locked" mutedValue />
+              <Metric label="Impressions" value="Pending" mutedValue />
+              <Metric label="Engagement" value="Pending" mutedValue />
             </div>
           </>
         )}
