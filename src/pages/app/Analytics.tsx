@@ -58,6 +58,7 @@ type MemberResp =
       status: "ok";
       profile_name: string | null;
       window_days?: number;
+      window_label?: string;
       impressions: number;
       reach: number;
       reactions: number;
