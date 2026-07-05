@@ -344,7 +344,8 @@ export default function Analytics() {
     return out.slice(0, 3);
   }, [topSetStats, pillars, posts]);
 
-  const memberAttempts = "attempts" in (memberResp ?? {}) ? memberResp?.attempts ?? [] : [];
+  const memberAttempts: MemberAttempt[] =
+    memberResp && "attempts" in memberResp && Array.isArray(memberResp.attempts) ? memberResp.attempts : [];
   const memberImpressionsAttempt = memberAttempts.find((a) => a.query === "IMPRESSION") ?? memberAttempts[0] ?? null;
   const memberStatusLabel = memberLoading
     ? "Loading"
