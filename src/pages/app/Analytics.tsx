@@ -54,7 +54,16 @@ type PageResp =
   | { status: "error"; http_status?: number; body?: string; error?: string };
 
 type MemberResp =
-  | { status: "ok"; profile_name: string | null; impressions: number }
+  | {
+      status: "ok";
+      profile_name: string | null;
+      window_days?: number;
+      impressions: number;
+      reach: number;
+      reactions: number;
+      comments: number;
+      engagementPct: number;
+    }
   | { status: "pending" }
   | { status: "reauth_required" }
   | { status: "not_connected" }
@@ -135,6 +144,7 @@ export default function Analytics() {
   const [pageLoading, setPageLoading] = useState(true);
   const [pageRetryCount, setPageRetryCount] = useState(0);
   const [memberResp, setMemberResp] = useState<MemberResp | null>(null);
+  const [memberLoading, setMemberLoading] = useState(true);
   const [range, setRange] = useState<RangeKey>("30");
 
   useEffect(() => {
@@ -180,22 +190,29 @@ export default function Analytics() {
     void fetchPage();
   }, [user, fetchPage]);
 
-  // Member (personal) analytics — one shot on load; flips card to live on 200.
+  // Member (personal) analytics — reruns when the range control changes so
+  // the personal window mirrors the Page window.
+  const fetchMember = useCallback(async () => {
+    setMemberLoading(true);
+    const days = RANGES.find((r) => r.key === range)?.days ?? 30;
+    try {
+      const { data, error } = await supabase.functions.invoke("linkedin-member-analytics", {
+        method: "POST",
+        body: { days },
+      });
+      if (error) throw error;
+      setMemberResp(data as MemberResp);
+    } catch {
+      setMemberResp({ status: "error", error: "network" });
+    } finally {
+      setMemberLoading(false);
+    }
+  }, [range]);
+
   useEffect(() => {
     if (!user) return;
-    void (async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke("linkedin-member-analytics", {
-          method: "POST",
-          body: {},
-        });
-        if (error) throw error;
-        setMemberResp(data as MemberResp);
-      } catch {
-        setMemberResp({ status: "error", error: "network" });
-      }
-    })();
-  }, [user]);
+    void fetchMember();
+  }, [user, fetchMember]);
 
   // Quiet retry for transient errors (max 2 retries).
   useEffect(() => {
@@ -208,7 +225,6 @@ export default function Analytics() {
   }, [pageResp, pageRetryCount, fetchPage]);
 
   const orgConn = useMemo(() => connections.find((c) => c.connection_type === "company") ?? null, [connections]);
-  const personalConn = useMemo(() => connections.find((c) => (c.connection_type ?? "personal") === "personal") ?? null, [connections]);
 
   // URN → pillar map, so top posts (fetched from LinkedIn) can show their MOXIEMO pillar tag.
   const pillarByUrn = useMemo(() => {
