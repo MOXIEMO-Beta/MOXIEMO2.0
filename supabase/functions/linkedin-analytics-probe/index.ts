@@ -113,6 +113,16 @@ Deno.serve(async (req) => {
         )
       : { url: "", status: 0, ok: false, body: orgToken ? "no_org_id" : "no_org_token" };
 
+    // Member analytics using the Pages/Community Management (org) token, which
+    // now carries r_member_postAnalytics. The old personal-app token no longer
+    // exists.
+    const memberProbe = orgToken
+      ? await probe(
+          "https://api.linkedin.com/rest/memberCreatorPostAnalytics?q=me&queryType=IMPRESSION&aggregation=TOTAL",
+          orgToken,
+        )
+      : { url: "", status: 0, ok: false, body: "no_org_token" };
+
     const result = {
       personal: {
         tokenPresent: !!personalToken,
@@ -133,6 +143,7 @@ Deno.serve(async (req) => {
         orgName: orgRow?.organization_name ?? null,
         probeB,
       },
+      memberProbe,
     };
 
     console.log("linkedin-analytics-probe result:", JSON.stringify(result, null, 2));
