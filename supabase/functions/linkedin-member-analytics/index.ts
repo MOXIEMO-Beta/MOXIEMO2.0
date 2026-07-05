@@ -60,10 +60,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Try personal first, then company (same authorization may back both).
+    // Prefer the company (Pages/Community Management) token: only that app
+    // has r_member_postAnalytics provisioned. Fall back to personal.
     const ordered = [...conns].sort((a, b) => {
-      const ap = (a.connection_type ?? "personal") === "personal" ? 0 : 1;
-      const bp = (b.connection_type ?? "personal") === "personal" ? 0 : 1;
+      const ap = (a.connection_type ?? "personal") === "company" ? 0 : 1;
+      const bp = (b.connection_type ?? "personal") === "company" ? 0 : 1;
       return ap - bp;
     });
 
