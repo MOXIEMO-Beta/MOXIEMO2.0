@@ -380,26 +380,28 @@ function EnrichmentPages({ enrichment, headingFam, bodyFam, bodyBoldFam, primary
           </View>
           <View style={s.divider} />
           <Text style={{ fontSize: 32, color: C.ink, fontFamily: headingFam, marginBottom: 6, letterSpacing: -0.8 }}>Where you stand.</Text>
-          <Text style={{ fontSize: 11, color: C.muted, marginBottom: 18, lineHeight: 1.5, fontFamily: bodyFam }}>
+          <Text style={{ fontSize: 11, color: C.muted, marginBottom: 14, lineHeight: 1.5, fontFamily: bodyFam }}>
             The distilled promise of your brand, and the four pieces it rests on.
           </Text>
-          {p.statement ? (
-            <View style={{ backgroundColor: C.ink, padding: 22, borderRadius: 4, marginBottom: 22 }}>
-              <Text style={{ fontSize: 9, color: accent, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>POSITIONING STATEMENT</Text>
-              <Text style={{ fontSize: 15, color: C.white, fontFamily: bodyFam, lineHeight: 1.55 }}>{p.statement}</Text>
-            </View>
-          ) : null}
-          <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
-            {posCells.map(([label, value], i) => (
-              <View key={label} style={{ width: "50%", padding: 6 }} wrap={false}>
-                <View style={{ backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 16, minHeight: 110 }}>
-                  <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 8 }}>
-                    0{i + 1}  ·  {label.toUpperCase()}
-                  </Text>
-                  <Text style={{ fontSize: 11, color: C.ink, fontFamily: bodyFam, lineHeight: 1.55 }}>{value}</Text>
-                </View>
+          <View wrap={false}>
+            {p.statement ? (
+              <View style={{ backgroundColor: C.ink, padding: 16, borderRadius: 4, marginBottom: 12 }}>
+                <Text style={{ fontSize: 9, color: accent, letterSpacing: 2, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>POSITIONING STATEMENT</Text>
+                <Text style={{ fontSize: 13, color: C.white, fontFamily: bodyFam, lineHeight: 1.5 }}>{p.statement}</Text>
               </View>
-            ))}
+            ) : null}
+            <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+              {posCells.map(([label, value], i) => (
+                <View key={label} style={{ width: "50%", padding: 5 }} wrap={false}>
+                  <View style={{ backgroundColor: C.white, borderWidth: 1, borderColor: C.border, borderRadius: 4, padding: 14, minHeight: 100 }}>
+                    <Text style={{ fontSize: 8, color: accent, letterSpacing: 1.8, fontFamily: "Helvetica-Bold", marginBottom: 6 }}>
+                      0{i + 1}  ·  {label.toUpperCase()}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: C.ink, fontFamily: bodyFam, lineHeight: 1.5 }}>{value}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
           </View>
           <Footer />
         </Page>
