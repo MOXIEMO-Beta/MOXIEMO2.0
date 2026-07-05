@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Linkedin, User, Clock, TrendingUp, AlertTriangle, ArrowRight, Zap, CircleDot, RefreshCw } from "lucide-react";
+import { Linkedin, User, Clock, TrendingUp, AlertTriangle, ArrowRight, Zap, CircleDot, RefreshCw, Facebook, Instagram } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,6 +22,7 @@ type Strategy = { content_pillars?: unknown; strength_score?: number | null };
 type SocialPost = {
   id: string; user_id: string; platforms: string[] | null; content_by_platform: Record<string, string> | null;
   pillar: string | null; status: string; published_at: string | null; created_at: string; topic: string | null;
+  platform_post_ids: Record<string, string> | string[] | null;
 };
 type SocialAnalytic = {
   post_id: string | null; platform: string | null; impressions: number | null; reach: number | null;
@@ -46,8 +47,8 @@ type PageTopPost = {
   reactions: number; comments: number; clicks: number; engagementPct: number | null;
 };
 type PageResp =
-  | { status: "ok"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[] }
-  | { status: "empty"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[] }
+  | { status: "ok"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number }
+  | { status: "empty"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number }
   | { status: "not_connected" }
   | { status: "reauth_required"; organization_name?: string | null }
   | { status: "error"; http_status?: number; body?: string; error?: string };
@@ -57,6 +58,22 @@ function pillarsOf(s: Strategy | null): string[] {
   if (!Array.isArray(v)) return [];
   return v.map((x) => (typeof x === "string" ? x : (x as { name?: string })?.name ?? "")).filter(Boolean);
 }
+
+type RangeKey = "1" | "7" | "14" | "30" | "90";
+const RANGES: { key: RangeKey; label: string; days: number }[] = [
+  { key: "1", label: "Today", days: 1 },
+  { key: "7", label: "7d", days: 7 },
+  { key: "14", label: "14d", days: 14 },
+  { key: "30", label: "30d", days: 30 },
+  { key: "90", label: "90d", days: 90 },
+];
+const RANGE_LABELS: Record<RangeKey, string> = {
+  "1": "Today",
+  "7": "Last 7 days",
+  "14": "Last 14 days",
+  "30": "Last 30 days",
+  "90": "Last 90 days",
+};
 
 function Eyebrow({ children, color = CORAL }: { children: React.ReactNode; color?: string }) {
   return (
@@ -91,10 +108,11 @@ function Badge({ tone, children }: { tone: "live" | "pending"; children: React.R
   );
 }
 
-function postPreview(p: SocialPost): string {
-  const cmap = p.content_by_platform || {};
-  const text = Object.values(cmap).join(" ").trim();
-  return text || p.topic || "Untitled post";
+function extractUrns(v: SocialPost["platform_post_ids"]): string[] {
+  if (!v) return [];
+  if (Array.isArray(v)) return v.filter((x) => typeof x === "string");
+  if (typeof v === "object") return Object.values(v).filter((x): x is string => typeof x === "string");
+  return [];
 }
 
 export default function Analytics() {
@@ -109,6 +127,7 @@ export default function Analytics() {
   const [pageResp, setPageResp] = useState<PageResp | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageRetryCount, setPageRetryCount] = useState(0);
+  const [range, setRange] = useState<RangeKey>("30");
 
   useEffect(() => {
     if (!user) return;
@@ -116,7 +135,7 @@ export default function Analytics() {
       setLoading(true);
       const results = await Promise.allSettled([
         supabase.from("strategies").select("content_pillars, strength_score").eq("user_id", user.id).maybeSingle(),
-        supabase.from("social_posts").select("id, user_id, platforms, content_by_platform, pillar, status, published_at, created_at, topic").eq("user_id", user.id).order("created_at", { ascending: false }),
+        supabase.from("social_posts").select("id, user_id, platforms, content_by_platform, pillar, status, published_at, created_at, topic, platform_post_ids").eq("user_id", user.id).order("created_at", { ascending: false }),
         supabase.from("social_analytics").select("post_id, platform, impressions, reach, likes, comments, shares, engagement_rate, fetched_at").eq("user_id", user.id).order("fetched_at", { ascending: false }),
         supabase.from("social_connections").select("platform, connection_type, expires_at, organization_name, profile_name").eq("user_id", user.id).eq("platform", "linkedin"),
       ]);
@@ -132,8 +151,12 @@ export default function Analytics() {
 
   const fetchPage = useCallback(async () => {
     setPageLoading(true);
+    const days = RANGES.find((r) => r.key === range)?.days ?? 30;
     try {
-      const { data, error } = await supabase.functions.invoke("linkedin-page-analytics", { method: "POST" });
+      const { data, error } = await supabase.functions.invoke("linkedin-page-analytics", {
+        method: "POST",
+        body: { days },
+      });
       if (error) throw error;
       setPageResp(data as PageResp);
     } catch {
@@ -141,10 +164,11 @@ export default function Analytics() {
     } finally {
       setPageLoading(false);
     }
-  }, []);
+  }, [range]);
 
   useEffect(() => {
     if (!user) return;
+    setPageRetryCount(0);
     void fetchPage();
   }, [user, fetchPage]);
 
@@ -161,16 +185,15 @@ export default function Analytics() {
   const orgConn = useMemo(() => connections.find((c) => c.connection_type === "company") ?? null, [connections]);
   const personalConn = useMemo(() => connections.find((c) => (c.connection_type ?? "personal") === "personal") ?? null, [connections]);
 
-  // Latest analytics per post
-  const analyticsByPost = useMemo(() => {
-    const m = new Map<string, SocialAnalytic>();
-    for (const a of analytics) {
-      if (!a.post_id) continue;
-      const cur = m.get(a.post_id);
-      if (!cur || new Date(a.fetched_at) > new Date(cur.fetched_at)) m.set(a.post_id, a);
+  // URN → pillar map, so top posts (fetched from LinkedIn) can show their MOXIEMO pillar tag.
+  const pillarByUrn = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of posts) {
+      if (!p.pillar) continue;
+      for (const urn of extractUrns(p.platform_post_ids)) m.set(urn, p.pillar);
     }
     return m;
-  }, [analytics]);
+  }, [posts]);
 
   // Engine health
   const pillars = useMemo(() => pillarsOf(strategy), [strategy]);
@@ -195,53 +218,82 @@ export default function Analytics() {
   const pageIsEmpty = pageResp?.status === "empty";
   const pageNeedsReauth = pageResp?.status === "reauth_required";
   const pageIsError = pageResp?.status === "error";
+  const rangeLabel = RANGE_LABELS[range];
 
-  // What the data says — grounded in live Page stats.
+  // Enrich top posts with pillar tags derived from MOXIEMO records.
+  const bestPagePostsEnriched = useMemo(
+    () => bestPagePosts.map((tp) => ({ ...tp, pillar: pillarByUrn.get(tp.urn) ?? null })),
+    [bestPagePosts, pillarByUrn]
+  );
+
+  // Deeper insights read the top-5 set within the selected window.
+  const topSetStats = useMemo(() => {
+    const set = bestPagePostsEnriched;
+    if (set.length === 0) {
+      return { avgEngagement: 0, dominantPillar: null as string | null, weakPillar: null as string | null, count: 0 };
+    }
+    const engVals = set.map((p) => p.engagementPct).filter((x): x is number => typeof x === "number");
+    const avgEngagement = engVals.length
+      ? Math.round((engVals.reduce((a, b) => a + b, 0) / engVals.length) * 100) / 100
+      : 0;
+    const counts = new Map<string, number>();
+    for (const p of set) if (p.pillar) counts.set(p.pillar, (counts.get(p.pillar) ?? 0) + 1);
+    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const dominantPillar = sorted[0]?.[0] ?? null;
+    // Weak pillar: a strategy pillar with the fewest (or zero) hits in the top-5.
+    let weakPillar: string | null = null;
+    if (pillars.length > 0) {
+      const scored = pillars.map((p) => ({ p, n: counts.get(p) ?? 0 })).sort((a, b) => a.n - b.n);
+      if (scored[0] && scored[0].p !== dominantPillar) weakPillar = scored[0].p;
+    }
+    return { avgEngagement, dominantPillar, weakPillar, count: set.length };
+  }, [bestPagePostsEnriched, pillars]);
+
   const insights = useMemo(() => {
     const out: { kind: "up" | "warn"; text: string }[] = [];
-    if (pageIsLive) {
-      if (pageStats.engagementPct >= 5) {
-        out.push({ kind: "up", text: `Page engagement is ${pageStats.engagementPct}% against impressions, above the LinkedIn norm.` });
-      } else if (pageStats.engagementPct > 0) {
-        out.push({ kind: "warn", text: `Page engagement is ${pageStats.engagementPct}% against impressions. Tighter hooks on the first two lines will lift this.` });
+    if (pageIsLive && topSetStats.count > 0) {
+      const label = rangeLabel.toLowerCase();
+      if (topSetStats.avgEngagement >= 5) {
+        out.push({ kind: "up", text: `Your top ${topSetStats.count} posts average ${topSetStats.avgEngagement}% engagement against impressions over the ${label}, above the LinkedIn norm.` });
+      } else if (topSetStats.avgEngagement > 0) {
+        out.push({ kind: "warn", text: `Your top ${topSetStats.count} posts average ${topSetStats.avgEngagement}% engagement against impressions over the ${label}. Tighter opening lines will lift this.` });
       }
-      if (bestPagePosts[0]) {
-        out.push({ kind: "up", text: `Your top post is pulling ${bestPagePosts[0].impressions} impressions. Rework that angle.` });
+      if (topSetStats.dominantPillar) {
+        out.push({ kind: "up", text: `${topSetStats.dominantPillar} holds the most spots on your leaderboard. That angle is landing.` });
       }
+      if (topSetStats.weakPillar) {
+        out.push({ kind: "warn", text: `${topSetStats.weakPillar} is thin on the leaderboard. Test it with a fresh angle.` });
+      }
+    } else if (pageIsLive && topSetStats.count === 0) {
+      out.push({ kind: "warn", text: `No Page posts landed in the ${rangeLabel.toLowerCase()} window. Widen the range or publish a new post to build signal.` });
     } else if (pageIsEmpty) {
-      out.push({ kind: "warn", text: "Your Page has no lifetime activity to score yet. Publish two posts this week to unlock real signal." });
+      out.push({ kind: "warn", text: "Your Page has no activity in this window to score yet. Publish two posts this week to unlock real signal." });
+    } else if (pageNeedsReauth) {
+      out.push({ kind: "warn", text: "Reconnect your LinkedIn Page to read live analytics." });
     } else {
       out.push({ kind: "warn", text: "Waiting on live LinkedIn Page numbers to score the pattern." });
     }
-    const empty = pillars.filter((p) => !posts.some((post) => post.pillar === p));
-    if (empty.length > 0) {
-      out.push({ kind: "warn", text: `${empty[0]} has no posts yet. That pillar is going untested.` });
-    }
     return out.slice(0, 3);
-  }, [pageIsLive, pageIsEmpty, pageStats, bestPagePosts, pillars, posts]);
+  }, [pageIsLive, pageIsEmpty, pageNeedsReauth, topSetStats, rangeLabel]);
 
-  // What to make next — leans on empty pillars since Page-side pillar tagging lives in MOXIEMO records only.
   const suggestions = useMemo(() => {
     const out: { text: string; pillar?: string }[] = [];
-    // top-performing pillar from MOXIEMO-tagged posts (if we happen to have analytics)
-    const byPillar = new Map<string, number>();
-    for (const p of posts) {
-      const a = analyticsByPost.get(p.id);
-      if (!a || !p.pillar) continue;
-      byPillar.set(p.pillar, (byPillar.get(p.pillar) || 0) + (a.impressions || 0));
+    if (topSetStats.dominantPillar) {
+      out.push({ text: `Another ${topSetStats.dominantPillar} post, your best-performing angle on the leaderboard.`, pillar: topSetStats.dominantPillar });
     }
-    const topPillar = [...byPillar.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-    if (topPillar) out.push({ text: `Another ${topPillar} post, your best-performing angle.`, pillar: topPillar });
-    // empty pillars
-    const empty = pillars.filter((p) => !posts.some((post) => post.pillar === p));
-    for (const p of empty.slice(0, 2)) out.push({ text: `A ${p} post to balance your pillars.`, pillar: p });
-    // fallback
+    if (topSetStats.weakPillar) {
+      out.push({ text: `A ${topSetStats.weakPillar} post to lift your weakest pillar.`, pillar: topSetStats.weakPillar });
+    }
+    if (out.length === 0) {
+      const empty = pillars.filter((p) => !posts.some((post) => post.pillar === p));
+      for (const p of empty.slice(0, 2)) out.push({ text: `A ${p} post to balance your pillars.`, pillar: p });
+    }
     if (out.length === 0 && pillars.length > 0) {
       out.push({ text: `Start with a ${pillars[0]} post to seed the engine.`, pillar: pillars[0] });
     }
     if (out.length === 0) out.push({ text: "Set your content pillars in Strategy, then generate your first post." });
     return out.slice(0, 3);
-  }, [posts, analyticsByPost, pillars]);
+  }, [topSetStats, pillars, posts]);
 
   const personalPublished = useMemo(
     () => posts.filter((p) => p.status === "published" && (p.platforms || []).includes("linkedin")).length,
@@ -295,8 +347,35 @@ export default function Analytics() {
         </div>
       </Card>
 
-      <div style={{ marginBottom: "0.6rem" }}>
+      {/* Distribution header + range control */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.6rem", gap: 12, flexWrap: "wrap" }}>
         <Eyebrow color={TEXT_MUTED}>Distribution</Eyebrow>
+        <div role="tablist" aria-label="Date range" style={{ display: "inline-flex", background: SURFACE_2, border: BORDER, borderRadius: 999, padding: 2 }}>
+          {RANGES.map((r) => {
+            const active = r.key === range;
+            return (
+              <button
+                key={r.key}
+                role="tab"
+                aria-selected={active}
+                onClick={() => setRange(r.key)}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 500,
+                  padding: "5px 12px",
+                  borderRadius: 999,
+                  border: "none",
+                  cursor: "pointer",
+                  background: active ? CORAL : "transparent",
+                  color: active ? "#fff" : TEXT_SECONDARY,
+                  transition: "background 0.15s, color 0.15s",
+                }}
+              >
+                {r.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* LinkedIn Page card */}
@@ -304,11 +383,14 @@ export default function Analytics() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.85rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Linkedin size={19} style={{ color: CORAL }} />
-            <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
-              {(pageHasStats && (pageResp as { organization_name: string | null }).organization_name)
-                || orgConn?.organization_name
-                || "LinkedIn Page"}
-            </span>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
+                {(pageHasStats && (pageResp as { organization_name: string | null }).organization_name)
+                  || orgConn?.organization_name
+                  || "LinkedIn Page"}
+              </span>
+              <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>{rangeLabel}</span>
+            </div>
           </div>
           {!orgConn && pageResp?.status === "not_connected" ? (
             <Badge tone="pending"><Clock size={12} /> Not connected</Badge>
@@ -343,15 +425,15 @@ export default function Analytics() {
       </Card>
 
       {/* Best posts */}
-      {bestPagePosts.length > 0 && (
+      {bestPagePostsEnriched.length > 0 && (
         <Card style={{ marginBottom: "1rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
             <Eyebrow>Your best posts</Eyebrow>
-            <span style={{ fontSize: 11.5, color: TEXT_MUTED }}>Ranked by impressions</span>
+            <span style={{ fontSize: 11.5, color: TEXT_MUTED }}>Top 5 by impressions, {rangeLabel.toLowerCase()}</span>
           </div>
-          {bestPagePosts.map((tp, i) => (
+          {bestPagePostsEnriched.map((tp, i) => (
             <div key={tp.urn}
-              style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "0.7rem 0", borderBottom: i < bestPagePosts.length - 1 ? BORDER : "none" }}>
+              style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "0.7rem 0", borderBottom: i < bestPagePostsEnriched.length - 1 ? BORDER : "none" }}>
               <div style={{ width: 30, height: 30, borderRadius: 8, background: "#0A66C2", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <Linkedin size={17} color="#fff" />
               </div>
@@ -360,7 +442,14 @@ export default function Analytics() {
                   display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
                   fontSize: 13.5, color: TEXT_PRIMARY, lineHeight: 1.4,
                 }}>{tp.text || "Untitled Page post"}</div>
-                <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 3 }}>LinkedIn Page</div>
+                <div style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 3, display: "flex", gap: 8, alignItems: "center" }}>
+                  <span>LinkedIn Page</span>
+                  {tp.pillar && (
+                    <span style={{ padding: "1px 7px", borderRadius: 999, background: SURFACE_1, border: BORDER, color: TEXT_SECONDARY }}>
+                      {tp.pillar}
+                    </span>
+                  )}
+                </div>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>
                 <div style={{ fontFamily: DISPLAY_FONT, fontSize: 16, fontWeight: 500 }}>{tp.impressions}</div>
@@ -422,6 +511,32 @@ export default function Analytics() {
           <Metric label="Best post" value="Locked" mutedValue />
         </div>
       </Card>
+
+      {/* Meta coming-soon (quiet) */}
+      <div style={{ marginTop: "1.5rem", marginBottom: "0.5rem" }}>
+        <Eyebrow color={TEXT_MUTED}>Also coming</Eyebrow>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
+        {[
+          { name: "Facebook Page", Icon: Facebook, color: "#1877F2" },
+          { name: "Instagram", Icon: Instagram, color: "#C13584" },
+        ].map(({ name, Icon, color }) => (
+          <div key={name} style={{ background: SURFACE_1, border: BORDER, borderRadius: 12, padding: "1rem 1.1rem", opacity: 0.85 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Icon size={17} style={{ color }} />
+                <span style={{ fontFamily: DISPLAY_FONT, fontSize: 14, fontWeight: 500, color: TEXT_SECONDARY }}>{name}</span>
+              </div>
+              <span style={{ fontSize: 10.5, padding: "2px 8px", borderRadius: 999, background: SURFACE_2, border: BORDER, color: TEXT_MUTED, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                Coming soon
+              </span>
+            </div>
+            <p style={{ fontSize: 12.5, color: TEXT_MUTED, margin: 0, lineHeight: 1.5 }}>
+              Analytics arrive when Meta publishing lands in Beta 1.0.
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
