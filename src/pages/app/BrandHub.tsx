@@ -265,6 +265,9 @@ export default function BrandHub() {
       // ready one for share/download/report views.
       setLatestAuditId(a.data?.id ?? null);
       setLatestKit(k.data ?? null);
+      // If a completed Kit exists, land on the finished view. Otherwise start
+      // the wizard at step 1 (visual). Never auto-generate on mount.
+      setKitStep(k.data?.kit_json ? "kit" : "visual");
       const visited = !!prof.brand_hub_visited;
       setHubVisited(visited);
       if (visited) {
