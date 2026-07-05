@@ -928,3 +928,34 @@ function EmptyState({
     </div>
   );
 }
+
+function RhythmTile({
+  eyebrow, title, sub, bg, fg, labelColor, to,
+}: {
+  eyebrow: string; title: string; sub: string; bg: string; fg: string; labelColor: string; to: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="group rounded-2xl p-6 flex flex-col justify-between transition hover:-translate-y-0.5 min-h-[140px]"
+      style={{ background: bg, color: fg }}
+    >
+      <div className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: labelColor }}>{eyebrow}</div>
+      <div>
+        <div className="font-display text-lg md:text-xl font-semibold leading-tight" style={{ color: fg }}>{title}</div>
+        <div className="mt-2 flex items-center gap-1.5 text-xs font-semibold" style={{ color: labelColor }}>
+          {sub} <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition" />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function RecapItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-1.5">{label}</div>
+      <div className="text-sm font-medium text-foreground leading-snug">{value}</div>
+    </div>
+  );
+}
