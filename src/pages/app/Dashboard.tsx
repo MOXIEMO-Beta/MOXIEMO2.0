@@ -772,7 +772,24 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
               <RecapItem label="Archetype" value={archetype || "Not set"} />
               <RecapItem label="Ideal client" value={idealClient || "Not set"} />
-              <RecapItem label="Voice" value={voiceCount > 0 ? `${voiceCount} attribute${voiceCount === 1 ? "" : "s"} defined` : "Not set"} />
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-1.5">Voice</div>
+                {voiceAttrs.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {voiceAttrs.map((v) => (
+                      <span
+                        key={v}
+                        className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                        style={{ background: CORAL_TINT, color: "#C24B38", border: "1px solid #F6D4CC" }}
+                      >
+                        {v}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm font-medium text-foreground leading-snug">Not set</div>
+                )}
+              </div>
             </div>
             {pillars.length > 0 && (
               <div>
