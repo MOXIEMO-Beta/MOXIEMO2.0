@@ -1,7 +1,9 @@
 // Reads the signed-in member's LinkedIn creator post analytics.
-// Tries each stored LinkedIn token (personal, then company) so a single
-// authorization that granted r_member_postAnalytics is enough to flip the
-// personal card live. Returns pending on 403 (partnerApi gate) with logs.
+// Uses the Pages / Community Management (company) token exclusively, since
+// only that LinkedIn app has r_member_postAnalytics + r_member_profileAnalytics
+// provisioned. The old personal Share app no longer carries these scopes,
+// so we never fall back to a personal-app token.
+// Returns pending on 403 (partnerApi gate) with logs.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -53,25 +55,25 @@ Deno.serve(async (req) => {
     if (rowsErr) throw rowsErr;
 
     const conns = (rows ?? []).filter((r) => !!r.access_token);
-    if (conns.length === 0) {
+    // Only the company (Pages / Community Management) token has the member
+    // analytics scopes provisioned. Ignore any personal-app tokens entirely.
+    const companyConns = conns.filter(
+      (c) => (c.connection_type ?? "personal") === "company",
+    );
+    if (companyConns.length === 0) {
       return new Response(JSON.stringify({ status: "not_connected" }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Prefer the company (Pages/Community Management) token: only that app
-    // has r_member_postAnalytics provisioned. Fall back to personal.
-    const ordered = [...conns].sort((a, b) => {
-      const ap = (a.connection_type ?? "personal") === "company" ? 0 : 1;
-      const bp = (b.connection_type ?? "personal") === "company" ? 0 : 1;
-      return ap - bp;
-    });
+    const ordered = companyConns;
 
     const attempts: Attempt[] = [];
     let liveJson: unknown = null;
     let profileName: string | null = null;
     let sawAuthError = false;
+    let profileAnalyticsJson: unknown = null;
 
     for (const conn of ordered) {
       const token = conn.access_token as string;
@@ -97,6 +99,27 @@ Deno.serve(async (req) => {
           liveJson = null;
         }
         profileName = conn.profile_name ?? null;
+        // Best-effort: also pull member profile analytics (viewers, followers,
+        // search appearances) using the same token. Non-fatal on failure.
+        try {
+          const pUrl =
+            "https://api.linkedin.com/rest/memberProfileAnalytics?q=me&aggregation=TOTAL";
+          const pr = await fetch(pUrl, { headers: liHeaders(token) });
+          const pBody = await pr.text();
+          console.log("member-profile-analytics", {
+            status: pr.status,
+            preview: pBody.slice(0, 240),
+          });
+          if (pr.ok) {
+            try {
+              profileAnalyticsJson = JSON.parse(pBody);
+            } catch {
+              profileAnalyticsJson = null;
+            }
+          }
+        } catch (e) {
+          console.log("member-profile-analytics fetch failed", String(e));
+        }
         break;
       }
       if (r.status === 401) sawAuthError = true;
@@ -119,6 +142,7 @@ Deno.serve(async (req) => {
           profile_name: profileName,
           impressions,
           raw: liveJson,
+          profile_analytics: profileAnalyticsJson,
           attempts,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
