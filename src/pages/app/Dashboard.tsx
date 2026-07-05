@@ -4,7 +4,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -17,7 +16,6 @@ import {
   Compass,
   Zap,
   CheckCircle2,
-  Search,
   Flame,
   Mail,
   Calendar as CalendarIcon,
@@ -26,10 +24,28 @@ import {
   Facebook,
   Instagram,
   Send,
+  CheckCircle,
+  User as UserIcon,
+  BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 
 type AnyRow = any;
+
+// ---------- brand tokens ----------
+const CORAL = "#E85A46";
+const CORAL_LIGHT = "#FF8A6B";
+const CORAL_TINT = "#FBE4DD";
+const SAGE = "#B8C5A6";
+const SAGE_TINT = "#E7EBDF";
+const SAGE_LABEL = "#4F5A3E";
+const TAUPE = "#D8CEBD";
+const TAUPE_TINT = "#EDE7DB";
+const TAUPE_LABEL = "#6B6250";
+const NAVY = "#14243D";
+const INK = "#0E0F10";
+const NAVY_MUTED = "#AEB9C9";
+const NAVY_TINT = "#F4C9BC";
 
 // ---------- date helpers ----------
 function isToday(dateStr: string | null | undefined): boolean {
@@ -85,6 +101,20 @@ function timeAgo(dateStr: string | null | undefined): string {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   if (diff < 172800) return "Yesterday";
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+function weeksSince(startIso: string | null | undefined): number {
+  if (!startIso) return 1;
+  const start = new Date(startIso);
+  if (isNaN(start.getTime())) return 1;
+  const days = Math.floor((Date.now() - start.getTime()) / 86_400_000);
+  return Math.min(52, Math.max(1, Math.floor(days / 7) + 1));
+}
+function lastReported<T = number>(entries: AnyRow[], key: string): T | null {
+  for (const e of entries) {
+    const v = e?.[key];
+    if (typeof v === "number" && !isNaN(v)) return v as unknown as T;
+  }
+  return null;
 }
 function getPostPreview(post: AnyRow, maxLen = 60): string {
   const content = post?.content_by_platform;
