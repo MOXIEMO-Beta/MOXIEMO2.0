@@ -525,16 +525,34 @@ export default function Analytics() {
               {personalConn?.profile_name ? `${personalConn.profile_name}, personal profile` : "Your personal profile"}
             </span>
           </div>
-          <Badge tone="pending"><Clock size={12} /> Pending LinkedIn approval</Badge>
+          {memberResp?.status === "ok"
+            ? <Badge tone="live"><CircleDot size={11} /> Live from LinkedIn</Badge>
+            : <Badge tone="pending"><Clock size={12} /> Pending LinkedIn approval</Badge>}
         </div>
-        <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-          Personal post analytics and best-post ranking need LinkedIn partner approval. The request is in review. Until it clears, MOXIEMO shows what it published for you.
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
-          <Metric label="Posts published" value={personalPublished} />
-          <Metric label="Impressions" value="Locked" mutedValue />
-          <Metric label="Best post" value="Locked" mutedValue />
-        </div>
+        {memberResp?.status === "ok" ? (
+          <>
+            <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
+              Live creator analytics for your personal profile.
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
+              <Metric label="Posts published" value={personalPublished} />
+              <Metric label="Impressions" value={memberResp.impressions.toLocaleString()} />
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
+              {memberResp?.status === "reauth_required"
+                ? "Reconnect LinkedIn to read personal profile analytics."
+                : "Personal post analytics and best-post ranking need LinkedIn partner approval. The request is in review. Until it clears, MOXIEMO shows what it published for you."}
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
+              <Metric label="Posts published" value={personalPublished} />
+              <Metric label="Impressions" value="Locked" mutedValue />
+              <Metric label="Best post" value="Locked" mutedValue />
+            </div>
+          </>
+        )}
       </Card>
 
       {/* Meta coming-soon (quiet) */}
