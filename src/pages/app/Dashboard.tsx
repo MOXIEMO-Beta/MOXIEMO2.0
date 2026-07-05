@@ -514,7 +514,34 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="w-full px-6 lg:px-10 py-10 space-y-10" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+    <div
+      className="w-full px-6 lg:px-10 py-10 space-y-10 dashboard-skin"
+      style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif", background: PAPER, minHeight: "100vh" }}
+    >
+      <style>{`
+        .dashboard-skin .stat-card { transition: transform 220ms ease, box-shadow 220ms ease; }
+        .dashboard-skin .stat-card:hover { transform: translateY(-3px); }
+        .dashboard-skin .grid-4up { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 999px) { .dashboard-skin .grid-4up { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 639px) { .dashboard-skin .grid-4up { grid-template-columns: minmax(0, 1fr); } }
+        .dashboard-skin .paper-card {
+          background: #FFFFFF; border: 1px solid ${HAIRLINE}; border-radius: 16px;
+          box-shadow: ${CARD_SHADOW}; transition: transform 220ms ease, box-shadow 220ms ease;
+        }
+        .dashboard-skin .paper-card:hover { transform: translateY(-2px); box-shadow: ${CARD_SHADOW_HOVER}; }
+        .dashboard-skin .ns-node {
+          position: absolute; top: 50%; transform: translate(-50%, -50%);
+          width: 14px; height: 14px; border-radius: 999px; background: ${CORAL};
+          box-shadow: 0 0 0 4px rgba(232,90,70,0.25), 0 0 18px rgba(232,90,70,0.65);
+          animation: nsPulse 2.2s ease-in-out infinite;
+        }
+        @keyframes nsPulse {
+          0%,100% { box-shadow: 0 0 0 4px rgba(232,90,70,0.25), 0 0 18px rgba(232,90,70,0.55); }
+          50%     { box-shadow: 0 0 0 6px rgba(232,90,70,0.18), 0 0 24px rgba(232,90,70,0.85); }
+        }
+        .dashboard-skin .live-dot { animation: liveDot 1.6s ease-in-out infinite; }
+        @keyframes liveDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+      `}</style>
       {/* 1. GREETING */}
       <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
