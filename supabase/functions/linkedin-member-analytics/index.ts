@@ -94,15 +94,22 @@ Deno.serve(async (req) => {
     const token = conn.access_token as string;
     const profileName = conn.profile_name ?? conn.organization_name ?? null;
 
-    // Build LinkedIn timeIntervals when windowDays > 0. TOTAL aggregation
-    // still applies; timeIntervals just bounds the window.
-    const now = Date.now();
-    const dayMs = 86_400_000;
-    const endMs = Math.floor(now / dayMs) * dayMs;
-    const startMs = windowDays > 0 ? endMs - windowDays * dayMs : 0;
-    const timeIntervalsParam = windowDays > 0
-      ? `&timeIntervals=(timeRange:(start:${startMs},end:${endMs}),timeGranularityType:DAY)`
-      : "";
+    // memberCreatorPostAnalytics does NOT accept timeIntervals (returns 400
+    // QUERY_PARAM_NOT_ALLOWED). It supports dateRange=(start:(day,month,year),
+    // end:(day,month,year)) at aggregation=TOTAL. When windowDays > 0 we send
+    // a dateRange; otherwise lifetime TOTAL.
+    let dateRangeParam = "";
+    let effectiveWindowDays = windowDays;
+    if (windowDays > 0) {
+      const now = new Date();
+      const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      const start = new Date(end.getTime() - windowDays * 86_400_000);
+      const fmt = (d: Date) =>
+        `(day:${d.getUTCDate()},month:${d.getUTCMonth() + 1},year:${d.getUTCFullYear()})`;
+      dateRangeParam = `&dateRange=(start:${fmt(start)},end:${fmt(end)})`;
+    } else {
+      effectiveWindowDays = 0;
+    }
 
     const base = "https://api.linkedin.com/rest/memberCreatorPostAnalytics?q=me&aggregation=TOTAL";
     const queries: Array<{ key: "impressions" | "reach" | "reactions" | "comments"; type: string }> = [
@@ -118,7 +125,7 @@ Deno.serve(async (req) => {
     let sawOk = false;
 
     for (const q of queries) {
-      const url = `${base}&queryType=${q.type}${timeIntervalsParam}`;
+      const url = `${base}&queryType=${q.type}${dateRangeParam}`;
       const r = await fetch(url, { headers: liHeaders(token) });
       const bodyText = await r.text();
       attempts.push({ query: q.type, url, status: r.status, ok: r.ok, body: bodyText.slice(0, 1500) });
@@ -134,7 +141,7 @@ Deno.serve(async (req) => {
     // Best-effort: member profile analytics (viewers, followers, search appearances).
     let profileAnalyticsJson: unknown = null;
     try {
-      const pUrl = `https://api.linkedin.com/rest/memberProfileAnalytics?q=me&aggregation=TOTAL${timeIntervalsParam}`;
+      const pUrl = `https://api.linkedin.com/rest/memberProfileAnalytics?q=me&aggregation=TOTAL${dateRangeParam}`;
       const pr = await fetch(pUrl, { headers: liHeaders(token) });
       const pBody = await pr.text();
       console.log("member-profile-analytics", { status: pr.status, days: windowDays });
@@ -158,7 +165,8 @@ Deno.serve(async (req) => {
         JSON.stringify({
           status: "ok",
           profile_name: profileName,
-          window_days: windowDays,
+          window_days: effectiveWindowDays,
+          window_label: effectiveWindowDays > 0 ? `last ${effectiveWindowDays} days` : "all time",
           impressions,
           reach,
           reactions,
