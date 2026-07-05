@@ -125,11 +125,22 @@ Deno.serve(async (req) => {
     let sawOk = false;
 
     for (const q of queries) {
-      const url = `${base}&queryType=${q.type}${dateRangeParam}`;
-      const r = await fetch(url, { headers: liHeaders(token) });
-      const bodyText = await r.text();
+      let url = `${base}&queryType=${q.type}${dateRangeParam}`;
+      let r = await fetch(url, { headers: liHeaders(token) });
+      let bodyText = await r.text();
+      // Fallback: if dateRange is rejected, retry lifetime TOTAL and mark
+      // the response as "all time".
+      if (!r.ok && dateRangeParam && (r.status === 400 || r.status === 422)) {
+        console.log("member-analytics dateRange rejected, falling back to lifetime", { status: r.status, body: bodyText.slice(0, 500) });
+        attempts.push({ query: q.type, url, status: r.status, ok: false, body: bodyText.slice(0, 1500) });
+        dateRangeParam = "";
+        effectiveWindowDays = 0;
+        url = `${base}&queryType=${q.type}`;
+        r = await fetch(url, { headers: liHeaders(token) });
+        bodyText = await r.text();
+      }
       attempts.push({ query: q.type, url, status: r.status, ok: r.ok, body: bodyText.slice(0, 1500) });
-      console.log("member-analytics", { queryType: q.type, url, status: r.status, body: bodyText.slice(0, 1500), days: windowDays });
+      console.log("member-analytics", { queryType: q.type, url, status: r.status, body: bodyText.slice(0, 1500), days: effectiveWindowDays });
       if (r.status === 401) { sawAuthError = true; continue; }
       if (!r.ok) continue;
       sawOk = true;
