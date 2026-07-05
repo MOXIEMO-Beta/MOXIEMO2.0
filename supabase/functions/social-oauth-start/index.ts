@@ -57,8 +57,6 @@ Deno.serve(async (req) => {
       "profile",
       "email",
       "w_member_social",
-      "r_member_postAnalytics",
-      "r_member_profileAnalytics",
       "r_basicprofile",
     ].join(" ");
     const url =

@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
     }
     const token = await tokenRes.json();
     const accessToken = token.access_token as string;
+    console.log("pages-callback granted scope:", token.scope ?? "(none returned)");
     const expiresAt = token.expires_in
       ? new Date(Date.now() + token.expires_in * 1000).toISOString()
       : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
