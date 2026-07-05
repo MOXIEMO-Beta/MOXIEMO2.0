@@ -131,7 +131,6 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [query, setQuery] = useState("");
 
   const [profile, setProfile] = useState<AnyRow>(null);
   const [strategy, setStrategy] = useState<AnyRow>(null);
@@ -140,20 +139,23 @@ export default function Dashboard() {
   const [emailSends, setEmailSends] = useState<AnyRow[]>([]);
   const [socialConnections, setSocialConnections] = useState<AnyRow[]>([]);
   const [discovery, setDiscovery] = useState<AnyRow>(null);
+  const [goalEntries, setGoalEntries] = useState<AnyRow[]>([]);
+  const [bestPost, setBestPost] = useState<{ impressions: number; engagement: number; text: string; pillar: string | null } | null>(null);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
       try {
-        const [profileRes, strategyRes, socialPostsRes, contentItemsRes, , emailSendsRes, socialConnectionsRes, discoveryRes] = await Promise.all([
+        const [profileRes, strategyRes, socialPostsRes, contentItemsRes, goalRes, emailSendsRes, socialConnectionsRes, discoveryRes, analyticsRes] = await Promise.all([
           supabase.from("profiles").select("full_name, business_name, role, plan, intended_use").eq("id", user.id).maybeSingle(),
-          supabase.from("strategies").select("positioning_statement, strength_score, success_definition, business_goal, content_pillars, primary_channel, posting_frequency").eq("user_id", user.id).maybeSingle(),
+          supabase.from("strategies").select("positioning_statement, strength_score, success_definition, business_goal, content_pillars, primary_channel, posting_frequency, ideal_client, voice_attributes, enhanced_foundation, created_at").eq("user_id", user.id).maybeSingle(),
           supabase.from("social_posts").select("id, status, platforms, pillar, scheduled_for, published_at, content_by_platform, topic, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
           supabase.from("content_items").select("id, status, platform, topic, body, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
-          supabase.from("goal_entries").select("*").eq("user_id", user.id).order("week_of", { ascending: false }).limit(4),
+          supabase.from("goal_entries").select("*").eq("user_id", user.id).order("week_of", { ascending: false }).limit(24),
           supabase.from("email_sends").select("id, subject, sent_at, recipient_count, status").eq("user_id", user.id).order("sent_at", { ascending: false }).limit(10),
           supabase.from("social_connections").select("platform, profile_name, connected_at").eq("user_id", user.id),
           supabase.from("discovery_sessions").select("status, messages").eq("user_id", user.id).maybeSingle(),
+          supabase.from("social_analytics").select("impressions, engagement_rate, post_id, platform").eq("user_id", user.id).eq("platform", "linkedin").order("impressions", { ascending: false }).limit(1),
         ]);
 
         setProfile(profileRes.data ?? null);
@@ -163,6 +165,19 @@ export default function Dashboard() {
         setEmailSends(emailSendsRes.data ?? []);
         setSocialConnections(socialConnectionsRes.data ?? []);
         setDiscovery(discoveryRes.data ?? null);
+        setGoalEntries(goalRes.data ?? []);
+        const top = (analyticsRes.data ?? [])[0];
+        if (top && top.post_id) {
+          const { data: postData } = await supabase.from("social_posts").select("content_by_platform, topic, pillar").eq("id", top.post_id).maybeSingle();
+          setBestPost({
+            impressions: top.impressions ?? 0,
+            engagement: top.engagement_rate ?? 0,
+            text: postData ? getPostPreview(postData, 90) : "",
+            pillar: postData?.pillar ?? null,
+          });
+        } else if (top) {
+          setBestPost({ impressions: top.impressions ?? 0, engagement: top.engagement_rate ?? 0, text: "", pillar: null });
+        }
       } catch (e) {
         console.error("Dashboard data load failed:", e);
       } finally {
@@ -189,139 +204,101 @@ export default function Dashboard() {
   const draftContentItems = contentItems.filter((c) => c.status === "draft");
   const totalDrafts = draftPosts.length + draftContentItems.length;
 
+  const weekNum = useMemo(() => weeksSince(strategy?.created_at ?? null), [strategy]);
   const subtitle = useMemo(() => {
-    if (postsScheduledToday.length > 0) {
-      return `You have ${postsScheduledToday.length} post${postsScheduledToday.length === 1 ? "" : "s"} scheduled today.`;
-    }
-    if (totalDrafts > 0) {
-      return `You have ${totalDrafts} draft${totalDrafts === 1 ? "" : "s"} ready to review.`;
-    }
-    if (hasStrategy && (strategy?.strength_score ?? 0) < 80) {
-      return "Your strategy needs some refinement — strengthen it to unlock better content.";
-    }
-    if (hasStrategy) return "Your marketing engine is running. Here's what needs your attention today.";
-    return "Let's build the strategy that powers everything else you publish.";
-  }, [postsScheduledToday.length, totalDrafts, hasStrategy, strategy]);
+    if (!hasStrategy) return "Set up your engine. It powers everything you publish.";
+    const parts = [`Week ${weekNum} of 52.`, "Your engine is producing."];
+    if (totalDrafts > 0) parts.push(`${totalDrafts} draft${totalDrafts === 1 ? "" : "s"} ${totalDrafts === 1 ? "is" : "are"} ready for you.`);
+    return parts.join(" ");
+  }, [hasStrategy, weekNum, totalDrafts]);
 
   // ---------- stats ----------
   const thisWeekPubPosts = socialPosts.filter((p) => isThisWeek(p.published_at));
   const thisWeekEmails = emailSends.filter((e) => isThisWeek(e.sent_at));
   const thisWeekContent = contentItems.filter((c) => isThisWeek(c.created_at));
-  const hoursSaved = thisWeekPubPosts.length * 1.5 + thisWeekEmails.length * 2 + thisWeekContent.length * 0.5;
-
-  const lastWeekPubPosts = socialPosts.filter((p) => isLastWeek(p.published_at));
-  const lastWeekEmails = emailSends.filter((e) => isLastWeek(e.sent_at));
-  const lastWeekContent = contentItems.filter((c) => isLastWeek(c.created_at));
-  const lastWeekHours = lastWeekPubPosts.length * 1.5 + lastWeekEmails.length * 2 + lastWeekContent.length * 0.5;
-  const hoursDelta = hoursSaved - lastWeekHours;
+  const totalGenerated = socialPosts.length + contentItems.length;
+  const publishedCount = socialPosts.filter((p) => p.published_at).length;
+  const hoursSaved = totalGenerated * 0.5 + publishedCount * 1.5;
 
   const scheduledNext7 = socialPosts.filter((p) => p.status === "scheduled" && isNext7Days(p.scheduled_for));
 
-  const last30Posts = socialPosts.filter((p) => isLast30Days(p.created_at || p.scheduled_for));
-  const withPillar = last30Posts.filter((p) => p.pillar);
-  const alignment = last30Posts.length > 0 ? Math.round((withPillar.length / last30Posts.length) * 100) : 0;
+  const alignment = strategy?.strength_score ?? 0;
+  const pillars: string[] = useMemo(() => {
+    const cp = strategy?.content_pillars;
+    if (!Array.isArray(cp)) return [];
+    return cp.map((p: any) => (typeof p === "string" ? p : p?.name ?? p?.title ?? "")).filter(Boolean);
+  }, [strategy]);
+  const pillarsCoveredWeek = new Set(
+    socialPosts
+      .filter((p) => isThisWeek(p.created_at) || isThisWeek(p.published_at))
+      .map((p) => p.pillar)
+      .filter(Boolean)
+  ).size;
+  const pillarsTotal = Math.max(pillars.length, 5);
 
-  const totalGenerated = socialPosts.length + contentItems.length;
+  // Goals numbers (same source as Goals page)
+  const payingNow = lastReported<number>(goalEntries, "paying_users") ?? 0;
+  const mrrNow = lastReported<number>(goalEntries, "mrr");
+  const retentionNow = lastReported<number>(goalEntries, "retention_pct");
+  const testimonialsNow = lastReported<number>(goalEntries, "testimonials");
+  const payingPct = Math.min(100, (payingNow / 500) * 100);
 
   const stats = [
-    {
-      label: "Hours saved",
-      value: hoursSaved > 0 ? hoursSaved.toFixed(1) : "—",
-      delta:
-        hoursSaved > 0
-          ? `${hoursDelta >= 0 ? "+" : ""}${hoursDelta.toFixed(1)} vs. last wk`
-          : hasStrategy
-          ? "Publish to start tracking"
-          : "Run discovery",
-      icon: Clock,
-    },
-    {
-      label: "Content scheduled",
-      value: scheduledNext7.length > 0 ? String(scheduledNext7.length) : "—",
-      delta: scheduledNext7.length > 0 ? "Next 7 days" : "Nothing scheduled",
-      icon: FileText,
-    },
-    {
-      label: "Strategic alignment",
-      value: last30Posts.length > 0 ? `${alignment}%` : "—",
-      delta: last30Posts.length > 0 ? "Matched to pillars" : "Create tagged posts to track",
-      icon: Target,
-    },
-    {
-      label: "Pieces generated",
-      value: totalGenerated > 0 ? String(totalGenerated) : "—",
-      delta: totalGenerated > 0 ? "All-time" : "—",
-      icon: Zap,
-    },
+    { label: "Hours saved", value: hoursSaved.toFixed(1), delta: "All-time", icon: Clock, tint: CORAL_TINT, color: CORAL },
+    { label: "Pieces generated", value: String(totalGenerated), delta: totalGenerated > 0 ? "All-time" : "None yet", icon: Zap, tint: SAGE_TINT, color: SAGE_LABEL },
+    { label: "Alignment", value: `${alignment}%`, delta: "Strategy strength", icon: Target, tint: TAUPE_TINT, color: TAUPE_LABEL },
+    { label: "Best post", value: bestPost ? String(bestPost.impressions) : "-", delta: bestPost ? "Impressions" : "No Page data yet", icon: TrendingUp, tint: "#EFF3F8", color: NAVY },
   ];
 
   // ---------- focus items ----------
   const focusItems = useMemo(() => {
     const items: any[] = [];
 
-    postsScheduledToday.forEach((p) => {
-      items.push({
-        type: "post",
-        icon: Send,
-        label: `Publish to ${(p.platforms ?? []).join(", ") || "social"}`,
-        detail: getPostPreview(p, 60) || "Scheduled for today",
-        action: "Open Social",
-        route: "/app/social",
-        urgent: true,
-      });
-    });
-
-    if (!hasStrategy) {
-      items.push({
-        type: "strategy",
-        icon: Compass,
-        label: "Complete your strategy",
-        detail: "Everything in MOXIEMO flows from your strategy",
-        action: "Start Discovery",
-        route: "/app/discovery",
-        urgent: true,
-      });
-    }
-
-    const thisWeekScheduled = socialPosts.filter((p) => p.status === "scheduled" && isThisWeek(p.scheduled_for));
-    if (thisWeekScheduled.length === 0 && hasStrategy) {
-      items.push({
-        type: "calendar",
-        icon: CalendarIcon,
-        label: "Nothing scheduled this week",
-        detail: "Plan your content to stay consistent",
-        action: "Open Calendar",
-        route: "/app/social",
-        urgent: false,
-      });
-    }
-
     if (totalDrafts > 0) {
       items.push({
-        type: "draft",
         icon: PenSquare,
-        label: `${totalDrafts} draft${totalDrafts === 1 ? "" : "s"} waiting for review`,
-        detail: "Review and queue your drafts to stay consistent",
-        action: "Review drafts",
+        label: `Review ${totalDrafts} draft${totalDrafts === 1 ? "" : "s"}`,
+        detail: "Approve and queue what is ready.",
+        action: "Review",
+        route: "/app/content",
+        urgent: true,
+      });
+    }
+    // untested pillar
+    const usedPillars = new Set(socialPosts.map((p) => p.pillar).filter(Boolean));
+    const untested = pillars.find((name) => !usedPillars.has(name));
+    if (untested) {
+      items.push({
+        icon: Sparkles,
+        label: `Generate a post for the ${untested} pillar`,
+        detail: "This pillar has no content yet.",
+        action: "Generate",
         route: "/app/content",
         urgent: false,
       });
     }
-
-    if (thisWeekEmails.length === 0 && strategy?.success_definition) {
+    if (postsScheduledToday.length > 0) {
       items.push({
-        type: "email",
-        icon: Mail,
-        label: "No newsletter sent this week",
-        detail: "Keep your audience warm with a weekly send",
-        action: "Write email",
-        route: "/app/email",
+        icon: Send,
+        label: `Publish ${postsScheduledToday.length} scheduled post${postsScheduledToday.length === 1 ? "" : "s"}`,
+        detail: "Ready to go out today.",
+        action: "Open",
+        route: "/app/social",
+        urgent: true,
+      });
+    }
+    if (items.length === 0) {
+      items.push({
+        icon: Flame,
+        label: "Log this week's numbers",
+        detail: "Two minutes keeps your goals honest.",
+        action: "Open",
+        route: "/app/goals",
         urgent: false,
       });
     }
-
     return [...items].sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0)).slice(0, 3);
-  }, [postsScheduledToday, hasStrategy, socialPosts, totalDrafts, thisWeekEmails.length, strategy]);
+  }, [postsScheduledToday, socialPosts, totalDrafts, pillars]);
 
   // ---------- quick actions w/ live subtitles ----------
   const lastGeneratedPost = socialPosts[0]?.created_at || contentItems[0]?.created_at || null;
@@ -444,7 +421,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="px-6 lg:px-10 py-12 max-w-7xl mx-auto">
+      <div className="w-full px-6 lg:px-10 py-12">
         <div className="animate-pulse space-y-6">
           <div className="h-12 w-72 bg-muted rounded-lg" />
           <div className="h-40 bg-muted rounded-2xl" />
@@ -463,61 +440,72 @@ export default function Dashboard() {
     );
   }
 
+  const archetype = strategy?.enhanced_foundation?.brandArchetype?.name || strategy?.enhanced_foundation?.brandArchetype?.icon || null;
+  const idealClient = strategy?.ideal_client || strategy?.enhanced_foundation?.idealClient?.title || null;
+  const voiceCount = Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes.length : 0;
+  const strengthScore = strategy?.strength_score ?? 0;
+
+  const smartGoals = [
+    { category: "Growth", tracked: false, title: "Reach $80K MRR", target: "$80K", now: mrrNow != null ? `$${mrrNow.toLocaleString()}` : "Not reported" },
+    { category: "Conversion", tracked: true, title: "Audit lead to paid trial", target: "15%", now: "0%" },
+    { category: "Retention", tracked: false, title: "Hold cohort retention", target: "85%", now: retentionNow != null ? `${retentionNow}%` : "Not reported" },
+    { category: "Advocacy", tracked: false, title: "Wow testimonials", target: "20", now: testimonialsNow != null ? String(testimonialsNow) : "Not reported" },
+  ];
+
   return (
-    <div className="px-6 lg:px-10 py-10 max-w-7xl mx-auto space-y-10">
-      {/* Header */}
+    <div className="w-full px-6 lg:px-10 py-10 space-y-10" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+      {/* 1. GREETING */}
       <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
-          <span className="inline-block text-xs font-bold uppercase tracking-[0.25em] text-accent px-3 py-1.5 rounded-full bg-accent-soft mb-4">
-            Workspace
-          </span>
-          <h1 className="font-display text-5xl md:text-6xl tracking-[-0.04em] leading-[0.95] mb-3">
+          <div className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-3" style={{ color: CORAL }}>Home</div>
+          <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em] leading-[1] mb-3" style={{ color: INK }}>
             {greeting}, {firstName}.
           </h1>
-          <p className="text-lg text-muted-foreground font-light max-w-xl">{subtitle}</p>
+          <p className="text-base text-muted-foreground max-w-2xl">{subtitle}</p>
         </div>
-        <div className="relative w-full lg:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && query.trim()) navigate(`/app/content?q=${encodeURIComponent(query)}`);
-            }}
-            placeholder="Search content, ideas, briefs…"
-            className="pl-10 h-11 rounded-xl border-border bg-muted/40 focus-visible:bg-background"
-          />
-          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-medium text-muted-foreground bg-background border border-border px-1.5 py-0.5 rounded">
-            ⌘K
-          </kbd>
-        </div>
+        {hasStrategy && (
+          <Link
+            to="/app/strategy"
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold self-start lg:self-end"
+            style={{ background: CORAL_TINT, color: CORAL }}
+          >
+            <Compass className="h-4 w-4" /> Strategy {strengthScore} / 100
+          </Link>
+        )}
       </header>
 
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {quickActions.map((a) => (
-          <Link
-            key={a.label}
-            to={a.to}
-            className="group flex items-center justify-between p-4 rounded-xl border border-border bg-background hover:border-foreground/30 hover:shadow-card transition-all"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <div
-                className={`h-9 w-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                  a.color === "accent" ? "bg-accent-soft text-accent" : "bg-muted text-foreground"
-                }`}
-              >
-                <a.icon className="h-[18px] w-[18px]" />
-              </div>
-              <div className="min-w-0">
-                <div className="font-medium text-sm truncate">{a.label}</div>
-                <div className="text-[11px] text-muted-foreground truncate">{a.sub}</div>
-              </div>
-            </div>
-            <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition flex-shrink-0" />
-          </Link>
-        ))}
-      </div>
+      {/* 2. RHYTHM STRIP */}
+      {hasStrategy && (
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <RhythmTile
+            eyebrow="Today"
+            title={totalDrafts > 0 ? `Review ${totalDrafts} draft${totalDrafts === 1 ? "" : "s"}` : "Nothing urgent today"}
+            sub={totalDrafts > 0 ? "Approve and queue" : "Your engine is caught up"}
+            bg={CORAL}
+            fg="#FFFFFF"
+            labelColor="#FFE1D9"
+            to={totalDrafts > 0 ? "/app/content" : "/app/content"}
+          />
+          <RhythmTile
+            eyebrow="This week"
+            title={`${pillarsCoveredWeek} of ${pillarsTotal} pillars covered`}
+            sub="Log your numbers"
+            bg={SAGE}
+            fg={INK}
+            labelColor={SAGE_LABEL}
+            to="/app/goals"
+          />
+          <RhythmTile
+            eyebrow="This month"
+            title={`${payingNow} of 500 users`}
+            sub="See your goals"
+            bg={TAUPE}
+            fg={INK}
+            labelColor={TAUPE_LABEL}
+            to="/app/goals"
+          />
+        </section>
+      )}
 
       {/* Setup checklist — show until strategy exists */}
       {!hasStrategy ? (
@@ -533,7 +521,7 @@ export default function Dashboard() {
                   Set up your engine.
                 </h2>
                 <p className="text-background/70 text-lg font-light mb-7 max-w-md">
-                  Four steps. About 15-20 minutes total. Then MOXIEMO runs the rest.
+                  Four steps. About 15 to 20 minutes total. Then MOXIEMO runs the rest.
                 </p>
                 <div className="flex items-center gap-4 mb-2">
                   <div className="flex-1 h-1.5 rounded-full bg-background/15 overflow-hidden">
@@ -584,168 +572,264 @@ export default function Dashboard() {
         </Card>
       ) : null}
 
-      {/* Stats row */}
-      <section>
-        <div className="flex items-end justify-between mb-5">
-          <div>
-            <span className="inline-block text-[11px] font-bold uppercase tracking-[0.25em] text-accent px-2.5 py-1 rounded-full bg-accent-soft mb-2">
-              This week
-            </span>
-            <h2 className="font-display text-2xl tracking-[-0.02em]">Engine performance</h2>
-          </div>
-          <Link to="/app/analytics" className="text-sm text-muted-foreground hover:text-foreground transition flex items-center gap-1">
-            Full analytics <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          {stats.map((s) => (
-            <Card key={s.label} className="p-5 border-border shadow-soft hover:shadow-card transition group">
-              <div className="flex items-start justify-between mb-4">
-                <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                  {s.label}
-                </span>
-                <s.icon className="h-4 w-4 text-muted-foreground group-hover:text-accent transition" />
+      {hasStrategy && (
+        <>
+          {/* 3. NORTH STAR BAND */}
+          <section
+            className="relative overflow-hidden rounded-2xl p-8 md:p-10"
+            style={{ background: NAVY, boxShadow: "0 18px 40px -18px rgba(20,36,61,0.55)" }}
+          >
+            <div className="flex flex-wrap items-center gap-2 mb-4">
+              <span className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: CORAL_LIGHT }}>★ North star</span>
+              <span className="text-[11px] uppercase tracking-wider font-semibold rounded-full px-2.5 py-1" style={{ background: "rgba(255,255,255,0.12)", color: NAVY_TINT }}>
+                Week {weekNum} of 52
+              </span>
+            </div>
+            <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight text-white">
+              500 paying users in 12 months
+            </h2>
+            <p className="mt-2 text-sm md:text-base font-medium" style={{ color: NAVY_TINT }}>
+              $80K MRR · $960K ARR · by June 2027
+            </p>
+            <div className="mt-6">
+              <div className="relative h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.14)" }}>
+                <div className="h-full rounded-full transition-all" style={{ width: `${payingPct}%`, background: CORAL }} />
+                {[10, 30, 60].map((t) => (
+                  <div key={t} className="absolute top-0 bottom-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.4)" }} />
+                ))}
               </div>
-              <div className="font-display text-4xl tracking-[-0.03em] mb-1.5">{s.value}</div>
-              <div className="text-xs text-muted-foreground">{s.delta}</div>
+              <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: NAVY_MUTED }}>
+                <span>0</span><span>50</span><span>150</span><span>300</span><span>500</span>
+              </div>
+            </div>
+            <div className="mt-4 text-xs" style={{ color: NAVY_MUTED }}>
+              You are at {payingNow} paying users. Log wins as they close.
+            </div>
+          </section>
+
+          {/* 4. SMART GOALS AT A GLANCE */}
+          <section>
+            <div className="flex items-end justify-between mb-4">
+              <h2 className="font-display text-xl tracking-tight" style={{ color: INK }}>Your goals, at a glance</h2>
+              <Link to="/app/goals" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+                Open Goals <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+              {smartGoals.map((g) => (
+                <Link key={g.category} to="/app/goals" className="rounded-xl bg-card border border-border p-5 hover:-translate-y-0.5 hover:shadow-card transition block">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">{g.category}</span>
+                    {g.tracked ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5" style={{ background: "#EAF7EF", color: "#16A34A" }}>
+                        <CheckCircle className="h-3 w-3" /> Tracked
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5" style={{ background: "#FEF3E2", color: "#D97706" }}>
+                        <UserIcon className="h-3 w-3" /> Reported
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-display font-semibold text-sm mb-3" style={{ color: INK }}>{g.title}</div>
+                  <div className="flex items-baseline justify-between">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Now</div>
+                      <div className="font-display text-lg font-semibold" style={{ color: INK }}>{g.now}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Target</div>
+                      <div className="font-display text-lg font-semibold" style={{ color: CORAL }}>{g.target}</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          {/* 5. ENGINE PERFORMANCE */}
+          <section>
+            <div className="flex items-end justify-between mb-4">
+              <h2 className="font-display text-xl tracking-tight" style={{ color: INK }}>Engine performance</h2>
+              <Link to="/app/analytics" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
+                Full analytics <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {stats.map((s) => (
+                <Card key={s.label} className="p-5 border-border shadow-soft hover:shadow-card transition">
+                  <div className="flex items-start justify-between mb-4">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{s.label}</span>
+                    <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: s.tint }}>
+                      <s.icon className="h-4 w-4" style={{ color: s.color }} />
+                    </div>
+                  </div>
+                  <div className="font-display text-3xl tracking-tight mb-1" style={{ color: INK }}>{s.value}</div>
+                  <div className="text-xs text-muted-foreground">{s.delta}</div>
+                </Card>
+              ))}
+            </div>
+          </section>
+
+          {/* 6. STRATEGY RECAP */}
+          <section className="rounded-2xl border border-border bg-card p-6 md:p-8">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-display text-xl tracking-tight" style={{ color: INK }}>Strategy recap</h2>
+              <Link to="/app/strategy" className="text-sm font-medium hover:underline flex items-center gap-1" style={{ color: CORAL }}>
+                Open strategy <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <p className="text-base leading-relaxed mb-5" style={{ color: INK }}>
+              {strategy.positioning_statement}
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
+              <RecapItem label="Archetype" value={archetype || "Not set"} />
+              <RecapItem label="Ideal client" value={idealClient || "Not set"} />
+              <RecapItem label="Voice" value={voiceCount > 0 ? `${voiceCount} attribute${voiceCount === 1 ? "" : "s"} defined` : "Not set"} />
+            </div>
+            {pillars.length > 0 && (
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-2">Content pillars</div>
+                <div className="flex flex-wrap gap-2">
+                  {pillars.slice(0, 5).map((p) => (
+                    <span key={p} className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: CORAL_TINT, color: CORAL }}>{p}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* 7. TWO-UP: focus + landing */}
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="p-7 border-border shadow-soft">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: CORAL_TINT }}>
+                    <Flame className="h-4 w-4" style={{ color: CORAL }} />
+                  </div>
+                  <h3 className="font-semibold text-base">Today's focus</h3>
+                </div>
+              </div>
+              <div className="space-y-2">
+                {focusItems.map((f, i) => (
+                  <button
+                    key={i}
+                    onClick={() => navigate(f.route)}
+                    className="w-full text-left group flex items-center gap-4 p-4 rounded-xl border border-border hover:border-foreground/30 hover:shadow-soft transition"
+                    style={f.urgent ? { borderLeft: `4px solid ${CORAL}` } : undefined}
+                  >
+                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
+                      <f.icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold truncate mb-1">{f.label}</div>
+                      <div className="text-xs text-muted-foreground truncate">{f.detail}</div>
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full flex-shrink-0" style={{ background: CORAL_TINT, color: CORAL }}>
+                      {f.action}
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition" />
+                  </button>
+                ))}
+              </div>
             </Card>
-          ))}
-        </div>
-      </section>
+
+            <Card className="p-7 border-border shadow-soft">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "#EFF3F8" }}>
+                    <BarChart3 className="h-4 w-4" style={{ color: NAVY }} />
+                  </div>
+                  <h3 className="font-semibold text-base">Your marketing is landing</h3>
+                </div>
+                {bestPost && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5" style={{ background: "#EAF7EF", color: "#16A34A" }}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Live
+                  </span>
+                )}
+              </div>
+              {bestPost ? (
+                <div className="space-y-4">
+                  <div className="text-sm leading-relaxed" style={{ color: INK }}>
+                    {bestPost.text || "Top LinkedIn Page post"}
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Impressions</div>
+                      <div className="font-display text-2xl font-semibold" style={{ color: INK }}>{bestPost.impressions}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Engagement</div>
+                      <div className="font-display text-2xl font-semibold" style={{ color: INK }}>
+                        {bestPost.engagement ? `${(bestPost.engagement * 100).toFixed(1)}%` : "-"}
+                      </div>
+                    </div>
+                    {bestPost.pillar && (
+                      <span className="ml-auto rounded-full px-3 py-1 text-xs font-medium" style={{ background: SAGE_TINT, color: SAGE_LABEL }}>{bestPost.pillar}</span>
+                    )}
+                  </div>
+                  <Link to="/app/analytics" className="inline-flex items-center gap-1 text-sm font-medium hover:underline" style={{ color: CORAL }}>
+                    See full analytics <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground py-4">
+                  No LinkedIn Page data yet. Once posts land, the top performer will show here.
+                </div>
+              )}
+            </Card>
+          </section>
+        </>
+      )}
 
       {/* Two-column workspace */}
       <section className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-4">
-        {/* Today's focus */}
+        {/* This week from your strategy */}
         <Card className="p-7 border-border shadow-soft">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg bg-accent-soft flex items-center justify-center">
-                <Flame className="h-4 w-4 text-accent" />
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: SAGE_TINT }}>
+                <CalendarIcon className="h-4 w-4" style={{ color: SAGE_LABEL }} />
               </div>
               <div>
-                <h3 className="font-semibold text-base">Today's focus</h3>
-                <p className="text-xs text-muted-foreground">Priority queue, ranked by MOXIEMO</p>
+                <h3 className="font-semibold text-base">This week from your strategy</h3>
+                <p className="text-xs text-muted-foreground">Drafts ready to review and queue</p>
               </div>
             </div>
             <Link to="/app/content" className="text-xs text-accent hover:underline font-medium">
               View all
             </Link>
           </div>
-          {focusItems.length > 0 ? (
+          {draftPosts.length > 0 ? (
             <div className="space-y-2">
-              {focusItems.map((f, i) => (
+              {draftPosts.slice(0, 5).map((p, i) => (
                 <button
                   key={i}
-                  onClick={() => navigate(f.route)}
-                  className={`w-full text-left group flex items-center gap-4 p-4 rounded-xl border transition cursor-pointer ${
-                    f.urgent
-                      ? "border-l-4 border-l-accent border-border hover:shadow-soft"
-                      : "border-border hover:border-foreground/30 hover:shadow-soft"
-                  }`}
+                  onClick={() => navigate("/app/content")}
+                  className="w-full text-left group flex items-center gap-4 p-4 rounded-xl border border-border hover:border-foreground/30 hover:shadow-soft transition"
                 >
                   <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
-                    <f.icon className="h-4 w-4" />
+                    <PenSquare className="h-4 w-4" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-semibold truncate mb-1">{f.label}</div>
-                    <div className="text-xs text-muted-foreground truncate">{f.detail}</div>
+                    <div className="text-sm font-semibold truncate mb-1">{getPostPreview(p, 70) || p.topic || "Untitled draft"}</div>
+                    <div className="text-xs text-muted-foreground truncate">{(p.platforms ?? []).join(", ") || "social"}{p.pillar ? ` · ${p.pillar}` : ""}</div>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full flex-shrink-0 bg-accent-soft text-accent">
-                    {f.action}
-                  </span>
-                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5 transition" />
+                  <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition" />
                 </button>
               ))}
             </div>
           ) : (
             <EmptyState
               icon={FileText}
-              title="You're all caught up"
-              body="Nothing urgent right now. MOXIEMO will surface items here as they come up."
+              title="No drafts waiting"
+              body="Generate the next batch when you are ready."
               cta={{ to: "/app/content", label: "Browse content" }}
             />
           )}
         </Card>
 
-        {/* Strategy snapshot + activity */}
+        {/* Platforms + activity */}
         <div className="space-y-4">
-          <Card className="p-7 border-border shadow-soft">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-lg bg-foreground text-background flex items-center justify-center">
-                  <Compass className="h-4 w-4" />
-                </div>
-                <h3 className="font-semibold text-base">Strategy snapshot</h3>
-              </div>
-              <Link to="/app/strategy" className="text-xs text-accent hover:underline font-medium">
-                Open
-              </Link>
-            </div>
-            {hasStrategy ? (
-              <div className="space-y-4">
-                <div>
-                  <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-1.5">
-                    Positioning
-                  </div>
-                  <div className="text-sm leading-snug">
-                    {strategy.positioning_statement?.length > 120
-                      ? strategy.positioning_statement.slice(0, 120) + "..."
-                      : strategy.positioning_statement}
-                  </div>
-                </div>
-                {strategy.strength_score != null && (
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">
-                        Strength
-                      </div>
-                      <div className="text-xs font-semibold">{strategy.strength_score}/100</div>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full bg-accent transition-all"
-                        style={{ width: `${Math.min(100, strategy.strength_score)}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
-                <div className="h-px bg-border" />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-1.5">
-                      Channel
-                    </div>
-                    <div className="text-sm font-medium">{strategy.primary_channel || "—"}</div>
-                  </div>
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-1.5">
-                      Cadence
-                    </div>
-                    <div className="text-sm font-medium">{strategy.posting_frequency || "—"}</div>
-                  </div>
-                </div>
-                {strategy.success_definition && (
-                  <>
-                    <div className="h-px bg-border" />
-                    <div>
-                      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-1.5">
-                        Success target
-                      </div>
-                      <div className="text-sm">{strategy.success_definition}</div>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <EmptyState
-                icon={TrendingUp}
-                title="Strategy in waiting"
-                body="Complete discovery and your strategy lives here — editable, exportable, always alive."
-                cta={{ to: "/app/discovery", label: discoveryStarted ? "Continue" : "Start Discovery" }}
-              />
-            )}
-          </Card>
-
           {/* Connected platforms */}
           <Card className="p-7 border-border shadow-soft">
             <div className="flex items-center justify-between mb-4">
