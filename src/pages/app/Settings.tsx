@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowRight, Shield, Linkedin, Facebook, Instagram, Mail, Calendar as CalIcon, Lightbulb, Megaphone, Sparkles, FileText } from "lucide-react";
-import { LinkedInAnalyticsProbe } from "@/components/LinkedInAnalyticsProbe";
 
 type SocialConn = {
   id: string;
@@ -145,9 +144,6 @@ export default function Settings() {
     }
   }, [user]);
 
-  const linkedin = connections.find(
-    (c) => c.platform === "linkedin" && (c.connection_type ?? "personal") === "personal",
-  );
   const companyPages = connections.filter(
     (c) => c.platform === "linkedin" && c.connection_type === "company",
   );
@@ -195,40 +191,6 @@ export default function Settings() {
       window.history.replaceState({}, "", cleanUrl);
     }
   }, [user]);
-
-  async function connectLinkedIn() {
-    if (!user) return;
-    setConnecting("linkedin");
-    try {
-      // Only these origins are registered as LinkedIn OAuth redirect URIs.
-      // On any other origin (e.g. Lovable editor preview) we fall back to the
-      // primary production callback so LinkedIn's exact-match check passes.
-      const ALLOWED_ORIGINS = new Set([
-        "https://buildwithmoxiemo.com",
-        "https://moxie-grow-platform.lovable.app",
-      ]);
-      const origin = window.location.origin;
-      const redirect_uri = ALLOWED_ORIGINS.has(origin)
-        ? `${origin}/auth/linkedin/callback`
-        : "https://buildwithmoxiemo.com/auth/linkedin/callback";
-      const { data, error } = await supabase.functions.invoke("social-oauth-start", {
-        body: { platform: "linkedin", user_id: user.id, redirect_uri },
-      });
-      if (error) throw error;
-      const url = (data as any)?.url ?? (data as any)?.authUrl;
-      if (url) window.location.href = url;
-    } catch (e: any) {
-      toast.error(e?.message ?? "Could not start connection");
-    } finally { setConnecting(null); }
-  }
-
-  async function disconnectLinkedIn() {
-    if (!user || !linkedin) return;
-    const { error } = await supabase.from("social_connections").delete().eq("id", linkedin.id);
-    if (error) { toast.error(error.message); return; }
-    setConnections((arr) => arr.filter((c) => c.id !== linkedin.id));
-    toast.success("Disconnected");
-  }
 
   function connectCompanyPage() {
     if (!user) return;
@@ -376,36 +338,9 @@ export default function Settings() {
         <p className="text-[13px] mb-3" style={{ color: "#6B6860" }}>
           Connect your social platforms to schedule and publish posts directly from MOXIEMO.
         </p>
-        <div className="flex items-center justify-between" style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center" style={{ width: 32, height: 32, background: "#E8F1FB", borderRadius: 8 }}>
-              <Linkedin size={18} color="#0A66C2" />
-            </div>
-            <div>
-              <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>LinkedIn</div>
-              {linkedin ? (
-                <div className="text-[12px]" style={{ color: "#6B6860" }}>{linkedin.profile_name || "Connected account"}</div>
-              ) : (
-                <div className="text-[12px]" style={{ color: "#9A9896" }}>Not connected</div>
-              )}
-            </div>
-          </div>
-          {linkedin ? (
-            <div className="flex items-center gap-2">
-              <ExpiryChip iso={linkedin.expires_at} />
-              <span className="text-[10px] font-semibold" style={{ background: "#EAF3DE", color: "#3B6D11", borderRadius: 4, padding: "2px 8px" }}>Connected</span>
-              <button onClick={disconnectLinkedIn} className="text-[12px]" style={{ border: "0.5px solid #ECEAE5", borderRadius: 6, height: 28, padding: "0 12px", color: "#6B6860" }}>Disconnect</button>
-            </div>
-          ) : (
-            <button onClick={connectLinkedIn} disabled={connecting === "linkedin"} className="text-[12px] font-semibold"
-              style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 32, padding: "0 14px", boxShadow: "0 4px 14px rgba(232,90,70,0.25)" }}>
-              {connecting === "linkedin" ? "Connecting…" : "Connect LinkedIn"}
-            </button>
-          )}
-        </div>
-
-        {/* Company Page (LinkedIn) — separate app + flow */}
-        {companyPages.map((page) => (
+        {/* Primary LinkedIn connection — one authorization covers the company
+            page (posting and analytics) and your personal post analytics. */}
+        {companyPages.map((page, i) => (
           <div key={page.id} className="flex items-center justify-between" style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center" style={{ width: 32, height: 32, background: "#E8F1FB", borderRadius: 8 }}>
@@ -415,7 +350,11 @@ export default function Settings() {
                 <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>
                   {page.organization_name || "LinkedIn Company Page"}
                 </div>
-                <div className="text-[12px]" style={{ color: "#6B6860" }}>LinkedIn company page</div>
+                <div className="text-[12px]" style={{ color: "#6B6860" }}>
+                  {i === 0
+                    ? "Covers company page posting and analytics, plus your personal post analytics."
+                    : "Additional company page you administer."}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -432,15 +371,19 @@ export default function Settings() {
               <Linkedin size={18} color="#0A66C2" />
             </div>
             <div>
-              <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>LinkedIn Company Page</div>
+              <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>
+                {companyPages.length > 0 ? "Connect another LinkedIn page" : "Connect LinkedIn"}
+              </div>
               <div className="text-[12px]" style={{ color: "#9A9896" }}>
-                {companyPages.length > 0 ? "Connect another page you administer" : "Post as a company page you administer"}
+                {companyPages.length > 0
+                  ? "Add another company page you administer."
+                  : "One connection covers company page posting and analytics, plus your personal post analytics."}
               </div>
             </div>
           </div>
           <button onClick={connectCompanyPage} disabled={connecting === "linkedin_pages"} className="text-[12px] font-semibold"
             style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 32, padding: "0 14px", boxShadow: "0 4px 14px rgba(232,90,70,0.25)" }}>
-            {connecting === "linkedin_pages" ? "Connecting…" : companyPages.length > 0 ? "Connect another page" : "Connect a company page"}
+            {connecting === "linkedin_pages" ? "Connecting…" : companyPages.length > 0 ? "Connect another page" : "Connect LinkedIn"}
           </button>
         </div>
 
@@ -503,7 +446,6 @@ export default function Settings() {
           </div>
           <span className="text-[10px] font-semibold" style={{ background: "#FEF3C7", color: "#854F0B", borderRadius: 4, padding: "2px 8px" }}>Pending verification</span>
         </div>
-        <LinkedInAnalyticsProbe />
       </div>
 
       {isAdmin && (
