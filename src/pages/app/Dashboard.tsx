@@ -668,7 +668,7 @@ export default function Dashboard() {
           {/* 3. NORTH STAR BAND */}
           <section
             className="relative overflow-hidden rounded-2xl p-8 md:p-10"
-            style={{ background: NAVY, boxShadow: "0 18px 40px -18px rgba(20,36,61,0.55)" }}
+            style={{ background: GRAD_NAVY, boxShadow: "0 18px 40px -18px rgba(20,36,61,0.55)" }}
           >
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <span className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: CORAL_LIGHT }}>★ North star</span>
@@ -683,11 +683,12 @@ export default function Dashboard() {
               $80K MRR · $960K ARR · by June 2027
             </p>
             <div className="mt-6">
-              <div className="relative h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.14)" }}>
+              <div className="relative h-3 rounded-full" style={{ background: "rgba(255,255,255,0.14)" }}>
                 <div className="h-full rounded-full transition-all" style={{ width: `${payingPct}%`, background: CORAL }} />
                 {[10, 30, 60].map((t) => (
                   <div key={t} className="absolute top-0 bottom-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.4)" }} />
                 ))}
+                <div className="ns-node" style={{ left: `${Math.max(2, Math.min(98, payingPct))}%` }} />
               </div>
               <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: NAVY_MUTED }}>
                 <span>0</span><span>50</span><span>150</span><span>300</span><span>500</span>
@@ -706,17 +707,17 @@ export default function Dashboard() {
                 Open Goals <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid-4up">
               {smartGoals.map((g) => (
-                <Link key={g.category} to="/app/goals" className="rounded-xl bg-card border border-border p-5 hover:-translate-y-0.5 hover:shadow-card transition block">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">{g.category}</span>
+                <Link key={g.category} to="/app/goals" className="paper-card p-5 block min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground truncate min-w-0">{g.category}</span>
                     {g.tracked ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5" style={{ background: "#EAF7EF", color: "#16A34A" }}>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0" style={{ background: "#E4F3E9", color: "#1F9254" }}>
                         <CheckCircle className="h-3 w-3" /> Tracked
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5" style={{ background: "#FEF3E2", color: "#D97706" }}>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0" style={{ background: "#FBEFD9", color: "#B5791C" }}>
                         <UserIcon className="h-3 w-3" /> Reported
                       </span>
                     )}
@@ -745,18 +746,18 @@ export default function Dashboard() {
                 Full analytics <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid-4up">
               {stats.map((s) => (
-                <Card key={s.label} className="p-5 border-border shadow-soft hover:shadow-card transition">
-                  <div className="flex items-start justify-between mb-4">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{s.label}</span>
-                    <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: s.tint }}>
+                <div key={s.label} className="paper-card p-5 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-4">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground truncate min-w-0">{s.label}</span>
+                    <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: s.tint }}>
                       <s.icon className="h-4 w-4" style={{ color: s.color }} />
                     </div>
                   </div>
                   <div className="font-display text-3xl tracking-tight mb-1" style={{ color: INK }}>{s.value}</div>
                   <div className="text-xs text-muted-foreground">{s.delta}</div>
-                </Card>
+                </div>
               ))}
             </div>
           </section>
