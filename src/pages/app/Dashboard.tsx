@@ -47,6 +47,19 @@ const INK = "#0E0F10";
 const NAVY_MUTED = "#AEB9C9";
 const NAVY_TINT = "#F4C9BC";
 
+// Gradient tokens for the three-color stat row + navy North Star.
+const GRAD_TODAY = "linear-gradient(135deg, #EA6350 0%, #E1503B 100%)";
+const GRAD_WEEK = "linear-gradient(135deg, #BFCBAE 0%, #AEBB9B 100%)";
+const GRAD_MONTH = "linear-gradient(135deg, #E3D6BE 0%, #D6C6A8 100%)";
+const GRAD_NAVY = "linear-gradient(135deg, #1B2A3C 0%, #13202E 100%)";
+const SHADOW_TODAY = "0 12px 28px -12px rgba(226, 83, 60, 0.55)";
+const SHADOW_WEEK = "0 12px 28px -12px rgba(140, 160, 120, 0.45)";
+const SHADOW_MONTH = "0 12px 28px -12px rgba(180, 155, 110, 0.45)";
+const PAPER = "#F4F2ED";
+const HAIRLINE = "#EAE7E1";
+const CARD_SHADOW = "0 1px 2px rgba(21,23,28,0.03)";
+const CARD_SHADOW_HOVER = "0 10px 24px rgba(21,23,28,0.07)";
+
 // ---------- date helpers ----------
 function isToday(dateStr: string | null | undefined): boolean {
   if (!dateStr) return false;
@@ -141,6 +154,10 @@ export default function Dashboard() {
   const [discovery, setDiscovery] = useState<AnyRow>(null);
   const [goalEntries, setGoalEntries] = useState<AnyRow[]>([]);
   const [bestPost, setBestPost] = useState<{ impressions: number; engagement: number; text: string; pillar: string | null } | null>(null);
+  const [pageTopPost, setPageTopPost] = useState<{
+    text: string; impressions: number; reactions: number; comments: number; clicks: number; engagementPct: number | null;
+  } | null>(null);
+  const [pageHasData, setPageHasData] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -182,6 +199,39 @@ export default function Dashboard() {
         console.error("Dashboard data load failed:", e);
       } finally {
         setLoading(false);
+      }
+    })();
+  }, [user]);
+
+  // Live LinkedIn Page leaderboard — powers Best post + "Your marketing is landing".
+  // No dependency on personal analytics; quiet state only if the Page genuinely has none.
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke("linkedin-page-analytics", {
+          method: "POST",
+          body: { days: 30 },
+        });
+        if (error) throw error;
+        const resp: any = data;
+        const posts: any[] = Array.isArray(resp?.topPosts) ? resp.topPosts : [];
+        if (posts.length > 0) {
+          const t = posts[0];
+          setPageTopPost({
+            text: (t?.text ?? "").toString(),
+            impressions: Number(t?.impressions ?? 0),
+            reactions: Number(t?.reactions ?? 0),
+            comments: Number(t?.comments ?? 0),
+            clicks: Number(t?.clicks ?? 0),
+            engagementPct: t?.engagementPct ?? null,
+          });
+          setPageHasData(true);
+        } else {
+          setPageHasData(resp?.status === "ok" || resp?.status === "empty" ? false : null);
+        }
+      } catch {
+        setPageHasData(null);
       }
     })();
   }, [user]);
@@ -247,7 +297,14 @@ export default function Dashboard() {
     { label: "Hours saved", value: hoursSaved.toFixed(1), delta: "All-time", icon: Clock, tint: CORAL_TINT, color: CORAL },
     { label: "Pieces generated", value: String(totalGenerated), delta: totalGenerated > 0 ? "All-time" : "None yet", icon: Zap, tint: SAGE_TINT, color: SAGE_LABEL },
     { label: "Alignment", value: `${alignment}%`, delta: "Strategy strength", icon: Target, tint: TAUPE_TINT, color: TAUPE_LABEL },
-    { label: "Best post", value: bestPost ? String(bestPost.impressions) : "-", delta: bestPost ? "Impressions" : "No Page data yet", icon: TrendingUp, tint: "#EFF3F8", color: NAVY },
+    {
+      label: "Best post",
+      value: pageTopPost ? String(pageTopPost.impressions) : (pageHasData === false ? "0" : "0"),
+      delta: pageTopPost ? "Impressions on top Page post" : (pageHasData === false ? "No Page posts yet" : "Loading"),
+      icon: TrendingUp,
+      tint: "#EFF3F8",
+      color: NAVY,
+    },
   ];
 
   // ---------- focus items ----------
@@ -442,7 +499,11 @@ export default function Dashboard() {
 
   const archetype = strategy?.enhanced_foundation?.brandArchetype?.name || strategy?.enhanced_foundation?.brandArchetype?.icon || null;
   const idealClient = strategy?.ideal_client || strategy?.enhanced_foundation?.idealClient?.title || null;
-  const voiceCount = Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes.length : 0;
+  const voiceAttrs: string[] = Array.isArray(strategy?.voice_attributes)
+    ? strategy.voice_attributes
+        .map((v: any) => (typeof v === "string" ? v : v?.name ?? v?.attribute ?? v?.label ?? ""))
+        .filter(Boolean)
+    : [];
   const strengthScore = strategy?.strength_score ?? 0;
 
   const smartGoals = [
@@ -453,7 +514,34 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="w-full px-6 lg:px-10 py-10 space-y-10" style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}>
+    <div
+      className="w-full px-6 lg:px-10 py-10 space-y-10 dashboard-skin"
+      style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif", background: PAPER, minHeight: "100vh" }}
+    >
+      <style>{`
+        .dashboard-skin .stat-card { transition: transform 220ms ease, box-shadow 220ms ease; }
+        .dashboard-skin .stat-card:hover { transform: translateY(-3px); }
+        .dashboard-skin .grid-4up { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 999px) { .dashboard-skin .grid-4up { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 639px) { .dashboard-skin .grid-4up { grid-template-columns: minmax(0, 1fr); } }
+        .dashboard-skin .paper-card {
+          background: #FFFFFF; border: 1px solid ${HAIRLINE}; border-radius: 16px;
+          box-shadow: ${CARD_SHADOW}; transition: transform 220ms ease, box-shadow 220ms ease;
+        }
+        .dashboard-skin .paper-card:hover { transform: translateY(-2px); box-shadow: ${CARD_SHADOW_HOVER}; }
+        .dashboard-skin .ns-node {
+          position: absolute; top: 50%; transform: translate(-50%, -50%);
+          width: 14px; height: 14px; border-radius: 999px; background: ${CORAL};
+          box-shadow: 0 0 0 4px rgba(232,90,70,0.25), 0 0 18px rgba(232,90,70,0.65);
+          animation: nsPulse 2.2s ease-in-out infinite;
+        }
+        @keyframes nsPulse {
+          0%,100% { box-shadow: 0 0 0 4px rgba(232,90,70,0.25), 0 0 18px rgba(232,90,70,0.55); }
+          50%     { box-shadow: 0 0 0 6px rgba(232,90,70,0.18), 0 0 24px rgba(232,90,70,0.85); }
+        }
+        .dashboard-skin .live-dot { animation: liveDot 1.6s ease-in-out infinite; }
+        @keyframes liveDot { 0%,100% { opacity: 1; } 50% { opacity: 0.35; } }
+      `}</style>
       {/* 1. GREETING */}
       <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
@@ -481,7 +569,8 @@ export default function Dashboard() {
             eyebrow="Today"
             title={totalDrafts > 0 ? `Review ${totalDrafts} draft${totalDrafts === 1 ? "" : "s"}` : "Nothing urgent today"}
             sub={totalDrafts > 0 ? "Approve and queue" : "Your engine is caught up"}
-            bg={CORAL}
+            bg={GRAD_TODAY}
+            shadow={SHADOW_TODAY}
             fg="#FFFFFF"
             labelColor="#FFE1D9"
             to={totalDrafts > 0 ? "/app/content" : "/app/content"}
@@ -490,7 +579,8 @@ export default function Dashboard() {
             eyebrow="This week"
             title={`${pillarsCoveredWeek} of ${pillarsTotal} pillars covered`}
             sub="Log your numbers"
-            bg={SAGE}
+            bg={GRAD_WEEK}
+            shadow={SHADOW_WEEK}
             fg={INK}
             labelColor={SAGE_LABEL}
             to="/app/goals"
@@ -499,7 +589,8 @@ export default function Dashboard() {
             eyebrow="This month"
             title={`${payingNow} of 500 users`}
             sub="See your goals"
-            bg={TAUPE}
+            bg={GRAD_MONTH}
+            shadow={SHADOW_MONTH}
             fg={INK}
             labelColor={TAUPE_LABEL}
             to="/app/goals"
@@ -577,7 +668,7 @@ export default function Dashboard() {
           {/* 3. NORTH STAR BAND */}
           <section
             className="relative overflow-hidden rounded-2xl p-8 md:p-10"
-            style={{ background: NAVY, boxShadow: "0 18px 40px -18px rgba(20,36,61,0.55)" }}
+            style={{ background: GRAD_NAVY, boxShadow: "0 18px 40px -18px rgba(20,36,61,0.55)" }}
           >
             <div className="flex flex-wrap items-center gap-2 mb-4">
               <span className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: CORAL_LIGHT }}>★ North star</span>
@@ -592,11 +683,12 @@ export default function Dashboard() {
               $80K MRR · $960K ARR · by June 2027
             </p>
             <div className="mt-6">
-              <div className="relative h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.14)" }}>
+              <div className="relative h-3 rounded-full" style={{ background: "rgba(255,255,255,0.14)" }}>
                 <div className="h-full rounded-full transition-all" style={{ width: `${payingPct}%`, background: CORAL }} />
                 {[10, 30, 60].map((t) => (
                   <div key={t} className="absolute top-0 bottom-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.4)" }} />
                 ))}
+                <div className="ns-node" style={{ left: `${Math.max(2, Math.min(98, payingPct))}%` }} />
               </div>
               <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: NAVY_MUTED }}>
                 <span>0</span><span>50</span><span>150</span><span>300</span><span>500</span>
@@ -615,17 +707,17 @@ export default function Dashboard() {
                 Open Goals <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid-4up">
               {smartGoals.map((g) => (
-                <Link key={g.category} to="/app/goals" className="rounded-xl bg-card border border-border p-5 hover:-translate-y-0.5 hover:shadow-card transition block">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">{g.category}</span>
+                <Link key={g.category} to="/app/goals" className="paper-card p-5 block min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground truncate min-w-0">{g.category}</span>
                     {g.tracked ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5" style={{ background: "#EAF7EF", color: "#16A34A" }}>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0" style={{ background: "#E4F3E9", color: "#1F9254" }}>
                         <CheckCircle className="h-3 w-3" /> Tracked
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5" style={{ background: "#FEF3E2", color: "#D97706" }}>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0" style={{ background: "#FBEFD9", color: "#B5791C" }}>
                         <UserIcon className="h-3 w-3" /> Reported
                       </span>
                     )}
@@ -654,18 +746,18 @@ export default function Dashboard() {
                 Full analytics <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid-4up">
               {stats.map((s) => (
-                <Card key={s.label} className="p-5 border-border shadow-soft hover:shadow-card transition">
-                  <div className="flex items-start justify-between mb-4">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">{s.label}</span>
-                    <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: s.tint }}>
+                <div key={s.label} className="paper-card p-5 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-4">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground truncate min-w-0">{s.label}</span>
+                    <div className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: s.tint }}>
                       <s.icon className="h-4 w-4" style={{ color: s.color }} />
                     </div>
                   </div>
                   <div className="font-display text-3xl tracking-tight mb-1" style={{ color: INK }}>{s.value}</div>
                   <div className="text-xs text-muted-foreground">{s.delta}</div>
-                </Card>
+                </div>
               ))}
             </div>
           </section>
@@ -684,7 +776,24 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
               <RecapItem label="Archetype" value={archetype || "Not set"} />
               <RecapItem label="Ideal client" value={idealClient || "Not set"} />
-              <RecapItem label="Voice" value={voiceCount > 0 ? `${voiceCount} attribute${voiceCount === 1 ? "" : "s"} defined` : "Not set"} />
+              <div>
+                <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-1.5">Voice</div>
+                {voiceAttrs.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5">
+                    {voiceAttrs.map((v) => (
+                      <span
+                        key={v}
+                        className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                        style={{ background: CORAL_TINT, color: "#C24B38", border: "1px solid #F6D4CC" }}
+                      >
+                        {v}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm font-medium text-foreground leading-snug">Not set</div>
+                )}
+              </div>
             </div>
             {pillars.length > 0 && (
               <div>
@@ -741,31 +850,30 @@ export default function Dashboard() {
                   </div>
                   <h3 className="font-semibold text-base">Your marketing is landing</h3>
                 </div>
-                {bestPost && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5" style={{ background: "#EAF7EF", color: "#16A34A" }}>
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Live
+                {pageTopPost && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5" style={{ background: "#E4F3E9", color: "#1F9254" }}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 live-dot" /> Live
                   </span>
                 )}
               </div>
-              {bestPost ? (
+              {pageTopPost ? (
                 <div className="space-y-4">
                   <div className="text-sm leading-relaxed" style={{ color: INK }}>
-                    {bestPost.text || "Top LinkedIn Page post"}
+                    {pageTopPost.text ? (pageTopPost.text.length > 140 ? pageTopPost.text.slice(0, 140) + "..." : pageTopPost.text) : "Top LinkedIn Page post"}
                   </div>
                   <div className="flex items-center gap-6">
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Impressions</div>
-                      <div className="font-display text-2xl font-semibold" style={{ color: INK }}>{bestPost.impressions}</div>
+                      <div className="font-display text-2xl font-semibold" style={{ color: INK }}>{pageTopPost.impressions}</div>
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Engagement</div>
                       <div className="font-display text-2xl font-semibold" style={{ color: INK }}>
-                        {bestPost.engagement ? `${(bestPost.engagement * 100).toFixed(1)}%` : "-"}
+                        {pageTopPost.engagementPct != null
+                          ? `${(pageTopPost.engagementPct * 100).toFixed(1)}%`
+                          : `${pageTopPost.reactions + pageTopPost.comments}`}
                       </div>
                     </div>
-                    {bestPost.pillar && (
-                      <span className="ml-auto rounded-full px-3 py-1 text-xs font-medium" style={{ background: SAGE_TINT, color: SAGE_LABEL }}>{bestPost.pillar}</span>
-                    )}
                   </div>
                   <Link to="/app/analytics" className="inline-flex items-center gap-1 text-sm font-medium hover:underline" style={{ color: CORAL }}>
                     See full analytics <ArrowRight className="h-3.5 w-3.5" />
@@ -773,7 +881,9 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div className="text-sm text-muted-foreground py-4">
-                  No LinkedIn Page data yet. Once posts land, the top performer will show here.
+                  {pageHasData === false
+                    ? "No LinkedIn Page posts in the last 30 days. Publish to your Page and the top performer will land here."
+                    : "Reading your LinkedIn Page leaderboard."}
                 </div>
               )}
             </Card>
@@ -930,15 +1040,15 @@ function EmptyState({
 }
 
 function RhythmTile({
-  eyebrow, title, sub, bg, fg, labelColor, to,
+  eyebrow, title, sub, bg, fg, labelColor, to, shadow,
 }: {
-  eyebrow: string; title: string; sub: string; bg: string; fg: string; labelColor: string; to: string;
+  eyebrow: string; title: string; sub: string; bg: string; fg: string; labelColor: string; to: string; shadow?: string;
 }) {
   return (
     <Link
       to={to}
-      className="group rounded-2xl p-6 flex flex-col justify-between transition hover:-translate-y-0.5 min-h-[140px]"
-      style={{ background: bg, color: fg }}
+      className="group rounded-2xl p-6 flex flex-col justify-between transition hover:-translate-y-1 min-h-[140px]"
+      style={{ background: bg, color: fg, boxShadow: shadow }}
     >
       <div className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: labelColor }}>{eyebrow}</div>
       <div>
