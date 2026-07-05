@@ -266,6 +266,12 @@
     --brand-ink-deep: 231 15% 7%;      /* #101116 */
     --brand-navy: 219 51% 16%;         /* #14243D */
     --brand-coral-light: 12 100% 71%;  /* #FF8A6B */
+    --brand-coral-solid: 8 78% 59%;    /* #E85A46 */
+    --brand-sage: 79 20% 71%;          /* #B8C5A6 */
+    --brand-taupe: 42 26% 79%;         /* #D8CEBD */
+    --brand-coral-tint: 14 79% 93%;    /* #FBE4DD */
+    --brand-sage-tint: 78 22% 89%;     /* #E7EBDF */
+    --brand-taupe-tint: 40 32% 89%;    /* #EDE7DB */
     --gradient-warm: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(231 15% 98%) 100%);
     --gradient-coral: linear-gradient(135deg, hsl(0 100% 71%) 0%, hsl(0 100% 81%) 100%);
     --shadow-soft: 0 1px 2px 0 hsl(0 0% 0% / 0.04), 0 1px 3px 0 hsl(0 0% 0% / 0.06);
