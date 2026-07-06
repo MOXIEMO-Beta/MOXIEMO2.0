@@ -9,6 +9,8 @@ const corsHeaders = {
 };
 
 const LI_VERSION = "202606";
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const CACHE_KIND = "page";
 
 type Stats = {
   impressionCount?: number;
@@ -90,10 +92,36 @@ Deno.serve(async (req) => {
       }
     } catch (_) { /* noop */ }
 
+    const userId = userData.user.id;
+
+    // Read cache. Serve fresh cache; keep stale for fallback on upstream failure.
+    const { data: cacheRow } = await supabase
+      .from("linkedin_analytics_cache")
+      .select("payload, fetched_at")
+      .eq("user_id", userId)
+      .eq("kind", CACHE_KIND)
+      .eq("window_days", windowDays)
+      .maybeSingle();
+    const cachedAt = cacheRow?.fetched_at ? new Date(cacheRow.fetched_at).getTime() : 0;
+    const cachedPayload = (cacheRow?.payload ?? null) as Record<string, unknown> | null;
+    if (cachedPayload && Date.now() - cachedAt < CACHE_TTL_MS) {
+      return new Response(
+        JSON.stringify({ ...cachedPayload, cached_at: cacheRow!.fetched_at, stale: false }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const serveStale = (extra: Record<string, unknown> = {}) => {
+      if (!cachedPayload) return null;
+      return new Response(
+        JSON.stringify({ ...cachedPayload, cached_at: cacheRow!.fetched_at, stale: true, ...extra }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    };
+
     const { data: rows, error: rowsErr } = await supabase
       .from("social_connections")
       .select("access_token, expires_at, organization_id, organization_name, connection_type")
-      .eq("user_id", userData.user.id)
+      .eq("user_id", userId)
       .eq("platform", "linkedin")
       .eq("connection_type", "company");
     if (rowsErr) throw rowsErr;
@@ -123,13 +151,25 @@ Deno.serve(async (req) => {
     const statsUrl = `https://api.linkedin.com/rest/organizationalEntityShareStatistics?q=organizationalEntity&organizationalEntity=${encodeURIComponent(orgUrn)}${timeIntervalsParam}`;
     const statsRes = await fetch(statsUrl, { headers: liHeaders(token) });
     if (statsRes.status === 401) {
+      const stale = serveStale({ reauth_required: true });
+      if (stale) return stale;
       return new Response(
         JSON.stringify({ status: "reauth_required", organization_name: conn.organization_name }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+    if (statsRes.status === 429) {
+      const stale = serveStale({ rate_limited: true });
+      if (stale) return stale;
+      return new Response(
+        JSON.stringify({ status: "rate_limited", organization_name: conn.organization_name }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
     if (!statsRes.ok) {
       const body = await statsRes.text();
+      const stale = serveStale();
+      if (stale) return stale;
       return new Response(
         JSON.stringify({ status: "error", http_status: statsRes.status, body: body.slice(0, 500) }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -274,25 +314,31 @@ Deno.serve(async (req) => {
       console.error("linkedin top-posts exception", e);
     }
 
+    const payload = {
+      status: impressions === 0 && topPosts.length === 0 ? "empty" as const : "ok" as const,
+      organization_name: conn.organization_name,
+      organization_id: conn.organization_id,
+      expires_at: conn.expires_at,
+      window_days: windowDays,
+      stats: {
+        impressions,
+        reach: total.uniqueImpressionsCount ?? 0,
+        reactions: total.likeCount ?? 0,
+        comments: total.commentCount ?? 0,
+        shares: total.shareCount ?? 0,
+        clicks: total.clickCount ?? 0,
+        engagementPct,
+      },
+      topPosts,
+      diagnostic: diag,
+    };
+    const nowIso = new Date().toISOString();
+    await supabase.from("linkedin_analytics_cache").upsert({
+      user_id: userId, kind: CACHE_KIND, window_days: windowDays,
+      payload, fetched_at: nowIso,
+    }, { onConflict: "user_id,kind,window_days" });
     return new Response(
-      JSON.stringify({
-        status: impressions === 0 && topPosts.length === 0 ? "empty" : "ok",
-        organization_name: conn.organization_name,
-        organization_id: conn.organization_id,
-        expires_at: conn.expires_at,
-        window_days: windowDays,
-        stats: {
-          impressions,
-          reach: total.uniqueImpressionsCount ?? 0,
-          reactions: total.likeCount ?? 0,
-          comments: total.commentCount ?? 0,
-          shares: total.shareCount ?? 0,
-          clicks: total.clickCount ?? 0,
-          engagementPct,
-        },
-        topPosts,
-        diagnostic: diag,
-      }),
+      JSON.stringify({ ...payload, cached_at: nowIso, stale: false }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err) {
