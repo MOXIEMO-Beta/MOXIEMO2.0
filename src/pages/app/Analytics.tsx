@@ -144,6 +144,19 @@ function extractUrns(v: SocialPost["platform_post_ids"]): string[] {
   return [];
 }
 
+function relativeTime(iso?: string | null): string | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return null;
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return "updated just now";
+  const m = Math.round(s / 60);
+  if (m < 60) return `updated ${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `updated ${h} hr ago`;
+  return "updated a while ago";
+}
+
 export default function Analytics() {
   const { user } = useAuth();
   const navigate = useNavigate();
