@@ -383,7 +383,7 @@ export default function Settings() {
           </div>
           <button onClick={connectCompanyPage} disabled={connecting === "linkedin_pages"} className="text-[12px] font-semibold"
             style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 32, padding: "0 14px", boxShadow: "0 4px 14px rgba(232,90,70,0.25)" }}>
-            {connecting === "linkedin_pages" ? "Connecting…" : companyPages.length > 0 ? "Connect another page" : "Connect LinkedIn"}
+            {connecting === "linkedin_pages" ? "Connecting…" : companyPages.length > 0 ? "Connect another page" : "Connect"}
           </button>
         </div>
 
