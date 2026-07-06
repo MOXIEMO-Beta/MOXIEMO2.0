@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { ArrowRight, Shield, Linkedin, Facebook, Instagram, Mail, Calendar as CalIcon, Lightbulb, Megaphone, Sparkles, FileText } from "lucide-react";
+import { LinkedInAnalyticsProbe } from "@/components/LinkedInAnalyticsProbe";
 
 type SocialConn = {
   id: string;
@@ -446,6 +447,7 @@ export default function Settings() {
           </div>
           <span className="text-[10px] font-semibold" style={{ background: "#FEF3C7", color: "#854F0B", borderRadius: 4, padding: "2px 8px" }}>Pending verification</span>
         </div>
+        {isAdmin && <LinkedInAnalyticsProbe />}
       </div>
 
       {isAdmin && (
