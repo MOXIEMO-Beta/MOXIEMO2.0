@@ -38,7 +38,11 @@ function sumValues(json: unknown): number {
     : [];
   let total = 0;
   for (const el of els) {
-    const v = Number((el as { value?: unknown }).value ?? 0);
+    // memberCreatorPostAnalytics returns { elements: [{ count, dateRange, ... }] }.
+    // Older shapes used `value`. Accept either.
+    const raw = (el as { count?: unknown; value?: unknown }).count ??
+      (el as { value?: unknown }).value ?? 0;
+    const v = Number(raw);
     if (Number.isFinite(v)) total += v;
   }
   return total;
