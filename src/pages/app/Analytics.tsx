@@ -604,16 +604,6 @@ export default function Analytics() {
             Reconnect LinkedIn to read personal profile analytics. LinkedIn tokens expire every 60 days.
           </p>
         )}
-        {memberImpressionsAttempt && (
-          <div style={{ marginTop: "0.85rem", background: SURFACE_1, border: BORDER, borderRadius: 10, padding: "0.75rem 0.85rem" }}>
-            <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 4 }}>Member analytics call</div>
-            <div style={{ fontSize: 11.5, color: TEXT_SECONDARY, overflowWrap: "anywhere", lineHeight: 1.45 }}>
-              URL: {memberImpressionsAttempt.url}<br />
-              Status: {memberImpressionsAttempt.status}<br />
-              Body: {memberImpressionsAttempt.body || "No response body"}
-            </div>
-          </div>
-        )}
       </Card>
 
       {/* Meta coming-soon (quiet) */}
