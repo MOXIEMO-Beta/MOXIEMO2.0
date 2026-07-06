@@ -123,6 +123,70 @@ Deno.serve(async (req) => {
         )
       : { url: "", status: 0, ok: false, body: "no_org_token" };
 
+    // Probe C/D — member posts listing + per-post analytics using Pages token.
+    let personUrn: string | null = null;
+    let probeC: { url: string; status: number; ok: boolean; count: number; body: string } = {
+      url: "", status: 0, ok: false, count: 0, body: orgToken ? "" : "no_org_token",
+    };
+    let probeD: { url: string; status: number; ok: boolean; body: string } = {
+      url: "", status: 0, ok: false, body: "not_run",
+    };
+
+    if (orgToken) {
+      try {
+        const meRes = await fetch("https://api.linkedin.com/v2/me", {
+          headers: { Authorization: `Bearer ${orgToken}` },
+        });
+        const meBody = await meRes.text();
+        console.log("probe /v2/me", { status: meRes.status, body: meBody.slice(0, 500) });
+        if (meRes.ok) {
+          try {
+            const j = JSON.parse(meBody);
+            if (typeof j?.id === "string") personUrn = `urn:li:person:${j.id}`;
+          } catch { /* noop */ }
+        }
+      } catch (e) {
+        console.log("probe /v2/me failed", String(e));
+      }
+
+      if (personUrn) {
+        const urlC = `https://api.linkedin.com/rest/posts?q=author&author=${encodeURIComponent(personUrn)}&count=10`;
+        try {
+          const rC = await fetch(urlC, { headers: liHeadersLocal(orgToken) });
+          const bodyC = await rC.text();
+          let countC = 0;
+          let firstPostUrn: string | null = null;
+          try {
+            const j = JSON.parse(bodyC);
+            const els = Array.isArray(j?.elements) ? j.elements : [];
+            countC = els.length;
+            const first = els[0];
+            if (first && typeof first.id === "string") firstPostUrn = first.id;
+          } catch { /* noop */ }
+          probeC = { url: urlC, status: rC.status, ok: rC.ok, count: countC, body: bodyC.slice(0, 1500) };
+          console.log("probeC member posts", { url: urlC, status: rC.status, ok: rC.ok, count: countC, body: bodyC.slice(0, 1500) });
+
+          if (rC.ok && firstPostUrn) {
+            const entityList = `List(${firstPostUrn})`;
+            const urlD = `https://api.linkedin.com/rest/memberCreatorPostAnalytics?q=entity&entity=${encodeURIComponent(entityList)}&queryType=IMPRESSION`;
+            const rD = await fetch(urlD, { headers: liHeadersLocal(orgToken) });
+            const bodyD = await rD.text();
+            probeD = { url: urlD, status: rD.status, ok: rD.ok, body: bodyD.slice(0, 1500) };
+            console.log("probeD per-post analytics", { url: urlD, status: rD.status, ok: rD.ok, body: bodyD.slice(0, 1500) });
+          } else {
+            probeD = { url: "", status: 0, ok: false, body: firstPostUrn ? "probeC_not_ok" : "no_posts_returned" };
+          }
+        } catch (e) {
+          probeC = { url: urlC, status: 0, ok: false, count: 0, body: `fetch_error: ${String(e)}` };
+        }
+      } else {
+        probeC = { url: "", status: 0, ok: false, count: 0, body: "no_person_urn" };
+      }
+    }
+
+    const memberPostsProbe = { personUrn, probeC, probeD };
+    console.log("memberPostsProbe", JSON.stringify(memberPostsProbe, null, 2));
+
     const result = {
       personal: {
         tokenPresent: !!personalToken,
@@ -144,6 +208,7 @@ Deno.serve(async (req) => {
         probeB,
       },
       memberProbe,
+      memberPostsProbe,
     };
 
     console.log("linkedin-analytics-probe result:", JSON.stringify(result, null, 2));
