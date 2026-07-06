@@ -13,6 +13,8 @@ const corsHeaders = {
 };
 
 const LI_VERSION = "202606";
+const CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const CACHE_KIND = "member";
 
 function liHeaders(token: string) {
   return {
@@ -76,10 +78,36 @@ Deno.serve(async (req) => {
       }
     } catch (_) { /* noop */ }
 
+    const userId = userData.user.id;
+
+    // Read cache. Serve fresh cache immediately; keep stale for fallback on upstream failure.
+    const { data: cacheRow } = await supabase
+      .from("linkedin_analytics_cache")
+      .select("payload, fetched_at")
+      .eq("user_id", userId)
+      .eq("kind", CACHE_KIND)
+      .eq("window_days", windowDays)
+      .maybeSingle();
+    const cachedAt = cacheRow?.fetched_at ? new Date(cacheRow.fetched_at).getTime() : 0;
+    const cachedPayload = (cacheRow?.payload ?? null) as Record<string, unknown> | null;
+    if (cachedPayload && Date.now() - cachedAt < CACHE_TTL_MS) {
+      return new Response(
+        JSON.stringify({ ...cachedPayload, cached_at: cacheRow!.fetched_at, stale: false }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+    const serveStale = (extra: Record<string, unknown> = {}) => {
+      if (!cachedPayload) return null;
+      return new Response(
+        JSON.stringify({ ...cachedPayload, cached_at: cacheRow!.fetched_at, stale: true, ...extra }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    };
+
     const { data: rows, error: rowsErr } = await supabase
       .from("social_connections")
       .select("access_token, expires_at, connection_type, profile_name, organization_name")
-      .eq("user_id", userData.user.id)
+      .eq("user_id", userId)
       .eq("platform", "linkedin");
     if (rowsErr) throw rowsErr;
 
@@ -127,6 +155,7 @@ Deno.serve(async (req) => {
     const results: Record<string, number> = {};
     let sawAuthError = false;
     let sawOk = false;
+    let sawRateLimit = false;
 
     for (const q of queries) {
       let url = `${base}&queryType=${q.type}${dateRangeParam}`;
@@ -146,6 +175,7 @@ Deno.serve(async (req) => {
       attempts.push({ query: q.type, url, status: r.status, ok: r.ok, body: bodyText.slice(0, 1500) });
       console.log("member-analytics", { queryType: q.type, url, status: r.status, body: bodyText.slice(0, 1500), days: effectiveWindowDays });
       if (r.status === 401) { sawAuthError = true; continue; }
+      if (r.status === 429) { sawRateLimit = true; continue; }
       if (!r.ok) continue;
       sawOk = true;
       try {
@@ -161,6 +191,7 @@ Deno.serve(async (req) => {
       const pBody = await pr.text();
       console.log("member-profile-analytics", { status: pr.status, days: windowDays });
       if (pr.status === 401) sawAuthError = true;
+      if (pr.status === 429) sawRateLimit = true;
       if (pr.ok) {
         try { profileAnalyticsJson = JSON.parse(pBody); } catch { profileAnalyticsJson = null; }
       }
@@ -176,31 +207,51 @@ Deno.serve(async (req) => {
       const engagementPct = impressions > 0
         ? Math.round(((reactions + comments) / impressions) * 10000) / 100
         : 0;
+      const payload = {
+        status: "ok" as const,
+        profile_name: profileName,
+        window_days: effectiveWindowDays,
+        window_label: effectiveWindowDays > 0 ? `last ${effectiveWindowDays} days` : "all time",
+        impressions,
+        reach,
+        reactions,
+        comments,
+        engagementPct,
+        profile_analytics: profileAnalyticsJson,
+        attempts,
+      };
+      const nowIso = new Date().toISOString();
+      await supabase.from("linkedin_analytics_cache").upsert({
+        user_id: userId, kind: CACHE_KIND, window_days: windowDays,
+        payload, fetched_at: nowIso,
+      }, { onConflict: "user_id,kind,window_days" });
       return new Response(
-        JSON.stringify({
-          status: "ok",
-          profile_name: profileName,
-          window_days: effectiveWindowDays,
-          window_label: effectiveWindowDays > 0 ? `last ${effectiveWindowDays} days` : "all time",
-          impressions,
-          reach,
-          reactions,
-          comments,
-          engagementPct,
-          profile_analytics: profileAnalyticsJson,
-          attempts,
-        }),
+        JSON.stringify({ ...payload, cached_at: nowIso, stale: false }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Upstream failure paths: prefer serving stale cache when available.
+    if (sawRateLimit) {
+      const stale = serveStale({ rate_limited: true });
+      if (stale) return stale;
+      return new Response(
+        JSON.stringify({ status: "rate_limited" }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     if (sawAuthError) {
+      const stale = serveStale({ reauth_required: true });
+      if (stale) return stale;
       return new Response(
         JSON.stringify({ status: "reauth_required", attempts }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
+    const staleAny = serveStale();
+    if (staleAny) return staleAny;
     const firstFailure = attempts.find((a) => !a.ok) ?? attempts[0] ?? null;
     return new Response(
       JSON.stringify({
