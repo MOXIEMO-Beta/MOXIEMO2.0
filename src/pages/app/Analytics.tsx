@@ -47,11 +47,14 @@ type PageTopPost = {
   reactions: number; comments: number; clicks: number; engagementPct: number | null;
 };
 type PageResp =
-  | { status: "ok"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number }
-  | { status: "empty"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number }
+  | ({ status: "ok"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number } & CacheMeta)
+  | ({ status: "empty"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number } & CacheMeta)
   | { status: "not_connected" }
-  | { status: "reauth_required"; organization_name?: string | null }
-  | { status: "error"; http_status?: number; body?: string; error?: string };
+  | ({ status: "reauth_required"; organization_name?: string | null } & CacheMeta)
+  | ({ status: "rate_limited"; organization_name?: string | null } & CacheMeta)
+  | ({ status: "error"; http_status?: number; body?: string; error?: string } & CacheMeta);
+
+type CacheMeta = { cached_at?: string; stale?: boolean; rate_limited?: boolean; reauth_required?: boolean };
 
 type MemberResp =
   | {
