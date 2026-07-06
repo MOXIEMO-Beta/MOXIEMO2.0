@@ -473,10 +473,12 @@ export default function Analytics() {
               style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, padding: "3px 9px", borderRadius: 999, background: WARN_BG, color: WARN_FG, border: "none", cursor: "pointer" }}>
               <RefreshCw size={12} /> Reconnect LinkedIn
             </button>
-          ) : pageIsLive ? (
+          ) : pageIsLive && !pageStale ? (
             <Badge tone="live"><CircleDot size={8} /> Live from LinkedIn</Badge>
+          ) : pageStale || pageIsRateLimited ? (
+            <Badge tone="pending"><Clock size={12} /> {relativeTime(pageCachedAt) ?? "Refreshing shortly"}</Badge>
           ) : pageIsError ? (
-            <Badge tone="pending"><RefreshCw size={12} /> Retrying</Badge>
+            <Badge tone="pending"><Clock size={12} /> Refreshing shortly</Badge>
           ) : pageLoading ? (
             <Badge tone="pending"><Clock size={12} /> Loading</Badge>
           ) : (
