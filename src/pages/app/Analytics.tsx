@@ -47,14 +47,17 @@ type PageTopPost = {
   reactions: number; comments: number; clicks: number; engagementPct: number | null;
 };
 type PageResp =
-  | { status: "ok"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number }
-  | { status: "empty"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number }
+  | ({ status: "ok"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number } & CacheMeta)
+  | ({ status: "empty"; organization_name: string | null; stats: PageStats; topPosts: PageTopPost[]; window_days?: number } & CacheMeta)
   | { status: "not_connected" }
-  | { status: "reauth_required"; organization_name?: string | null }
-  | { status: "error"; http_status?: number; body?: string; error?: string };
+  | ({ status: "reauth_required"; organization_name?: string | null } & CacheMeta)
+  | ({ status: "rate_limited"; organization_name?: string | null } & CacheMeta)
+  | ({ status: "error"; http_status?: number; body?: string; error?: string } & CacheMeta);
+
+type CacheMeta = { cached_at?: string; stale?: boolean; rate_limited?: boolean; reauth_required?: boolean };
 
 type MemberResp =
-  | {
+  | ({
       status: "ok";
       profile_name: string | null;
       window_days?: number;
@@ -65,10 +68,11 @@ type MemberResp =
       comments: number;
       engagementPct: number;
       attempts?: MemberAttempt[];
-    }
-  | { status: "reauth_required"; attempts?: MemberAttempt[] }
+    } & CacheMeta)
+  | ({ status: "reauth_required"; attempts?: MemberAttempt[] } & CacheMeta)
+  | ({ status: "rate_limited" } & CacheMeta)
   | { status: "not_connected" }
-  | { status: "error"; http_status?: number; error?: string; attempts?: MemberAttempt[] };
+  | ({ status: "error"; http_status?: number; error?: string; attempts?: MemberAttempt[] } & CacheMeta);
 
 type MemberAttempt = {
   query: string;
@@ -140,6 +144,19 @@ function extractUrns(v: SocialPost["platform_post_ids"]): string[] {
   return [];
 }
 
+function relativeTime(iso?: string | null): string | null {
+  if (!iso) return null;
+  const t = new Date(iso).getTime();
+  if (!Number.isFinite(t)) return null;
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return "updated just now";
+  const m = Math.round(s / 60);
+  if (m < 60) return `updated ${m} min ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `updated ${h} hr ago`;
+  return "updated a while ago";
+}
+
 export default function Analytics() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -151,7 +168,6 @@ export default function Analytics() {
   const [connections, setConnections] = useState<SocialConn[]>([]);
   const [pageResp, setPageResp] = useState<PageResp | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [pageRetryCount, setPageRetryCount] = useState(0);
   const [memberResp, setMemberResp] = useState<MemberResp | null>(null);
   const [memberLoading, setMemberLoading] = useState(true);
   const [range, setRange] = useState<RangeKey>("30");
@@ -195,7 +211,6 @@ export default function Analytics() {
 
   useEffect(() => {
     if (!user) return;
-    setPageRetryCount(0);
     void fetchPage();
   }, [user, fetchPage]);
 
@@ -222,16 +237,6 @@ export default function Analytics() {
     if (!user) return;
     void fetchMember();
   }, [user, fetchMember]);
-
-  // Quiet retry for transient errors (max 2 retries).
-  useEffect(() => {
-    if (pageResp?.status !== "error" || pageRetryCount >= 2) return;
-    const t = setTimeout(() => {
-      setPageRetryCount((c) => c + 1);
-      void fetchPage();
-    }, 4000 * (pageRetryCount + 1));
-    return () => clearTimeout(t);
-  }, [pageResp, pageRetryCount, fetchPage]);
 
   const orgConn = useMemo(() => connections.find((c) => c.connection_type === "company") ?? null, [connections]);
 
@@ -267,7 +272,10 @@ export default function Analytics() {
   const pageIsLive = pageResp?.status === "ok";
   const pageIsEmpty = pageResp?.status === "empty";
   const pageNeedsReauth = pageResp?.status === "reauth_required";
+  const pageIsRateLimited = pageResp?.status === "rate_limited" || !!(pageResp && "rate_limited" in pageResp && (pageResp as { rate_limited?: boolean }).rate_limited);
   const pageIsError = pageResp?.status === "error";
+  const pageStale = !!(pageResp && "stale" in pageResp && (pageResp as { stale?: boolean }).stale);
+  const pageCachedAt = (pageResp && "cached_at" in pageResp ? (pageResp as { cached_at?: string }).cached_at : undefined);
   const rangeLabel = RANGE_LABELS[range];
 
   // Enrich top posts with pillar tags derived from MOXIEMO records.
@@ -347,23 +355,20 @@ export default function Analytics() {
 
   const memberAttempts: MemberAttempt[] =
     memberResp && "attempts" in memberResp && Array.isArray(memberResp.attempts) ? memberResp.attempts : [];
-  const memberImpressionsAttempt = memberAttempts.find((a) => a.query === "IMPRESSION") ?? memberAttempts[0] ?? null;
-  const memberStatusLabel = memberLoading
+  void memberAttempts;
+  const memberStale = !!(memberResp && "stale" in memberResp && (memberResp as { stale?: boolean }).stale);
+  const memberCachedAt = (memberResp && "cached_at" in memberResp ? (memberResp as { cached_at?: string }).cached_at : undefined);
+  const memberIsRateLimited = memberResp?.status === "rate_limited" || !!(memberResp && "rate_limited" in memberResp && (memberResp as { rate_limited?: boolean }).rate_limited);
+  const memberCalmLabel = memberLoading
     ? "Loading"
-    : memberResp?.status === "ok"
-      ? "200"
+    : memberResp?.status === "not_connected"
+      ? "Not connected"
       : memberResp?.status === "reauth_required"
-        ? "401"
-        : memberResp?.status === "not_connected"
-          ? "Not connected"
-          : memberResp?.status === "error" && memberResp.http_status
-            ? String(memberResp.http_status)
-            : memberImpressionsAttempt
-              ? String(memberImpressionsAttempt.status)
-              : "Unavailable";
-  const memberImpressionsValue = memberResp?.status === "ok" ? memberResp.impressions.toLocaleString() : memberStatusLabel;
-  const memberReachValue = memberResp?.status === "ok" ? memberResp.reach.toLocaleString() : memberStatusLabel;
-  const memberEngagementValue = memberResp?.status === "ok" ? `${memberResp.engagementPct}%` : memberStatusLabel;
+        ? "Reconnect needed"
+        : "Refreshing shortly";
+  const memberImpressionsValue = memberResp?.status === "ok" ? memberResp.impressions.toLocaleString() : memberCalmLabel;
+  const memberReachValue = memberResp?.status === "ok" ? memberResp.reach.toLocaleString() : memberCalmLabel;
+  const memberEngagementValue = memberResp?.status === "ok" ? `${memberResp.engagementPct}%` : memberCalmLabel;
 
   function goCreate(pillar?: string) {
     const q = pillar ? `?pillar=${encodeURIComponent(pillar)}` : "";
@@ -468,10 +473,12 @@ export default function Analytics() {
               style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, padding: "3px 9px", borderRadius: 999, background: WARN_BG, color: WARN_FG, border: "none", cursor: "pointer" }}>
               <RefreshCw size={12} /> Reconnect LinkedIn
             </button>
-          ) : pageIsLive ? (
+          ) : pageIsLive && !pageStale ? (
             <Badge tone="live"><CircleDot size={8} /> Live from LinkedIn</Badge>
+          ) : pageStale || pageIsRateLimited ? (
+            <Badge tone="pending"><Clock size={12} /> {relativeTime(pageCachedAt) ?? "Refreshing shortly"}</Badge>
           ) : pageIsError ? (
-            <Badge tone="pending"><RefreshCw size={12} /> Retrying</Badge>
+            <Badge tone="pending"><Clock size={12} /> Refreshing shortly</Badge>
           ) : pageLoading ? (
             <Badge tone="pending"><Clock size={12} /> Loading</Badge>
           ) : (
@@ -574,17 +581,19 @@ export default function Analytics() {
               <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>{rangeLabel}</span>
             </div>
           </div>
-          {memberResp?.status === "ok" ? (
+          {memberResp?.status === "ok" && !memberStale ? (
             <Badge tone="live"><CircleDot size={8} /> Live from LinkedIn</Badge>
           ) : memberResp?.status === "reauth_required" ? (
             <button onClick={() => navigate("/app/settings?tab=integrations")}
               style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, padding: "3px 9px", borderRadius: 999, background: WARN_BG, color: WARN_FG, border: "none", cursor: "pointer" }}>
               <RefreshCw size={12} /> Reconnect LinkedIn
             </button>
+          ) : memberStale || memberIsRateLimited ? (
+            <Badge tone="pending"><Clock size={12} /> {relativeTime(memberCachedAt) ?? "Refreshing shortly"}</Badge>
           ) : memberLoading ? (
             <Badge tone="pending"><Clock size={12} /> Loading</Badge>
           ) : (
-            <Badge tone="pending"><AlertTriangle size={12} /> Status {memberStatusLabel}</Badge>
+            <Badge tone="pending"><Clock size={12} /> Refreshing shortly</Badge>
           )}
         </div>
         <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
