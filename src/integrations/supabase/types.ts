@@ -945,6 +945,30 @@ export type Database = {
           },
         ]
       }
+      linkedin_analytics_cache: {
+        Row: {
+          fetched_at: string
+          kind: string
+          payload: Json
+          user_id: string
+          window_days: number
+        }
+        Insert: {
+          fetched_at?: string
+          kind: string
+          payload: Json
+          user_id: string
+          window_days: number
+        }
+        Update: {
+          fetched_at?: string
+          kind?: string
+          payload?: Json
+          user_id?: string
+          window_days?: number
+        }
+        Relationships: []
+      }
       onboarding_responses: {
         Row: {
           completed_at: string | null
