@@ -10,6 +10,14 @@ const corsHeaders = {
 
 const LI_VERSION = "202606";
 
+function liHeadersLocal(token: string) {
+  return {
+    Authorization: `Bearer ${token}`,
+    "LinkedIn-Version": LI_VERSION,
+    "X-Restli-Protocol-Version": "2.0.0",
+  };
+}
+
 async function introspect(token: string, clientId?: string, clientSecret?: string): Promise<string | null> {
   if (!clientId || !clientSecret) return null;
   try {
