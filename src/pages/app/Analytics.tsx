@@ -57,7 +57,7 @@ type PageResp =
 type CacheMeta = { cached_at?: string; stale?: boolean; rate_limited?: boolean; reauth_required?: boolean };
 
 type MemberResp =
-  | {
+  | ({
       status: "ok";
       profile_name: string | null;
       window_days?: number;
@@ -68,10 +68,11 @@ type MemberResp =
       comments: number;
       engagementPct: number;
       attempts?: MemberAttempt[];
-    }
-  | { status: "reauth_required"; attempts?: MemberAttempt[] }
+    } & CacheMeta)
+  | ({ status: "reauth_required"; attempts?: MemberAttempt[] } & CacheMeta)
+  | ({ status: "rate_limited" } & CacheMeta)
   | { status: "not_connected" }
-  | { status: "error"; http_status?: number; error?: string; attempts?: MemberAttempt[] };
+  | ({ status: "error"; http_status?: number; error?: string; attempts?: MemberAttempt[] } & CacheMeta);
 
 type MemberAttempt = {
   query: string;
