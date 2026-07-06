@@ -355,23 +355,20 @@ export default function Analytics() {
 
   const memberAttempts: MemberAttempt[] =
     memberResp && "attempts" in memberResp && Array.isArray(memberResp.attempts) ? memberResp.attempts : [];
-  const memberImpressionsAttempt = memberAttempts.find((a) => a.query === "IMPRESSION") ?? memberAttempts[0] ?? null;
-  const memberStatusLabel = memberLoading
+  void memberAttempts;
+  const memberStale = !!(memberResp && "stale" in memberResp && (memberResp as { stale?: boolean }).stale);
+  const memberCachedAt = (memberResp && "cached_at" in memberResp ? (memberResp as { cached_at?: string }).cached_at : undefined);
+  const memberIsRateLimited = memberResp?.status === "rate_limited" || !!(memberResp && "rate_limited" in memberResp && (memberResp as { rate_limited?: boolean }).rate_limited);
+  const memberCalmLabel = memberLoading
     ? "Loading"
-    : memberResp?.status === "ok"
-      ? "200"
+    : memberResp?.status === "not_connected"
+      ? "Not connected"
       : memberResp?.status === "reauth_required"
-        ? "401"
-        : memberResp?.status === "not_connected"
-          ? "Not connected"
-          : memberResp?.status === "error" && memberResp.http_status
-            ? String(memberResp.http_status)
-            : memberImpressionsAttempt
-              ? String(memberImpressionsAttempt.status)
-              : "Unavailable";
-  const memberImpressionsValue = memberResp?.status === "ok" ? memberResp.impressions.toLocaleString() : memberStatusLabel;
-  const memberReachValue = memberResp?.status === "ok" ? memberResp.reach.toLocaleString() : memberStatusLabel;
-  const memberEngagementValue = memberResp?.status === "ok" ? `${memberResp.engagementPct}%` : memberStatusLabel;
+        ? "Reconnect needed"
+        : "Refreshing shortly";
+  const memberImpressionsValue = memberResp?.status === "ok" ? memberResp.impressions.toLocaleString() : memberCalmLabel;
+  const memberReachValue = memberResp?.status === "ok" ? memberResp.reach.toLocaleString() : memberCalmLabel;
+  const memberEngagementValue = memberResp?.status === "ok" ? `${memberResp.engagementPct}%` : memberCalmLabel;
 
   function goCreate(pillar?: string) {
     const q = pillar ? `?pillar=${encodeURIComponent(pillar)}` : "";
