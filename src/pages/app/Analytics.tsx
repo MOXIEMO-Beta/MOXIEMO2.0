@@ -155,7 +155,6 @@ export default function Analytics() {
   const [connections, setConnections] = useState<SocialConn[]>([]);
   const [pageResp, setPageResp] = useState<PageResp | null>(null);
   const [pageLoading, setPageLoading] = useState(true);
-  const [pageRetryCount, setPageRetryCount] = useState(0);
   const [memberResp, setMemberResp] = useState<MemberResp | null>(null);
   const [memberLoading, setMemberLoading] = useState(true);
   const [range, setRange] = useState<RangeKey>("30");
