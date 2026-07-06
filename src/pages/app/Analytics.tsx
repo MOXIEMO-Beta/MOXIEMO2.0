@@ -579,17 +579,19 @@ export default function Analytics() {
               <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>{rangeLabel}</span>
             </div>
           </div>
-          {memberResp?.status === "ok" ? (
+          {memberResp?.status === "ok" && !memberStale ? (
             <Badge tone="live"><CircleDot size={8} /> Live from LinkedIn</Badge>
           ) : memberResp?.status === "reauth_required" ? (
             <button onClick={() => navigate("/app/settings?tab=integrations")}
               style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, padding: "3px 9px", borderRadius: 999, background: WARN_BG, color: WARN_FG, border: "none", cursor: "pointer" }}>
               <RefreshCw size={12} /> Reconnect LinkedIn
             </button>
+          ) : memberStale || memberIsRateLimited ? (
+            <Badge tone="pending"><Clock size={12} /> {relativeTime(memberCachedAt) ?? "Refreshing shortly"}</Badge>
           ) : memberLoading ? (
             <Badge tone="pending"><Clock size={12} /> Loading</Badge>
           ) : (
-            <Badge tone="pending"><AlertTriangle size={12} /> Status {memberStatusLabel}</Badge>
+            <Badge tone="pending"><Clock size={12} /> Refreshing shortly</Badge>
           )}
         </div>
         <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
