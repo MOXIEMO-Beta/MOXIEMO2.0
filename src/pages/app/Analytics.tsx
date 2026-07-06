@@ -198,7 +198,6 @@ export default function Analytics() {
 
   useEffect(() => {
     if (!user) return;
-    setPageRetryCount(0);
     void fetchPage();
   }, [user, fetchPage]);
 
@@ -225,16 +224,6 @@ export default function Analytics() {
     if (!user) return;
     void fetchMember();
   }, [user, fetchMember]);
-
-  // Quiet retry for transient errors (max 2 retries).
-  useEffect(() => {
-    if (pageResp?.status !== "error" || pageRetryCount >= 2) return;
-    const t = setTimeout(() => {
-      setPageRetryCount((c) => c + 1);
-      void fetchPage();
-    }, 4000 * (pageRetryCount + 1));
-    return () => clearTimeout(t);
-  }, [pageResp, pageRetryCount, fetchPage]);
 
   const orgConn = useMemo(() => connections.find((c) => c.connection_type === "company") ?? null, [connections]);
 
