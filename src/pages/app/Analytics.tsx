@@ -272,7 +272,10 @@ export default function Analytics() {
   const pageIsLive = pageResp?.status === "ok";
   const pageIsEmpty = pageResp?.status === "empty";
   const pageNeedsReauth = pageResp?.status === "reauth_required";
+  const pageIsRateLimited = pageResp?.status === "rate_limited" || !!(pageResp && "rate_limited" in pageResp && (pageResp as { rate_limited?: boolean }).rate_limited);
   const pageIsError = pageResp?.status === "error";
+  const pageStale = !!(pageResp && "stale" in pageResp && (pageResp as { stale?: boolean }).stale);
+  const pageCachedAt = (pageResp && "cached_at" in pageResp ? (pageResp as { cached_at?: string }).cached_at : undefined);
   const rangeLabel = RANGE_LABELS[range];
 
   // Enrich top posts with pillar tags derived from MOXIEMO records.
