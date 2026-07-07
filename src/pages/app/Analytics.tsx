@@ -380,8 +380,10 @@ export default function Analytics() {
   const memberCommentsValue = memberResp?.status === "ok" ? memberResp.comments.toLocaleString() : memberCalmLabel;
   const memberFollowersGained = memberResp?.status === "ok" ? (memberResp.followersGained ?? null) : null;
   const memberFollowersPrior = memberResp?.status === "ok" ? (memberResp.followersGainedPrior ?? null) : null;
-  const memberProfileViewers = memberResp?.status === "ok" ? (memberResp.profileViewers ?? null) : null;
-  const memberSearchAppearances = memberResp?.status === "ok" ? (memberResp.searchAppearances ?? null) : null;
+  const memberTotalFollowers = memberResp?.status === "ok" ? (memberResp.followerCountLifetime ?? null) : null;
+  const memberReposts = memberResp?.status === "ok" ? (memberResp.reposts ?? null) : null;
+  const memberProfile = memberResp?.status === "ok" ? (memberResp.profile ?? null) : null;
+  const memberProfileViewers: number | null = null;
   const followersTrend = (() => {
     if (memberFollowersGained == null || memberFollowersPrior == null) return null;
     const delta = memberFollowersGained - memberFollowersPrior;
