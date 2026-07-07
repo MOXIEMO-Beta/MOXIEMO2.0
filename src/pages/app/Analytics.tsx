@@ -60,12 +60,14 @@ type MemberResp =
   | ({
       status: "ok";
       profile_name: string | null;
+      profile?: { name: string | null; headline: string | null; pictureUrl: string | null } | null;
       window_days?: number;
       window_label?: string;
       impressions: number;
       reach: number;
       reactions: number;
       comments: number;
+      reposts?: number;
       engagementPct: number;
       followersGained?: number | null;
       followersGainedPrior?: number | null;
