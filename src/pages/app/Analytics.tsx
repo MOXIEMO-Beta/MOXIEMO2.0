@@ -60,12 +60,14 @@ type MemberResp =
   | ({
       status: "ok";
       profile_name: string | null;
+      profile?: { name: string | null; headline: string | null; pictureUrl: string | null } | null;
       window_days?: number;
       window_label?: string;
       impressions: number;
       reach: number;
       reactions: number;
       comments: number;
+      reposts?: number;
       engagementPct: number;
       followersGained?: number | null;
       followersGainedPrior?: number | null;
@@ -378,8 +380,10 @@ export default function Analytics() {
   const memberCommentsValue = memberResp?.status === "ok" ? memberResp.comments.toLocaleString() : memberCalmLabel;
   const memberFollowersGained = memberResp?.status === "ok" ? (memberResp.followersGained ?? null) : null;
   const memberFollowersPrior = memberResp?.status === "ok" ? (memberResp.followersGainedPrior ?? null) : null;
-  const memberProfileViewers = memberResp?.status === "ok" ? (memberResp.profileViewers ?? null) : null;
-  const memberSearchAppearances = memberResp?.status === "ok" ? (memberResp.searchAppearances ?? null) : null;
+  const memberTotalFollowers = memberResp?.status === "ok" ? (memberResp.followerCountLifetime ?? null) : null;
+  const memberReposts = memberResp?.status === "ok" ? (memberResp.reposts ?? null) : null;
+  const memberProfile = memberResp?.status === "ok" ? (memberResp.profile ?? null) : null;
+  const memberProfileViewers: number | null = null;
   const followersTrend = (() => {
     if (memberFollowersGained == null || memberFollowersPrior == null) return null;
     const delta = memberFollowersGained - memberFollowersPrior;
@@ -409,16 +413,6 @@ export default function Analytics() {
         out.push({ kind: "warn", text: `Follower growth slowed (${followersTrend.text}). A stronger point of view post can restart it.` });
       } else {
         out.push({ kind: "warn", text: "Follower growth is flat. A stronger point of view post can restart it." });
-      }
-    }
-    const viewers = memberProfileViewers ?? 0;
-    const gained = memberFollowersGained ?? 0;
-    if (viewers > 0) {
-      const conv = Math.round((gained / viewers) * 1000) / 10;
-      if (gained === 0) {
-        out.push({ kind: "warn", text: `${viewers} profile viewers converted to zero follows. Your headline and About need a clearer promise.` });
-      } else {
-        out.push({ kind: "up", text: `${viewers} profile viewers converted to ${gained} follows (${conv}%).` });
       }
     }
     return out.slice(0, 3);
@@ -649,12 +643,27 @@ export default function Analytics() {
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.7rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <User size={18} style={{ color: TEXT_MUTED }} />
+            {memberProfile?.pictureUrl ? (
+              <img
+                src={memberProfile.pictureUrl}
+                alt={memberProfile.name ?? "Profile"}
+                style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: BORDER }}
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: SURFACE_1, border: BORDER, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <User size={18} style={{ color: TEXT_MUTED }} />
+              </div>
+            )}
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
-                Your personal profile
+                {memberProfile?.name
+                  ?? (memberResp?.status === "ok" ? memberResp.profile_name : null)
+                  ?? "Your personal profile"}
               </span>
-              <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>{rangeLabel}</span>
+              <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>
+                {memberProfile?.headline ? `${memberProfile.headline} · ${rangeLabel}` : rangeLabel}
+              </span>
             </div>
           </div>
           {memberResp?.status === "ok" && !memberStale ? (
@@ -673,7 +682,7 @@ export default function Analytics() {
           )}
         </div>
         <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-          Creator analytics from your Build With MOXIEMO® Pages connection,{" "}
+          Loads from your Build With MOXIEMO® connection,{" "}
           {memberResp?.status === "ok" && memberResp.window_label
             ? memberResp.window_label.toLowerCase()
             : rangeLabel.toLowerCase()}
@@ -688,16 +697,16 @@ export default function Analytics() {
             mutedValue={memberResp?.status !== "ok"}
           />
           <Metric
-            label="Profile viewers"
-            value={memberProfileViewers != null ? memberProfileViewers.toLocaleString() : (memberResp?.status === "ok" ? "—" : memberCalmLabel)}
-            sub={memberResp?.status === "ok" && memberProfileViewers == null ? "Not available via LinkedIn API" : undefined}
-            mutedValue={memberResp?.status !== "ok" || memberProfileViewers == null}
+            label="Total followers"
+            value={memberTotalFollowers != null ? memberTotalFollowers.toLocaleString() : memberCalmLabel}
+            sub="lifetime"
+            mutedValue={memberResp?.status !== "ok" || memberTotalFollowers == null}
           />
           <Metric
-            label="Search appearances"
-            value={memberSearchAppearances != null ? memberSearchAppearances.toLocaleString() : (memberResp?.status === "ok" ? "—" : memberCalmLabel)}
-            sub={memberResp?.status === "ok" && memberSearchAppearances == null ? "Not available via LinkedIn API" : undefined}
-            mutedValue={memberResp?.status !== "ok" || memberSearchAppearances == null}
+            label="Reposts"
+            value={memberReposts != null ? memberReposts.toLocaleString() : memberCalmLabel}
+            sub={memberResp?.status === "ok" ? "of your posts" : undefined}
+            mutedValue={memberResp?.status !== "ok" || memberReposts == null}
           />
         </div>
         <div style={{ marginBottom: "0.5rem" }}><Eyebrow color={TEXT_MUTED}>Post performance</Eyebrow></div>

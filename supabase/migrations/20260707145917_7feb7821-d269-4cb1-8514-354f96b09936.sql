@@ -1,0 +1,1 @@
+DELETE FROM public.linkedin_analytics_cache WHERE kind = 'member';
