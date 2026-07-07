@@ -150,6 +150,8 @@ Deno.serve(async (req) => {
       { key: "reactions", type: "REACTION" },
       { key: "comments", type: "COMMENT" },
     ];
+    // SHARE (reposts) is exposed alongside the other post-analytics queries.
+    (queries as Array<{ key: string; type: string }>).push({ key: "reposts", type: "SHARE" });
 
     const attempts: Attempt[] = [];
     const results: Record<string, number> = {};
@@ -270,23 +272,70 @@ Deno.serve(async (req) => {
       searchAppearances: null,
     };
 
+    // Profile identity (r_basicprofile). Best-effort; failures do not block
+    // the analytics response. Fetched once per call — cached alongside stats.
+    let profile: { name: string | null; headline: string | null; pictureUrl: string | null } = {
+      name: profileName, headline: null, pictureUrl: null,
+    };
+    try {
+      const meUrl = "https://api.linkedin.com/v2/me?projection=(id,localizedFirstName,localizedLastName,localizedHeadline,profilePicture(displayImage~:playableStreams))";
+      const r = await fetch(meUrl, { headers: liHeaders(token) });
+      const body = await r.text();
+      attempts.push({ query: "profile:me", url: meUrl, status: r.status, ok: r.ok, body: body.slice(0, 1500) });
+      console.log("member-profile", { status: r.status, ok: r.ok, body: body.slice(0, 1500) });
+      if (r.status === 401) sawAuthError = true;
+      else if (r.status === 429) sawRateLimit = true;
+      else if (r.ok) {
+        sawOk = true;
+        try {
+          const j = JSON.parse(body) as Record<string, unknown>;
+          const first = (j.localizedFirstName as string | undefined) ?? "";
+          const last = (j.localizedLastName as string | undefined) ?? "";
+          const fullName = `${first} ${last}`.trim();
+          if (fullName) profile.name = fullName;
+          profile.headline = (j.localizedHeadline as string | undefined) ?? null;
+          // profilePicture(displayImage~:playableStreams) → identifiers[0].identifier
+          const pp = j.profilePicture as Record<string, unknown> | undefined;
+          const disp = pp?.["displayImage~"] as Record<string, unknown> | undefined;
+          const elements = (disp?.elements as Array<Record<string, unknown>> | undefined) ?? [];
+          // Prefer largest available image.
+          let best: { w: number; url: string } | null = null;
+          for (const el of elements) {
+            const ids = (el.identifiers as Array<Record<string, unknown>> | undefined) ?? [];
+            const url = (ids[0]?.identifier as string | undefined) ?? null;
+            const data = el.data as Record<string, unknown> | undefined;
+            const vDisp = data?.["com.linkedin.digitalmedia.mediaartifact.StillImage"] as Record<string, unknown> | undefined;
+            const size = vDisp?.storageSize as Record<string, unknown> | undefined;
+            const w = Number(size?.width ?? 0);
+            if (url && (!best || w > best.w)) best = { w: Number.isFinite(w) ? w : 0, url };
+          }
+          profile.pictureUrl = best?.url ?? null;
+        } catch { /* ignore parse errors */ }
+      }
+    } catch (e) {
+      console.log("member-profile fetch failed", String(e));
+    }
+
     if (sawOk) {
       const impressions = results.impressions ?? 0;
       const reach = results.reach ?? 0;
       const reactions = results.reactions ?? 0;
       const comments = results.comments ?? 0;
+      const reposts = results.reposts ?? 0;
       const engagementPct = impressions > 0
         ? Math.round(((reactions + comments) / impressions) * 10000) / 100
         : 0;
       const payload = {
         status: "ok" as const,
         profile_name: profileName,
+        profile,
         window_days: effectiveWindowDays,
         window_label: effectiveWindowDays > 0 ? `last ${effectiveWindowDays} days` : "all time",
         impressions,
         reach,
         reactions,
         comments,
+        reposts,
         engagementPct,
         followersGained: profileResults.followersGained,
         followersGainedPrior,
