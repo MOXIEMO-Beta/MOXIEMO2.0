@@ -67,6 +67,10 @@ type MemberResp =
       reactions: number;
       comments: number;
       engagementPct: number;
+      followersGained?: number;
+      followersGainedPrior?: number | null;
+      profileViewers?: number;
+      searchAppearances?: number;
       attempts?: MemberAttempt[];
     } & CacheMeta)
   | ({ status: "reauth_required"; attempts?: MemberAttempt[] } & CacheMeta)
