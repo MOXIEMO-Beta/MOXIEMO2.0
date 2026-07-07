@@ -183,20 +183,59 @@ Deno.serve(async (req) => {
       } catch { results[q.key] = 0; }
     }
 
-    // Best-effort: member profile analytics (viewers, followers, search appearances).
-    let profileAnalyticsJson: unknown = null;
-    try {
-      const pUrl = `https://api.linkedin.com/rest/memberProfileAnalytics?q=me&aggregation=TOTAL${dateRangeParam}`;
-      const pr = await fetch(pUrl, { headers: liHeaders(token) });
-      const pBody = await pr.text();
-      console.log("member-profile-analytics", { status: pr.status, days: windowDays });
-      if (pr.status === 401) sawAuthError = true;
-      if (pr.status === 429) sawRateLimit = true;
-      if (pr.ok) {
-        try { profileAnalyticsJson = JSON.parse(pBody); } catch { profileAnalyticsJson = null; }
+    // Member profile analytics: visibility metrics (viewers, followers gained,
+    // search appearances). Typed queryTypes, same dateRange semantics as posts.
+    const profileBase = "https://api.linkedin.com/rest/memberProfileAnalytics?q=me&aggregation=TOTAL";
+    const profileQueries: Array<{ key: "followersGained" | "profileViewers" | "searchAppearances"; type: string }> = [
+      { key: "followersGained", type: "FOLLOWER" },
+      { key: "profileViewers", type: "PROFILE_VIEW" },
+      { key: "searchAppearances", type: "SEARCH_APPEARANCE" },
+    ];
+    const profileResults: Record<string, number> = {};
+    for (const pq of profileQueries) {
+      try {
+        let url = `${profileBase}&queryType=${pq.type}${dateRangeParam}`;
+        let r = await fetch(url, { headers: liHeaders(token) });
+        let bodyText = await r.text();
+        if (!r.ok && dateRangeParam && (r.status === 400 || r.status === 422)) {
+          attempts.push({ query: `profile:${pq.type}`, url, status: r.status, ok: false, body: bodyText.slice(0, 800) });
+          url = `${profileBase}&queryType=${pq.type}`;
+          r = await fetch(url, { headers: liHeaders(token) });
+          bodyText = await r.text();
+        }
+        attempts.push({ query: `profile:${pq.type}`, url, status: r.status, ok: r.ok, body: bodyText.slice(0, 800) });
+        console.log("member-profile-analytics", { queryType: pq.type, status: r.status, days: effectiveWindowDays });
+        if (r.status === 401) { sawAuthError = true; continue; }
+        if (r.status === 429) { sawRateLimit = true; continue; }
+        if (!r.ok) continue;
+        sawOk = true;
+        try { profileResults[pq.key] = sumValues(JSON.parse(bodyText)); } catch { profileResults[pq.key] = 0; }
+      } catch (e) {
+        console.log("member-profile-analytics fetch failed", pq.type, String(e));
       }
-    } catch (e) {
-      console.log("member-profile-analytics fetch failed", String(e));
+    }
+
+    // Prior-window follower count for trend (only when a window is set).
+    let followersGainedPrior: number | null = null;
+    if (effectiveWindowDays > 0) {
+      try {
+        const now = new Date();
+        const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        const currentStart = new Date(end.getTime() - effectiveWindowDays * 86_400_000);
+        const priorStart = new Date(currentStart.getTime() - effectiveWindowDays * 86_400_000);
+        const fmt = (d: Date) =>
+          `(day:${d.getUTCDate()},month:${d.getUTCMonth() + 1},year:${d.getUTCFullYear()})`;
+        const priorRange = `&dateRange=(start:${fmt(priorStart)},end:${fmt(currentStart)})`;
+        const url = `${profileBase}&queryType=FOLLOWER${priorRange}`;
+        const r = await fetch(url, { headers: liHeaders(token) });
+        const bodyText = await r.text();
+        console.log("member-profile-analytics prior", { status: r.status, days: effectiveWindowDays });
+        if (r.ok) {
+          try { followersGainedPrior = sumValues(JSON.parse(bodyText)); } catch { followersGainedPrior = null; }
+        }
+      } catch (e) {
+        console.log("member-profile-analytics prior fetch failed", String(e));
+      }
     }
 
     if (sawOk) {
@@ -217,7 +256,10 @@ Deno.serve(async (req) => {
         reactions,
         comments,
         engagementPct,
-        profile_analytics: profileAnalyticsJson,
+        followersGained: profileResults.followersGained ?? 0,
+        followersGainedPrior,
+        profileViewers: profileResults.profileViewers ?? 0,
+        searchAppearances: profileResults.searchAppearances ?? 0,
         attempts,
       };
       const nowIso = new Date().toISOString();
