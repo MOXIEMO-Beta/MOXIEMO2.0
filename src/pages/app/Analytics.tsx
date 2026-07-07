@@ -667,7 +667,9 @@ export default function Analytics() {
             )}
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
-                {memberProfile?.name ?? memberResp && "profile_name" in memberResp && memberResp.profile_name ? (memberProfile?.name ?? (memberResp as { profile_name?: string | null }).profile_name) : "Your personal profile"}
+                {memberProfile?.name
+                  ?? (memberResp?.status === "ok" ? memberResp.profile_name : null)
+                  ?? "Your personal profile"}
               </span>
               <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>
                 {memberProfile?.headline ? `${memberProfile.headline} · ${rangeLabel}` : rangeLabel}
