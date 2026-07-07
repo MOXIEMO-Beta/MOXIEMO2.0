@@ -415,16 +415,6 @@ export default function Analytics() {
         out.push({ kind: "warn", text: "Follower growth is flat. A stronger point of view post can restart it." });
       }
     }
-    const viewers = memberProfileViewers ?? 0;
-    const gained = memberFollowersGained ?? 0;
-    if (viewers > 0) {
-      const conv = Math.round((gained / viewers) * 1000) / 10;
-      if (gained === 0) {
-        out.push({ kind: "warn", text: `${viewers} profile viewers converted to zero follows. Your headline and About need a clearer promise.` });
-      } else {
-        out.push({ kind: "up", text: `${viewers} profile viewers converted to ${gained} follows (${conv}%).` });
-      }
-    }
     return out.slice(0, 3);
   }, [memberResp, followersTrend, memberProfileViewers, memberFollowersGained]);
 
