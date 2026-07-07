@@ -653,12 +653,25 @@ export default function Analytics() {
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.7rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <User size={18} style={{ color: TEXT_MUTED }} />
+            {memberProfile?.pictureUrl ? (
+              <img
+                src={memberProfile.pictureUrl}
+                alt={memberProfile.name ?? "Profile"}
+                style={{ width: 36, height: 36, borderRadius: "50%", objectFit: "cover", border: BORDER }}
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: SURFACE_1, border: BORDER, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <User size={18} style={{ color: TEXT_MUTED }} />
+              </div>
+            )}
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
-                Your personal profile
+                {memberProfile?.name ?? memberResp && "profile_name" in memberResp && memberResp.profile_name ? (memberProfile?.name ?? (memberResp as { profile_name?: string | null }).profile_name) : "Your personal profile"}
               </span>
-              <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>{rangeLabel}</span>
+              <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>
+                {memberProfile?.headline ? `${memberProfile.headline} · ${rangeLabel}` : rangeLabel}
+              </span>
             </div>
           </div>
           {memberResp?.status === "ok" && !memberStale ? (
@@ -677,7 +690,7 @@ export default function Analytics() {
           )}
         </div>
         <p style={{ fontSize: 13, color: TEXT_SECONDARY, margin: "0 0 0.85rem" }}>
-          Creator analytics from your Build With MOXIEMO® Pages connection,{" "}
+          Loads from your Build With MOXIEMO® connection,{" "}
           {memberResp?.status === "ok" && memberResp.window_label
             ? memberResp.window_label.toLowerCase()
             : rangeLabel.toLowerCase()}
@@ -692,16 +705,16 @@ export default function Analytics() {
             mutedValue={memberResp?.status !== "ok"}
           />
           <Metric
-            label="Profile viewers"
-            value={memberProfileViewers != null ? memberProfileViewers.toLocaleString() : (memberResp?.status === "ok" ? "—" : memberCalmLabel)}
-            sub={memberResp?.status === "ok" && memberProfileViewers == null ? "Not available via LinkedIn API" : undefined}
-            mutedValue={memberResp?.status !== "ok" || memberProfileViewers == null}
+            label="Total followers"
+            value={memberTotalFollowers != null ? memberTotalFollowers.toLocaleString() : memberCalmLabel}
+            sub="lifetime"
+            mutedValue={memberResp?.status !== "ok" || memberTotalFollowers == null}
           />
           <Metric
-            label="Search appearances"
-            value={memberSearchAppearances != null ? memberSearchAppearances.toLocaleString() : (memberResp?.status === "ok" ? "—" : memberCalmLabel)}
-            sub={memberResp?.status === "ok" && memberSearchAppearances == null ? "Not available via LinkedIn API" : undefined}
-            mutedValue={memberResp?.status !== "ok" || memberSearchAppearances == null}
+            label="Reposts"
+            value={memberReposts != null ? memberReposts.toLocaleString() : memberCalmLabel}
+            sub={memberResp?.status === "ok" ? "of your posts" : undefined}
+            mutedValue={memberResp?.status !== "ok" || memberReposts == null}
           />
         </div>
         <div style={{ marginBottom: "0.5rem" }}><Eyebrow color={TEXT_MUTED}>Post performance</Eyebrow></div>
