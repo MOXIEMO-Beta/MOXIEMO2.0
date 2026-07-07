@@ -67,10 +67,11 @@ type MemberResp =
       reactions: number;
       comments: number;
       engagementPct: number;
-      followersGained?: number;
+      followersGained?: number | null;
       followersGainedPrior?: number | null;
-      profileViewers?: number;
-      searchAppearances?: number;
+      followerCountLifetime?: number | null;
+      profileViewers?: number | null;
+      searchAppearances?: number | null;
       attempts?: MemberAttempt[];
     } & CacheMeta)
   | ({ status: "reauth_required"; attempts?: MemberAttempt[] } & CacheMeta)
@@ -375,10 +376,10 @@ export default function Analytics() {
   const memberEngagementValue = memberResp?.status === "ok" ? `${memberResp.engagementPct}%` : memberCalmLabel;
   const memberReactionsValue = memberResp?.status === "ok" ? memberResp.reactions.toLocaleString() : memberCalmLabel;
   const memberCommentsValue = memberResp?.status === "ok" ? memberResp.comments.toLocaleString() : memberCalmLabel;
-  const memberFollowersGained = memberResp?.status === "ok" ? (memberResp.followersGained ?? 0) : null;
+  const memberFollowersGained = memberResp?.status === "ok" ? (memberResp.followersGained ?? null) : null;
   const memberFollowersPrior = memberResp?.status === "ok" ? (memberResp.followersGainedPrior ?? null) : null;
-  const memberProfileViewers = memberResp?.status === "ok" ? (memberResp.profileViewers ?? 0) : null;
-  const memberSearchAppearances = memberResp?.status === "ok" ? (memberResp.searchAppearances ?? 0) : null;
+  const memberProfileViewers = memberResp?.status === "ok" ? (memberResp.profileViewers ?? null) : null;
+  const memberSearchAppearances = memberResp?.status === "ok" ? (memberResp.searchAppearances ?? null) : null;
   const followersTrend = (() => {
     if (memberFollowersGained == null || memberFollowersPrior == null) return null;
     const delta = memberFollowersGained - memberFollowersPrior;
@@ -688,13 +689,15 @@ export default function Analytics() {
           />
           <Metric
             label="Profile viewers"
-            value={memberProfileViewers != null ? memberProfileViewers.toLocaleString() : memberCalmLabel}
-            mutedValue={memberResp?.status !== "ok"}
+            value={memberProfileViewers != null ? memberProfileViewers.toLocaleString() : (memberResp?.status === "ok" ? "—" : memberCalmLabel)}
+            sub={memberResp?.status === "ok" && memberProfileViewers == null ? "Not available via LinkedIn API" : undefined}
+            mutedValue={memberResp?.status !== "ok" || memberProfileViewers == null}
           />
           <Metric
             label="Search appearances"
-            value={memberSearchAppearances != null ? memberSearchAppearances.toLocaleString() : memberCalmLabel}
-            mutedValue={memberResp?.status !== "ok"}
+            value={memberSearchAppearances != null ? memberSearchAppearances.toLocaleString() : (memberResp?.status === "ok" ? "—" : memberCalmLabel)}
+            sub={memberResp?.status === "ok" && memberSearchAppearances == null ? "Not available via LinkedIn API" : undefined}
+            mutedValue={memberResp?.status !== "ok" || memberSearchAppearances == null}
           />
         </div>
         <div style={{ marginBottom: "0.5rem" }}><Eyebrow color={TEXT_MUTED}>Post performance</Eyebrow></div>

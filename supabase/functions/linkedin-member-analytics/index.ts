@@ -183,60 +183,92 @@ Deno.serve(async (req) => {
       } catch { results[q.key] = 0; }
     }
 
-    // Member profile analytics: visibility metrics (viewers, followers gained,
-    // search appearances). Typed queryTypes, same dateRange semantics as posts.
-    const profileBase = "https://api.linkedin.com/rest/memberProfileAnalytics?q=me&aggregation=TOTAL";
-    const profileQueries: Array<{ key: "followersGained" | "profileViewers" | "searchAppearances"; type: string }> = [
-      { key: "followersGained", type: "FOLLOWER" },
-      { key: "profileViewers", type: "PROFILE_VIEW" },
-      { key: "searchAppearances", type: "SEARCH_APPEARANCE" },
-    ];
-    const profileResults: Record<string, number> = {};
-    for (const pq of profileQueries) {
+    // Visibility metrics. LinkedIn's Community Management API only exposes a
+    // member-facing endpoint for followers (`memberFollowersCount`); there is
+    // no accessible endpoint for profile viewers or search appearances (the
+    // scope description mentions them but no read endpoint is provisioned).
+    // We therefore return null for those two — the UI shows "Not available".
+    const followersBase = "https://api.linkedin.com/rest/memberFollowersCount";
+    const fmtDay = (d: Date) =>
+      `(year:${d.getUTCFullYear()},month:${d.getUTCMonth() + 1},day:${d.getUTCDate()})`;
+
+    const fetchFollowers = async (
+      label: string,
+      url: string,
+    ): Promise<{ status: number; body: string; ok: boolean; elements: Array<Record<string, unknown>> }> => {
+      const r = await fetch(url, { headers: liHeaders(token) });
+      const body = await r.text();
+      attempts.push({ query: label, url, status: r.status, ok: r.ok, body: body.slice(0, 1500) });
+      console.log("member-followers", { label, url, status: r.status, ok: r.ok, body: body.slice(0, 1500), days: effectiveWindowDays });
+      let elements: Array<Record<string, unknown>> = [];
       try {
-        let url = `${profileBase}&queryType=${pq.type}${dateRangeParam}`;
-        let r = await fetch(url, { headers: liHeaders(token) });
-        let bodyText = await r.text();
-        if (!r.ok && dateRangeParam && (r.status === 400 || r.status === 422)) {
-          attempts.push({ query: `profile:${pq.type}`, url, status: r.status, ok: false, body: bodyText.slice(0, 800) });
-          url = `${profileBase}&queryType=${pq.type}`;
-          r = await fetch(url, { headers: liHeaders(token) });
-          bodyText = await r.text();
-        }
-        attempts.push({ query: `profile:${pq.type}`, url, status: r.status, ok: r.ok, body: bodyText.slice(0, 800) });
-        console.log("member-profile-analytics", { queryType: pq.type, status: r.status, days: effectiveWindowDays });
-        if (r.status === 401) { sawAuthError = true; continue; }
-        if (r.status === 429) { sawRateLimit = true; continue; }
-        if (!r.ok) continue;
+        const parsed = JSON.parse(body) as { elements?: Array<Record<string, unknown>> };
+        elements = Array.isArray(parsed?.elements) ? parsed.elements : [];
+      } catch { /* noop */ }
+      return { status: r.status, body, ok: r.ok, elements };
+    };
+
+    const readFollowerCount = (el: Record<string, unknown>): number => {
+      const raw = (el as { memberFollowersCount?: unknown }).memberFollowersCount;
+      const v = Number(raw);
+      return Number.isFinite(v) ? v : 0;
+    };
+
+    let followersGained: number | null = null;
+    let followersGainedPrior: number | null = null;
+    let followerCountLifetime: number | null = null;
+
+    try {
+      // Always fetch lifetime `me` so we can show current follower total when
+      // no window is selected, and as a fallback baseline.
+      const meRes = await fetchFollowers("followers:me", `${followersBase}?q=me`);
+      if (meRes.status === 401) sawAuthError = true;
+      else if (meRes.status === 429) sawRateLimit = true;
+      else if (meRes.ok) {
         sawOk = true;
-        try { profileResults[pq.key] = sumValues(JSON.parse(bodyText)); } catch { profileResults[pq.key] = 0; }
-      } catch (e) {
-        console.log("member-profile-analytics fetch failed", pq.type, String(e));
+        followerCountLifetime = meRes.elements[0] ? readFollowerCount(meRes.elements[0]) : 0;
       }
+    } catch (e) {
+      console.log("member-followers me fetch failed", String(e));
     }
 
-    // Prior-window follower count for trend (only when a window is set).
-    let followersGainedPrior: number | null = null;
     if (effectiveWindowDays > 0) {
       try {
         const now = new Date();
         const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
         const currentStart = new Date(end.getTime() - effectiveWindowDays * 86_400_000);
         const priorStart = new Date(currentStart.getTime() - effectiveWindowDays * 86_400_000);
-        const fmt = (d: Date) =>
-          `(day:${d.getUTCDate()},month:${d.getUTCMonth() + 1},year:${d.getUTCFullYear()})`;
-        const priorRange = `&dateRange=(start:${fmt(priorStart)},end:${fmt(currentStart)})`;
-        const url = `${profileBase}&queryType=FOLLOWER${priorRange}`;
-        const r = await fetch(url, { headers: liHeaders(token) });
-        const bodyText = await r.text();
-        console.log("member-profile-analytics prior", { status: r.status, days: effectiveWindowDays });
-        if (r.ok) {
-          try { followersGainedPrior = sumValues(JSON.parse(bodyText)); } catch { followersGainedPrior = null; }
+        const curUrl = `${followersBase}?q=dateRange&dateRange=(start:${fmtDay(currentStart)},end:${fmtDay(end)})`;
+        const priorUrl = `${followersBase}?q=dateRange&dateRange=(start:${fmtDay(priorStart)},end:${fmtDay(currentStart)})`;
+
+        const cur = await fetchFollowers("followers:current", curUrl);
+        if (cur.status === 401) sawAuthError = true;
+        else if (cur.status === 429) sawRateLimit = true;
+        else if (cur.ok) {
+          sawOk = true;
+          // memberFollowersCount returns per-day snapshots. Sum across days to
+          // get followers gained within the window.
+          followersGained = cur.elements.reduce((acc, el) => acc + readFollowerCount(el), 0);
+        }
+
+        const prior = await fetchFollowers("followers:prior", priorUrl);
+        if (prior.ok) {
+          followersGainedPrior = prior.elements.reduce((acc, el) => acc + readFollowerCount(el), 0);
         }
       } catch (e) {
-        console.log("member-profile-analytics prior fetch failed", String(e));
+        console.log("member-followers window fetch failed", String(e));
       }
+    } else if (followerCountLifetime != null) {
+      followersGained = followerCountLifetime;
     }
+
+    // No accessible endpoint for these — return null so the UI can show
+    // "Not available" instead of a misleading 0.
+    const profileResults: { followersGained: number | null; profileViewers: number | null; searchAppearances: number | null } = {
+      followersGained,
+      profileViewers: null,
+      searchAppearances: null,
+    };
 
     if (sawOk) {
       const impressions = results.impressions ?? 0;
@@ -256,10 +288,11 @@ Deno.serve(async (req) => {
         reactions,
         comments,
         engagementPct,
-        followersGained: profileResults.followersGained ?? 0,
+        followersGained: profileResults.followersGained,
         followersGainedPrior,
-        profileViewers: profileResults.profileViewers ?? 0,
-        searchAppearances: profileResults.searchAppearances ?? 0,
+        followerCountLifetime,
+        profileViewers: profileResults.profileViewers,
+        searchAppearances: profileResults.searchAppearances,
         attempts,
       };
       const nowIso = new Date().toISOString();
