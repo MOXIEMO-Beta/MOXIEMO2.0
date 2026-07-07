@@ -67,6 +67,10 @@ type MemberResp =
       reactions: number;
       comments: number;
       engagementPct: number;
+      followersGained?: number;
+      followersGainedPrior?: number | null;
+      profileViewers?: number;
+      searchAppearances?: number;
       attempts?: MemberAttempt[];
     } & CacheMeta)
   | ({ status: "reauth_required"; attempts?: MemberAttempt[] } & CacheMeta)
@@ -369,6 +373,79 @@ export default function Analytics() {
   const memberImpressionsValue = memberResp?.status === "ok" ? memberResp.impressions.toLocaleString() : memberCalmLabel;
   const memberReachValue = memberResp?.status === "ok" ? memberResp.reach.toLocaleString() : memberCalmLabel;
   const memberEngagementValue = memberResp?.status === "ok" ? `${memberResp.engagementPct}%` : memberCalmLabel;
+  const memberReactionsValue = memberResp?.status === "ok" ? memberResp.reactions.toLocaleString() : memberCalmLabel;
+  const memberCommentsValue = memberResp?.status === "ok" ? memberResp.comments.toLocaleString() : memberCalmLabel;
+  const memberFollowersGained = memberResp?.status === "ok" ? (memberResp.followersGained ?? 0) : null;
+  const memberFollowersPrior = memberResp?.status === "ok" ? (memberResp.followersGainedPrior ?? null) : null;
+  const memberProfileViewers = memberResp?.status === "ok" ? (memberResp.profileViewers ?? 0) : null;
+  const memberSearchAppearances = memberResp?.status === "ok" ? (memberResp.searchAppearances ?? 0) : null;
+  const followersTrend = (() => {
+    if (memberFollowersGained == null || memberFollowersPrior == null) return null;
+    const delta = memberFollowersGained - memberFollowersPrior;
+    if (memberFollowersPrior === 0 && memberFollowersGained === 0) return null;
+    if (memberFollowersPrior === 0) return { dir: "up" as const, text: "new this window" };
+    const pct = Math.round((delta / Math.max(1, memberFollowersPrior)) * 100);
+    if (pct === 0) return { dir: "flat" as const, text: "flat vs prior window" };
+    return { dir: pct > 0 ? ("up" as const) : ("down" as const), text: `${pct > 0 ? "+" : ""}${pct}% vs prior window` };
+  })();
+
+  const personalInsights = useMemo(() => {
+    const out: { kind: "up" | "warn"; text: string }[] = [];
+    if (memberResp?.status !== "ok") {
+      out.push({ kind: "warn", text: "Waiting on live LinkedIn creator numbers to score your personal pattern." });
+      return out;
+    }
+    const eng = memberResp.engagementPct ?? 0;
+    if (eng >= 5) {
+      out.push({ kind: "up", text: `Your posts run at ${eng}% engagement, above the LinkedIn creator norm.` });
+    } else if (eng > 0) {
+      out.push({ kind: "warn", text: `Your posts run at ${eng}% engagement. Sharper hooks in the first two lines will lift this.` });
+    }
+    if (followersTrend) {
+      if (followersTrend.dir === "up") {
+        out.push({ kind: "up", text: `Followers are accelerating (${followersTrend.text}). Keep the cadence.` });
+      } else if (followersTrend.dir === "down") {
+        out.push({ kind: "warn", text: `Follower growth slowed (${followersTrend.text}). A stronger point of view post can restart it.` });
+      } else {
+        out.push({ kind: "warn", text: "Follower growth is flat. A stronger point of view post can restart it." });
+      }
+    }
+    const viewers = memberProfileViewers ?? 0;
+    const gained = memberFollowersGained ?? 0;
+    if (viewers > 0) {
+      const conv = Math.round((gained / viewers) * 1000) / 10;
+      if (gained === 0) {
+        out.push({ kind: "warn", text: `${viewers} profile viewers converted to zero follows. Your headline and About need a clearer promise.` });
+      } else {
+        out.push({ kind: "up", text: `${viewers} profile viewers converted to ${gained} follows (${conv}%).` });
+      }
+    }
+    return out.slice(0, 3);
+  }, [memberResp, followersTrend, memberProfileViewers, memberFollowersGained]);
+
+  const personalSuggestions = useMemo(() => {
+    const out: { text: string; pillar?: string }[] = [];
+    if (memberResp?.status === "ok") {
+      const eng = memberResp.engagementPct ?? 0;
+      const primary = topSetStats.dominantPillar ?? pillars[0] ?? null;
+      if (primary) {
+        out.push({ text: `A first-person ${primary} post from your point of view — your strongest angle.`, pillar: primary });
+      }
+      if (eng < 3) {
+        out.push({ text: "A short hook-led post (2 line opener, one insight, one ask) to lift engagement." });
+      }
+      if ((memberFollowersGained ?? 0) === 0 && (memberProfileViewers ?? 0) > 0) {
+        out.push({ text: "A profile-repositioning post that restates who you help and how, to convert viewers to follows." });
+      }
+    }
+    if (out.length === 0 && pillars.length > 0) {
+      out.push({ text: `A ${pillars[0]} post to seed your personal signal.`, pillar: pillars[0] });
+    }
+    if (out.length === 0) {
+      out.push({ text: "Set your content pillars in Strategy, then generate your first personal post." });
+    }
+    return out.slice(0, 3);
+  }, [memberResp, topSetStats.dominantPillar, pillars, memberFollowersGained, memberProfileViewers]);
 
   function goCreate(pillar?: string) {
     const q = pillar ? `?pillar=${encodeURIComponent(pillar)}` : "";
@@ -574,9 +651,7 @@ export default function Analytics() {
             <User size={18} style={{ color: TEXT_MUTED }} />
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
-                {memberResp?.status === "ok" && memberResp.profile_name
-                  ? `${memberResp.profile_name}, personal profile`
-                  : "Your personal profile"}
+                Your personal profile
               </span>
               <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>{rangeLabel}</span>
             </div>
@@ -603,10 +678,32 @@ export default function Analytics() {
             : rangeLabel.toLowerCase()}
           .
         </p>
+        <div style={{ marginBottom: "0.5rem" }}><Eyebrow color={TEXT_MUTED}>Visibility</Eyebrow></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12, marginBottom: "0.9rem" }}>
+          <Metric
+            label="Followers gained"
+            value={memberFollowersGained != null ? memberFollowersGained.toLocaleString() : memberCalmLabel}
+            sub={followersTrend?.text}
+            mutedValue={memberResp?.status !== "ok"}
+          />
+          <Metric
+            label="Profile viewers"
+            value={memberProfileViewers != null ? memberProfileViewers.toLocaleString() : memberCalmLabel}
+            mutedValue={memberResp?.status !== "ok"}
+          />
+          <Metric
+            label="Search appearances"
+            value={memberSearchAppearances != null ? memberSearchAppearances.toLocaleString() : memberCalmLabel}
+            mutedValue={memberResp?.status !== "ok"}
+          />
+        </div>
+        <div style={{ marginBottom: "0.5rem" }}><Eyebrow color={TEXT_MUTED}>Post performance</Eyebrow></div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
           <Metric label="Impressions" value={memberImpressionsValue} mutedValue={memberResp?.status !== "ok"} />
           <Metric label="Reach" value={memberReachValue} mutedValue={memberResp?.status !== "ok"} />
           <Metric label="Engagement" value={memberEngagementValue} sub={memberResp?.status === "ok" ? "of impressions" : undefined} mutedValue={memberResp?.status !== "ok"} />
+          <Metric label="Reactions" value={memberReactionsValue} mutedValue={memberResp?.status !== "ok"} />
+          <Metric label="Comments" value={memberCommentsValue} mutedValue={memberResp?.status !== "ok"} />
         </div>
         {memberResp?.status === "reauth_required" && (
           <p style={{ fontSize: 12.5, color: WARN_FG, margin: "0.75rem 0 0" }}>
@@ -614,6 +711,34 @@ export default function Analytics() {
           </p>
         )}
       </Card>
+
+      {/* Personal insights + suggestions */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, marginTop: "1rem" }}>
+        <Card>
+          <div style={{ marginBottom: "0.7rem" }}><Eyebrow>What the data says</Eyebrow></div>
+          {personalInsights.map((it, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "0.35rem 0" }}>
+              {it.kind === "up"
+                ? <TrendingUp size={16} style={{ color: SUCCESS_FG, marginTop: 2, flexShrink: 0 }} />
+                : <AlertTriangle size={16} style={{ color: WARN_FG, marginTop: 2, flexShrink: 0 }} />}
+              <span style={{ fontSize: 13, color: TEXT_PRIMARY, lineHeight: 1.5 }}>{it.text}</span>
+            </div>
+          ))}
+        </Card>
+        <Card>
+          <div style={{ marginBottom: "0.7rem" }}><Eyebrow>What to make next</Eyebrow></div>
+          {personalSuggestions.map((s, i) => (
+            <div key={i}
+              style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", padding: "0.35rem 0", borderBottom: i < personalSuggestions.length - 1 ? BORDER : "none" }}>
+              <span style={{ fontSize: 13, color: TEXT_PRIMARY, lineHeight: 1.5 }}>{s.text}</span>
+              <button onClick={() => goCreate(s.pillar)}
+                style={{ fontSize: 12.5, color: CORAL, fontWeight: 500, whiteSpace: "nowrap", cursor: "pointer", background: "none", border: "none", padding: 0, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                Generate <ArrowRight size={13} />
+              </button>
+            </div>
+          ))}
+        </Card>
+      </div>
 
       {/* Meta coming-soon (quiet) */}
       <div style={{ marginTop: "1.5rem", marginBottom: "0.5rem" }}>
