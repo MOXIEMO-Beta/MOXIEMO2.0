@@ -651,9 +651,7 @@ export default function Analytics() {
             <User size={18} style={{ color: TEXT_MUTED }} />
             <div style={{ display: "flex", flexDirection: "column" }}>
               <span style={{ fontFamily: DISPLAY_FONT, fontSize: 15, fontWeight: 500, color: TEXT_PRIMARY }}>
-                {memberResp?.status === "ok" && memberResp.profile_name
-                  ? `${memberResp.profile_name}, personal profile`
-                  : "Your personal profile"}
+                Your personal profile
               </span>
               <span style={{ fontSize: 11.5, color: TEXT_MUTED, marginTop: 1 }}>{rangeLabel}</span>
             </div>
@@ -680,10 +678,32 @@ export default function Analytics() {
             : rangeLabel.toLowerCase()}
           .
         </p>
+        <div style={{ marginBottom: "0.5rem" }}><Eyebrow color={TEXT_MUTED}>Visibility</Eyebrow></div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12, marginBottom: "0.9rem" }}>
+          <Metric
+            label="Followers gained"
+            value={memberFollowersGained != null ? memberFollowersGained.toLocaleString() : memberCalmLabel}
+            sub={followersTrend?.text}
+            mutedValue={memberResp?.status !== "ok"}
+          />
+          <Metric
+            label="Profile viewers"
+            value={memberProfileViewers != null ? memberProfileViewers.toLocaleString() : memberCalmLabel}
+            mutedValue={memberResp?.status !== "ok"}
+          />
+          <Metric
+            label="Search appearances"
+            value={memberSearchAppearances != null ? memberSearchAppearances.toLocaleString() : memberCalmLabel}
+            mutedValue={memberResp?.status !== "ok"}
+          />
+        </div>
+        <div style={{ marginBottom: "0.5rem" }}><Eyebrow color={TEXT_MUTED}>Post performance</Eyebrow></div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
           <Metric label="Impressions" value={memberImpressionsValue} mutedValue={memberResp?.status !== "ok"} />
           <Metric label="Reach" value={memberReachValue} mutedValue={memberResp?.status !== "ok"} />
           <Metric label="Engagement" value={memberEngagementValue} sub={memberResp?.status === "ok" ? "of impressions" : undefined} mutedValue={memberResp?.status !== "ok"} />
+          <Metric label="Reactions" value={memberReactionsValue} mutedValue={memberResp?.status !== "ok"} />
+          <Metric label="Comments" value={memberCommentsValue} mutedValue={memberResp?.status !== "ok"} />
         </div>
         {memberResp?.status === "reauth_required" && (
           <p style={{ fontSize: 12.5, color: WARN_FG, margin: "0.75rem 0 0" }}>
@@ -691,6 +711,34 @@ export default function Analytics() {
           </p>
         )}
       </Card>
+
+      {/* Personal insights + suggestions */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, marginTop: "1rem" }}>
+        <Card>
+          <div style={{ marginBottom: "0.7rem" }}><Eyebrow>What the data says</Eyebrow></div>
+          {personalInsights.map((it, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "0.35rem 0" }}>
+              {it.kind === "up"
+                ? <TrendingUp size={16} style={{ color: SUCCESS_FG, marginTop: 2, flexShrink: 0 }} />
+                : <AlertTriangle size={16} style={{ color: WARN_FG, marginTop: 2, flexShrink: 0 }} />}
+              <span style={{ fontSize: 13, color: TEXT_PRIMARY, lineHeight: 1.5 }}>{it.text}</span>
+            </div>
+          ))}
+        </Card>
+        <Card>
+          <div style={{ marginBottom: "0.7rem" }}><Eyebrow>What to make next</Eyebrow></div>
+          {personalSuggestions.map((s, i) => (
+            <div key={i}
+              style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", padding: "0.35rem 0", borderBottom: i < personalSuggestions.length - 1 ? BORDER : "none" }}>
+              <span style={{ fontSize: 13, color: TEXT_PRIMARY, lineHeight: 1.5 }}>{s.text}</span>
+              <button onClick={() => goCreate(s.pillar)}
+                style={{ fontSize: 12.5, color: CORAL, fontWeight: 500, whiteSpace: "nowrap", cursor: "pointer", background: "none", border: "none", padding: 0, display: "inline-flex", alignItems: "center", gap: 3 }}>
+                Generate <ArrowRight size={13} />
+              </button>
+            </div>
+          ))}
+        </Card>
+      </div>
 
       {/* Meta coming-soon (quiet) */}
       <div style={{ marginTop: "1.5rem", marginBottom: "0.5rem" }}>
