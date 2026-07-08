@@ -1246,37 +1246,35 @@ function Divider() { return <div style={{ height: 1, background: BORDER, margin:
 
 function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets, kitOwnerId, kit }: any) {
   const brandName = kit?.brand_name || strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand";
-  const generatedAt = "Jun 22, 2026";
+  const generatedAt = kit?.generated_at
+    ? new Date(kit.generated_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
-  const palette = (colors && colors.length ? colors : ["#0E0F10", "#E85A46", "#F7F5F1", "#B8C5A6"]).slice(0, 4);
-  const fontName = fonts?.[0] || "Space Grotesk";
+  const palette = (colors && colors.length ? colors : []).slice(0, 4);
+  const fontName = fonts?.[0] || "";
 
-  const archetypePrimary = kit?.archetype?.primary || "The Magician";
-  const archetypeSecondary = kit?.archetype?.secondary || "Creator";
-  const archetypeDescription = kit?.archetype?.description || "Transforms chaos into clarity, complexity into autonomy. Promises to turn a founder's vision into reality through a system that feels effortless.";
+  const archetypePrimary = kit?.archetype?.primary || strategy?.enhanced_foundation?.brandArchetype?.name || "";
+  const archetypeSecondary = kit?.archetype?.secondary || strategy?.enhanced_foundation?.brandArchetype?.secondary || "";
+  const archetypeDescription = kit?.archetype?.description || strategy?.enhanced_foundation?.brandArchetype?.description || "";
   const voiceAttrs: string[] = Array.isArray(kit?.voice?.attributes) && kit.voice.attributes.length
     ? kit.voice.attributes
-    : ["Clear and Direct", "Empowering, Not Overwhelming", "Strategic, Not Salesy", "Honest and Specific"];
+    : Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes : [];
   const neverUse: string[] = Array.isArray(kit?.voice?.never_use) && kit.voice.never_use.length
     ? kit.voice.never_use
-    : ["Em-Dashes", "Contractions in Formal Copy", "Filler Phrases"];
-  const icpRows: [string, string][] = [
-    ["Revenue Floor", kit?.icp?.revenue_floor || "$250K+ annually"],
-    ["Business Type", kit?.icp?.business_type || "Expertise-based, founder-led"],
-    ["Core Pain", kit?.icp?.core_pain || "20+ hrs/week on reactive marketing with no strategy"],
-    ["Transformation", kit?.icp?.transformation || "From tool chaos to 1 platform, 2 hrs/week"],
-  ];
+    : [];
+  const icpRows: [string, string][] = ([
+    ["Revenue Floor", kit?.icp?.revenue_floor],
+    ["Business Type", kit?.icp?.business_type],
+    ["Core Pain", kit?.icp?.core_pain || strategy?.pain_point],
+    ["Transformation", kit?.icp?.transformation || strategy?.transformation],
+  ] as [string, string | undefined | null][]).filter(([, v]) => !!v) as [string, string][];
   const keyMessages: string[] = Array.isArray(kit?.key_messages) && kit.key_messages.length
     ? kit.key_messages
-    : [
-        "You built a real business. Your marketing should match.",
-        "Strategy first. Always. Then content that actually works.",
-        "One platform. 18 hours back. Revenue that moves.",
-      ];
-  const primaryPillar = kit?.pillars?.primary || "Strategy-First Marketing";
+    : [];
+  const primaryPillar = kit?.pillars?.primary || "";
   const supportingPillars: string[] = Array.isArray(kit?.pillars?.supporting) && kit.pillars.supporting.length
     ? kit.pillars.supporting
-    : ["Founder Wins & Beta Stories", "Platform Transparency & Product Updates", "Founder Efficiency Hacks", "Market Positioning & Differentiation"];
+    : (Array.isArray(strategy?.content_pillars) ? strategy.content_pillars : []).map((p: any) => typeof p === "string" ? p : (p?.name ?? "")).filter(Boolean);
 
   // Enrichment sections (Positioning / Values / Tone) — derived structure-agnostically
   // from the kit's own fields when present, otherwise from strategy.enhanced_foundation.
