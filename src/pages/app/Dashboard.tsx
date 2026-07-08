@@ -29,6 +29,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useGoalDefinitions } from "@/hooks/useGoalDefinitions";
 
 type AnyRow = any;
 
@@ -161,6 +162,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
+    // Reset on user change to prevent prior session data bleeding through.
+    setProfile(null); setStrategy(null); setSocialPosts([]); setContentItems([]);
+    setEmailSends([]); setSocialConnections([]); setDiscovery(null); setGoalEntries([]);
+    setBestPost(null); setPageTopPost(null); setPageHasData(null);
     (async () => {
       try {
         const [profileRes, strategyRes, socialPostsRes, contentItemsRes, goalRes, emailSendsRes, socialConnectionsRes, discoveryRes, analyticsRes] = await Promise.all([
@@ -202,6 +207,11 @@ export default function Dashboard() {
       }
     })();
   }, [user]);
+
+  const { goals: goalDefs } = useGoalDefinitions({
+    autoGenerate: true,
+    hasStrategy: !!strategy?.positioning_statement,
+  });
 
   // Live LinkedIn Page leaderboard — powers Best post + "Your marketing is landing".
   // No dependency on personal analytics; quiet state only if the Page genuinely has none.
@@ -291,7 +301,40 @@ export default function Dashboard() {
   const mrrNow = lastReported<number>(goalEntries, "mrr");
   const retentionNow = lastReported<number>(goalEntries, "retention_pct");
   const testimonialsNow = lastReported<number>(goalEntries, "testimonials");
-  const payingPct = Math.min(100, (payingNow / 500) * 100);
+  const discoveryNow = lastReported<number>(goalEntries, "discovery_calls");
+
+  // North Star + SMART cards come from goal_definitions (per-user), never hardcoded.
+  const ns = goalDefs?.north_star ?? null;
+  const parseTargetNumber = (target?: string | null): number | null => {
+    if (!target) return null;
+    const m = String(target).replace(/[,$]/g, "").match(/(\d+(?:\.\d+)?)/);
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (isNaN(n)) return null;
+    if (/k/i.test(target)) return n * 1000;
+    if (/m/i.test(target)) return n * 1_000_000;
+    return n;
+  };
+  const metricNow = (key?: string | null): number | null => {
+    switch (key) {
+      case "paying_users": return payingNow;
+      case "mrr": return mrrNow;
+      case "retention_pct": return retentionNow;
+      case "testimonials": return testimonialsNow;
+      case "discovery_calls": return discoveryNow;
+      default: return null;
+    }
+  };
+  const formatMetric = (key?: string | null): string => {
+    const v = metricNow(key);
+    if (v === null || v === undefined) return "Not reported";
+    if (key === "mrr") return `$${v.toLocaleString()}`;
+    if (key === "retention_pct") return `${v}%`;
+    return String(v);
+  };
+  const nsTargetNum = parseTargetNumber(ns?.target_value);
+  const nsCurrent = metricNow(ns?.metric_key) ?? 0;
+  const payingPct = nsTargetNum ? Math.min(100, (nsCurrent / nsTargetNum) * 100) : 0;
 
   const stats = [
     { label: "Hours saved", value: hoursSaved.toFixed(1), delta: "All-time", icon: Clock, tint: CORAL_TINT, color: CORAL },
@@ -506,12 +549,13 @@ export default function Dashboard() {
     : [];
   const strengthScore = strategy?.strength_score ?? 0;
 
-  const smartGoals = [
-    { category: "Growth", tracked: false, title: "Reach $80K MRR", target: "$80K", now: mrrNow != null ? `$${mrrNow.toLocaleString()}` : "Not reported" },
-    { category: "Conversion", tracked: true, title: "Audit lead to paid trial", target: "15%", now: "0%" },
-    { category: "Retention", tracked: false, title: "Hold cohort retention", target: "85%", now: retentionNow != null ? `${retentionNow}%` : "Not reported" },
-    { category: "Advocacy", tracked: false, title: "Wow testimonials", target: "20", now: testimonialsNow != null ? String(testimonialsNow) : "Not reported" },
-  ];
+  const smartGoals = (goalDefs?.smart_cards ?? []).map((c) => ({
+    category: c.category || "Goal",
+    tracked: c.tracked_by === "moxiemo",
+    title: c.title || "Untitled",
+    target: c.target || "—",
+    now: formatMetric(c.metric_key),
+  }));
 
   return (
     <div
