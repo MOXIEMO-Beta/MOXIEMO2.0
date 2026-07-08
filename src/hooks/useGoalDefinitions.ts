@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { resolveGoalDefinitions } from "@/lib/goalResolver";
 
 export type GoalCard = {
   category: string;
@@ -52,8 +53,12 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
         { body: {} },
       );
       if (error) throw error;
-      if (data?.goals) setGoals(data.goals as GoalDefinitions);
-      return data?.goals as GoalDefinitions | null;
+      if (data?.goals) {
+        const resolved = resolveGoalDefinitions(data.goals as GoalDefinitions);
+        setGoals(resolved);
+        return resolved;
+      }
+      return null;
     } catch (e: any) {
       setError(e?.message ?? String(e));
       return null;
@@ -78,7 +83,7 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
       if (cancelled) return;
       if (error) setError(error.message);
       if (data) {
-        setGoals(data as unknown as GoalDefinitions);
+        setGoals(resolveGoalDefinitions(data as unknown as GoalDefinitions));
         setLoading(false);
       } else if (autoGenerate && opts.hasStrategy) {
         setLoading(false);
