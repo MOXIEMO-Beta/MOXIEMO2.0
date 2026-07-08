@@ -20,6 +20,7 @@ type GoalEntry = {
   posts_published: number | null;
   email_opens: number | null;
   notes: string | null;
+  goal_definition_id: string | null;
   metric_key: string | null;
   value: number | null;
   period: string | null;
@@ -227,7 +228,7 @@ export default function Goals() {
       const isSelf = (g.tracked_by ?? "self") !== "moxiemo";
       if (!isSelf) return;
       const title = g.title || "Goal";
-      const key = (g.metric_key && String(g.metric_key)) || slugify(String(label));
+      const key = (g.metric_key && String(g.metric_key)) || slugify(String(title));
       if (seen.has(key)) return;
       seen.add(key);
       const target = g.target || "—";
