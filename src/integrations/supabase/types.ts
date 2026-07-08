@@ -956,7 +956,15 @@ export type Database = {
           value?: number | null
           week_of?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "goal_entries_goal_definition_id_fkey"
+            columns: ["goal_definition_id"]
+            isOneToOne: false
+            referencedRelation: "goal_definitions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       leads: {
         Row: {
