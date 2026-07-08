@@ -631,8 +631,8 @@ export default function Dashboard() {
           />
           <RhythmTile
             eyebrow="This month"
-            title={`${payingNow} of 500 users`}
-            sub="See your goals"
+            title={ns && nsTargetNum ? `${nsCurrent} of ${ns.target_value}` : "Set your North Star"}
+            sub={ns ? "See your goals" : "Generating your goals…"}
             bg={GRAD_MONTH}
             shadow={SHADOW_MONTH}
             fg={INK}
@@ -721,25 +721,25 @@ export default function Dashboard() {
               </span>
             </div>
             <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight text-white">
-              500 paying users in 12 months
+              {ns?.title || "Your North Star, forming"}
             </h2>
             <p className="mt-2 text-sm md:text-base font-medium" style={{ color: NAVY_TINT }}>
-              $80K MRR · $960K ARR · by June 2027
+              {ns ? [ns.target_value, ns.deadline].filter(Boolean).join(" · ") : "Personalized from your strategy"}
             </p>
             <div className="mt-6">
               <div className="relative h-3 rounded-full" style={{ background: "rgba(255,255,255,0.14)" }}>
                 <div className="h-full rounded-full transition-all" style={{ width: `${payingPct}%`, background: CORAL }} />
-                {[10, 30, 60].map((t) => (
+                {[25, 50, 75].map((t) => (
                   <div key={t} className="absolute top-0 bottom-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.4)" }} />
                 ))}
                 <div className="ns-node" style={{ left: `${Math.max(2, Math.min(98, payingPct))}%` }} />
               </div>
               <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: NAVY_MUTED }}>
-                <span>0</span><span>50</span><span>150</span><span>300</span><span>500</span>
+                <span>0</span><span>25%</span><span>50%</span><span>75%</span><span>{ns?.target_value || "Target"}</span>
               </div>
             </div>
             <div className="mt-4 text-xs" style={{ color: NAVY_MUTED }}>
-              You are at {payingNow} paying users. Log wins as they close.
+              {ns?.lever || "Your personal goals appear as soon as your strategy is set."}
             </div>
           </section>
 
