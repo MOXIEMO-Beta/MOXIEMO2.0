@@ -72,7 +72,11 @@ Deno.serve(async (req) => {
     }
 
     const state = JSON.parse(atob(stateRaw));
-    const { user_id: userId, redirect_uri: redirectUri } = state ?? {};
+    const { user_id: userId, redirect_uri: redirectUri, intent: rawIntent } = state ?? {};
+    const intent: "personal" | "company" | "both" =
+      rawIntent === "personal" || rawIntent === "company" || rawIntent === "both"
+        ? rawIntent
+        : "both";
     if (!userId || !redirectUri) {
       return new Response("Invalid state", { status: 400, headers: corsHeaders });
     }
@@ -106,6 +110,89 @@ Deno.serve(async (req) => {
     const expiresAt = token.expires_in
       ? new Date(Date.now() + token.expires_in * 1000).toISOString()
       : new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+
+    // Save the personal profile row unless the user explicitly chose company-only.
+    // The Community Management token carries member scopes (w_member_social,
+    // r_member_postAnalytics, r_member_profileAnalytics, r_basicprofile), so
+    // the same token powers personal posting and personal analytics.
+    let personalSaved = false;
+    if (intent === "personal" || intent === "both") {
+      let profileName: string | null = null;
+      let profileImage: string | null = null;
+      try {
+        const meRes = await fetch("https://api.linkedin.com/v2/userinfo", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (meRes.ok) {
+          const p = await meRes.json();
+          profileName = p?.name ?? [p?.given_name, p?.family_name].filter(Boolean).join(" ") || null;
+          profileImage = p?.picture ?? null;
+        } else {
+          const legacy = await fetch("https://api.linkedin.com/v2/me", {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "X-Restli-Protocol-Version": "2.0.0",
+            },
+          });
+          if (legacy.ok) {
+            const p = await legacy.json();
+            profileName = [p?.localizedFirstName, p?.localizedLastName].filter(Boolean).join(" ") || null;
+          }
+        }
+      } catch (e) {
+        console.warn("personal profile lookup failed", e);
+      }
+
+      const personalRow = {
+        user_id: userId,
+        platform: "linkedin",
+        connection_type: "personal" as const,
+        organization_id: null as string | null,
+        organization_name: null as string | null,
+        access_token: accessToken,
+        refresh_token: token.refresh_token ?? null,
+        expires_at: expiresAt,
+        profile_name: profileName,
+        profile_image: profileImage,
+        reminder_sent_at: null,
+      };
+      const { data: existingPersonal, error: selPersErr } = await supabase
+        .from("social_connections")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("platform", "linkedin")
+        .eq("connection_type", "personal")
+        .is("organization_id", null)
+        .maybeSingle();
+      const persErr = selPersErr
+        ? selPersErr
+        : existingPersonal
+          ? (await supabase.from("social_connections").update(personalRow).eq("id", (existingPersonal as any).id)).error
+          : (await supabase.from("social_connections").insert(personalRow)).error;
+      if (persErr) {
+        console.error("personal connection save failed", persErr);
+        if (intent === "personal") {
+          return Response.redirect(
+            appRedirect(`/app/settings?pages_error=save_failed#integrations-section`),
+            302,
+          );
+        }
+      } else {
+        personalSaved = true;
+      }
+    }
+
+    if (intent === "personal") {
+      return Response.redirect(
+        appRedirect(`/app/settings?pages_connected=personal#integrations-section`),
+        302,
+      );
+    }
 
     // Look up organizations the user administers.
     const aclsRes = await fetch(
@@ -144,6 +231,12 @@ Deno.serve(async (req) => {
       } else {
         const txt = await legacyRes.text();
         console.error("organizationAcls failed", legacyRes.status, txt);
+        if (intent === "both" && personalSaved) {
+          return Response.redirect(
+            appRedirect(`/app/settings?pages_connected=personal&pages_error=acl_lookup_failed#integrations-section`),
+            302,
+          );
+        }
         return Response.redirect(
           appRedirect(`/app/settings?pages_error=acl_lookup_failed#integrations-section`),
           302,
@@ -158,12 +251,13 @@ Deno.serve(async (req) => {
       orgs.push({ organization_id: id, organization_name: name, urn });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
     if (orgs.length === 0) {
+      if (personalSaved) {
+        return Response.redirect(
+          appRedirect(`/app/settings?pages_connected=personal#integrations-section`),
+          302,
+        );
+      }
       return Response.redirect(
         appRedirect(`/app/settings?pages_error=no_pages_found#integrations-section`),
         302,
