@@ -173,7 +173,7 @@ export default function Settings() {
       toast.error(map[pagesError] ?? "Company page connection failed.");
     }
     if (pagesConnected) {
-      toast.success("Company page connected.");
+      toast.success(pagesConnected === "personal" ? "LinkedIn personal profile connected." : "Company page connected.");
       // Refresh the connections list.
       supabase
         .from("social_connections")
