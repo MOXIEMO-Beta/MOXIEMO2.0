@@ -901,48 +901,60 @@ export type Database = {
       goal_entries: {
         Row: {
           created_at: string
-          discovery_calls: number
-          email_opens: number
+          discovery_calls: number | null
+          email_opens: number | null
+          goal_definition_id: string | null
           id: string
+          metric_key: string | null
           mrr: number | null
           notes: string | null
-          paying_users: number
-          posts_published: number
+          paying_users: number | null
+          period: string | null
+          posts_published: number | null
           retention_pct: number | null
           testimonials: number | null
           updated_at: string
           user_id: string
-          week_of: string
+          value: number | null
+          week_of: string | null
         }
         Insert: {
           created_at?: string
-          discovery_calls?: number
-          email_opens?: number
+          discovery_calls?: number | null
+          email_opens?: number | null
+          goal_definition_id?: string | null
           id?: string
+          metric_key?: string | null
           mrr?: number | null
           notes?: string | null
-          paying_users?: number
-          posts_published?: number
+          paying_users?: number | null
+          period?: string | null
+          posts_published?: number | null
           retention_pct?: number | null
           testimonials?: number | null
           updated_at?: string
           user_id: string
-          week_of: string
+          value?: number | null
+          week_of?: string | null
         }
         Update: {
           created_at?: string
-          discovery_calls?: number
-          email_opens?: number
+          discovery_calls?: number | null
+          email_opens?: number | null
+          goal_definition_id?: string | null
           id?: string
+          metric_key?: string | null
           mrr?: number | null
           notes?: string | null
-          paying_users?: number
-          posts_published?: number
+          paying_users?: number | null
+          period?: string | null
+          posts_published?: number | null
           retention_pct?: number | null
           testimonials?: number | null
           updated_at?: string
           user_id?: string
-          week_of?: string
+          value?: number | null
+          week_of?: string | null
         }
         Relationships: []
       }
