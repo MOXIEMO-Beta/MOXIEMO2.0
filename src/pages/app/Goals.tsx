@@ -226,6 +226,27 @@ export default function Goals() {
     return out;
   }, [entries]);
 
+  const latestByGoalMetric = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const e of entries) {
+      if (!e.goal_definition_id || !e.metric_key) continue;
+      const key = `${e.goal_definition_id}|${e.metric_key}`;
+      if (!(key in out) && typeof e.value === "number" && !isNaN(e.value)) {
+        out[key] = Number(e.value);
+      }
+    }
+    return out;
+  }, [entries]);
+
+  function latestValue(metricKey: string | null | undefined, goalDefinitionId?: string | null): number | undefined {
+    if (!metricKey) return undefined;
+    if (goalDefinitionId) {
+      const keyed = latestByGoalMetric[`${goalDefinitionId}|${metricKey}`];
+      if (keyed !== undefined) return keyed;
+    }
+    return latestByMetric[metricKey];
+  }
+
   // Build the reportable field list from the user's own goals.
   const reportFields: ReportField[] = useMemo(() => {
     if (!goals) return [];
@@ -263,17 +284,17 @@ export default function Goals() {
       const next: Record<string, string> = { ...prev };
       for (const f of reportFields) {
         if (next[f.key] === undefined) {
-          const v = latestByMetric[f.key];
+          const v = latestValue(f.key, f.goalDefinitionId);
           next[f.key] = v === undefined ? "" : String(v);
         }
       }
       return next;
     });
-  }, [reportFields, latestByMetric]);
+  }, [reportFields, latestByGoalMetric, latestByMetric]);
 
-  function formatMetric(key: string | null | undefined, unit?: string | null): string {
+  function formatMetric(key: string | null | undefined, unit?: string | null, goalDefinitionId?: string | null): string {
     if (!key) return "Not reported";
-    const v = latestByMetric[key];
+    const v = latestValue(key, goalDefinitionId);
     return v === undefined ? "Not reported" : formatValue(v, unit);
   }
 
@@ -426,7 +447,7 @@ export default function Goals() {
     pill: c.tracked_by === "moxiemo" ? "moxie" : "you",
     title: c.title || "Untitled goal",
     target: c.target || "—",
-    now: formatMetric(c.metric_key),
+    now: formatMetric((c.metric_key && String(c.metric_key)) || slugify(c.title || "Goal"), undefined, goals!.id),
     meta: c.deadline || "",
     lever: c.lever || "",
   }));
