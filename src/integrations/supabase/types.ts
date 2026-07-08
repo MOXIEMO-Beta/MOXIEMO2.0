@@ -859,6 +859,45 @@ export type Database = {
         }
         Relationships: []
       }
+      goal_definitions: {
+        Row: {
+          created_at: string
+          generated_at: string
+          id: string
+          north_star: Json
+          secondary_goals: Json
+          smart_cards: Json
+          source_model: string | null
+          strategy_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          north_star?: Json
+          secondary_goals?: Json
+          smart_cards?: Json
+          source_model?: string | null
+          strategy_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          generated_at?: string
+          id?: string
+          north_star?: Json
+          secondary_goals?: Json
+          smart_cards?: Json
+          source_model?: string | null
+          strategy_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       goal_entries: {
         Row: {
           created_at: string
