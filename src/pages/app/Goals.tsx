@@ -485,7 +485,7 @@ export default function Goals() {
             className="text-[11px] uppercase tracking-wider font-semibold rounded-full px-2.5 py-1"
             style={{ background: "rgba(255,255,255,0.12)", color: CORAL_TINT_SOFT }}
           >
-            ◔ You report this
+            Umbrella outcome
           </span>
         </div>
         <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight" style={{ color: "#FFFFFF" }}>
