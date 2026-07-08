@@ -209,7 +209,7 @@ export default function Goals() {
 
   const hasStrategyReady = !!strategy?.success_definition;
   const { goals, loading: goalsLoading, generating, generate, hasGoals } =
-    useGoalDefinitions({ autoGenerate: true, hasStrategy: hasStrategyReady });
+    useGoalDefinitions({ autoGenerate: true, hasStrategy: hasStrategyReady, debugSource: "Goals North Star" });
 
   const weekNum = useMemo(() => weeksSince(strategy?.created_at ?? null), [strategy]);
   const yearPct = Math.min(100, Math.round((weekNum / 52) * 100));
