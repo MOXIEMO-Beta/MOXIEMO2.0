@@ -26,9 +26,15 @@ function parseSeg(s: string): { value: string; unit: string; unitKey: string } {
 function splitSegments(s: string): string[] {
   if (!s) return [];
   const normalized = s.replace(/\s+(?:and|&)\s+|\s*\+\s*|\s*\/\s*/gi, "|goal|");
+  const withCommaBreaks = normalized.replace(/,(\s*[$]?\d)/g, (match, next: string, offset: number, whole: string) => {
+    const before = whole[offset - 1] ?? "";
+    const after = whole.slice(offset + 1);
+    return /\d/.test(before) && /^\d{3}\b/.test(after) ? match : `|goal|${next}`;
+  });
   const parts = normalized
     // Split list commas, but preserve thousands separators like 2,000.
-    .split(/\|goal\||(?<!\d),(?!\d{3}\b)(?=\s*[$]?\d)/g)
+    .replace(normalized, withCommaBreaks)
+    .split("|goal|")
     .map((p) => p.trim())
     .filter(Boolean);
   const numeric = parts.filter((p) => /\d/.test(p));
