@@ -21,16 +21,24 @@ Rules:
   (posts published, engagement rate, alignment score, drafts). Everything
   else (revenue, users, retention, testimonials, calls booked) is "self".
 
+CRITICAL: The North Star resolves to EXACTLY ONE primary measurable metric
+with ONE numeric target and ONE unit. Never a compound "X and Y" target.
+If the founder's ambition names several outcomes (e.g. "2,000 followers and
+500 subscribers"), pick the single most primary outcome for the North Star
+and turn every other named outcome into its own SMART card below. The
+North Star title MAY be an umbrella sentence, but target_value, target_unit,
+and metric_key MUST describe one metric only.
+
 Schema:
 {
   "north_star": {
     "title": "one sentence, sentence case, THE headline outcome from the strategy",
-    "target_value": "short string, e.g. '$80K MRR', '500 users', 'Baseline'",
-    "target_unit": "short string like 'users', 'MRR', 'clients' or empty",
+    "target_value": "SINGLE-metric target string, e.g. '$80K MRR', '500 users', '2000 followers'. Never compound like '2000 followers and 500 subs'.",
+    "target_unit": "short single unit like 'users', 'MRR', 'followers', 'clients' or empty",
     "deadline": "short string like 'By June 2027'",
     "lever": "one sentence explaining what pulls this forward",
     "tracked_by": "self",
-    "metric_key": "one of: paying_users, mrr, retention_pct, testimonials, discovery_calls, or null"
+    "metric_key": "snake_case key that matches the primary metric, e.g. paying_users, mrr, followers, subscribers, retention_pct. Must correspond to how this founder will report progress."
   },
   "smart_cards": [
     // Exactly 4 cards. Each:
