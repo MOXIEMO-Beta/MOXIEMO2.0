@@ -88,6 +88,7 @@ export default function Settings() {
   const [pendingPages, setPendingPages] = useState<PendingPagesRow | null>(null);
   const [selectedPending, setSelectedPending] = useState<Record<string, boolean>>({});
   const [savingPending, setSavingPending] = useState(false);
+  const [showLinkedInChooser, setShowLinkedInChooser] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -148,6 +149,9 @@ export default function Settings() {
   const companyPages = connections.filter(
     (c) => c.platform === "linkedin" && c.connection_type === "company",
   );
+  const personalLinkedIn = connections.find(
+    (c) => c.platform === "linkedin" && (c.connection_type ?? "personal") === "personal",
+  );
 
   // Handle pages_connected / pages_select / pages_error query params + load pending row.
   useEffect(() => {
@@ -169,7 +173,7 @@ export default function Settings() {
       toast.error(map[pagesError] ?? "Company page connection failed.");
     }
     if (pagesConnected) {
-      toast.success("Company page connected.");
+      toast.success(pagesConnected === "personal" ? "LinkedIn personal profile connected." : "Company page connected.");
       // Refresh the connections list.
       supabase
         .from("social_connections")
@@ -193,9 +197,9 @@ export default function Settings() {
     }
   }, [user]);
 
-  function connectCompanyPage() {
+  function connectLinkedIn(intent: "personal" | "company" | "both") {
     if (!user) return;
-    setConnecting("linkedin_pages");
+    setConnecting(`linkedin_${intent}`);
     try {
       const redirect_uri = "https://mqhipuvkdsvapbhrrzjd.supabase.co/functions/v1/social-oauth-pages-callback";
       const clientId = "86swh4fzu3j3vo";
@@ -216,6 +220,7 @@ export default function Settings() {
       const state = btoa(JSON.stringify({
         platform: "linkedin",
         connection_type: "company",
+        intent,
         user_id: user.id,
         redirect_uri,
       }));
@@ -366,26 +371,94 @@ export default function Settings() {
           </div>
         ))}
 
-        <div className="flex items-center justify-between" style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center" style={{ width: 32, height: 32, background: "#E8F1FB", borderRadius: 8 }}>
-              <Linkedin size={18} color="#0A66C2" />
+        {personalLinkedIn && (
+          <div className="flex items-center justify-between" style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center" style={{ width: 32, height: 32, background: "#E8F1FB", borderRadius: 8 }}>
+                <Linkedin size={18} color="#0A66C2" />
+              </div>
+              <div>
+                <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>
+                  {personalLinkedIn.profile_name || "LinkedIn personal profile"}
+                </div>
+                <div className="text-[12px]" style={{ color: "#6B6860" }}>
+                  Personal posting and personal analytics.
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>
-                {companyPages.length > 0 ? "Connect another LinkedIn page" : "Connect LinkedIn"}
-              </div>
-              <div className="text-[12px]" style={{ color: "#9A9896" }}>
-                {companyPages.length > 0
-                  ? "Add another company page you administer."
-                  : "One connection covers company page posting and analytics, plus your personal post analytics."}
-              </div>
+            <div className="flex items-center gap-2">
+              <ExpiryChip iso={personalLinkedIn.expires_at} />
+              <span className="text-[10px] font-semibold" style={{ background: "#EAF3DE", color: "#3B6D11", borderRadius: 4, padding: "2px 8px" }}>Connected</span>
+              <button onClick={() => disconnectCompanyPage(personalLinkedIn.id)} className="text-[12px]" style={{ border: "0.5px solid #ECEAE5", borderRadius: 6, height: 28, padding: "0 12px", color: "#6B6860" }}>Disconnect</button>
             </div>
           </div>
-          <button onClick={connectCompanyPage} disabled={connecting === "linkedin_pages"} className="text-[12px] font-semibold"
-            style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 32, padding: "0 14px", boxShadow: "0 4px 14px rgba(232,90,70,0.25)" }}>
-            {connecting === "linkedin_pages" ? "Connecting…" : companyPages.length > 0 ? "Connect another page" : "Connect"}
-          </button>
+        )}
+
+        <div style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center" style={{ width: 32, height: 32, background: "#E8F1FB", borderRadius: 8 }}>
+                <Linkedin size={18} color="#0A66C2" />
+              </div>
+              <div>
+                <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>
+                  {personalLinkedIn || companyPages.length > 0 ? "Add another LinkedIn connection" : "Connect LinkedIn"}
+                </div>
+                <div className="text-[12px]" style={{ color: "#9A9896" }}>
+                  Choose personal profile, company page(s), or both. A company page is not required.
+                </div>
+              </div>
+            </div>
+            {!showLinkedInChooser && (
+              <button onClick={() => setShowLinkedInChooser(true)} className="text-[12px] font-semibold"
+                style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 32, padding: "0 14px", boxShadow: "0 4px 14px rgba(232,90,70,0.25)" }}>
+                Connect
+              </button>
+            )}
+          </div>
+          {showLinkedInChooser && (
+            <div className="mt-3 grid gap-2 sm:grid-cols-3">
+              <button
+                onClick={() => connectLinkedIn("personal")}
+                disabled={!!connecting}
+                className="text-left"
+                style={{ border: "0.5px solid #ECEAE5", borderRadius: 10, padding: "12px 14px", background: "#FFFDF7" }}
+              >
+                <div className="text-[13px] font-semibold" style={{ color: "#0E0F10" }}>
+                  {connecting === "linkedin_personal" ? "Connecting…" : "Personal profile only"}
+                </div>
+                <div className="text-[11px]" style={{ color: "#6B6860" }}>
+                  Posting and analytics for your own LinkedIn. No company page needed.
+                </div>
+              </button>
+              <button
+                onClick={() => connectLinkedIn("company")}
+                disabled={!!connecting}
+                className="text-left"
+                style={{ border: "0.5px solid #ECEAE5", borderRadius: 10, padding: "12px 14px", background: "#FFFDF7" }}
+              >
+                <div className="text-[13px] font-semibold" style={{ color: "#0E0F10" }}>
+                  {connecting === "linkedin_company" ? "Connecting…" : "Company page(s) only"}
+                </div>
+                <div className="text-[11px]" style={{ color: "#6B6860" }}>
+                  Pages you administer. Choose which ones to connect.
+                </div>
+              </button>
+              <button
+                onClick={() => connectLinkedIn("both")}
+                disabled={!!connecting}
+                className="text-left"
+                style={{ border: "0.5px solid #ECEAE5", borderRadius: 10, padding: "12px 14px", background: "#FFFDF7" }}
+              >
+                <div className="text-[13px] font-semibold" style={{ color: "#0E0F10" }}>
+                  {connecting === "linkedin_both" ? "Connecting…" : "Personal + company page(s)"}
+                </div>
+                <div className="text-[11px]" style={{ color: "#6B6860" }}>
+                  One authorization covers both.
+                </div>
+              </button>
+            </div>
+          )}
         </div>
 
         {pendingPages && (
