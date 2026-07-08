@@ -88,6 +88,7 @@ export default function Settings() {
   const [pendingPages, setPendingPages] = useState<PendingPagesRow | null>(null);
   const [selectedPending, setSelectedPending] = useState<Record<string, boolean>>({});
   const [savingPending, setSavingPending] = useState(false);
+  const [showLinkedInChooser, setShowLinkedInChooser] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -148,6 +149,9 @@ export default function Settings() {
   const companyPages = connections.filter(
     (c) => c.platform === "linkedin" && c.connection_type === "company",
   );
+  const personalLinkedIn = connections.find(
+    (c) => c.platform === "linkedin" && (c.connection_type ?? "personal") === "personal",
+  );
 
   // Handle pages_connected / pages_select / pages_error query params + load pending row.
   useEffect(() => {
@@ -193,9 +197,9 @@ export default function Settings() {
     }
   }, [user]);
 
-  function connectCompanyPage() {
+  function connectLinkedIn(intent: "personal" | "company" | "both") {
     if (!user) return;
-    setConnecting("linkedin_pages");
+    setConnecting(`linkedin_${intent}`);
     try {
       const redirect_uri = "https://mqhipuvkdsvapbhrrzjd.supabase.co/functions/v1/social-oauth-pages-callback";
       const clientId = "86swh4fzu3j3vo";
@@ -216,6 +220,7 @@ export default function Settings() {
       const state = btoa(JSON.stringify({
         platform: "linkedin",
         connection_type: "company",
+        intent,
         user_id: user.id,
         redirect_uri,
       }));
