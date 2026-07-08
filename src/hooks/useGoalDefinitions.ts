@@ -35,6 +35,38 @@ export type GoalDefinitions = {
   generated_at: string;
 };
 
+function differs(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a ?? null) !== JSON.stringify(b ?? null);
+}
+
+async function persistResolved(original: GoalDefinitions, resolved: GoalDefinitions) {
+  if (!differs(original.north_star, resolved.north_star) && !differs(original.smart_cards, resolved.smart_cards)) return;
+  const { error } = await supabase
+    .from("goal_definitions")
+    .update({
+      north_star: resolved.north_star as any,
+      smart_cards: resolved.smart_cards as any,
+    })
+    .eq("id", original.id)
+    .eq("user_id", original.user_id);
+  if (error) {
+    console.error("[goalResolver] failed to persist resolved North Star", {
+      goal_definition_id: original.id,
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+    });
+  } else {
+    console.info("[goalResolver] persisted single-metric North Star", {
+      goal_definition_id: original.id,
+      target_value: resolved.north_star?.target_value,
+      metric_key: resolved.north_star?.metric_key,
+      smart_card_count: resolved.smart_cards?.length ?? 0,
+    });
+  }
+}
+
 export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?: boolean } = {}) {
   const { user } = useAuth();
   const [goals, setGoals] = useState<GoalDefinitions | null>(null);
@@ -54,8 +86,10 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
       );
       if (error) throw error;
       if (data?.goals) {
-        const resolved = resolveGoalDefinitions(data.goals as GoalDefinitions);
+        const original = data.goals as GoalDefinitions;
+        const resolved = resolveGoalDefinitions(original);
         setGoals(resolved);
+        void persistResolved(original, resolved);
         return resolved;
       }
       return null;
@@ -83,7 +117,10 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
       if (cancelled) return;
       if (error) setError(error.message);
       if (data) {
-        setGoals(resolveGoalDefinitions(data as unknown as GoalDefinitions));
+        const original = data as unknown as GoalDefinitions;
+        const resolved = resolveGoalDefinitions(original);
+        setGoals(resolved);
+        void persistResolved(original, resolved);
         setLoading(false);
       } else if (autoGenerate && opts.hasStrategy) {
         setLoading(false);
