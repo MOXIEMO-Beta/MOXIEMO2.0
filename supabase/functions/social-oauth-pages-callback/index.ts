@@ -130,7 +130,7 @@ Deno.serve(async (req) => {
         });
         if (meRes.ok) {
           const p = await meRes.json();
-          profileName = p?.name ?? [p?.given_name, p?.family_name].filter(Boolean).join(" ") || null;
+          profileName = p?.name ?? ([p?.given_name, p?.family_name].filter(Boolean).join(" ") || null);
           profileImage = p?.picture ?? null;
         } else {
           const legacy = await fetch("https://api.linkedin.com/v2/me", {
@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
           });
           if (legacy.ok) {
             const p = await legacy.json();
-            profileName = [p?.localizedFirstName, p?.localizedLastName].filter(Boolean).join(" ") || null;
+            profileName = ([p?.localizedFirstName, p?.localizedLastName].filter(Boolean).join(" ") || null);
           }
         }
       } catch (e) {
