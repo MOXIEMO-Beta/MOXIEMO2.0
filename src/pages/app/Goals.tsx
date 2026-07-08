@@ -155,6 +155,13 @@ function formatValue(n: number | null, unit?: string | null): string {
   return rendered;
 }
 
+function targetAffix(target?: string | null): { prefix?: string; suffix?: string } {
+  const t = target ?? "";
+  if (/\$|usd|dollar/i.test(t)) return { prefix: "$" };
+  if (/%|percent/i.test(t)) return { suffix: "%" };
+  return {};
+}
+
 export default function Goals() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -232,7 +239,7 @@ export default function Goals() {
       if (seen.has(key)) return;
       seen.add(key);
       const target = g.target || "—";
-      const affix = unitAffix(target);
+      const affix = targetAffix(target);
       list.push({
         key,
         label: shortMetricLabel(g, key),
