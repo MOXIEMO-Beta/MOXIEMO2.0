@@ -69,6 +69,8 @@ async function persistResolved(original: GoalDefinitions, resolved: GoalDefiniti
 
 function logResolution(source: string | undefined, original: GoalDefinitions, resolved: GoalDefinitions) {
   if (!source) return;
+  const primaryTitle = String(resolved.north_star?.title ?? "").toLowerCase();
+  const primaryTarget = String(resolved.north_star?.target_value ?? "").toLowerCase();
   console.info(`[goalResolver] ${source} read path`, {
     goal_definition_id: original.id,
     received: {
@@ -79,7 +81,8 @@ function logResolution(source: string | undefined, original: GoalDefinitions, re
       primary_metric: resolved.north_star,
       secondary_cards: resolved.smart_cards?.filter((card) => {
         const target = String(card?.target ?? "").toLowerCase();
-        return !original.smart_cards?.some((originalCard) => String(originalCard?.target ?? "").toLowerCase() === target);
+        const title = String(card?.title ?? "").toLowerCase();
+        return target !== primaryTarget && title !== primaryTitle;
       }) ?? [],
       smart_card_count: resolved.smart_cards?.length ?? 0,
     },
