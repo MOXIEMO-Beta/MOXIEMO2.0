@@ -47,6 +47,15 @@ function matchCardKey(cards: any[], segment: string): string | null {
   return null;
 }
 
+function matchCard(cards: any[], segment: string): any | null {
+  const words = (segment.toLowerCase().match(/[a-z]{4,}/g) ?? []);
+  if (words.length === 0) return null;
+  return cards.find((c) => {
+    const hay = `${c?.title ?? ""} ${c?.target ?? ""} ${c?.metric_key ?? ""}`.toLowerCase();
+    return words.some((w) => hay.includes(w));
+  }) ?? null;
+}
+
 export function resolveGoalDefinitions<T extends { north_star?: any; smart_cards?: any[] } | null>(g: T): T {
   if (!g) return g;
   const ns = (g as any).north_star ?? {};
@@ -64,6 +73,7 @@ export function resolveGoalDefinitions<T extends { north_star?: any; smart_cards
   const [primary, ...rest] = segments;
   const primaryParsed = parseSeg(primary);
   const cards = [...((g as any).smart_cards ?? [])];
+  const primaryCard = matchCard(cards, primary);
   const primaryKey = (ns.metric_key && String(ns.metric_key)) || matchCardKey(cards, primary) || slugify(primaryParsed.unitKey || primaryParsed.unit || primary);
 
   const extraCards = rest.map((seg) => {
@@ -82,6 +92,7 @@ export function resolveGoalDefinitions<T extends { north_star?: any; smart_cards
 
   const newNs = {
     ...ns,
+    title: primaryCard?.title || ns.title,
     target_value: primary,
     target_unit: primaryParsed.unit || ns.target_unit || "",
     metric_key: primaryKey,
