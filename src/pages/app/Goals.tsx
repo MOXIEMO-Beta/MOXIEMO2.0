@@ -82,11 +82,60 @@ function slugify(s: string): string {
 type ReportField = {
   key: string;              // metric_key (falls back to slug(title))
   label: string;
-  hint: string;
+  title: string;
+  target: string;
+  deadline?: string;
+  category?: string;
   prefix?: string;
   suffix?: string;
   goalDefinitionId?: string | null;
 };
+
+const STOP_WORDS = new Set([
+  "a", "an", "and", "at", "by", "for", "from", "in", "into", "of", "on", "or", "per", "the", "to", "with",
+  "build", "create", "deliver", "drive", "grow", "hit", "increase", "launch", "reach", "record", "sell", "secure",
+  "weekly", "monthly", "quarterly", "annual", "annually", "before", "after", "through", "within", "toward", "around",
+]);
+
+const METRIC_LABELS: Record<string, string> = {
+  paying_users: "Paying users",
+  mrr: "MRR",
+  retention_pct: "Retention",
+  testimonials: "Testimonials",
+  discovery_calls: "Discovery calls",
+  instagram_followers: "Instagram followers",
+  substack_subscribers: "Substack subscribers",
+  book_copies: "Book copies",
+  dms_comments: "DMs and comments",
+};
+
+function humanizeKey(key?: string | null): string {
+  if (!key) return "Metric";
+  return key
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (m) => m.toUpperCase())
+    .replace(/\bMrr\b/, "MRR")
+    .replace(/\bDms\b/, "DMs");
+}
+
+function shortMetricLabel(goal: GoalCard, key: string): string {
+  if (goal.metric_key) return METRIC_LABELS[String(goal.metric_key)] ?? humanizeKey(String(goal.metric_key));
+
+  const title = (goal.title || goal.category || "Metric").replace(/[,$%]/g, " ");
+  const words = title.match(/[A-Za-z][A-Za-z']*/g) ?? [];
+  const meaningful = words
+    .map((w) => w.toLowerCase())
+    .filter((w) => w.length > 2 && !STOP_WORDS.has(w) && !/^\d+$/.test(w));
+  const picked = meaningful.slice(-3);
+  if (picked.length > 0) {
+    return picked
+      .join(" ")
+      .replace(/\bdms\b/i, "DMs")
+      .replace(/^./, (m) => m.toUpperCase());
+  }
+
+  return METRIC_LABELS[key] ?? humanizeKey(key);
+}
 
 function unitAffix(unit?: string | null): { prefix?: string; suffix?: string } {
   const u = (unit ?? "").trim();
@@ -174,25 +223,27 @@ export default function Goals() {
     if (!goals) return [];
     const list: ReportField[] = [];
     const seen = new Set<string>();
-    const push = (g: NorthStar | GoalCard) => {
+    const push = (g: GoalCard) => {
       const isSelf = (g.tracked_by ?? "self") !== "moxiemo";
       if (!isSelf) return;
-      const label = ("title" in g ? g.title : (g as any).title) || "Goal";
+      const title = g.title || "Goal";
       const key = (g.metric_key && String(g.metric_key)) || slugify(String(label));
       if (seen.has(key)) return;
       seen.add(key);
-      const unit = ("target_unit" in g ? (g as NorthStar).target_unit : undefined) ?? undefined;
-      const affix = unitAffix(unit);
-      const target = "target_value" in g ? (g as NorthStar).target_value : (g as GoalCard).target;
+      const target = g.target || "—";
+      const affix = unitAffix(target);
       list.push({
         key,
-        label,
-        hint: target ? `Target: ${target}` : "Update when it changes.",
+        label: shortMetricLabel(g, key),
+        title,
+        target,
+        deadline: g.deadline,
+        category: g.category,
         prefix: affix.prefix,
         suffix: affix.suffix,
+        goalDefinitionId: goals.id,
       });
     };
-    if (goals.north_star) push(goals.north_star);
     for (const c of goals.smart_cards ?? []) push(c);
     return list;
   }, [goals]);
@@ -259,10 +310,11 @@ export default function Goals() {
       };
       const period = currentWeek;
       const rows = reportFields
-        .map((f) => ({ key: f.key, value: parse(inputs[f.key] ?? "") }))
+        .map((f) => ({ key: f.key, value: parse(inputs[f.key] ?? ""), goalDefinitionId: f.goalDefinitionId ?? goals?.id ?? null }))
         .filter((r) => r.value !== null)
         .map((r) => ({
           user_id: user.id,
+          goal_definition_id: r.goalDefinitionId,
           metric_key: r.key,
           value: r.value,
           period,
@@ -275,16 +327,23 @@ export default function Goals() {
       }
       const { data, error } = await supabase
         .from("goal_entries")
-        .upsert(rows, { onConflict: "user_id,metric_key,period" })
+        .upsert(rows, { onConflict: "user_id,goal_definition_id,metric_key,period" })
         .select();
       if (error) {
-        console.error("goal_entries upsert failed", error);
+        console.error("goal_entries upsert failed", {
+          status: (error as any).status ?? null,
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          payload: rows,
+        });
         throw error;
       }
       const savedRows = (data ?? []) as GoalEntry[];
       setEntries((prev) => {
-        const keySet = new Set(savedRows.map((r) => `${r.metric_key}|${r.period}`));
-        const kept = prev.filter((e) => !keySet.has(`${e.metric_key}|${e.period}`));
+        const keySet = new Set(savedRows.map((r) => `${r.goal_definition_id}|${r.metric_key}|${r.period}`));
+        const kept = prev.filter((e) => !keySet.has(`${e.goal_definition_id}|${e.metric_key}|${e.period}`));
         return [...savedRows, ...kept].slice(0, 200);
       });
       setSaved(true);
@@ -538,29 +597,54 @@ export default function Goals() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
                 {reportFields.map((f, idx) => (
-                  <label key={f.key} className="block">
-                    <span className="text-xs font-medium text-foreground">{f.label}</span>
-                    <div className="relative mt-1">
-                      {f.prefix && (
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.prefix}</span>
-                      )}
-                      <input
-                        ref={idx === 0 ? firstFieldRef : undefined}
-                        type="number"
-                        inputMode="decimal"
-                        min={0}
-                        value={inputs[f.key] ?? ""}
-                        onChange={(e) => setInputs((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                        className="block w-full rounded-lg border border-border bg-background py-2 text-base focus:outline-none focus:ring-2 focus:ring-[--ring]"
-                        style={{ paddingLeft: f.prefix ? 24 : 12, paddingRight: f.suffix ? 28 : 12 }}
-                        placeholder=""
-                      />
-                      {f.suffix && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.suffix}</span>
-                      )}
+                  <article key={f.key} className="rounded-xl bg-card border border-border p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <div className="min-w-0">
+                        <div className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground truncate">
+                          {f.category || "Metric"}
+                        </div>
+                        <label htmlFor={`goal-input-${f.key}`} className="mt-1 block font-display text-lg font-semibold text-foreground leading-tight">
+                          {f.label}
+                        </label>
+                      </div>
+                      <span className="shrink-0 text-[10px] font-semibold rounded-full px-2 py-0.5" style={{ background: "#FEF3E2", color: "#D97706" }}>
+                        ◔ You report
+                      </span>
                     </div>
-                    <span className="mt-1 block text-[11px] text-muted-foreground">{f.hint}</span>
-                  </label>
+
+                    <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 items-end">
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Now</div>
+                        <div className="relative">
+                          {f.prefix && (
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.prefix}</span>
+                          )}
+                          <input
+                            id={`goal-input-${f.key}`}
+                            ref={idx === 0 ? firstFieldRef : undefined}
+                            type="number"
+                            inputMode="decimal"
+                            min={0}
+                            value={inputs[f.key] ?? ""}
+                            onChange={(e) => setInputs((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                            className="block w-full rounded-lg border border-border bg-background py-2 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-[--ring]"
+                            style={{ paddingLeft: f.prefix ? 24 : 12, paddingRight: f.suffix ? 28 : 12 }}
+                          />
+                          {f.suffix && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.suffix}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Target</div>
+                        <div className="font-display text-lg font-semibold text-foreground leading-tight break-words">{f.target}</div>
+                      </div>
+                    </div>
+
+                    {f.deadline ? (
+                      <div className="mt-3 text-[11px] text-muted-foreground border-t border-border pt-2">By {f.deadline}</div>
+                    ) : null}
+                  </article>
                 ))}
               </div>
             )}
