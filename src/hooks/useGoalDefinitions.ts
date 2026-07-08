@@ -119,7 +119,7 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
     } finally {
       setGenerating(false);
     }
-  }, []);
+  }, [opts.debugSource]);
 
   useEffect(() => {
     // Reset when user changes so a prior user's cache never bleeds through.
