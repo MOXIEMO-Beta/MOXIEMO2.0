@@ -426,7 +426,7 @@ export default function Goals() {
             {ns.lever || "Log the numbers each week to keep this honest."}
           </p>
           <button
-            onClick={brandFire}
+            onClick={logWin}
             className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
             style={{ background: CORAL }}
           >
