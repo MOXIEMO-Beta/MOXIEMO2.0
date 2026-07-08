@@ -959,20 +959,46 @@ function KitPanel({
 }: any) {
   const [url, setUrl] = useState<string>(profile?.website_url ?? "");
   const [colors, setColors] = useState<string[]>(
-    Array.isArray(profile?.brand_colors) && profile.brand_colors.length
-      ? profile.brand_colors
-      : ["#0E0F10", "#E85A46", "#F7F5F1"]
+    Array.isArray(profile?.brand_colors) ? profile.brand_colors : []
   );
   const [fonts, setFonts] = useState<string[]>(
-    Array.isArray(profile?.brand_fonts) && profile.brand_fonts.length
-      ? profile.brand_fonts
-      : ["Space Grotesk", "Inter"]
+    Array.isArray(profile?.brand_fonts) ? profile.brand_fonts : []
   );
   const [logoUrl, setLogoUrl] = useState<string | null>(profile?.brand_logo_url ?? null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
   const [kit, setKit] = useState<any>(latestKit?.kit_json ?? null);
   const [kitId, setKitId] = useState<string | null>(latestKit?.id ?? null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+
+  async function handleScan() {
+    const target = url.trim();
+    if (!target) {
+      setScanError("Enter your website URL first.");
+      return;
+    }
+    setScanning(true);
+    setScanError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-brand-kit", { body: { url: target } });
+      if (error) throw error;
+      const scanned: string[] = Array.isArray(data?.colors) ? data.colors : [];
+      const scannedFonts: string[] = Array.isArray(data?.fonts?.all) && data.fonts.all.length
+        ? data.fonts.all
+        : [data?.fonts?.heading, data?.fonts?.body].filter(Boolean);
+      if (!scanned.length && !scannedFonts.length && !data?.logo) {
+        throw new Error("Could not read colors or typography from that site.");
+      }
+      if (scanned.length) setColors(scanned);
+      if (scannedFonts.length) setFonts(scannedFonts);
+      if (data?.logo && !logoUrl) setLogoUrl(data.logo);
+    } catch (e: any) {
+      setScanError(e?.message || "Site scan failed. Try again or enter values manually.");
+    } finally {
+      setScanning(false);
+    }
+  }
 
   useEffect(() => {
     if (latestKit?.kit_json && !kit) {
@@ -1041,10 +1067,18 @@ function KitPanel({
               onFocus={(e) => (e.currentTarget.style.borderColor = CORAL)}
               onBlur={(e) => (e.currentTarget.style.borderColor = BORDER)}
             />
-            <button style={{ background: INK, color: "#fff", border: "none", borderRadius: 8, padding: "0 16px", height: 40, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-              Scan Site
+            <button
+              type="button"
+              onClick={handleScan}
+              disabled={scanning}
+              style={{ background: INK, color: "#fff", border: "none", borderRadius: 8, padding: "0 16px", height: 40, fontSize: 13, fontWeight: 600, cursor: scanning ? "not-allowed" : "pointer", opacity: scanning ? 0.7 : 1 }}
+            >
+              {scanning ? "Scanning…" : "Scan Site"}
             </button>
           </div>
+          {scanError && (
+            <div style={{ fontSize: 12, color: CORAL, marginTop: 8 }}>{scanError}</div>
+          )}
 
           <Divider />
 
@@ -1074,7 +1108,9 @@ function KitPanel({
           <Divider />
 
           <FieldLabel>Brand Colors</FieldLabel>
-          <div style={{ fontSize: 11, color: FAINT, marginBottom: 10 }}>Auto-extracted from your site. Confirm or edit.</div>
+          <div style={{ fontSize: 11, color: FAINT, marginBottom: 10 }}>
+            {colors.length ? "Auto-extracted from your site. Confirm or edit." : "Scan your site above, or add colors manually."}
+          </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-start" }}>
             {colors.map((c, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative" }}>
@@ -1100,7 +1136,9 @@ function KitPanel({
           <Divider />
 
           <FieldLabel>Typography</FieldLabel>
-          <div style={{ fontSize: 11, color: FAINT, marginBottom: 10 }}>Auto-detected from your site.</div>
+          <div style={{ fontSize: 11, color: FAINT, marginBottom: 10 }}>
+            {fonts.length ? "Auto-detected from your site." : "Scan your site above, or add fonts manually."}
+          </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {fonts.map((f, i) => (
               <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#F0EFEC", borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 500, color: INK }}>
