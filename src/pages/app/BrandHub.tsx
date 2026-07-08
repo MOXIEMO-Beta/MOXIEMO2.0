@@ -1733,24 +1733,31 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         Icon={Compass}
         title="Full Brand Strategy"
         description="Positioning · ICP · Voice · Channels · Action Plan · Metrics, the complete document"
-        meta={<span style={{ fontSize: 11, color: FAINT }}>Updated Jun 22, 2026</span>}
+        meta={strategyUpdatedLabel ? <span style={{ fontSize: 11, color: FAINT }}>Updated {strategyUpdatedLabel}</span> : null}
         body={
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "8px 10px" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Positioning</div>
-              <div style={{ fontSize: 12, color: INK, marginTop: 2 }}>First fully autonomous content marketing platform starting with custom strategy</div>
+          strategy ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "8px 10px" }}>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Positioning</div>
+                <div style={{ fontSize: 12, color: INK, marginTop: 2 }}>{strategyPositioning || "Not set yet."}</div>
+              </div>
+              <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "8px 10px" }}>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Archetype</div>
+                <div style={{ fontSize: 12, color: INK, marginTop: 2 }}>
+                  {strategyArchetypePrimary
+                    ? `${strategyArchetypePrimary}${strategyArchetypeSecondary ? ` · Secondary: ${strategyArchetypeSecondary}` : ""}`
+                    : "Not set yet."}
+                </div>
+              </div>
             </div>
-            <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "8px 10px" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Archetype</div>
-              <div style={{ fontSize: 12, color: INK, marginTop: 2 }}>The Magician · Secondary: Creator</div>
-            </div>
-          </div>
+          ) : (
+            <div style={{ fontSize: 12, color: MUTED }}>No strategy on file yet.</div>
+          )
         }
-        bodyNote="6 sections · Auto-updates when strategy is regenerated"
+        bodyNote={strategy ? "Auto-updates when your strategy is regenerated" : ""}
         footer={
           <>
-            <PrimaryPill onClick={dlStrategy} disabled={busy === "strategy"}>{busy === "strategy" ? "Preparing…" : "Download PDF"}</PrimaryPill>
-            <button style={pill()}>Copy All</button>
+            <PrimaryPill onClick={dlStrategy} disabled={busy === "strategy" || !strategy}>{busy === "strategy" ? "Preparing…" : "Download PDF"}</PrimaryPill>
             <ShareControls documentType="strategy" sourceId={strategyId} />
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Auto-saved from your strategy</span>
           </>
@@ -1763,23 +1770,29 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         Icon={FileText}
         title="Brand Kit"
         description="Archetype · Voice · Key Messages · Content Pillars · ICP Brief, built for sharing"
-        meta={<span style={{ fontSize: 11, color: FAINT }}>Generated Jun 22, 2026</span>}
+        meta={kitGeneratedLabel ? <span style={{ fontSize: 11, color: FAINT }}>Generated {kitGeneratedLabel}</span> : null}
         body={
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            <span style={{ background: INK, color: "#fff", borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>The Magician</span>
-            {["Clear and Direct", "Strategy-First Marketing", "$250K+ Founder ICP"].map((c) => (
-              <span key={c} style={{ background: "#F0EFEC", color: INK, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>{c}</span>
-            ))}
-            <span style={{ background: "#F0EFEC", color: INK, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>+4 more</span>
-          </div>
+          kitJson ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {kitTags.length ? kitTags.map((c, i) => (
+                <span key={c + i} style={{ background: i === 0 ? INK : "#F0EFEC", color: i === 0 ? "#fff" : INK, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>{c}</span>
+              )) : <span style={{ fontSize: 12, color: MUTED }}>Kit generated. Open it to view details.</span>}
+              {remainingKitTags > 0 && (
+                <span style={{ background: "#F0EFEC", color: INK, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>+{remainingKitTags} more</span>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: MUTED }}>No Brand Kit yet — generate one from the Brand Kit tab.</div>
+          )
         }
-        bodyNote="5 sections · 1 page · Regenerate from Brand Kit tab when strategy changes"
+        bodyNote={kitJson ? "Regenerate from Brand Kit tab when your strategy changes" : ""}
         footer={
           <>
-            <PrimaryPill onClick={dlKit} disabled={busy === "kit"}>{busy === "kit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
-            <button style={pill()}>Copy All</button>
-            <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
-            <button style={pill(true)} onClick={goKitVisual}>↺ Regenerate</button>
+            <PrimaryPill onClick={kitJson ? dlKit : goKitVisual} disabled={busy === "kit"}>
+              {busy === "kit" ? "Preparing…" : kitJson ? "Download PDF" : "Generate Brand Kit"}
+            </PrimaryPill>
+            {kitJson && <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />}
+            {kitJson && <button style={pill(true)} onClick={goKitVisual}>↺ Regenerate</button>}
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Kit tab</span>
           </>
         }
