@@ -211,6 +211,7 @@ export default function Dashboard() {
   const { goals: goalDefs } = useGoalDefinitions({
     autoGenerate: true,
     hasStrategy: !!strategy?.positioning_statement,
+    debugSource: "Dashboard North Star",
   });
 
   // Live LinkedIn Page leaderboard — powers Best post + "Your marketing is landing".
