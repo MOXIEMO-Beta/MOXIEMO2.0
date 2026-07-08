@@ -322,7 +322,16 @@ export default function Dashboard() {
       case "retention_pct": return retentionNow;
       case "testimonials": return testimonialsNow;
       case "discovery_calls": return discoveryNow;
-      default: return null;
+      default: {
+        if (!key) return null;
+        // Fallback: dynamic metric_key stored on goal_entries.value.
+        for (const e of goalEntries) {
+          if (e?.metric_key === key && typeof e?.value === "number" && !isNaN(e.value)) {
+            return e.value as number;
+          }
+        }
+        return null;
+      }
     }
   };
   const formatMetric = (key?: string | null): string => {
