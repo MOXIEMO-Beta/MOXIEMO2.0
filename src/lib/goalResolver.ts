@@ -31,9 +31,8 @@ function splitSegments(s: string): string[] {
     const after = whole.slice(offset + 1);
     return /\d/.test(before) && /^\d{3}\b/.test(after) ? match : `|goal|${next}`;
   });
-  const parts = normalized
-    // Split list commas, but preserve thousands separators like 2,000.
-    .replace(normalized, withCommaBreaks)
+  // Split list commas, but preserve thousands separators like 2,000.
+  const parts = withCommaBreaks
     .split("|goal|")
     .map((p) => p.trim())
     .filter(Boolean);
