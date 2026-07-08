@@ -67,7 +67,26 @@ async function persistResolved(original: GoalDefinitions, resolved: GoalDefiniti
   }
 }
 
-export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?: boolean } = {}) {
+function logResolution(source: string | undefined, original: GoalDefinitions, resolved: GoalDefinitions) {
+  if (!source) return;
+  console.info(`[goalResolver] ${source} read path`, {
+    goal_definition_id: original.id,
+    received: {
+      north_star: original.north_star,
+      smart_card_count: original.smart_cards?.length ?? 0,
+    },
+    returned: {
+      primary_metric: resolved.north_star,
+      secondary_cards: resolved.smart_cards?.filter((card) => {
+        const target = String(card?.target ?? "").toLowerCase();
+        return !original.smart_cards?.some((originalCard) => String(originalCard?.target ?? "").toLowerCase() === target);
+      }) ?? [],
+      smart_card_count: resolved.smart_cards?.length ?? 0,
+    },
+  });
+}
+
+export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?: boolean; debugSource?: string } = {}) {
   const { user } = useAuth();
   const [goals, setGoals] = useState<GoalDefinitions | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,6 +107,7 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
       if (data?.goals) {
         const original = data.goals as GoalDefinitions;
         const resolved = resolveGoalDefinitions(original);
+        logResolution(opts.debugSource, original, resolved);
         setGoals(resolved);
         void persistResolved(original, resolved);
         return resolved;
@@ -119,6 +139,7 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
       if (data) {
         const original = data as unknown as GoalDefinitions;
         const resolved = resolveGoalDefinitions(original);
+        logResolution(opts.debugSource, original, resolved);
         setGoals(resolved);
         void persistResolved(original, resolved);
         setLoading(false);
@@ -130,7 +151,7 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
       }
     })();
     return () => { cancelled = true; };
-  }, [user, autoGenerate, opts.hasStrategy, generate]);
+  }, [user, autoGenerate, opts.hasStrategy, opts.debugSource, generate]);
 
   return { goals, loading, generating, error, generate, hasGoals: !!goals?.north_star?.title };
 }
