@@ -256,7 +256,7 @@ export default function BrandHub() {
           .maybeSingle(),
         supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("audits").select("id").eq("user_id", user.id).eq("status", "ready").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("brand_kits").select("id, kit_json").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("brand_kits").select("id, kit_json, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       const prof: any = p.data ?? {};
       setProfile(prof);
