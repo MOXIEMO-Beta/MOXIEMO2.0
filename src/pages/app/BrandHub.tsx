@@ -238,7 +238,7 @@ export default function BrandHub() {
   const [profile, setProfile] = useState<any>(null);
   const [strategy, setStrategy] = useState<any>(null);
   const [latestAuditId, setLatestAuditId] = useState<string | null>(null);
-  const [latestKit, setLatestKit] = useState<{ id: string; kit_json: any } | null>(null);
+  const [latestKit, setLatestKit] = useState<{ id: string; kit_json: any; created_at?: string | null } | null>(null);
   const [hubVisited, setHubVisited] = useState(false);
   const [tab, setTab] = useState<BrandTab>("welcome");
   const [auditStep, setAuditStep] = useState<AuditStep>("prompt");
