@@ -503,6 +503,7 @@ export default function Goals() {
 
       {/* UPDATE YOUR NUMBERS */}
       <section
+        ref={numbersSectionRef}
         className="rounded-xl p-6 md:p-8 border transition-colors"
         style={saved
           ? { background: "linear-gradient(135deg, #FFF3F0 0%, #FEEDE8 100%)", borderColor: "#F8CFC5" }
@@ -530,33 +531,42 @@ export default function Goals() {
             <p className="text-sm text-muted-foreground mb-5">
               Each field is pre-filled with your last reported value. Update what changed, leave the rest. Every field is optional.
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
-              {FIELDS.map((f) => (
-                <label key={f.key} className="block">
-                  <span className="text-xs font-medium text-foreground">{f.label}</span>
-                  <div className="relative mt-1">
-                    {f.prefix && (
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.prefix}</span>
-                    )}
-                    <input
-                      type="number" min={0}
-                      value={inputs[f.key]}
-                      onChange={(e) => setInputs((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                      className="block w-full rounded-lg border border-border bg-background py-2 text-base focus:outline-none focus:ring-2 focus:ring-[--ring]"
-                      style={{ paddingLeft: f.prefix ? 24 : 12, paddingRight: f.suffix ? 28 : 12 }}
-                      placeholder=""
-                    />
-                    {f.suffix && (
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.suffix}</span>
-                    )}
-                  </div>
-                  <span className="mt-1 block text-[11px] text-muted-foreground">{f.hint}</span>
-                </label>
-              ))}
-            </div>
+            {reportFields.length === 0 ? (
+              <p className="text-sm text-muted-foreground mb-5">
+                No reportable goals yet. Once your goals are generated, one input will appear here per goal you report yourself.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
+                {reportFields.map((f, idx) => (
+                  <label key={f.key} className="block">
+                    <span className="text-xs font-medium text-foreground">{f.label}</span>
+                    <div className="relative mt-1">
+                      {f.prefix && (
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.prefix}</span>
+                      )}
+                      <input
+                        ref={idx === 0 ? firstFieldRef : undefined}
+                        type="number"
+                        inputMode="decimal"
+                        min={0}
+                        value={inputs[f.key] ?? ""}
+                        onChange={(e) => setInputs((prev) => ({ ...prev, [f.key]: e.target.value }))}
+                        className="block w-full rounded-lg border border-border bg-background py-2 text-base focus:outline-none focus:ring-2 focus:ring-[--ring]"
+                        style={{ paddingLeft: f.prefix ? 24 : 12, paddingRight: f.suffix ? 28 : 12 }}
+                        placeholder=""
+                      />
+                      {f.suffix && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.suffix}</span>
+                      )}
+                    </div>
+                    <span className="mt-1 block text-[11px] text-muted-foreground">{f.hint}</span>
+                  </label>
+                ))}
+              </div>
+            )}
             <button
               onClick={saveNumbers}
-              disabled={saving}
+              disabled={saving || reportFields.length === 0}
               className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
               style={{ background: CORAL }}
             >
