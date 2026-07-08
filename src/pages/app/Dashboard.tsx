@@ -116,6 +116,13 @@ function timeAgo(dateStr: string | null | undefined): string {
   if (diff < 172800) return "Yesterday";
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60) || "metric";
+}
 function weeksSince(startIso: string | null | undefined): number {
   if (!startIso) return 1;
   const start = new Date(startIso);
@@ -211,6 +218,7 @@ export default function Dashboard() {
   const { goals: goalDefs } = useGoalDefinitions({
     autoGenerate: true,
     hasStrategy: !!strategy?.positioning_statement,
+    debugSource: "Dashboard North Star",
   });
 
   // Live LinkedIn Page leaderboard — powers Best post + "Your marketing is landing".
@@ -563,7 +571,7 @@ export default function Dashboard() {
     tracked: c.tracked_by === "moxiemo",
     title: c.title || "Untitled",
     target: c.target || "—",
-    now: formatMetric(c.metric_key),
+    now: formatMetric((c.metric_key && String(c.metric_key)) || slugify(c.title || "Goal")),
   }));
 
   return (
