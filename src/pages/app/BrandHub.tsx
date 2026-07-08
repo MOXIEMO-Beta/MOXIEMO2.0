@@ -1602,6 +1602,41 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
   const auditDateLabel = latestAudit?.created_at
     ? new Date(latestAudit.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
     : null;
+
+  // Derive Full Brand Strategy card content from the signed-in user's strategy row,
+  // structure-agnostically, the same way the working Dashboard recap does.
+  const strategyReport = strategy ? buildReportData(strategy, profile ?? {}) : null;
+  const strategyPositioning = strategyReport?.positioning?.statement || "";
+  const strategyArchetypePrimary = strategyReport?.archetype?.primary || "";
+  const strategyArchetypeSecondary = strategyReport?.archetype?.secondary || "";
+  const strategyUpdatedLabel = strategy?.updated_at || strategy?.created_at
+    ? new Date((strategy.updated_at ?? strategy.created_at) as string).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
+
+  // Derive Brand Kit asset card tags from the signed-in user's latest kit_json.
+  const kitJson: any = latestKit?.kit_json ?? null;
+  const kitEnrichment = kitJson || strategy ? deriveEnrichment(kitJson, strategy) : { positioning: null, values: [], tone: { words_to_use: [], words_to_avoid: [], tone_by_platform: [] } };
+  const kitArchetype = kitJson?.archetype?.primary || strategyArchetypePrimary || "";
+  const kitVoiceAttrs: string[] = Array.isArray(kitJson?.voice?.attributes) && kitJson.voice.attributes.length
+    ? kitJson.voice.attributes
+    : (Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes : []);
+  const kitPrimaryPillar: string = kitJson?.pillars?.primary || "";
+  const kitSupportingPillars: string[] = Array.isArray(kitJson?.pillars?.supporting) && kitJson.pillars.supporting.length
+    ? kitJson.pillars.supporting
+    : (Array.isArray(strategy?.content_pillars) ? strategy.content_pillars : []).map((p: any) => typeof p === "string" ? p : (p?.name ?? "")).filter(Boolean);
+  const kitTags: string[] = [];
+  if (kitArchetype) kitTags.push(kitArchetype);
+  for (const v of kitVoiceAttrs) { if (kitTags.length < 4 && v) kitTags.push(v); }
+  if (kitPrimaryPillar && kitTags.length < 4) kitTags.push(kitPrimaryPillar);
+  for (const p of kitSupportingPillars) { if (kitTags.length < 4 && p) kitTags.push(p); }
+  const remainingKitTags = Math.max(
+    0,
+    (kitVoiceAttrs.length + (kitPrimaryPillar ? 1 : 0) + kitSupportingPillars.length + (kitArchetype ? 1 : 0)) - kitTags.length,
+  );
+  const kitGeneratedLabel = latestKit?.created_at
+    ? new Date(latestKit.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
+
   const dlStrategy = async () => {
     if (!userId) { toast({ title: "Sign in required", variant: "destructive" }); return; }
     setBusy("strategy");
