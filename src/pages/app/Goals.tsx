@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import confetti from "canvas-confetti";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -6,12 +6,12 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useGoalDefinitions } from "@/hooks/useGoalDefinitions";
+import { useGoalDefinitions, type GoalCard, type NorthStar } from "@/hooks/useGoalDefinitions";
 
 type GoalEntry = {
   id: string;
   user_id: string;
-  week_of: string;
+  week_of: string | null;
   paying_users: number | null;
   mrr: number | null;
   retention_pct: number | null;
@@ -20,6 +20,9 @@ type GoalEntry = {
   posts_published: number | null;
   email_opens: number | null;
   notes: string | null;
+  metric_key: string | null;
+  value: number | null;
+  period: string | null;
   created_at?: string;
 };
 
@@ -68,42 +71,39 @@ function weeksSince(startIso: string | null | undefined): number {
   return Math.min(52, Math.max(1, n));
 }
 
-function lastReported<K extends keyof GoalEntry>(entries: GoalEntry[], key: K): number | null {
-  for (const e of entries) {
-    const v = e[key];
-    if (typeof v === "number" && !isNaN(v)) return v;
-  }
-  return null;
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 60) || "metric";
 }
 
-function fmtMoney(n: number | null): string {
-  if (n === null || n === undefined) return "Not reported";
-  return `$${n.toLocaleString()}`;
-}
-function fmtInt(n: number | null): string {
-  if (n === null || n === undefined) return "Not reported";
-  return String(n);
-}
-function fmtPct(n: number | null): string {
-  if (n === null || n === undefined) return "Not reported";
-  return `${n}%`;
-}
-
-type Field = {
-  key: "paying_users" | "mrr" | "retention_pct" | "testimonials" | "discovery_calls";
+type ReportField = {
+  key: string;              // metric_key (falls back to slug(title))
   label: string;
   hint: string;
   prefix?: string;
   suffix?: string;
+  goalDefinitionId?: string | null;
 };
 
-const FIELDS: Field[] = [
-  { key: "paying_users", label: "Paying users", hint: "Total count today." },
-  { key: "mrr", label: "MRR this month", hint: "Dollars, entered directly.", prefix: "$" },
-  { key: "retention_pct", label: "Retention", hint: "Percent still active.", suffix: "%" },
-  { key: "testimonials", label: "Testimonials", hint: "Wow moments captured." },
-  { key: "discovery_calls", label: "Discovery calls", hint: "Booked this period." },
-];
+function unitAffix(unit?: string | null): { prefix?: string; suffix?: string } {
+  const u = (unit ?? "").trim();
+  if (!u) return {};
+  if (u === "$" || /^usd$/i.test(u) || /dollar/i.test(u)) return { prefix: "$" };
+  if (u === "%" || /^percent/i.test(u)) return { suffix: "%" };
+  return { suffix: u };
+}
+
+function formatValue(n: number | null, unit?: string | null): string {
+  if (n === null || n === undefined) return "Not reported";
+  const affix = unitAffix(unit);
+  const rendered = Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  if (affix.prefix) return `${affix.prefix}${rendered}`;
+  if (affix.suffix) return `${rendered}${affix.suffix === "%" ? "%" : ` ${affix.suffix}`}`;
+  return rendered;
+}
 
 export default function Goals() {
   const { user } = useAuth();
@@ -113,9 +113,9 @@ export default function Goals() {
   const [engine, setEngine] = useState({ pieces: 0, drafts: 0, pillarsCovered: 0, pillarsTotal: 5 });
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [inputs, setInputs] = useState<Record<Field["key"], string>>({
-    paying_users: "", mrr: "", retention_pct: "", testimonials: "", discovery_calls: "",
-  });
+  const [inputs, setInputs] = useState<Record<string, string>>({});
+  const numbersSectionRef = useRef<HTMLDivElement>(null);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
 
   const currentWeek = useMemo(() => startOfWeekISO(), []);
 
@@ -124,7 +124,7 @@ export default function Goals() {
     // Reset when user changes to avoid a prior session's numbers rendering.
     setStrategy(null);
     setEntries([]);
-    setInputs({ paying_users: "", mrr: "", retention_pct: "", testimonials: "", discovery_calls: "" });
+    setInputs({});
     setSaved(false);
     let cancelled = false;
     (async () => {
@@ -132,7 +132,7 @@ export default function Goals() {
       const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
       const [stratRes, entriesRes, postsRes] = await Promise.all([
         supabase.from("strategies").select("success_definition, business_goal, strength_score, content_pillars, created_at").eq("user_id", user.id).maybeSingle(),
-        supabase.from("goal_entries").select("*").eq("user_id", user.id).order("week_of", { ascending: false }).limit(24),
+        supabase.from("goal_entries").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
         supabase.from("social_posts").select("id, status, pillar, created_at").eq("user_id", user.id).gte("created_at", weekStart.toISOString()),
       ]);
       if (cancelled) return;
@@ -145,13 +145,6 @@ export default function Goals() {
       setStrategy(strat);
       setEntries(ents);
       setEngine({ pieces: posts.length, drafts, pillarsCovered, pillarsTotal });
-
-      const next: Record<Field["key"], string> = { paying_users: "", mrr: "", retention_pct: "", testimonials: "", discovery_calls: "" };
-      for (const f of FIELDS) {
-        const v = lastReported(ents, f.key);
-        next[f.key] = v === null ? "" : String(v);
-      }
-      setInputs(next);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -164,21 +157,78 @@ export default function Goals() {
   const weekNum = useMemo(() => weeksSince(strategy?.created_at ?? null), [strategy]);
   const yearPct = Math.min(100, Math.round((weekNum / 52) * 100));
 
-  const payingNow = useMemo(() => lastReported(entries, "paying_users"), [entries]);
-  const mrrNow = useMemo(() => lastReported(entries, "mrr"), [entries]);
-  const retentionNow = useMemo(() => lastReported(entries, "retention_pct"), [entries]);
-  const testimonialsNow = useMemo(() => lastReported(entries, "testimonials"), [entries]);
-  const discoveryNow = useMemo(() => lastReported(entries, "discovery_calls"), [entries]);
-
-  function formatMetric(key: string | null | undefined): string {
-    switch (key) {
-      case "paying_users": return fmtInt(payingNow);
-      case "mrr": return fmtMoney(mrrNow);
-      case "retention_pct": return fmtPct(retentionNow);
-      case "testimonials": return fmtInt(testimonialsNow);
-      case "discovery_calls": return fmtInt(discoveryNow);
-      default: return "Not reported";
+  // Latest reported value per metric_key, newest first (already ordered by created_at desc).
+  const latestByMetric = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const e of entries) {
+      if (!e.metric_key) continue;
+      if (!(e.metric_key in out) && typeof e.value === "number" && !isNaN(e.value)) {
+        out[e.metric_key] = Number(e.value);
+      }
     }
+    return out;
+  }, [entries]);
+
+  // Build the reportable field list from the user's own goals.
+  const reportFields: ReportField[] = useMemo(() => {
+    if (!goals) return [];
+    const list: ReportField[] = [];
+    const seen = new Set<string>();
+    const push = (g: NorthStar | GoalCard) => {
+      const isSelf = (g.tracked_by ?? "self") !== "moxiemo";
+      if (!isSelf) return;
+      const label = ("title" in g ? g.title : (g as any).title) || "Goal";
+      const key = (g.metric_key && String(g.metric_key)) || slugify(String(label));
+      if (seen.has(key)) return;
+      seen.add(key);
+      const unit = ("target_unit" in g ? (g as NorthStar).target_unit : undefined) ?? undefined;
+      const affix = unitAffix(unit);
+      const target = "target_value" in g ? (g as NorthStar).target_value : (g as GoalCard).target;
+      list.push({
+        key,
+        label,
+        hint: target ? `Target: ${target}` : "Update when it changes.",
+        prefix: affix.prefix,
+        suffix: affix.suffix,
+      });
+    };
+    if (goals.north_star) push(goals.north_star);
+    for (const c of goals.smart_cards ?? []) push(c);
+    return list;
+  }, [goals]);
+
+  // Pre-fill inputs from the last reported value per metric.
+  useEffect(() => {
+    if (reportFields.length === 0) return;
+    setInputs((prev) => {
+      const next: Record<string, string> = { ...prev };
+      for (const f of reportFields) {
+        if (next[f.key] === undefined) {
+          const v = latestByMetric[f.key];
+          next[f.key] = v === undefined ? "" : String(v);
+        }
+      }
+      return next;
+    });
+  }, [reportFields, latestByMetric]);
+
+  function formatMetric(key: string | null | undefined, unit?: string | null): string {
+    if (!key) return "Not reported";
+    const v = latestByMetric[key];
+    return v === undefined ? "Not reported" : formatValue(v, unit);
+  }
+
+  function scrollToNumbers() {
+    setSaved(false);
+    requestAnimationFrame(() => {
+      numbersSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setTimeout(() => firstFieldRef.current?.focus(), 350);
+    });
+  }
+
+  function logWin() {
+    brandFire();
+    scrollToNumbers();
   }
 
   function parseTargetNumber(target: string | undefined): number | null {
@@ -193,14 +243,9 @@ export default function Goals() {
   }
 
   function currentForMetric(key: string | null | undefined): number | null {
-    switch (key) {
-      case "paying_users": return payingNow;
-      case "mrr": return mrrNow;
-      case "retention_pct": return retentionNow;
-      case "testimonials": return testimonialsNow;
-      case "discovery_calls": return discoveryNow;
-      default: return null;
-    }
+    if (!key) return null;
+    const v = latestByMetric[key];
+    return v === undefined ? null : v;
   }
 
   async function saveNumbers() {
@@ -208,34 +253,45 @@ export default function Goals() {
     setSaving(true);
     try {
       const parse = (s: string): number | null => {
-        if (s.trim() === "") return null;
-        const n = parseInt(s, 10);
+        if (!s || s.trim() === "") return null;
+        const n = Number(s.replace(/,/g, ""));
         return isNaN(n) ? null : n;
       };
-      const payload = {
-        user_id: user.id,
-        week_of: currentWeek,
-        paying_users: parse(inputs.paying_users),
-        mrr: parse(inputs.mrr),
-        retention_pct: parse(inputs.retention_pct),
-        testimonials: parse(inputs.testimonials),
-        discovery_calls: parse(inputs.discovery_calls),
-      };
+      const period = currentWeek;
+      const rows = reportFields
+        .map((f) => ({ key: f.key, value: parse(inputs[f.key] ?? "") }))
+        .filter((r) => r.value !== null)
+        .map((r) => ({
+          user_id: user.id,
+          metric_key: r.key,
+          value: r.value,
+          period,
+          week_of: period,
+        }));
+      if (rows.length === 0) {
+        toast.error("Enter a number in at least one field.");
+        setSaving(false);
+        return;
+      }
       const { data, error } = await supabase
         .from("goal_entries")
-        .upsert(payload, { onConflict: "user_id,week_of" })
-        .select()
-        .single();
-      if (error) throw error;
-      const saved = data as GoalEntry;
+        .upsert(rows, { onConflict: "user_id,metric_key,period" })
+        .select();
+      if (error) {
+        console.error("goal_entries upsert failed", error);
+        throw error;
+      }
+      const savedRows = (data ?? []) as GoalEntry[];
       setEntries((prev) => {
-        const others = prev.filter((e) => e.week_of !== currentWeek);
-        return [saved, ...others].sort((a, b) => (a.week_of < b.week_of ? 1 : -1)).slice(0, 24);
+        const keySet = new Set(savedRows.map((r) => `${r.metric_key}|${r.period}`));
+        const kept = prev.filter((e) => !keySet.has(`${e.metric_key}|${e.period}`));
+        return [...savedRows, ...kept].slice(0, 200);
       });
       setSaved(true);
       brandFire();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Try again.";
+      console.error("saveNumbers error", e);
       toast.error("Could not save", { description: msg });
     } finally {
       setSaving(false);
