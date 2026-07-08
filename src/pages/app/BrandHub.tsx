@@ -238,7 +238,7 @@ export default function BrandHub() {
   const [profile, setProfile] = useState<any>(null);
   const [strategy, setStrategy] = useState<any>(null);
   const [latestAuditId, setLatestAuditId] = useState<string | null>(null);
-  const [latestKit, setLatestKit] = useState<{ id: string; kit_json: any } | null>(null);
+  const [latestKit, setLatestKit] = useState<{ id: string; kit_json: any; created_at?: string | null } | null>(null);
   const [hubVisited, setHubVisited] = useState(false);
   const [tab, setTab] = useState<BrandTab>("welcome");
   const [auditStep, setAuditStep] = useState<AuditStep>("prompt");
@@ -256,7 +256,7 @@ export default function BrandHub() {
           .maybeSingle(),
         supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("audits").select("id").eq("user_id", user.id).eq("status", "ready").order("created_at", { ascending: false }).limit(1).maybeSingle(),
-        supabase.from("brand_kits").select("id, kit_json").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("brand_kits").select("id, kit_json, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       const prof: any = p.data ?? {};
       setProfile(prof);
@@ -959,20 +959,46 @@ function KitPanel({
 }: any) {
   const [url, setUrl] = useState<string>(profile?.website_url ?? "");
   const [colors, setColors] = useState<string[]>(
-    Array.isArray(profile?.brand_colors) && profile.brand_colors.length
-      ? profile.brand_colors
-      : ["#0E0F10", "#E85A46", "#F7F5F1"]
+    Array.isArray(profile?.brand_colors) ? profile.brand_colors : []
   );
   const [fonts, setFonts] = useState<string[]>(
-    Array.isArray(profile?.brand_fonts) && profile.brand_fonts.length
-      ? profile.brand_fonts
-      : ["Space Grotesk", "Inter"]
+    Array.isArray(profile?.brand_fonts) ? profile.brand_fonts : []
   );
   const [logoUrl, setLogoUrl] = useState<string | null>(profile?.brand_logo_url ?? null);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [genError, setGenError] = useState<string | null>(null);
   const [kit, setKit] = useState<any>(latestKit?.kit_json ?? null);
   const [kitId, setKitId] = useState<string | null>(latestKit?.id ?? null);
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+
+  async function handleScan() {
+    const target = url.trim();
+    if (!target) {
+      setScanError("Enter your website URL first.");
+      return;
+    }
+    setScanning(true);
+    setScanError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("extract-brand-kit", { body: { url: target } });
+      if (error) throw error;
+      const scanned: string[] = Array.isArray(data?.colors) ? data.colors : [];
+      const scannedFonts: string[] = Array.isArray(data?.fonts?.all) && data.fonts.all.length
+        ? data.fonts.all
+        : [data?.fonts?.heading, data?.fonts?.body].filter(Boolean);
+      if (!scanned.length && !scannedFonts.length && !data?.logo) {
+        throw new Error("Could not read colors or typography from that site.");
+      }
+      if (scanned.length) setColors(scanned);
+      if (scannedFonts.length) setFonts(scannedFonts);
+      if (data?.logo && !logoUrl) setLogoUrl(data.logo);
+    } catch (e: any) {
+      setScanError(e?.message || "Site scan failed. Try again or enter values manually.");
+    } finally {
+      setScanning(false);
+    }
+  }
 
   useEffect(() => {
     if (latestKit?.kit_json && !kit) {
@@ -1041,10 +1067,18 @@ function KitPanel({
               onFocus={(e) => (e.currentTarget.style.borderColor = CORAL)}
               onBlur={(e) => (e.currentTarget.style.borderColor = BORDER)}
             />
-            <button style={{ background: INK, color: "#fff", border: "none", borderRadius: 8, padding: "0 16px", height: 40, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>
-              Scan Site
+            <button
+              type="button"
+              onClick={handleScan}
+              disabled={scanning}
+              style={{ background: INK, color: "#fff", border: "none", borderRadius: 8, padding: "0 16px", height: 40, fontSize: 13, fontWeight: 600, cursor: scanning ? "not-allowed" : "pointer", opacity: scanning ? 0.7 : 1 }}
+            >
+              {scanning ? "Scanning…" : "Scan Site"}
             </button>
           </div>
+          {scanError && (
+            <div style={{ fontSize: 12, color: CORAL, marginTop: 8 }}>{scanError}</div>
+          )}
 
           <Divider />
 
@@ -1074,7 +1108,9 @@ function KitPanel({
           <Divider />
 
           <FieldLabel>Brand Colors</FieldLabel>
-          <div style={{ fontSize: 11, color: FAINT, marginBottom: 10 }}>Auto-extracted from your site. Confirm or edit.</div>
+          <div style={{ fontSize: 11, color: FAINT, marginBottom: 10 }}>
+            {colors.length ? "Auto-extracted from your site. Confirm or edit." : "Scan your site above, or add colors manually."}
+          </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-start" }}>
             {colors.map((c, i) => (
               <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, position: "relative" }}>
@@ -1100,7 +1136,9 @@ function KitPanel({
           <Divider />
 
           <FieldLabel>Typography</FieldLabel>
-          <div style={{ fontSize: 11, color: FAINT, marginBottom: 10 }}>Auto-detected from your site.</div>
+          <div style={{ fontSize: 11, color: FAINT, marginBottom: 10 }}>
+            {fonts.length ? "Auto-detected from your site." : "Scan your site above, or add fonts manually."}
+          </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {fonts.map((f, i) => (
               <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#F0EFEC", borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 500, color: INK }}>
@@ -1208,37 +1246,35 @@ function Divider() { return <div style={{ height: 1, background: BORDER, margin:
 
 function KitDocument({ profile, strategy, colors, logoUrl, fonts, setStep, goAssets, kitOwnerId, kit }: any) {
   const brandName = kit?.brand_name || strategy?.business_name || profile?.business_name || profile?.full_name || "Your Brand";
-  const generatedAt = "Jun 22, 2026";
+  const generatedAt = kit?.generated_at
+    ? new Date(kit.generated_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
-  const palette = (colors && colors.length ? colors : ["#0E0F10", "#E85A46", "#F7F5F1", "#B8C5A6"]).slice(0, 4);
-  const fontName = fonts?.[0] || "Space Grotesk";
+  const palette = (colors && colors.length ? colors : []).slice(0, 4);
+  const fontName = fonts?.[0] || "";
 
-  const archetypePrimary = kit?.archetype?.primary || "The Magician";
-  const archetypeSecondary = kit?.archetype?.secondary || "Creator";
-  const archetypeDescription = kit?.archetype?.description || "Transforms chaos into clarity, complexity into autonomy. Promises to turn a founder's vision into reality through a system that feels effortless.";
+  const archetypePrimary = kit?.archetype?.primary || strategy?.enhanced_foundation?.brandArchetype?.name || "";
+  const archetypeSecondary = kit?.archetype?.secondary || strategy?.enhanced_foundation?.brandArchetype?.secondary || "";
+  const archetypeDescription = kit?.archetype?.description || strategy?.enhanced_foundation?.brandArchetype?.description || "";
   const voiceAttrs: string[] = Array.isArray(kit?.voice?.attributes) && kit.voice.attributes.length
     ? kit.voice.attributes
-    : ["Clear and Direct", "Empowering, Not Overwhelming", "Strategic, Not Salesy", "Honest and Specific"];
+    : Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes : [];
   const neverUse: string[] = Array.isArray(kit?.voice?.never_use) && kit.voice.never_use.length
     ? kit.voice.never_use
-    : ["Em-Dashes", "Contractions in Formal Copy", "Filler Phrases"];
-  const icpRows: [string, string][] = [
-    ["Revenue Floor", kit?.icp?.revenue_floor || "$250K+ annually"],
-    ["Business Type", kit?.icp?.business_type || "Expertise-based, founder-led"],
-    ["Core Pain", kit?.icp?.core_pain || "20+ hrs/week on reactive marketing with no strategy"],
-    ["Transformation", kit?.icp?.transformation || "From tool chaos to 1 platform, 2 hrs/week"],
-  ];
+    : [];
+  const icpRows: [string, string][] = ([
+    ["Revenue Floor", kit?.icp?.revenue_floor],
+    ["Business Type", kit?.icp?.business_type],
+    ["Core Pain", kit?.icp?.core_pain || strategy?.pain_point],
+    ["Transformation", kit?.icp?.transformation || strategy?.transformation],
+  ] as [string, string | undefined | null][]).filter(([, v]) => !!v) as [string, string][];
   const keyMessages: string[] = Array.isArray(kit?.key_messages) && kit.key_messages.length
     ? kit.key_messages
-    : [
-        "You built a real business. Your marketing should match.",
-        "Strategy first. Always. Then content that actually works.",
-        "One platform. 18 hours back. Revenue that moves.",
-      ];
-  const primaryPillar = kit?.pillars?.primary || "Strategy-First Marketing";
+    : [];
+  const primaryPillar = kit?.pillars?.primary || "";
   const supportingPillars: string[] = Array.isArray(kit?.pillars?.supporting) && kit.pillars.supporting.length
     ? kit.pillars.supporting
-    : ["Founder Wins & Beta Stories", "Platform Transparency & Product Updates", "Founder Efficiency Hacks", "Market Positioning & Differentiation"];
+    : (Array.isArray(strategy?.content_pillars) ? strategy.content_pillars : []).map((p: any) => typeof p === "string" ? p : (p?.name ?? "")).filter(Boolean);
 
   // Enrichment sections (Positioning / Values / Tone) — derived structure-agnostically
   // from the kit's own fields when present, otherwise from strategy.enhanced_foundation.
@@ -1521,7 +1557,7 @@ function CopyPill() {
 }
 
 /* -------------------- Brand Assets -------------------- */
-function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId, userId, profile, strategy, latestKit }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null; userId?: string | null; profile?: any; strategy?: any; latestKit?: { id: string; kit_json: any } | null }) {
+function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, kitOwnerId, latestAuditId, userId, profile, strategy, latestKit }: { goAuditResults: () => void; goAuditPrompt: () => void; goKitVisual: () => void; strategyId?: string | null; kitOwnerId?: string | null; latestAuditId?: string | null; userId?: string | null; profile?: any; strategy?: any; latestKit?: { id: string; kit_json: any; created_at?: string | null } | null }) {
   const [busy, setBusy] = useState<null | "strategy" | "kit" | "audit">(null);
   // Load the real latest audit row so the "Brand Audit Report" card can never
   // show fabricated headline data. If no audit exists yet, `latestAudit`
@@ -1566,6 +1602,41 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
   const auditDateLabel = latestAudit?.created_at
     ? new Date(latestAudit.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
     : null;
+
+  // Derive Full Brand Strategy card content from the signed-in user's strategy row,
+  // structure-agnostically, the same way the working Dashboard recap does.
+  const strategyReport = strategy ? buildReportData(strategy, profile ?? {}) : null;
+  const strategyPositioning = strategyReport?.positioning?.statement || "";
+  const strategyArchetypePrimary = strategyReport?.archetype?.primary || "";
+  const strategyArchetypeSecondary = strategyReport?.archetype?.secondary || "";
+  const strategyUpdatedLabel = strategy?.updated_at || strategy?.created_at
+    ? new Date((strategy.updated_at ?? strategy.created_at) as string).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
+
+  // Derive Brand Kit asset card tags from the signed-in user's latest kit_json.
+  const kitJson: any = latestKit?.kit_json ?? null;
+  const kitEnrichment = kitJson || strategy ? deriveEnrichment(kitJson, strategy) : { positioning: null, values: [], tone: { words_to_use: [], words_to_avoid: [], tone_by_platform: [] } };
+  const kitArchetype = kitJson?.archetype?.primary || strategyArchetypePrimary || "";
+  const kitVoiceAttrs: string[] = Array.isArray(kitJson?.voice?.attributes) && kitJson.voice.attributes.length
+    ? kitJson.voice.attributes
+    : (Array.isArray(strategy?.voice_attributes) ? strategy.voice_attributes : []);
+  const kitPrimaryPillar: string = kitJson?.pillars?.primary || "";
+  const kitSupportingPillars: string[] = Array.isArray(kitJson?.pillars?.supporting) && kitJson.pillars.supporting.length
+    ? kitJson.pillars.supporting
+    : (Array.isArray(strategy?.content_pillars) ? strategy.content_pillars : []).map((p: any) => typeof p === "string" ? p : (p?.name ?? "")).filter(Boolean);
+  const kitTags: string[] = [];
+  if (kitArchetype) kitTags.push(kitArchetype);
+  for (const v of kitVoiceAttrs) { if (kitTags.length < 4 && v) kitTags.push(v); }
+  if (kitPrimaryPillar && kitTags.length < 4) kitTags.push(kitPrimaryPillar);
+  for (const p of kitSupportingPillars) { if (kitTags.length < 4 && p) kitTags.push(p); }
+  const remainingKitTags = Math.max(
+    0,
+    (kitVoiceAttrs.length + (kitPrimaryPillar ? 1 : 0) + kitSupportingPillars.length + (kitArchetype ? 1 : 0)) - kitTags.length,
+  );
+  const kitGeneratedLabel = latestKit?.created_at
+    ? new Date(latestKit.created_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
+
   const dlStrategy = async () => {
     if (!userId) { toast({ title: "Sign in required", variant: "destructive" }); return; }
     setBusy("strategy");
@@ -1662,24 +1733,31 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         Icon={Compass}
         title="Full Brand Strategy"
         description="Positioning · ICP · Voice · Channels · Action Plan · Metrics, the complete document"
-        meta={<span style={{ fontSize: 11, color: FAINT }}>Updated Jun 22, 2026</span>}
+        meta={strategyUpdatedLabel ? <span style={{ fontSize: 11, color: FAINT }}>Updated {strategyUpdatedLabel}</span> : null}
         body={
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "8px 10px" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Positioning</div>
-              <div style={{ fontSize: 12, color: INK, marginTop: 2 }}>First fully autonomous content marketing platform starting with custom strategy</div>
+          strategy ? (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "8px 10px" }}>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Positioning</div>
+                <div style={{ fontSize: 12, color: INK, marginTop: 2 }}>{strategyPositioning || "Not set yet."}</div>
+              </div>
+              <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "8px 10px" }}>
+                <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Archetype</div>
+                <div style={{ fontSize: 12, color: INK, marginTop: 2 }}>
+                  {strategyArchetypePrimary
+                    ? `${strategyArchetypePrimary}${strategyArchetypeSecondary ? ` · Secondary: ${strategyArchetypeSecondary}` : ""}`
+                    : "Not set yet."}
+                </div>
+              </div>
             </div>
-            <div style={{ background: "#F7F5F1", borderRadius: 8, padding: "8px 10px" }}>
-              <div style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", color: FAINT }}>Archetype</div>
-              <div style={{ fontSize: 12, color: INK, marginTop: 2 }}>The Magician · Secondary: Creator</div>
-            </div>
-          </div>
+          ) : (
+            <div style={{ fontSize: 12, color: MUTED }}>No strategy on file yet.</div>
+          )
         }
-        bodyNote="6 sections · Auto-updates when strategy is regenerated"
+        bodyNote={strategy ? "Auto-updates when your strategy is regenerated" : ""}
         footer={
           <>
-            <PrimaryPill onClick={dlStrategy} disabled={busy === "strategy"}>{busy === "strategy" ? "Preparing…" : "Download PDF"}</PrimaryPill>
-            <button style={pill()}>Copy All</button>
+            <PrimaryPill onClick={dlStrategy} disabled={busy === "strategy" || !strategy}>{busy === "strategy" ? "Preparing…" : "Download PDF"}</PrimaryPill>
             <ShareControls documentType="strategy" sourceId={strategyId} />
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Auto-saved from your strategy</span>
           </>
@@ -1692,23 +1770,29 @@ function AssetsPanel({ goAuditResults, goAuditPrompt, goKitVisual, strategyId, k
         Icon={FileText}
         title="Brand Kit"
         description="Archetype · Voice · Key Messages · Content Pillars · ICP Brief, built for sharing"
-        meta={<span style={{ fontSize: 11, color: FAINT }}>Generated Jun 22, 2026</span>}
+        meta={kitGeneratedLabel ? <span style={{ fontSize: 11, color: FAINT }}>Generated {kitGeneratedLabel}</span> : null}
         body={
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            <span style={{ background: INK, color: "#fff", borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>The Magician</span>
-            {["Clear and Direct", "Strategy-First Marketing", "$250K+ Founder ICP"].map((c) => (
-              <span key={c} style={{ background: "#F0EFEC", color: INK, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>{c}</span>
-            ))}
-            <span style={{ background: "#F0EFEC", color: INK, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>+4 more</span>
-          </div>
+          kitJson ? (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {kitTags.length ? kitTags.map((c, i) => (
+                <span key={c + i} style={{ background: i === 0 ? INK : "#F0EFEC", color: i === 0 ? "#fff" : INK, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>{c}</span>
+              )) : <span style={{ fontSize: 12, color: MUTED }}>Kit generated. Open it to view details.</span>}
+              {remainingKitTags > 0 && (
+                <span style={{ background: "#F0EFEC", color: INK, borderRadius: 20, padding: "4px 12px", fontSize: 11 }}>+{remainingKitTags} more</span>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: MUTED }}>No Brand Kit yet — generate one from the Brand Kit tab.</div>
+          )
         }
-        bodyNote="5 sections · 1 page · Regenerate from Brand Kit tab when strategy changes"
+        bodyNote={kitJson ? "Regenerate from Brand Kit tab when your strategy changes" : ""}
         footer={
           <>
-            <PrimaryPill onClick={dlKit} disabled={busy === "kit"}>{busy === "kit" ? "Preparing…" : "Download PDF"}</PrimaryPill>
-            <button style={pill()}>Copy All</button>
-            <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />
-            <button style={pill(true)} onClick={goKitVisual}>↺ Regenerate</button>
+            <PrimaryPill onClick={kitJson ? dlKit : goKitVisual} disabled={busy === "kit"}>
+              {busy === "kit" ? "Preparing…" : kitJson ? "Download PDF" : "Generate Brand Kit"}
+            </PrimaryPill>
+            {kitJson && <ShareControls documentType="brand-kit" sourceId={kitOwnerId} />}
+            {kitJson && <button style={pill(true)} onClick={goKitVisual}>↺ Regenerate</button>}
             <span style={{ fontSize: 10, color: FAINT, marginLeft: "auto" }}>Saved from Brand Kit tab</span>
           </>
         }
