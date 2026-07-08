@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import confetti from "canvas-confetti";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useGoalDefinitions } from "@/hooks/useGoalDefinitions";
 
 type GoalEntry = {
   id: string;
@@ -120,6 +121,11 @@ export default function Goals() {
 
   useEffect(() => {
     if (!user) return;
+    // Reset when user changes to avoid a prior session's numbers rendering.
+    setStrategy(null);
+    setEntries([]);
+    setInputs({ paying_users: "", mrr: "", retention_pct: "", testimonials: "", discovery_calls: "" });
+    setSaved(false);
     let cancelled = false;
     (async () => {
       setLoading(true);
@@ -151,6 +157,10 @@ export default function Goals() {
     return () => { cancelled = true; };
   }, [user]);
 
+  const hasStrategyReady = !!strategy?.success_definition;
+  const { goals, loading: goalsLoading, generating, generate, hasGoals } =
+    useGoalDefinitions({ autoGenerate: true, hasStrategy: hasStrategyReady });
+
   const weekNum = useMemo(() => weeksSince(strategy?.created_at ?? null), [strategy]);
   const yearPct = Math.min(100, Math.round((weekNum / 52) * 100));
 
@@ -158,6 +168,40 @@ export default function Goals() {
   const mrrNow = useMemo(() => lastReported(entries, "mrr"), [entries]);
   const retentionNow = useMemo(() => lastReported(entries, "retention_pct"), [entries]);
   const testimonialsNow = useMemo(() => lastReported(entries, "testimonials"), [entries]);
+  const discoveryNow = useMemo(() => lastReported(entries, "discovery_calls"), [entries]);
+
+  function formatMetric(key: string | null | undefined): string {
+    switch (key) {
+      case "paying_users": return fmtInt(payingNow);
+      case "mrr": return fmtMoney(mrrNow);
+      case "retention_pct": return fmtPct(retentionNow);
+      case "testimonials": return fmtInt(testimonialsNow);
+      case "discovery_calls": return fmtInt(discoveryNow);
+      default: return "Not reported";
+    }
+  }
+
+  function parseTargetNumber(target: string | undefined): number | null {
+    if (!target) return null;
+    const m = String(target).replace(/[,$]/g, "").match(/(\d+(?:\.\d+)?)/);
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (isNaN(n)) return null;
+    if (/k/i.test(target)) return n * 1000;
+    if (/m/i.test(target)) return n * 1_000_000;
+    return n;
+  }
+
+  function currentForMetric(key: string | null | undefined): number | null {
+    switch (key) {
+      case "paying_users": return payingNow;
+      case "mrr": return mrrNow;
+      case "retention_pct": return retentionNow;
+      case "testimonials": return testimonialsNow;
+      case "discovery_calls": return discoveryNow;
+      default: return null;
+    }
+  }
 
   async function saveNumbers() {
     if (!user) return;
@@ -225,15 +269,48 @@ export default function Goals() {
     );
   }
 
-  const smartCards = [
-    { category: "Growth", pill: "you", title: "Reach $80K MRR", target: "$80K", now: fmtMoney(mrrNow), meta: "Jun 2027", lever: "Enter MRR each month, it never derives from user count." },
-    { category: "Conversion", pill: "moxie", title: "Audit lead to paid trial", target: "15%", now: "0%", meta: "Brand Audit", lever: "Improves when audit CTA converts." },
-    { category: "Retention", pill: "you", title: "Hold cohort retention", target: "85%", now: fmtPct(retentionNow), meta: "Month 1", lever: "Report monthly once cohorts land." },
-    { category: "Advocacy", pill: "you", title: "Wow testimonials and referrals", target: "20", now: fmtInt(testimonialsNow), meta: "Founding", lever: "Ask happy founders to write one." },
-  ] as const;
+  // Goals are still being generated for this user — show honest generate/empty state.
+  if (goalsLoading || (!hasGoals && generating)) {
+    return (
+      <div className="p-6 md:p-10 max-w-3xl space-y-4">
+        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold" style={{ color: CORAL }}>Your goals</div>
+        <h1 className="font-display text-3xl md:text-4xl text-foreground">Building your goal set from your strategy</h1>
+        <p className="text-muted-foreground">This takes about ten seconds. Nothing is generic — every target is drawn from your own foundation.</p>
+        <div className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Generating your SMART goals…</div>
+      </div>
+    );
+  }
+  if (!hasGoals) {
+    return (
+      <div className="p-6 md:p-10 max-w-3xl space-y-4">
+        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold" style={{ color: CORAL }}>Your goals</div>
+        <h1 className="font-display text-3xl md:text-4xl text-foreground">Generate your personalized SMART goals</h1>
+        <p className="text-muted-foreground">We turn your strategy into a North Star and four scoped SMART goals in a few seconds.</p>
+        <button
+          onClick={() => generate(false)}
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white"
+          style={{ background: CORAL }}
+        >
+          <Sparkles className="h-4 w-4" /> Generate my goals
+        </button>
+      </div>
+    );
+  }
 
-  const payingProgress = payingNow ?? 0;
-  const payingPct = Math.min(100, (payingProgress / 500) * 100);
+  const ns = goals!.north_star;
+  const smartCards = (goals!.smart_cards ?? []).map((c) => ({
+    category: c.category || "Goal",
+    pill: c.tracked_by === "moxiemo" ? "moxie" : "you",
+    title: c.title || "Untitled goal",
+    target: c.target || "—",
+    now: formatMetric(c.metric_key),
+    meta: c.deadline || "",
+    lever: c.lever || "",
+  }));
+
+  const nsTargetNum = parseTargetNumber(ns.target_value);
+  const nsCurrent = currentForMetric(ns.metric_key) ?? 0;
+  const payingPct = nsTargetNum ? Math.min(100, (nsCurrent / nsTargetNum) * 100) : 0;
 
   return (
     <div className="w-full p-6 md:p-10 space-y-8">
@@ -268,29 +345,29 @@ export default function Goals() {
           </span>
         </div>
         <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight" style={{ color: "#FFFFFF" }}>
-          500 paying users in 12 months
+          {ns.title || "Your North Star"}
         </h2>
         <p className="mt-2 text-sm md:text-base font-medium" style={{ color: CORAL_TINT }}>
-          $80K MRR · $960K ARR · by June 2027
+          {[ns.target_value, ns.deadline].filter(Boolean).join(" · ")}
         </p>
 
         {/* Milestone bar */}
         <div className="mt-6">
           <div className="relative h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.14)" }}>
             <div className="h-full rounded-full transition-all" style={{ width: `${payingPct}%`, background: CORAL }} />
-            {[10, 30, 60].map((t) => (
+            {[25, 50, 75].map((t) => (
               <div key={t} className="absolute top-0 bottom-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.4)" }} />
             ))}
           </div>
           <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: LABEL_MUTED }}>
-            <span>0</span><span>50</span><span>150</span><span>300</span><span>500 🎉</span>
+            <span>0</span><span>25%</span><span>50%</span><span>75%</span><span>{ns.target_value || "Target"} 🎉</span>
           </div>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
           <p className="text-xs md:text-sm max-w-md flex items-center gap-2" style={{ color: LABEL_MUTED }}>
             <span style={{ color: CORAL_LIGHT }}>→</span>
-            Lever: every paying user pulls the North Star forward. Log wins as they close.
+            {ns.lever || "Log the numbers each week to keep this honest."}
           </p>
           <button
             onClick={brandFire}
@@ -339,11 +416,7 @@ export default function Goals() {
 
       {/* SECONDARY GOALS STRIP */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {[
-          { title: "Publication features", value: "0 of 4 to 6" },
-          { title: "Platform awards", value: "0 of 3 to 4" },
-          { title: "Social growth", value: "Baseline from zero" },
-        ].map((t) => (
+        {(goals!.secondary_goals ?? []).map((t) => (
           <div key={t.title} className="rounded-[10px] p-4" style={{ background: "#F7F6F3" }}>
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">{t.title}</div>
             <div className="text-sm font-semibold text-foreground">{t.value}</div>

@@ -459,7 +459,8 @@ function WelcomeCard({
   const [hover, setHover] = useState(false);
   const hoverBorder = dark ? "rgba(232,90,70,0.5)" : CORAL;
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -474,6 +475,9 @@ function WelcomeCard({
         flexDirection: "column",
         gap: 12,
         minWidth: 0,
+        textAlign: "left",
+        font: "inherit",
+        color: "inherit",
       }}
     >
       <div style={{ width: 40, height: 40, borderRadius: 10, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -482,7 +486,7 @@ function WelcomeCard({
       <div style={{ fontSize: 14, fontWeight: 700, color: dark ? "#fff" : INK }}>{title}</div>
       <div style={{ fontSize: 12, color: dark ? "rgba(255,255,255,0.6)" : MUTED, lineHeight: 1.6 }}>{body}</div>
       <div style={{ fontSize: 12, fontWeight: 600, color: ctaColor, marginTop: 4 }}>{cta}</div>
-    </div>
+    </button>
   );
 }
 

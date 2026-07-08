@@ -26,12 +26,13 @@ export function buildReportData(strategy: any = {}, profile: any = {}) {
 
 // ─── META ───────────────────────────────────────────────────────
 function buildMeta(profile: any, strategy: any) {
+  const businessName = profile?.business_name ?? profile?.full_name ?? "Your Business";
   return {
     preparedFor:   profile?.full_name     ?? profile?.email ?? 'Founder',
-    businessName:  profile?.business_name ?? profile?.full_name ?? 'Your Business',
+    businessName,
     email:         profile?.email         ?? '',
     date:          formatDate(strategy.created_at ? new Date(strategy.created_at) : new Date()),
-    reportTitle:   'Chief MOXIEMO Officer Strategic Report',
+    reportTitle:   `${businessName} Strategic Report`,
     confidential:  true,
     strengthScore: strategy.strength_score ?? null,
   };

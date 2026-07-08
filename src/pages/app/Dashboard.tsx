@@ -29,6 +29,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useGoalDefinitions } from "@/hooks/useGoalDefinitions";
 
 type AnyRow = any;
 
@@ -161,6 +162,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user) return;
+    // Reset on user change to prevent prior session data bleeding through.
+    setProfile(null); setStrategy(null); setSocialPosts([]); setContentItems([]);
+    setEmailSends([]); setSocialConnections([]); setDiscovery(null); setGoalEntries([]);
+    setBestPost(null); setPageTopPost(null); setPageHasData(null);
     (async () => {
       try {
         const [profileRes, strategyRes, socialPostsRes, contentItemsRes, goalRes, emailSendsRes, socialConnectionsRes, discoveryRes, analyticsRes] = await Promise.all([
@@ -202,6 +207,11 @@ export default function Dashboard() {
       }
     })();
   }, [user]);
+
+  const { goals: goalDefs } = useGoalDefinitions({
+    autoGenerate: true,
+    hasStrategy: !!strategy?.positioning_statement,
+  });
 
   // Live LinkedIn Page leaderboard — powers Best post + "Your marketing is landing".
   // No dependency on personal analytics; quiet state only if the Page genuinely has none.
@@ -291,7 +301,40 @@ export default function Dashboard() {
   const mrrNow = lastReported<number>(goalEntries, "mrr");
   const retentionNow = lastReported<number>(goalEntries, "retention_pct");
   const testimonialsNow = lastReported<number>(goalEntries, "testimonials");
-  const payingPct = Math.min(100, (payingNow / 500) * 100);
+  const discoveryNow = lastReported<number>(goalEntries, "discovery_calls");
+
+  // North Star + SMART cards come from goal_definitions (per-user), never hardcoded.
+  const ns = goalDefs?.north_star ?? null;
+  const parseTargetNumber = (target?: string | null): number | null => {
+    if (!target) return null;
+    const m = String(target).replace(/[,$]/g, "").match(/(\d+(?:\.\d+)?)/);
+    if (!m) return null;
+    const n = parseFloat(m[1]);
+    if (isNaN(n)) return null;
+    if (/k/i.test(target)) return n * 1000;
+    if (/m/i.test(target)) return n * 1_000_000;
+    return n;
+  };
+  const metricNow = (key?: string | null): number | null => {
+    switch (key) {
+      case "paying_users": return payingNow;
+      case "mrr": return mrrNow;
+      case "retention_pct": return retentionNow;
+      case "testimonials": return testimonialsNow;
+      case "discovery_calls": return discoveryNow;
+      default: return null;
+    }
+  };
+  const formatMetric = (key?: string | null): string => {
+    const v = metricNow(key);
+    if (v === null || v === undefined) return "Not reported";
+    if (key === "mrr") return `$${v.toLocaleString()}`;
+    if (key === "retention_pct") return `${v}%`;
+    return String(v);
+  };
+  const nsTargetNum = parseTargetNumber(ns?.target_value);
+  const nsCurrent = metricNow(ns?.metric_key) ?? 0;
+  const payingPct = nsTargetNum ? Math.min(100, (nsCurrent / nsTargetNum) * 100) : 0;
 
   const stats = [
     { label: "Hours saved", value: hoursSaved.toFixed(1), delta: "All-time", icon: Clock, tint: CORAL_TINT, color: CORAL },
@@ -506,12 +549,13 @@ export default function Dashboard() {
     : [];
   const strengthScore = strategy?.strength_score ?? 0;
 
-  const smartGoals = [
-    { category: "Growth", tracked: false, title: "Reach $80K MRR", target: "$80K", now: mrrNow != null ? `$${mrrNow.toLocaleString()}` : "Not reported" },
-    { category: "Conversion", tracked: true, title: "Audit lead to paid trial", target: "15%", now: "0%" },
-    { category: "Retention", tracked: false, title: "Hold cohort retention", target: "85%", now: retentionNow != null ? `${retentionNow}%` : "Not reported" },
-    { category: "Advocacy", tracked: false, title: "Wow testimonials", target: "20", now: testimonialsNow != null ? String(testimonialsNow) : "Not reported" },
-  ];
+  const smartGoals = (goalDefs?.smart_cards ?? []).map((c) => ({
+    category: c.category || "Goal",
+    tracked: c.tracked_by === "moxiemo",
+    title: c.title || "Untitled",
+    target: c.target || "—",
+    now: formatMetric(c.metric_key),
+  }));
 
   return (
     <div
@@ -587,8 +631,8 @@ export default function Dashboard() {
           />
           <RhythmTile
             eyebrow="This month"
-            title={`${payingNow} of 500 users`}
-            sub="See your goals"
+            title={ns && nsTargetNum ? `${nsCurrent} of ${ns.target_value}` : "Set your North Star"}
+            sub={ns ? "See your goals" : "Generating your goals…"}
             bg={GRAD_MONTH}
             shadow={SHADOW_MONTH}
             fg={INK}
@@ -677,25 +721,25 @@ export default function Dashboard() {
               </span>
             </div>
             <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight text-white">
-              500 paying users in 12 months
+              {ns?.title || "Your North Star, forming"}
             </h2>
             <p className="mt-2 text-sm md:text-base font-medium" style={{ color: NAVY_TINT }}>
-              $80K MRR · $960K ARR · by June 2027
+              {ns ? [ns.target_value, ns.deadline].filter(Boolean).join(" · ") : "Personalized from your strategy"}
             </p>
             <div className="mt-6">
               <div className="relative h-3 rounded-full" style={{ background: "rgba(255,255,255,0.14)" }}>
                 <div className="h-full rounded-full transition-all" style={{ width: `${payingPct}%`, background: CORAL }} />
-                {[10, 30, 60].map((t) => (
+                {[25, 50, 75].map((t) => (
                   <div key={t} className="absolute top-0 bottom-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.4)" }} />
                 ))}
                 <div className="ns-node" style={{ left: `${Math.max(2, Math.min(98, payingPct))}%` }} />
               </div>
               <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: NAVY_MUTED }}>
-                <span>0</span><span>50</span><span>150</span><span>300</span><span>500</span>
+                <span>0</span><span>25%</span><span>50%</span><span>75%</span><span>{ns?.target_value || "Target"}</span>
               </div>
             </div>
             <div className="mt-4 text-xs" style={{ color: NAVY_MUTED }}>
-              You are at {payingNow} paying users. Log wins as they close.
+              {ns?.lever || "Your personal goals appear as soon as your strategy is set."}
             </div>
           </section>
 
