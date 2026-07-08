@@ -97,7 +97,7 @@ export function resolveGoalDefinitions<T extends { north_star?: any; smart_cards
 
   const newNs = {
     ...ns,
-    title: primaryCard?.title || ns.title,
+    title: primaryCard?.title || `Reach ${primary}`,
     target_value: primary,
     target_unit: primaryParsed.unit || ns.target_unit || "",
     metric_key: primaryKey,
