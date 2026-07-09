@@ -80,6 +80,99 @@ const AUTO_LOAD_LIMIT = 3;
 const ACCEPT = "image/png,image/jpeg,image/svg+xml,image/gif,image/webp,video/mp4,video/quicktime";
 
 /* ------------------------------------------------------------------ */
+/*  Signed-URL resolution                                              */
+/* ------------------------------------------------------------------ */
+
+const STORAGE_BUCKET = "social-assets";
+const PUBLIC_MARKER = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+const SIGNED_MARKER = `/storage/v1/object/sign/${STORAGE_BUCKET}/`;
+
+function extractStoragePath(url: string): string | null {
+  if (!url) return null;
+  const pIdx = url.indexOf(PUBLIC_MARKER);
+  if (pIdx !== -1) return url.slice(pIdx + PUBLIC_MARKER.length).split("?")[0];
+  const sIdx = url.indexOf(SIGNED_MARKER);
+  if (sIdx !== -1) return url.slice(sIdx + SIGNED_MARKER.length).split("?")[0];
+  return null;
+}
+
+const signedUrlCache = new Map<string, { url: string; expires: number }>();
+
+async function resolveDisplayUrl(rawUrl: string): Promise<string> {
+  if (!rawUrl) return rawUrl;
+  const path = extractStoragePath(rawUrl);
+  if (!path) return rawUrl; // external (e.g. Pexels CDN)
+  const cached = signedUrlCache.get(path);
+  const now = Date.now();
+  if (cached && cached.expires > now + 30_000) return cached.url;
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl) {
+    console.warn("[MediaLibrary] signed URL failed", { path, error });
+    return rawUrl;
+  }
+  signedUrlCache.set(path, { url: data.signedUrl, expires: now + 3600 * 1000 });
+  return data.signedUrl;
+}
+
+function AssetImage({
+  rawUrl,
+  alt,
+  style,
+}: {
+  rawUrl: string;
+  alt: string;
+  style?: React.CSSProperties;
+}) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setFailed(false);
+    setSrc(null);
+    resolveDisplayUrl(rawUrl).then((u) => {
+      if (alive) setSrc(u);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [rawUrl]);
+
+  if (failed || !src) {
+    return (
+      <div
+        style={{
+          ...style,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#F0EFEC",
+          color: MUTED,
+        }}
+        aria-label={alt}
+      >
+        <ImageIcon size={22} />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      onError={() => {
+        console.warn("[MediaLibrary] image failed to load", { rawUrl, resolved: src });
+        setFailed(true);
+      }}
+      style={style}
+    />
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Utilities                                                          */
 /* ------------------------------------------------------------------ */
 
@@ -319,10 +412,11 @@ export default function MediaLibrary({ userId, mode = "page", onSelect, headerle
     toast.success("Deleted");
   }
 
-  function editInCanva(url: string) {
+  async function editInCanvaAsync(url: string) {
+    const resolved = await resolveDisplayUrl(url);
     try {
       const a = document.createElement("a");
-      a.href = url;
+      a.href = resolved;
       a.download = "moxiemo-image.jpg";
       a.target = "_blank";
       a.rel = "noopener noreferrer";
@@ -584,8 +678,11 @@ export default function MediaLibrary({ userId, mode = "page", onSelect, headerle
                         onClick={() => isPicker && setPickerSelected(a.id)}
                       >
                         {kind === "image" ? (
-                          <img src={a.url} alt={a.display_name ?? ""} loading="lazy"
-                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <AssetImage
+                            rawUrl={a.url}
+                            alt={a.display_name ?? a.filename ?? ""}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center" style={{ background: "#0E0F10", color: "#fff" }}>
                             <Play size={24} />
@@ -624,7 +721,7 @@ export default function MediaLibrary({ userId, mode = "page", onSelect, headerle
                                   <TagIcon className="mr-2 h-3.5 w-3.5" /> Tag
                                 </DropdownMenuItem>
                                 {kind === "image" && (
-                                  <DropdownMenuItem onClick={() => editInCanva(a.url)}>
+                                  <DropdownMenuItem onClick={() => void editInCanvaAsync(a.url)}>
                                     <ExternalLink className="mr-2 h-3.5 w-3.5" /> Edit in Canva
                                   </DropdownMenuItem>
                                 )}
