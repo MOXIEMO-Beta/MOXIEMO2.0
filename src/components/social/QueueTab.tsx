@@ -656,7 +656,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                   </div>
                   {!hasMedia && (
                     <button
-                      onClick={() => setOpenMediaFor(isOpen ? null : post.id)}
+                      onClick={() => setLibraryPickerFor(post.id)}
                       className="flex items-center gap-1.5 flex-shrink-0"
                       style={{
                         fontSize: 11, color: "#E85A46", fontWeight: 600,
@@ -686,7 +686,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
                     <button title="Edit" onClick={() => setEditingId(editingId === post.id ? null : post.id)}>
                       <Pencil size={13} color={editingId === post.id ? "#E85A46" : "#6B6860"} /></button>
-                    <button title="Media library" onClick={() => setOpenMediaFor(isOpen ? null : post.id)}>
+                    <button title="Media library" onClick={() => setLibraryPickerFor(post.id)}>
                       <ImageIcon size={13} color="#6B6860" /></button>
                     <button title="Delete" onClick={() => handleDelete(post)}>
                       <Trash2 size={13} color="#6B6860" /></button>
@@ -736,6 +736,28 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
           onConfirm={handlePickerPublish}
         />
       )}
+      <MediaPickerModal
+        open={!!libraryPickerFor}
+        onOpenChange={(o) => !o && setLibraryPickerFor(null)}
+        userId={userId}
+        onSelect={async (asset) => {
+          const postId = libraryPickerFor;
+          if (!postId) return;
+          const { error } = await supabase
+            .from("social_posts")
+            .update({ media_urls: [asset.url] })
+            .eq("id", postId);
+          if (error) {
+            toast.error(error.message);
+            return;
+          }
+          setPosts((arr) =>
+            arr.map((p) => (p.id === postId ? { ...p, media_urls: [asset.url] } : p)),
+          );
+          setLibraryPickerFor(null);
+          toast.success("Attached to post");
+        }}
+      />
     </div>
   );
 }
