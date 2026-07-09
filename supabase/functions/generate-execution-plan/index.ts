@@ -14,6 +14,13 @@ Generate a complete EXECUTION PLAN that includes:
 
 Be SPECIFIC and grounded in the foundation. Reference the user's actual ideal client, pillars, archetype, channel — never generic placeholders. Topic angles must progress logically (awareness → understanding → application). Tasks should reference the user's primary channel and positioning.
 
+SUCCESS METRICS COMPLETENESS — ALL SUBSECTIONS REQUIRED:
+successMetrics MUST include, all populated, all grounded in THIS founder's foundation (never sample copy, never blank):
+- primary.name, primary.target (weekly + monthly for recurring; or a single sell string for launches), primary.leadSources (3-5 items with source + percentage), primary.qualification.highFit / .mediumFit / .lowFit (each with percentage + definition).
+- contentPerformance.linkedin (engagementTarget, profileViewsTarget, postsPerWeek) AND contentPerformance.email (openRateTarget, clickRateTarget, sendsPerMonth). Include BOTH channels' targets even if email is secondary; use realistic starter values, never leave empty.
+- businessGoals.revenueGrowth AND businessGoals.scalingPlan — one sentence each, specific to this founder's stated goals.
+- brandHealth.voiceConsistencyScore, brandHealth.archetypeAlignment, brandHealth.notes (short baseline note).
+
 ACTION PLAN FORMAT — STRICT:
 Each of week1, week2, week3, week4 MUST be a structured OBJECT with:
   - "title": a short 2-6 word thematic phrase specific to this founder's strategy (e.g. "Foundation & Strategy Lock-in", "Launch & Initial Engagement", "Building Momentum & Conversations", "Analysis & Optimization"). Do NOT prefix with "Week N", "Task:", or any date range. Do NOT include time estimates like "(Est. 10 hours)" in the title. Time estimates belong on individual task lines.
@@ -42,6 +49,14 @@ HARD RULES:
 - Never use calendar quarter labels ("Q1 2027", "Q4 2026"). Use phase labels with date ranges.
 - Never derive or emit a monthly recurring revenue figure anywhere.
 - Never use em-dashes. Never use contractions.
+
+SUCCESS METRICS COMPLETENESS — ALL SUBSECTIONS REQUIRED:
+successMetrics MUST include, all populated, all grounded in THIS founder's launch (never sample copy, never blank):
+- primary.name (short label like "Enrollments sold"), primary.target.total = the founder's sell target string verbatim ("Sell N unit by Month D, YYYY"). Do NOT emit weekly/monthly recurring targets; if you set primary.target.weekly or .monthly at all, they must describe a launch-week pacing count (e.g. "3 seats sold this week"), never MRR.
+- primary.leadSources (3-5 items sized to the launch: warm list, referral partners, LinkedIn inbound, etc.), primary.qualification.highFit / .mediumFit / .lowFit (percentage + definition matched to who buys THIS offer).
+- contentPerformance.linkedin AND contentPerformance.email — realistic starter targets for the launch window, both channels.
+- businessGoals.revenueGrowth = one sentence about the launch revenue (one-time, not MRR); businessGoals.scalingPlan = the next move after this launch closes.
+- brandHealth.voiceConsistencyScore, brandHealth.archetypeAlignment, brandHealth.notes.
 
 ACTION PLAN FORMAT — STRICT:
 Each of week1, week2, week3, week4 MUST be a structured OBJECT with:
@@ -674,6 +689,105 @@ Today's date: ${today}${launchContext}`;
         }
       }
     }
+
+    // ================================================================
+    // SUCCESS METRICS COMPLETENESS — retry any empty required subsection.
+    // The UI has six required blocks; a partial response would render
+    // headers with no body. We retry once and merge per-subsection,
+    // never overwriting a populated section with an empty one.
+    // ================================================================
+    const smMissing = (sm: any): string[] => {
+      const miss: string[] = [];
+      const p = sm?.primary || {};
+      if (!p.name || !p.target) miss.push("primary");
+      if (!Array.isArray(p.leadSources) || p.leadSources.length === 0) miss.push("leadSources");
+      const q = p.qualification || {};
+      if (!q.highFit?.percentage && !q.mediumFit?.percentage && !q.lowFit?.percentage) miss.push("qualification");
+      const cp = sm?.contentPerformance || {};
+      const cpLi = cp.linkedin || {}, cpEm = cp.email || {};
+      const cpEmpty = !cpLi.engagementTarget && !cpLi.profileViewsTarget && !cpLi.postsPerWeek
+                   && !cpEm.openRateTarget && !cpEm.clickRateTarget && !cpEm.sendsPerMonth;
+      if (cpEmpty) miss.push("contentPerformance");
+      const bg = sm?.businessGoals || {};
+      if (!bg.revenueGrowth && !bg.scalingPlan) miss.push("businessGoals");
+      const bh = sm?.brandHealth || {};
+      if (bh.voiceConsistencyScore == null && bh.archetypeAlignment == null && !bh.notes) miss.push("brandHealth");
+      return miss;
+    };
+
+    let smMiss = smMissing(parsed?.successMetrics);
+    if (smMiss.length > 0) {
+      console.error("execution-plan: missing successMetrics subsections", { missing: smMiss });
+      const smRetry = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: isLaunch ? SYSTEM_LAUNCH : SYSTEM },
+            { role: "user", content: userBrief },
+            { role: "user", content: `RETRY: your previous successMetrics response was missing or empty for: ${smMiss.join(", ")}. Regenerate ONLY the successMetrics object with ALL of these subsections populated: primary (name, target, leadSources with 3-5 items, qualification.highFit/.mediumFit/.lowFit each with percentage AND definition), contentPerformance.linkedin AND contentPerformance.email (all target fields), businessGoals.revenueGrowth AND businessGoals.scalingPlan, brandHealth.voiceConsistencyScore + archetypeAlignment + notes. Ground every value in THIS founder's foundation. Do NOT return empty objects.` },
+          ],
+          tools: [{
+            type: "function",
+            function: {
+              name: "save_success_metrics",
+              description: "Save the successMetrics object only.",
+              parameters: {
+                type: "object",
+                properties: { successMetrics: { type: "object" } },
+                required: ["successMetrics"],
+              },
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "save_success_metrics" } },
+        }),
+      });
+      if (smRetry.ok) {
+        const rd = await smRetry.json();
+        const rArgs = rd.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+        const rParsed = rArgs ? JSON.parse(rArgs) : {};
+        const nextSm = rParsed?.successMetrics;
+        if (nextSm && typeof nextSm === "object") {
+          const prev = parsed.successMetrics || {};
+          const nonEmpty = (v: any) => {
+            if (v == null) return false;
+            if (typeof v === "string") return v.trim().length > 0;
+            if (Array.isArray(v)) return v.length > 0;
+            if (typeof v === "object") return Object.keys(v).length > 0;
+            return true;
+          };
+          const pickBetter = (a: any, b: any) => (nonEmpty(b) ? b : a);
+          parsed.successMetrics = {
+            primary: {
+              ...(prev.primary || {}),
+              ...(nextSm.primary || {}),
+              name: pickBetter(prev.primary?.name, nextSm.primary?.name),
+              target: pickBetter(prev.primary?.target, nextSm.primary?.target),
+              leadSources: pickBetter(prev.primary?.leadSources, nextSm.primary?.leadSources),
+              qualification: pickBetter(prev.primary?.qualification, nextSm.primary?.qualification),
+            },
+            contentPerformance: pickBetter(prev.contentPerformance, nextSm.contentPerformance),
+            businessGoals: pickBetter(prev.businessGoals, nextSm.businessGoals),
+            brandHealth: pickBetter(prev.brandHealth, nextSm.brandHealth),
+          };
+          smMiss = smMissing(parsed.successMetrics);
+          if (smMiss.length > 0) console.error("execution-plan: successMetrics retry still missing", smMiss);
+        }
+      } else {
+        console.error("execution-plan: successMetrics retry failed", smRetry.status, await smRetry.text());
+      }
+    }
+
+    // Report completeness so the client can decide to swap or hold.
+    const actionPlanEmpty = !parsed?.actionPlan || [1,2,3,4].some((n) => {
+      const w = parsed.actionPlan[`week${n}`];
+      return !w || !Array.isArray(w.tasks) || w.tasks.length === 0;
+    });
+    (parsed as any)._completeness = {
+      successMetricsMissing: smMiss,
+      actionPlanEmpty,
+    };
 
     return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {

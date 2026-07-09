@@ -26,6 +26,8 @@ export function MetricsTab() {
   const cp = sm.contentPerformance || {};
   const bg = sm.businessGoals || {};
   const bh = sm.brandHealth || {};
+  const isLaunch = strategy?.strategy_lane === "offer_gtm";
+  const sellTarget: string = (ef as any)?.successTarget || strategy?.success_definition || "";
 
   return (
     <div className="space-y-6 report-page">
@@ -40,17 +42,32 @@ export function MetricsTab() {
             <h3 className="font-display text-3xl tracking-[-0.02em]">{primary.name}</h3>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-          <div className="p-4 rounded-lg bg-background/5 border border-background/10">
-            <div className="text-[10px] uppercase tracking-[0.25em] text-background/60 mb-1">Weekly target</div>
-            <div className="font-display text-3xl">{primary.target?.weekly || "—"}</div>
+        {isLaunch ? (
+          <div className="mb-5">
+            <div className="p-4 rounded-lg bg-background/5 border border-background/10">
+              <div className="text-[10px] uppercase tracking-[0.25em] text-background/60 mb-1">Sell target</div>
+              <div className="font-display text-2xl leading-tight">
+                {primary.target?.total || sellTarget || primary.name || ""}
+              </div>
+            </div>
           </div>
-          <div className="p-4 rounded-lg bg-background/5 border border-background/10">
-            <div className="text-[10px] uppercase tracking-[0.25em] text-background/60 mb-1">Monthly target</div>
-            <div className="font-display text-3xl">{primary.target?.monthly || "—"}</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+            {primary.target?.weekly && (
+              <div className="p-4 rounded-lg bg-background/5 border border-background/10">
+                <div className="text-[10px] uppercase tracking-[0.25em] text-background/60 mb-1">Weekly target</div>
+                <div className="font-display text-3xl">{primary.target.weekly}</div>
+              </div>
+            )}
+            {primary.target?.monthly && (
+              <div className="p-4 rounded-lg bg-background/5 border border-background/10">
+                <div className="text-[10px] uppercase tracking-[0.25em] text-background/60 mb-1">Monthly target</div>
+                <div className="font-display text-3xl">{primary.target.monthly}</div>
+              </div>
+            )}
           </div>
-        </div>
-        <p className="text-sm text-background/70 italic">Starting baseline — connect analytics to track real performance.</p>
+        )}
+        <p className="text-sm text-background/70 italic">Starting baseline, connect analytics to track real performance.</p>
       </Card>
 
       {/* Lead sources + qualification */}
@@ -100,11 +117,12 @@ export function MetricsTab() {
         </div>
       )}
 
-      {/* Content performance */}
+      {/* Content performance — hide the card entirely when nothing is populated */}
+      {(cp.linkedin || cp.email) && (
       <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4"><TrendingUp className="h-3.5 w-3.5" /> Content performance targets</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {cp.linkedin && (
+          {cp.linkedin && (cp.linkedin.engagementTarget || cp.linkedin.profileViewsTarget || cp.linkedin.postsPerWeek) && (
             <div className="p-4 rounded-lg border border-border">
               <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">{strategy?.primary_channel ?? 'LinkedIn'}</div>
               <ul className="text-sm space-y-1">
@@ -115,7 +133,7 @@ export function MetricsTab() {
               <NoDataNote>Will populate after first posts.</NoDataNote>
             </div>
           )}
-          {cp.email && (
+          {cp.email && (cp.email.openRateTarget || cp.email.clickRateTarget || cp.email.sendsPerMonth) && (
             <div className="p-4 rounded-lg border border-border">
               <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">Email</div>
               <ul className="text-sm space-y-1">
@@ -128,6 +146,7 @@ export function MetricsTab() {
           )}
         </div>
       </Card>
+      )}
 
       {/* Business goals */}
       {(bg.revenueGrowth || bg.scalingPlan) && (
