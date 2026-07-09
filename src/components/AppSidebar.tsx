@@ -9,6 +9,7 @@ import {
   Share2,
   Target,
   ShieldCheck,
+  Images,
   type LucideIcon,
 } from "lucide-react";
 import { NavLink, Link } from "react-router-dom";
@@ -33,6 +34,7 @@ const execute: AppNavItem[] = [
   { title: "Content", url: "/app/content", icon: FileText },
   { title: "Campaign Planner", url: "/app/calendar", icon: CalendarDays },
   { title: "Social", url: "/app/social", icon: Share2 },
+  { title: "Media Library", url: "/app/media", icon: Images },
   { title: "Brand Hub", url: "/app/brand-hub", icon: ShieldCheck },
 ];
 const analyze: AppNavItem[] = [
