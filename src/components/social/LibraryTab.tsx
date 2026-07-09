@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { DropZone } from "@/hooks/useFileDrop";
 import {
   Search,
   Upload,
