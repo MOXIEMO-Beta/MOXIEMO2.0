@@ -838,9 +838,8 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   userId: string; postId: string; onClose: () => void; onAttached: (url: string) => void;
 }) {
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [tab, setTab] = useState<"all" | "images" | "videos" | "colors" | "stock">("all");
+  const [tab, setTab] = useState<"all" | "images" | "videos" | "stock">("all");
   const [selected, setSelected] = useState<string | null>(null);
-  const [brandColors, setBrandColors] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [signed, setSigned] = useState<Record<string, string>>({});
   const [stockQuery, setStockQuery] = useState("");
