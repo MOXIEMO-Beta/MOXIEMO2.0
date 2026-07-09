@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { ChevronDown, Calendar as CalendarIcon, Download, FileText, Mail, Mic } from "lucide-react";
 import { useStrategyEditor } from "@/hooks/useStrategyEditor";
 import { useAuth } from "@/hooks/useAuth";
+import { formatDateUS } from "@/lib/utils";
 import {
   ensureItemIds,
   resolveCalendarDates,
@@ -214,7 +215,7 @@ export function ContentTab() {
                   {items.map((item, i) => (
                     <div key={i} className="p-4 rounded-lg border border-border bg-background">
                       <div className="flex items-center justify-between mb-2 text-xs text-muted-foreground">
-                        <span className="font-medium">{item.day} · {item.resolvedDate || item.date}</span>
+                       <span className="font-medium">{item.day} · {formatDateUS(item.resolvedDate || item.date)}</span>
                         <span className="inline-flex items-center gap-1.5 text-accent">{platformIcon(item.platform)} {item.platform}</span>
                       </div>
                       <div className="text-sm font-medium leading-snug mb-2">{item.topic}</div>
