@@ -153,7 +153,7 @@ export function ContentTab() {
                         )}
                         {Array.isArray(t.contentTopics) && t.contentTopics.length > 0 && (
                           <div>
-                            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Content topics — 12 weeks</div>
+                            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Content topics, 12 weeks</div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                               {t.contentTopics.map((c: any) => (
                                 <div key={c.week} className="flex gap-3 text-sm p-3 rounded-lg bg-background border border-border">

@@ -55,7 +55,7 @@ const TAB_PLACEHOLDER = (label: string) => (
     <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Coming next sprint</div>
     <h3 className="font-display text-2xl mb-2">{label}</h3>
     <p className="text-sm text-muted-foreground max-w-md mx-auto">
-      This workspace section is part of the next strategy build-out. Your foundation data is already captured — we're laying out the views.
+      This workspace section is part of the next strategy build-out. Your foundation data is already captured, we're laying out the views.
     </p>
   </Card>
 );
@@ -333,7 +333,7 @@ function OverviewTab() {
         </Card>
         ) : <div />}
 
-        {/* Brand positioning — dark card (right) */}
+        {/* Brand positioning, dark card (right) */}
         <div className="p-6" style={{ background: "#0E0F10", color: "#FFFFFF", borderRadius: 14 }}>
           <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#E85A46" }}>
             Brand positioning
@@ -435,7 +435,7 @@ function OverviewTab() {
         <Card className="group relative report-card p-7 border-border shadow-soft">
           {efPencil(["competitivePositioning", "yourPosition"], "competitive positioning", "Your unique market position and the gap you fill versus alternatives.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">
-            {isService ? "Competitive positioning — your ownable gap" : "Competitive positioning"}
+            {isService ? "Competitive positioning, your ownable gap" : "Competitive positioning"}
           </div>
           <p className="font-display text-xl tracking-[-0.01em] mb-3">
             <EditableField
@@ -551,7 +551,7 @@ function OverviewTab() {
       {/* Success + goal */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="group relative report-card p-6 border-border shadow-soft">
-          {colPencil("success_definition", "success metric", "How you'll measure traction — a number you can track weekly or monthly.")}
+          {colPencil("success_definition", "success metric", "How you'll measure traction, a number you can track weekly or monthly.")}
           <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Success looks like</div>
           <p>
             <EditableField value={strategy.success_definition} onChange={(v) => setField("success_definition", v)} multiline placeholder="What success looks like" />
@@ -742,7 +742,7 @@ function VoiceTab() {
 
       {/* Sentence structure */}
       <Card className="group relative report-card p-7 border-border shadow-soft">
-        {efPencil(["voiceGuidelines", "sentenceStructure", "example"], "sentence structure", "How your sentences are shaped — rhythm, length, and a canonical example.")}
+        {efPencil(["voiceGuidelines", "sentenceStructure", "example"], "sentence structure", "How your sentences are shaped, rhythm, length, and a canonical example.")}
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Sentence structure</div>
         <div className="mb-5">
           <EditableBulletList
@@ -771,7 +771,7 @@ function VoiceTab() {
           />
         </Card>
         <Card className="group relative report-card words-avoid p-6 border-border shadow-soft">
-          {efPencil(["voiceGuidelines", "vocabulary", "avoid"], "words to avoid", "The vocabulary that should never appear — generic, jargon, or off-brand terms.")}
+          {efPencil(["voiceGuidelines", "vocabulary", "avoid"], "words to avoid", "The vocabulary that should never appear, generic, jargon, or off-brand terms.")}
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3"><X className="h-3.5 w-3.5" /> Words to avoid</div>
           <EditableList
             items={vocab.avoid || []}
@@ -808,7 +808,7 @@ function VoiceTab() {
 
       {/* Voice examples */}
       <Card className="group relative report-card p-7 border-border shadow-soft">
-        {efPencil(["voiceGuidelines", "voiceExamples", "openingHook", "good"], "voice examples", "Concrete good/bad examples — hooks, teaching points, and CTAs in your voice.")}
+        {efPencil(["voiceGuidelines", "voiceExamples", "openingHook", "good"], "voice examples", "Concrete good/bad examples, hooks, teaching points, and CTAs in your voice.")}
         <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-5">Voice examples</div>
         <div className="space-y-5">
           {([
@@ -1064,7 +1064,7 @@ export default function Strategy() {
   // synthesis completes. Until then we keep rendering it on top so the
   // user never sees a flash of the dashboard or any white state.
   const [interstitialDismissed, setInterstitialDismissed] = useState(false);
-  // Whether we ever entered the building state — used to decide if we should
+  // Whether we ever entered the building state, used to decide if we should
   // run the fade-out on completion or render the dashboard immediately.
   const sawBuildingRef = useRef(false);
   // Captures the synthesis_status the *first* time we display the interstitial
@@ -1214,9 +1214,9 @@ export default function Strategy() {
       if (anchor.target && anchor.target !== "" && anchor.target !== "_self") return;
       if (/^(https?:)?\/\//i.test(href) && !href.startsWith(window.location.origin)) return;
       if (href.startsWith("mailto:") || href.startsWith("tel:")) return;
-      // Same-page hash — let it through.
+      // Same-page hash, let it through.
       if (href.startsWith("#")) return;
-      // Already on this URL — ignore.
+      // Already on this URL, ignore.
       const normalized = href.startsWith("http") ? new URL(href).pathname + new URL(href).search : href;
       if (normalized === window.location.pathname + window.location.search) return;
       e.preventDefault();
@@ -1273,7 +1273,7 @@ export default function Strategy() {
           <>
             <h1 className="font-display text-4xl mb-3">Strategy generation hit a snag</h1>
             <p className="text-muted-foreground mb-8">
-              We're automatically retrying in a moment — your Discovery answers are safe.
+              We're automatically retrying in a moment, your Discovery answers are safe.
             </p>
             <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin text-accent" />

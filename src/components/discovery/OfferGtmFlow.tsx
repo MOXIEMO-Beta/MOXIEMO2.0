@@ -293,7 +293,7 @@ const SECTIONS: Array<{ title: string; fields: Field[] }> = [
         key: "goal_by_date",
         label: "By this date",
         helper: "A real date. Not soon. Not this quarter.",
-        placeholder: "2026-09-30",
+        placeholder: "09/30/2026",
       },
       {
         key: "goal_revenue",

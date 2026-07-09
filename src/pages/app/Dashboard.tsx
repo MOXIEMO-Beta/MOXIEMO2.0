@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { formatDateUS } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -741,7 +742,7 @@ export default function Dashboard() {
               {ns?.title || "Your North Star, forming"}
             </h2>
             <p className="mt-2 text-sm md:text-base font-medium" style={{ color: NAVY_TINT }}>
-              {ns ? [ns.target_value, ns.deadline].filter(Boolean).join(" · ") : "Personalized from your strategy"}
+              {ns ? [ns.target_value, formatDateUS(ns.deadline, "long")].filter(Boolean).join(" · ") : "Personalized from your strategy"}
             </p>
             <div className="mt-6">
               <div className="relative h-3 rounded-full" style={{ background: "rgba(255,255,255,0.14)" }}>

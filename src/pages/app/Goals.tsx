@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { formatDateUS } from "@/lib/utils";
 import confetti from "canvas-confetti";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -492,7 +493,7 @@ export default function Goals() {
           {ns.title || "Your North Star"}
         </h2>
         <p className="mt-2 text-sm md:text-base font-medium" style={{ color: CORAL_TINT }}>
-          {[ns.target_value, ns.deadline].filter(Boolean).join(" · ")}
+          {[ns.target_value, formatDateUS(ns.deadline, "long")].filter(Boolean).join(" · ")}
         </p>
 
         {/* Milestone bar */}
@@ -671,7 +672,7 @@ export default function Goals() {
                     </div>
 
                     {f.deadline ? (
-                      <div className="mt-3 text-[11px] text-muted-foreground border-t border-border pt-2">By {f.deadline}</div>
+                      <div className="mt-3 text-[11px] text-muted-foreground border-t border-border pt-2">By {formatDateUS(f.deadline, "long")}</div>
                     ) : null}
                   </article>
                 ))}
