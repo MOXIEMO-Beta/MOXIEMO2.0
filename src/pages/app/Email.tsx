@@ -1416,6 +1416,7 @@ export default function Email() {
           })()}
         </CardContent>
       </Card>
+      </DropZone>
 
       {/* 4. Compose */}
       <Card>
