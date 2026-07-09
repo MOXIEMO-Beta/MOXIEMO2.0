@@ -900,6 +900,23 @@ ${transcript}`,
       }
       parsed.strategy_lane = isLane2 ? "service" : "expertise";
       if (isLane3) parsed.strategy_lane = "offer_gtm";
+      // Lane 3 post-processing: enforce single-metric successTarget and scrub
+      // any recurring-revenue phrasing the model may have slipped in.
+      if (isLane3) {
+        const ef = parsed.enhanced_foundation && typeof parsed.enhanced_foundation === "object" ? parsed.enhanced_foundation : {};
+        const canonical = buildSuccessTarget(offerIntake);
+        if (canonical) {
+          ef.successTarget = canonical;
+          // Also normalize success_definition so downstream Goals / North Star
+          // see one metric, not compound.
+          if (!parsed.success_definition || /\band\b|\+|\//i.test(parsed.success_definition)) {
+            parsed.success_definition = canonical;
+          }
+        }
+        parsed.enhanced_foundation = stripRecurringRevenue(ef);
+        parsed.success_definition = stripRecurringRevenue(parsed.success_definition);
+        parsed.business_goal = stripRecurringRevenue(parsed.business_goal);
+      }
       // Brand rule: never persist em/en dashes in generated strategy copy.
       return sanitizeDashesDeep(parsed);
     };
