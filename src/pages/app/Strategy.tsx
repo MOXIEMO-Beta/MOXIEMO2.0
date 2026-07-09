@@ -86,26 +86,80 @@ function StrategyHeader() {
       const { data, error } = await supabase.functions.invoke("generate-execution-plan", { body: { strategy } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
-      // Regenerating replaces contentCalendar (new item_ids). Purge overrides so
-      // stale references don't shadow the fresh calendar.
+
+      // ============================================================
+      // GENERATE-THEN-SWAP: build the NEW bundle into a staged object,
+      // validate it, and only atomically swap if complete. On failure
+      // or partial, KEEP the existing bundle intact and ask for retry.
+      // ============================================================
+      const nonEmpty = (v: any) => {
+        if (v == null) return false;
+        if (typeof v === "string") return v.trim().length > 0;
+        if (Array.isArray(v)) return v.length > 0;
+        if (typeof v === "object") return Object.keys(v).length > 0;
+        return true;
+      };
+      const pickBetter = (a: any, b: any) => (nonEmpty(b) ? b : a);
+
+      // Preserve any prior populated subsection when the new one is empty.
+      const prevSm = ef.successMetrics || {};
+      const nextSm = data.successMetrics || {};
+      const mergedSm = {
+        primary: {
+          ...(prevSm.primary || {}),
+          ...(nextSm.primary || {}),
+          name: pickBetter(prevSm.primary?.name, nextSm.primary?.name),
+          target: pickBetter(prevSm.primary?.target, nextSm.primary?.target),
+          leadSources: pickBetter(prevSm.primary?.leadSources, nextSm.primary?.leadSources),
+          qualification: pickBetter(prevSm.primary?.qualification, nextSm.primary?.qualification),
+        },
+        contentPerformance: pickBetter(prevSm.contentPerformance, nextSm.contentPerformance),
+        businessGoals: pickBetter(prevSm.businessGoals, nextSm.businessGoals),
+        brandHealth: pickBetter(prevSm.brandHealth, nextSm.brandHealth),
+      };
+
+      const stagedActionPlan = pickBetter(ef.actionPlan, data.actionPlan);
+      const stagedThemes = pickBetter(ef.quarterlyThemes, data.quarterlyThemes);
+      const stagedCalendar = pickBetter(ef.contentCalendar, data.contentCalendar);
+      const stagedChannels = pickBetter(ef.channelStrategy, data.channelStrategy);
+
+      // Validate the STAGED bundle end-to-end. If any required section is
+      // still empty after merge, we hold and ask for retry — no partial swap.
+      const apOk = stagedActionPlan && [1,2,3,4].every((n) => {
+        const w = stagedActionPlan[`week${n}`];
+        return w && Array.isArray(w.tasks) && w.tasks.some((t: any) => t?.task && String(t.task).trim());
+      });
+      const smOk = nonEmpty(mergedSm.primary?.name)
+        && nonEmpty(mergedSm.primary?.leadSources)
+        && nonEmpty(mergedSm.primary?.qualification)
+        && nonEmpty(mergedSm.contentPerformance)
+        && nonEmpty(mergedSm.businessGoals)
+        && nonEmpty(mergedSm.brandHealth);
+
+      if (!apOk || !smOk) {
+        console.error("execution-plan incomplete after merge", {
+          apOk, smOk, completeness: (data as any)?._completeness,
+        });
+        toast.error("Plan came back incomplete", { description: "Your existing plan is preserved. Please Regenerate again." });
+        return; // keep prior bundle intact
+      }
+
+      // Atomic swap. Only now do we purge calendar overrides + task completion.
       if (user?.id) {
         try {
           const { clearOverridesForUser } = await import("@/lib/contentCalendar");
           await clearOverridesForUser(user.id);
         } catch (e) { console.warn("clearOverridesForUser failed", e); }
       }
-      // Merge new sections into enhanced_foundation, preserving Sprint 1 fields.
       const merged = {
         ...ef,
-        quarterlyThemes: data.quarterlyThemes,
-        contentCalendar: data.contentCalendar,
-        channelStrategy: data.channelStrategy,
-        successMetrics: data.successMetrics,
-        actionPlan: data.actionPlan,
+        quarterlyThemes: stagedThemes,
+        contentCalendar: stagedCalendar,
+        channelStrategy: stagedChannels,
+        successMetrics: mergedSm,
+        actionPlan: stagedActionPlan,
       };
       setEnhanced([], merged);
-      // Idempotency: clear per-task completion so stale ids from a prior plan
-      // don't shadow fresh task rows and the "N of M complete" count is honest.
       setField("task_completion", {});
       await saveNow();
       toast.success("Execution plan generated", { description: "Content, Channels, Metrics and Action Plan are ready." });
