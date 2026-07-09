@@ -833,7 +833,13 @@ export default function CreateTab({
             />
 
             {/* Media row */}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
+            <DropZone
+              onFile={(f) => void handleFile(f)}
+              accept="image/jpeg,image/png,image/gif,image/webp"
+              className="mt-3 flex flex-wrap items-center gap-2 rounded-md p-1"
+              style={{ border: "1.5px dashed transparent", transition: "background 120ms ease, border-color 120ms ease" }}
+              activeStyle={{ border: "1.5px dashed #E85A46", background: "rgba(232,90,70,0.06)" }}
+            >
               <input
                 ref={fileInputRef}
                 type="file"
@@ -871,7 +877,7 @@ export default function CreateTab({
                   </button>
                 </div>
               ))}
-            </div>
+            </DropZone>
 
             {/* Step 4 */}
             <div
