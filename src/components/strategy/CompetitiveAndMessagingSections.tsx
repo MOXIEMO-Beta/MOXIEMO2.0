@@ -274,7 +274,7 @@ export function CompetitiveAndMessagingSections() {
               className="shrink-0 text-xs"
             >
               {regenPositioning ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
-              Regenerate
+              Generate
             </Button>
           </div>
           <CollapsibleContent>
