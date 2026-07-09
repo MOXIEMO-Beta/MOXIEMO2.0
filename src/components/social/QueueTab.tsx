@@ -79,19 +79,32 @@ type Asset = {
   created_at: string;
 };
 
-// Resolve a signed URL for a stored asset. We persist the storage path in
-// `filename`; fall back to parsing the path out of legacy `url` values.
+// Resolve a stored value (path, public URL, or legacy signed URL) into the
+// bare storage path within the `social-assets` bucket.
+export function extractStoragePath(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const v = String(value);
+  // Full Supabase storage URL (public or signed) — strip prefix + querystring.
+  const m = v.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/social-assets\/([^?#]+)/);
+  if (m) return decodeURIComponent(m[1]);
+  // Fallback: any "social-assets/…" segment.
+  const m2 = v.match(/social-assets\/([^?#]+)/);
+  if (m2) return decodeURIComponent(m2[1]);
+  // Already a bare path (contains "/", not a URL scheme).
+  if (!/^https?:/i.test(v) && v.includes("/")) return v;
+  return null;
+}
 function storagePathOf(a: Pick<Asset, "url" | "filename">): string | null {
-  if (a.filename && a.filename.includes("/")) return a.filename;
-  const m = a.url?.match(/social-assets\/(.+)$/);
-  if (m) return m[1];
-  return a.filename ?? null;
+  return extractStoragePath(a.filename) ?? extractStoragePath(a.url);
 }
 async function signAssetUrl(a: Pick<Asset, "url" | "filename">): Promise<string> {
   const path = storagePathOf(a);
   if (!path) return a.url ?? "";
-  const { data } = await supabase.storage.from("social-assets").createSignedUrl(path, 60 * 60);
-  return data?.signedUrl ?? a.url ?? "";
+  const { data, error } = await supabase.storage
+    .from("social-assets")
+    .createSignedUrl(path, 60 * 60);
+  if (error) console.warn("[QueueTab] signed URL failed", { path, error });
+  return data?.signedUrl ?? "";
 }
 
 const PLATFORM_META: Record<Platform, { bg: string; color: string; Icon: any; label: string }> = {
