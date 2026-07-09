@@ -104,6 +104,9 @@ function StrategyHeader() {
         actionPlan: data.actionPlan,
       };
       setEnhanced([], merged);
+      // Idempotency: clear per-task completion so stale ids from a prior plan
+      // don't shadow fresh task rows and the "N of M complete" count is honest.
+      setField("task_completion", {});
       await saveNow();
       toast.success("Execution plan generated", { description: "Content, Channels, Metrics and Action Plan are ready." });
     } catch (e: any) {
