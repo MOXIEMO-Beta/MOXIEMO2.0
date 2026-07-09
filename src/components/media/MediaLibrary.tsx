@@ -677,8 +677,11 @@ export default function MediaLibrary({ userId, mode = "page", onSelect, headerle
                         onClick={() => isPicker && setPickerSelected(a.id)}
                       >
                         {kind === "image" ? (
-                          <img src={a.url} alt={a.display_name ?? ""} loading="lazy"
-                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                          <AssetImage
+                            rawUrl={a.url}
+                            alt={a.display_name ?? a.filename ?? ""}
+                            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center" style={{ background: "#0E0F10", color: "#fff" }}>
                             <Play size={24} />
@@ -717,7 +720,7 @@ export default function MediaLibrary({ userId, mode = "page", onSelect, headerle
                                   <TagIcon className="mr-2 h-3.5 w-3.5" /> Tag
                                 </DropdownMenuItem>
                                 {kind === "image" && (
-                                  <DropdownMenuItem onClick={() => editInCanva(a.url)}>
+                                  <DropdownMenuItem onClick={() => void editInCanvaAsync(a.url)}>
                                     <ExternalLink className="mr-2 h-3.5 w-3.5" /> Edit in Canva
                                   </DropdownMenuItem>
                                 )}
