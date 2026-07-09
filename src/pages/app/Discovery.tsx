@@ -722,6 +722,25 @@ export default function Discovery() {
         done={strategyReady}
         onFadedOut={() => navigate("/app/strategy")}
       />
+      {showHangTight && !synthesizing && !strategyReady && (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center px-6"
+          style={{ backgroundColor: "rgba(250, 250, 248, 0.96)" }}
+        >
+          <div className="max-w-md text-center">
+            <div className="inline-flex items-center gap-2 mb-3">
+              <Sparkles className="h-4 w-4 text-accent" />
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">MOXIEMO</span>
+            </div>
+            <h2 className="text-2xl font-semibold text-foreground" style={{ letterSpacing: "-0.01em" }}>
+              That is everything we need.
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We are about to build your strategy now. Hang tight.
+            </p>
+          </div>
+        </div>
+      )}
       {lane === null && !completed && (
         <div className="flex-1 overflow-y-auto px-4 lg:px-10 py-10" style={{ backgroundColor: "#FAFAF8" }}>
           <div className="max-w-2xl mx-auto">
