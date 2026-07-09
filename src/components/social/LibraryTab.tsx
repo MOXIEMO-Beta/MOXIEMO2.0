@@ -531,7 +531,14 @@ export default function LibraryTab({
   const templatesEmpty = !loading && showTemplatesSection && filteredPosts.length === 0;
 
   return (
-    <div className="space-y-5">
+    <DropZone
+      onFile={uploadFile}
+      accept="image/jpeg,image/png,image/gif,image/webp,video/mp4"
+      disabled={uploading}
+      className="space-y-5 rounded-lg p-1"
+      style={{ border: "1.5px dashed transparent", transition: "background 120ms ease, border-color 120ms ease" }}
+      activeStyle={{ border: "1.5px dashed hsl(var(--accent))", background: "hsl(var(--accent) / 0.06)" }}
+    >
       {/* hidden file input */}
       <input
         ref={fileInputRef}
