@@ -577,7 +577,23 @@ Today's date: ${today}${launchContext}`;
       }
       return bad;
     };
-    let bad = missingTitles(parsed?.actionPlan);
+    // Trigger action plan retry when either titles are missing OR any week has
+    // no non-empty tasks. Previously we only retried on missing titles, so a
+    // response with titles but empty tasks (observed on the launch prompt) fell
+    // through and produced an empty Action Plan tab.
+    const missingTasks = (ap: any): number[] => {
+      const bad: number[] = [];
+      for (const n of [1, 2, 3, 4]) {
+        const w = ap?.[`week${n}`];
+        const tasks = Array.isArray(w?.tasks) ? w.tasks : [];
+        const hasReal = tasks.some((t: any) => t && typeof t.task === "string" && t.task.trim().length > 0);
+        if (!hasReal) bad.push(n);
+      }
+      return bad;
+    };
+    const badTitles = missingTitles(parsed?.actionPlan);
+    const badTasks = missingTasks(parsed?.actionPlan);
+    let bad = Array.from(new Set([...badTitles, ...badTasks])).sort();
     if (bad.length > 0) {
       console.error("execution-plan: missing week titles", {
         weeks: bad,
@@ -592,7 +608,7 @@ Today's date: ${today}${launchContext}`;
           messages: [
             { role: "system", content: isLaunch ? SYSTEM_LAUNCH : SYSTEM },
             { role: "user", content: userBrief },
-            { role: "user", content: `RETRY: your previous response returned week(s) ${bad.join(", ")} without a "title" field. Regenerate ONLY the actionPlan. Every week MUST have a short 2-6 word thematic title AND a "tasks" array where each task has non-empty "id", "task" (the full task sentence), and "estimatedTime". Do NOT return weeks as strings and do NOT return empty task objects.` },
+            { role: "user", content: `RETRY: your previous actionPlan response was incomplete for week(s) ${bad.join(", ")} (missing title or empty/missing tasks). Regenerate ONLY the actionPlan. Every week MUST have a short 2-6 word thematic title AND a "tasks" array of 4-6 items where EACH task has non-empty "id", "task" (the full task sentence, specific to THIS founder's strategy), and "estimatedTime". Do NOT return weeks as strings and do NOT return empty task objects.` },
           ],
           tools: [{
             type: "function",
