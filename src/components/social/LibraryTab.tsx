@@ -341,8 +341,7 @@ export default function LibraryTab({
   /* ---------- File upload ---------- */
   const handleUploadClick = () => fileInputRef.current?.click();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const uploadFile = async (file: File | undefined) => {
     if (!file || !userId) return;
     if (file.size > 50 * 1024 * 1024) {
       toast.error("File too large", { description: "Max size is 50MB" });
@@ -356,13 +355,18 @@ export default function LibraryTab({
       contentType: file.type,
     });
     setUploading(false);
-    if (e.target) e.target.value = "";
     if (error) {
       toast.error("Upload failed", { description: error.message });
       return;
     }
     toast.success("Uploaded");
     void loadAll();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    await uploadFile(file);
   };
 
   const handleDeleteAsset = async (a: StorageAsset) => {
