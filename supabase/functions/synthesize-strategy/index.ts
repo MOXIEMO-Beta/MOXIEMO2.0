@@ -61,6 +61,11 @@ MAPPINGS (use the intake fields as source of truth, sharpened by the chat):
 - business_goal: one short sentence about the launch outcome.
 - time_capacity: infer from the intake or leave a sensible default.
 
+HARD RULES FOR THIS LAUNCH (NON NEGOTIABLE):
+- successTarget on enhanced_foundation MUST be a single string with ONE number and ONE date, written verbatim from the intake in the exact form: "Sell {goal_sell_number} by {goal_by_date, long form Month D, YYYY}". Never compound. Never combine two metrics. Never add "and", "plus", "/".
+- Do NOT compute, derive, or emit any monthly recurring revenue, "MRR", "per month", "/mo", or "New Clients / Month" figure anywhere in success_definition, business_goal, enhanced_foundation, or any offer section. This is a one time launch, not a subscription.
+- Only reference a revenue figure if goal_revenue is explicitly present in the intake. If goal_revenue is blank, omit revenue entirely rather than derive it.
+
 enhanced_foundation must include:
 - positioningBreakdown: idealClient (buyer_who + buyer_trigger), painPoint (buyer_pain), transformation (offer_transformation), uniqueApproach (diff_why_you), method (offer_deliverables), outcome (goal_sell_number + goal_by_date).
 - messagingVariations: oneliner, short, elevator, all framed around THIS offer, in the founder's voice, no salesy tone.
@@ -108,6 +113,59 @@ function formatOfferIntake(intake: Record<string, unknown> | null | undefined, g
     `- Revenue equivalent: ${line("goal_revenue")}`,
     `- Warm list: ${line("warm_list")}`,
   ].join("\n");
+}
+
+// Long-form date helper: "2026-09-30" -> "September 30, 2026". Falls back to
+// the raw input if it cannot be parsed, so a founder's plain text ("end of
+// September") is preserved verbatim.
+function longFormDate(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const d = new Date(`${iso[1]}-${iso[2]}-${iso[3]}T00:00:00Z`);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+    }
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime()) && /\d/.test(s)) {
+    return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  }
+  return s;
+}
+
+// Compose the canonical single-metric target string from the intake.
+function buildSuccessTarget(intake: Record<string, unknown> | null | undefined): string {
+  if (!intake || typeof intake !== "object") return "";
+  const n = String((intake as any).goal_sell_number ?? "").trim();
+  const by = longFormDate((intake as any).goal_by_date);
+  if (!n || !by) return "";
+  const withBy = /^by\s/i.test(n) ? n : `${n} by ${by}`;
+  const startsSell = /^sell\b/i.test(withBy);
+  return startsSell ? withBy : `Sell ${withBy}`;
+}
+
+// Strip any recurring-revenue phrasing that Lane 3 must never emit. Operates
+// on strings inside enhanced_foundation. Non-strings pass through untouched.
+function stripRecurringRevenue<T>(value: T): T {
+  if (value == null) return value;
+  if (typeof value === "string") {
+    let out = value;
+    // "$5,000 / month", "$5000/mo", "5k per month", "MRR: $X"
+    out = out.replace(/\$?\s*[\d.,]+\s*[kKmM]?\s*(?:\/|per)\s*(?:mo(?:nth)?|wk|week)\b\.?/gi, "");
+    out = out.replace(/\b(?:MRR|ARR)\b[^.,;\n]*/gi, "");
+    out = out.replace(/\bNew\s+Clients\s*\/\s*Month\b[^.,;\n]*/gi, "");
+    out = out.replace(/[ \t]{2,}/g, " ").replace(/\s+([,.;])/g, "$1").trim();
+    return out as unknown as T;
+  }
+  if (Array.isArray(value)) return value.map((v) => stripRecurringRevenue(v)) as unknown as T;
+  if (typeof value === "object") {
+    const out: any = {};
+    for (const [k, v] of Object.entries(value as any)) out[k] = stripRecurringRevenue(v);
+    return out;
+  }
+  return value;
 }
 
 // ---- Strength scoring -------------------------------------------------------
@@ -582,6 +640,10 @@ ${transcript}`,
                         outcome: { type: "string" },
                       },
                     },
+                    successTarget: {
+                      type: "string",
+                      description: "Lane 3 only. Single metric, single date, verbatim from the intake. Form: 'Sell N [unit] by Month D, YYYY'. Never compound.",
+                    },
                     positioningVariations: {
                       type: "object",
                       properties: {
@@ -838,6 +900,23 @@ ${transcript}`,
       }
       parsed.strategy_lane = isLane2 ? "service" : "expertise";
       if (isLane3) parsed.strategy_lane = "offer_gtm";
+      // Lane 3 post-processing: enforce single-metric successTarget and scrub
+      // any recurring-revenue phrasing the model may have slipped in.
+      if (isLane3) {
+        const ef = parsed.enhanced_foundation && typeof parsed.enhanced_foundation === "object" ? parsed.enhanced_foundation : {};
+        const canonical = buildSuccessTarget(offerIntake);
+        if (canonical) {
+          ef.successTarget = canonical;
+          // Also normalize success_definition so downstream Goals / North Star
+          // see one metric, not compound.
+          if (!parsed.success_definition || /\band\b|\+|\//i.test(parsed.success_definition)) {
+            parsed.success_definition = canonical;
+          }
+        }
+        parsed.enhanced_foundation = stripRecurringRevenue(ef);
+        parsed.success_definition = stripRecurringRevenue(parsed.success_definition);
+        parsed.business_goal = stripRecurringRevenue(parsed.business_goal);
+      }
       // Brand rule: never persist em/en dashes in generated strategy copy.
       return sanitizeDashesDeep(parsed);
     };

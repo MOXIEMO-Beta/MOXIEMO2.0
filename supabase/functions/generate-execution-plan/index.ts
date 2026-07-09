@@ -20,7 +20,62 @@ Each of week1, week2, week3, week4 MUST be a structured OBJECT with:
   - "tasks": an array of task objects.
 Never return a week as a plain string, markdown block, or without a title.`;
 
+const SYSTEM_LAUNCH = `You are MOXIEMO's execution-plan synthesizer for a FOUNDER LAUNCHING ONE SPECIFIC OFFER by a HARD TARGET DATE. The plan is a LAUNCH SPRINT, not an evergreen content program.
+
+The target date is the hard guard for the whole plan. You will be told today's date and the target date. Compute the window in weeks and shape everything to land the sell target ON OR BEFORE the target date.
+
+Generate a complete EXECUTION PLAN that includes:
+1. quarterlyThemes: use this field to hold LAUNCH PHASES, not calendar quarters. For a roughly 12 week window, produce three phases in this order:
+   - Awareness (open the launch, name the problem, seed the offer)
+   - Resonance (proof, objections, transformation stories)
+   - Invitation and Enrollment (open cart, direct invitations, close on the target date)
+   A short optional Post Launch tail phase after the target date is allowed as a fourth entry, but the sprint to the target date is the spine. For very short windows (under 6 weeks) collapse to two phases. For longer windows (over 16 weeks) add a Nurture phase before Invitation. The "quarter" field on each phase MUST be a human phase label with its date range, for example "Awareness (Jul 1 to Jul 28)", NEVER "Q1 2027" or any calendar quarter tag.
+   Each phase has weekly contentTopics sized to that phase, not a fixed 12.
+   The FINAL phase before or at the target date MUST have its successMetric equal the founder's sell target verbatim ("Sell N unit by Month D, YYYY"). Do NOT file the sell milestone in any phase whose window begins after the target date.
+2. contentCalendar: 30 days from today, using the real primary and supporting channels, driving toward the enrollment push, not evergreen education. Weight later days toward invitation and enrollment as the target date approaches.
+3. channelStrategy: same object shape as normal (primary, secondary, tertiary), tuned for this launch.
+4. successMetrics: primary.name and primary.target should reflect the single sell target (one number, one date). Never emit MRR, "per month", or "New Clients / Month" figures. This is a one time launch.
+5. actionPlan: 4 week quick start; week titles reflect launch phases (e.g. "Open the Launch", "Prove the Transformation", "Invite the Warm List", "Close and Enroll").
+
+HARD RULES:
+- Never file the sell target in a phase or period that begins after the target date.
+- Never use calendar quarter labels ("Q1 2027", "Q4 2026"). Use phase labels with date ranges.
+- Never derive or emit a monthly recurring revenue figure anywhere.
+- Never use em-dashes. Never use contractions.
+
+ACTION PLAN FORMAT — STRICT:
+Each of week1, week2, week3, week4 MUST be a structured OBJECT with:
+  - "title": short 2-6 word phase-aligned phrase.
+  - "tasks": array of task objects.
+Never return a week as a plain string.`;
+
 function todayISO() { return new Date().toISOString().slice(0, 10); }
+
+function longFormDate(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const d = new Date(`${iso[1]}-${iso[2]}-${iso[3]}T00:00:00Z`);
+    if (!isNaN(d.getTime())) return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime()) && /\d/.test(s)) return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  return s;
+}
+
+function extractTargetDate(strategy: any): string | null {
+  const raw = strategy?.enhanced_foundation?.successTarget || strategy?.success_definition || "";
+  const iso = String(raw).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  // Long form "September 30, 2026"
+  const long = String(raw).match(/([A-Za-z]+ \d{1,2},? \d{4})/);
+  if (long) {
+    const d = new Date(long[1]);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);
+  }
+  return null;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -32,6 +87,25 @@ Deno.serve(async (req) => {
     const ef = strategy?.enhanced_foundation || {};
     const archetypeName = ef.brandArchetype?.name || "—";
     const pillars = (strategy?.content_pillars || []).map((p: any) => typeof p === "string" ? p : (p?.name || "")).filter(Boolean);
+
+    const isLaunch = strategy?.strategy_lane === "offer_gtm";
+    const today = todayISO();
+    const targetDateIso = isLaunch ? extractTargetDate(strategy) : null;
+    let launchContext = "";
+    if (isLaunch) {
+      const targetLong = targetDateIso ? longFormDate(targetDateIso) : "";
+      let weeks = 0;
+      if (targetDateIso) {
+        const ms = new Date(targetDateIso + "T00:00:00Z").getTime() - new Date(today + "T00:00:00Z").getTime();
+        weeks = Math.max(0, Math.round(ms / (7 * 24 * 3600 * 1000)));
+      }
+      launchContext = `\n\nLAUNCH CONTEXT (HARD GUARD):
+- Today: ${today}
+- Target date: ${targetDateIso || "(unknown, treat successTarget string as canonical)"}${targetLong ? ` (${targetLong})` : ""}
+- Window: ${weeks || "unknown"} weeks from today to the target date
+- Sell target (verbatim): ${ef.successTarget || strategy?.success_definition || "(missing)"}
+- The final launch phase MUST close on or before the target date and its successMetric MUST equal the sell target above verbatim. Never file the sell milestone in any period beginning after the target date. Never use calendar quarter labels.`;
+    }
 
     const userBrief = `STRATEGY FOUNDATION
 
@@ -48,7 +122,7 @@ Time capacity: ${strategy?.time_capacity || "—"}
 Success metric: ${strategy?.success_definition || "—"}
 Business goal: ${strategy?.business_goal || "—"}
 
-Today's date: ${todayISO()}`;
+Today's date: ${today}${launchContext}`;
 
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -56,7 +130,7 @@ Today's date: ${todayISO()}`;
       body: JSON.stringify({
         model: "google/gemini-2.5-pro",
         messages: [
-          { role: "system", content: SYSTEM },
+          { role: "system", content: isLaunch ? SYSTEM_LAUNCH : SYSTEM },
           { role: "user", content: userBrief },
         ],
         tools: [{
