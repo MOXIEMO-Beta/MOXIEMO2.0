@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { RefreshCw, Copy as CopyIcon, Check as CheckIcon } from "lucide-react";
+import { useFileDrop } from "@/hooks/useFileDrop";
 
 type BrandTab = "welcome" | "audit" | "kit" | "assets";
 type AuditStep = "prompt" | "running" | "results";
