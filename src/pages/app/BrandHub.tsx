@@ -390,6 +390,46 @@ export default function BrandHub() {
   );
 }
 
+function LogoDropZoneInline({ onFile, fileRef, logoUrl }: { onFile: (f: File) => void; fileRef: React.RefObject<HTMLInputElement>; logoUrl: string | null }) {
+  const BORDER = "#ECEAE5";
+  const INK = "#0E0F10";
+  const FAINT = "#9A9896";
+  const CORAL = "#E85A46";
+  const { isOver, dropProps } = useFileDrop({ onFile, accept: "image/png,image/jpeg,image/svg+xml,image/*" });
+  return (
+    <div
+      {...dropProps}
+      onClick={() => fileRef.current?.click()}
+      style={{
+        border: `1.5px dashed ${isOver ? CORAL : BORDER}`,
+        borderRadius: 10,
+        padding: 20,
+        textAlign: "center",
+        background: isOver ? "rgba(232,90,70,0.06)" : "#FAFAF8",
+        cursor: "pointer",
+        transition: "background 120ms ease, border-color 120ms ease",
+      }}
+    >
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/svg+xml"
+        style={{ display: "none" }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }}
+      />
+      {logoUrl ? (
+        <img src={logoUrl} alt="Logo" style={{ maxHeight: 60, margin: "0 auto" }} />
+      ) : (
+        <>
+          <UploadCloud size={24} color={isOver ? CORAL : FAINT} style={{ margin: "0 auto" }} />
+          <div style={{ fontSize: 13, fontWeight: 500, color: INK, marginTop: 8 }}>{isOver ? "Drop to upload" : "Upload your logo"}</div>
+          <div style={{ fontSize: 11, color: FAINT }}>Drag and drop, or click · PNG, SVG, or JPG</div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* -------------------- Welcome -------------------- */
 function WelcomePanel({ onAudit, onKit, onAssets }: { onAudit: () => void; onKit: () => void; onAssets: () => void }) {
   return (
