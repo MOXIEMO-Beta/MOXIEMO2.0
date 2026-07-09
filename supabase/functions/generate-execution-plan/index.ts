@@ -690,6 +690,105 @@ Today's date: ${today}${launchContext}`;
       }
     }
 
+    // ================================================================
+    // SUCCESS METRICS COMPLETENESS — retry any empty required subsection.
+    // The UI has six required blocks; a partial response would render
+    // headers with no body. We retry once and merge per-subsection,
+    // never overwriting a populated section with an empty one.
+    // ================================================================
+    const smMissing = (sm: any): string[] => {
+      const miss: string[] = [];
+      const p = sm?.primary || {};
+      if (!p.name || !p.target) miss.push("primary");
+      if (!Array.isArray(p.leadSources) || p.leadSources.length === 0) miss.push("leadSources");
+      const q = p.qualification || {};
+      if (!q.highFit?.percentage && !q.mediumFit?.percentage && !q.lowFit?.percentage) miss.push("qualification");
+      const cp = sm?.contentPerformance || {};
+      const cpLi = cp.linkedin || {}, cpEm = cp.email || {};
+      const cpEmpty = !cpLi.engagementTarget && !cpLi.profileViewsTarget && !cpLi.postsPerWeek
+                   && !cpEm.openRateTarget && !cpEm.clickRateTarget && !cpEm.sendsPerMonth;
+      if (cpEmpty) miss.push("contentPerformance");
+      const bg = sm?.businessGoals || {};
+      if (!bg.revenueGrowth && !bg.scalingPlan) miss.push("businessGoals");
+      const bh = sm?.brandHealth || {};
+      if (bh.voiceConsistencyScore == null && bh.archetypeAlignment == null && !bh.notes) miss.push("brandHealth");
+      return miss;
+    };
+
+    let smMiss = smMissing(parsed?.successMetrics);
+    if (smMiss.length > 0) {
+      console.error("execution-plan: missing successMetrics subsections", { missing: smMiss });
+      const smRetry = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: isLaunch ? SYSTEM_LAUNCH : SYSTEM },
+            { role: "user", content: userBrief },
+            { role: "user", content: `RETRY: your previous successMetrics response was missing or empty for: ${smMiss.join(", ")}. Regenerate ONLY the successMetrics object with ALL of these subsections populated: primary (name, target, leadSources with 3-5 items, qualification.highFit/.mediumFit/.lowFit each with percentage AND definition), contentPerformance.linkedin AND contentPerformance.email (all target fields), businessGoals.revenueGrowth AND businessGoals.scalingPlan, brandHealth.voiceConsistencyScore + archetypeAlignment + notes. Ground every value in THIS founder's foundation. Do NOT return empty objects.` },
+          ],
+          tools: [{
+            type: "function",
+            function: {
+              name: "save_success_metrics",
+              description: "Save the successMetrics object only.",
+              parameters: {
+                type: "object",
+                properties: { successMetrics: { type: "object" } },
+                required: ["successMetrics"],
+              },
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "save_success_metrics" } },
+        }),
+      });
+      if (smRetry.ok) {
+        const rd = await smRetry.json();
+        const rArgs = rd.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+        const rParsed = rArgs ? JSON.parse(rArgs) : {};
+        const nextSm = rParsed?.successMetrics;
+        if (nextSm && typeof nextSm === "object") {
+          const prev = parsed.successMetrics || {};
+          const nonEmpty = (v: any) => {
+            if (v == null) return false;
+            if (typeof v === "string") return v.trim().length > 0;
+            if (Array.isArray(v)) return v.length > 0;
+            if (typeof v === "object") return Object.keys(v).length > 0;
+            return true;
+          };
+          const pickBetter = (a: any, b: any) => (nonEmpty(b) ? b : a);
+          parsed.successMetrics = {
+            primary: {
+              ...(prev.primary || {}),
+              ...(nextSm.primary || {}),
+              name: pickBetter(prev.primary?.name, nextSm.primary?.name),
+              target: pickBetter(prev.primary?.target, nextSm.primary?.target),
+              leadSources: pickBetter(prev.primary?.leadSources, nextSm.primary?.leadSources),
+              qualification: pickBetter(prev.primary?.qualification, nextSm.primary?.qualification),
+            },
+            contentPerformance: pickBetter(prev.contentPerformance, nextSm.contentPerformance),
+            businessGoals: pickBetter(prev.businessGoals, nextSm.businessGoals),
+            brandHealth: pickBetter(prev.brandHealth, nextSm.brandHealth),
+          };
+          smMiss = smMissing(parsed.successMetrics);
+          if (smMiss.length > 0) console.error("execution-plan: successMetrics retry still missing", smMiss);
+        }
+      } else {
+        console.error("execution-plan: successMetrics retry failed", smRetry.status, await smRetry.text());
+      }
+    }
+
+    // Report completeness so the client can decide to swap or hold.
+    const actionPlanEmpty = !parsed?.actionPlan || [1,2,3,4].some((n) => {
+      const w = parsed.actionPlan[`week${n}`];
+      return !w || !Array.isArray(w.tasks) || w.tasks.length === 0;
+    });
+    (parsed as any)._completeness = {
+      successMetricsMissing: smMiss,
+      actionPlanEmpty,
+    };
+
     return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error(e);
