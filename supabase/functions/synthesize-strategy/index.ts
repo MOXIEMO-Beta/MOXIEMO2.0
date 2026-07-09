@@ -43,6 +43,73 @@ STRATEGIC PRIORITY (use Q12 to weight emphasis throughout the output):
 
 Be specific and grounded in the transcript — never generic. NEVER reference thought leadership, personal expertise, founder authority, or solo practitioner framing. If the transcript is ambiguous, infer a reasonable business-brand interpretation — never refuse to build a strategy.`;
 
+const SYSTEM_LANE3 = `You are MOXIEMO's strategy synthesizer for a FOUNDER LAUNCHING ONE SPECIFIC OFFER. Inputs: the founder's completed offer readiness gate, their structured OFFER INTAKE worksheet (offer, buyer, why you, revenue goal, warm list), and a short sharpening chat transcript.
+
+Your job is to produce a full GO TO MARKET strategy for THIS ONE OFFER, in the SAME enhanced_foundation shape the app already reads. Frame everything around the offer and the launch, not around a general personal brand or thought leadership program.
+
+MAPPINGS (use the intake fields as source of truth, sharpened by the chat):
+- positioning_statement: derive from offer_one_line + offer_transformation + diff_why_you. Anchor on THIS offer.
+- ideal_client: buyer_who + buyer_trigger. Specific role, stage, moment.
+- pain_point: buyer_pain in the buyer's own words.
+- transformation: offer_transformation.
+- voice_attributes: infer 3 to 5 attributes from the founder's own language in the intake and chat.
+- anti_positioning: the framing you must never use, drawn from buyer_tried (what did not work).
+- content_pillars: 3 to 5 LAUNCH CONTENT THEMES that will sell this offer between now and the goal date. Each pillar name is a theme, description is a one line explanation.
+- primary_channel: the single best channel to concentrate on for this launch (from where the buyer already gathers, warm_list evidence, and founder capacity).
+- posting_frequency: a realistic launch cadence that fits the goal date.
+- success_definition: SINGLE METRIC ONLY. Write the goal_sell_number and goal_by_date verbatim in the form "Sell N [unit] by [date]". Exactly one number and one date. Never compound (never "and", "plus", "/"). If goal_revenue exists mention it as parenthetical context only.
+- business_goal: one short sentence about the launch outcome.
+- time_capacity: infer from the intake or leave a sensible default.
+
+enhanced_foundation must include:
+- positioningBreakdown: idealClient (buyer_who + buyer_trigger), painPoint (buyer_pain), transformation (offer_transformation), uniqueApproach (diff_why_you), method (offer_deliverables), outcome (goal_sell_number + goal_by_date).
+- messagingVariations: oneliner, short, elevator, all framed around THIS offer, in the founder's voice, no salesy tone.
+- brandArchetype: pick the archetype that best fits how the founder describes themselves and the offer. whyThisFits and howToApply must reference the offer and launch, not a generic brand.
+- coreValues (3 to 5) with decision filters that guide launch choices.
+- competitivePositioning: yourPosition (diff_why_you), marketGap (what buyer_tried missed), differentiators (diff_why_you vs alternatives), competitiveAdvantages (diff_proof).
+- voiceGuidelines: attributes, sentenceStructure, vocabulary, toneByPlatform (skewed to the primary channel for this launch).
+
+ADDITIVE OFFER SECTIONS (populate ALL of these, on top of enhanced_foundation):
+- offerPositioning: { offer (offer_one_line, tightened), transformation (offer_transformation), priceFraming (one line that frames offer_price against the value delivered and the cost of inaction), againstAlternatives (one line that positions the offer versus what buyer_tried and did not work) }.
+- launchMessaging: { coreMessage (one sentence, the single most important thing to say about this offer), angles (3 to 5 items, each { angle, buyerLanguage } where buyerLanguage uses phrasing pulled from buyer_pain and buyer_tried), objectionCounters (3 to 5 items, each { objection, counter } derived from what the buyer already tried that did not work) }.
+- channelPlan: { primaryChannel, rationale (why this channel wins given where the buyer gathers and the warm list), cadence (concrete weekly rhythm through the goal date), channels (2 to 4 supporting channels each { name, why, cadence }) }.
+- firstMove: { type ("post" | "dm" | "email"), copy (COMPLETE, ready to send, no placeholders, in the founder's voice, tuned to the warm_list audience), audience (reference the warm_list explicitly by name or handle if provided), why (one sentence on why this move first) }. firstMove is the closing beat of the session, treat it as first class.
+
+Never use em-dashes or en-dashes. Never use contractions. Be specific and grounded in the intake and chat — never generic, never boilerplate.`;
+
+function formatOfferIntake(intake: Record<string, unknown> | null | undefined, gate: Record<string, unknown> | null | undefined): string {
+  const i = (intake && typeof intake === "object") ? intake as Record<string, unknown> : {};
+  const g = (gate && typeof gate === "object") ? gate as Record<string, unknown> : {};
+  const line = (k: string) => String(i[k] ?? "").trim() || "(blank)";
+  return [
+    "OFFER READINESS GATE:",
+    `- Can deliver now: ${g.can_deliver ?? "unknown"}`,
+    `- Has demand: ${g.has_demand ?? "unknown"}`,
+    `- Is priced: ${g.is_priced ?? "unknown"}`,
+    "",
+    "OFFER INTAKE WORKSHEET:",
+    "The offer",
+    `- One sentence: ${line("offer_one_line")}`,
+    `- Deliverables: ${line("offer_deliverables")}`,
+    `- Price: ${line("offer_price")}`,
+    `- Transformation: ${line("offer_transformation")}`,
+    "The buyer",
+    `- Who specifically: ${line("buyer_who")}`,
+    `- Trigger moment: ${line("buyer_trigger")}`,
+    `- Pain in their words: ${line("buyer_pain")}`,
+    `- What they tried that did not work: ${line("buyer_tried")}`,
+    "Why you",
+    `- Why you: ${line("diff_why_you")}`,
+    `- Proof: ${line("diff_proof")}`,
+    `- Cost of inaction: ${line("diff_cost_of_inaction")}`,
+    "Revenue goal",
+    `- Sell this many: ${line("goal_sell_number")}`,
+    `- By this date: ${line("goal_by_date")}`,
+    `- Revenue equivalent: ${line("goal_revenue")}`,
+    `- Warm list: ${line("warm_list")}`,
+  ].join("\n");
+}
+
 // ---- Strength scoring -------------------------------------------------------
 // Parse [MODE:...] [Q:#] tags appended by the discovery agent.
 function parseModes(transcript: string): Record<number, "standard" | "coaching" | "placeholder"> {
@@ -271,12 +338,34 @@ Deno.serve(async (req) => {
     }
 
     const isLane2 = effectiveLane === "lane2";
+    const isLane3 = effectiveLane === "offer_gtm";
+
+    // Lane 3 needs the structured intake + gate loaded from the session.
+    let offerIntake: Record<string, unknown> | null = null;
+    let offerGate: Record<string, unknown> | null = null;
+    if (isLane3 && supabaseUrl && serviceKey && resolvedSessionId) {
+      try {
+        const r = await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?id=eq.${resolvedSessionId}&select=answers`, {
+          headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+        });
+        const rows = await r.json().catch(() => []);
+        const ans = Array.isArray(rows) ? (rows[0]?.answers ?? null) : null;
+        if (ans && typeof ans === "object") {
+          offerIntake = (ans.offer_intake ?? null) as Record<string, unknown> | null;
+          offerGate = (ans.offer_gate ?? null) as Record<string, unknown> | null;
+        }
+      } catch (e) {
+        console.warn("lane3: failed to load offer intake from session", e);
+      }
+    }
 
     // Optional compression pass: if the transcript is large, summarise it to a
     // structured JSON first so synthesis runs against a much smaller prompt.
     let compressedJson: string | null = null;
     let compressionRan = false;
-    if (transcript.length > 15_000) {
+    // Lane 3 uses the structured intake as source of truth; the chat only sharpens
+    // it, so skip the extra compression call and just cap the transcript.
+    if (!isLane3 && transcript.length > 15_000) {
       compressionRan = true;
       const originalChars = transcript.length;
       try {
@@ -377,9 +466,26 @@ ${transcript}`,
     const synthesisSource = compressedJson
       ? `Here is a COMPRESSED structured summary of the Discovery interview (the full transcript was too long to include directly). Treat this as the source of truth — it preserves the founder's specifics, numbers, and exact language where it mattered.\n\nCompressed Discovery JSON:\n\n${compressedJson}`
       : `Discovery transcript:\n\n${transcript}`;
-    let userContent = isLane2
-      ? "Here is a complete Discovery conversation with the founder or operator of a SERVICE-BASED BUSINESS or MARKETPLACE. The strategy must be for the BUSINESS BRAND — no personal/expertise framing.\n\n" + synthesisSource
-      : "Here is a founder's complete Discovery conversation with MOXIEMO.\nExtract and synthesize their full marketing strategy from their answers below.\n\n" + synthesisSource;
+    let userContent: string;
+    if (isLane3) {
+      // Cap the sharpening transcript so a chatty session does not balloon
+      // the prompt. The structured intake is the source of truth.
+      const CHAT_CAP = 8000;
+      let lane3Transcript = transcript;
+      if (lane3Transcript.length > CHAT_CAP) {
+        console.log(`[synthesize-strategy] lane3 transcript capped: ${lane3Transcript.length} -> ${CHAT_CAP}`);
+        lane3Transcript = lane3Transcript.slice(-CHAT_CAP);
+      }
+      userContent =
+        "Here is a founder launching ONE specific offer. Build the go to market strategy for THIS offer using the structured intake as source of truth, sharpened by the chat transcript below.\n\n" +
+        formatOfferIntake(offerIntake, offerGate) +
+        "\n\nSHARPENING CHAT TRANSCRIPT (recent portion):\n\n" +
+        lane3Transcript;
+    } else if (isLane2) {
+      userContent = "Here is a complete Discovery conversation with the founder or operator of a SERVICE-BASED BUSINESS or MARKETPLACE. The strategy must be for the BUSINESS BRAND — no personal/expertise framing.\n\n" + synthesisSource;
+    } else {
+      userContent = "Here is a founder's complete Discovery conversation with MOXIEMO.\nExtract and synthesize their full marketing strategy from their answers below.\n\n" + synthesisSource;
+    }
     if (revenueRange) userContent += `\n\nFounder's revenue stage: ${revenueRange}`;
     if (biggestChallenge) userContent += `\nBiggest marketing challenge: ${biggestChallenge}`;
     if (brandContext && typeof brandContext === "object") {
@@ -427,7 +533,9 @@ ${transcript}`,
     // - uncompressed under 15k → 16384
     // - compression failed but transcript was huge → 32000 safety net
     let maxTokensForCall: number;
-    if (compressedJson) {
+    if (isLane3) {
+      maxTokensForCall = 20000;
+    } else if (compressedJson) {
       maxTokensForCall = 24000;
     } else if (transcript.length < 15_000) {
       maxTokensForCall = 16384;
@@ -438,7 +546,7 @@ ${transcript}`,
 
     // Pre-synthesis prompt length logging so we can see when prompts balloon.
     console.log(
-      `[synthesize-strategy] lane=${isLane2 ? "lane2" : "lane1"} prompt_chars=${userContent.length} transcript_chars=${transcript.length} compressed=${!!compressedJson} max_tokens=${maxTokensForCall}`,
+      `[synthesize-strategy] lane=${isLane3 ? "lane3" : isLane2 ? "lane2" : "lane1"} prompt_chars=${userContent.length} transcript_chars=${transcript.length} compressed=${!!compressedJson} max_tokens=${maxTokensForCall}`,
     );
 
     const saveStrategyParams = {
@@ -569,6 +677,77 @@ ${transcript}`,
                         },
                       },
                     },
+                    offerPositioning: {
+                      type: "object",
+                      description: "Lane 3 only — how this specific offer is positioned. Leave empty for non offer-launch strategies.",
+                      properties: {
+                        offer: { type: "string" },
+                        transformation: { type: "string" },
+                        priceFraming: { type: "string" },
+                        againstAlternatives: { type: "string" },
+                      },
+                    },
+                    launchMessaging: {
+                      type: "object",
+                      description: "Lane 3 only — the launch messaging system for this offer.",
+                      properties: {
+                        coreMessage: { type: "string" },
+                        angles: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              angle: { type: "string" },
+                              buyerLanguage: { type: "string" },
+                            },
+                            required: ["angle"],
+                          },
+                        },
+                        objectionCounters: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              objection: { type: "string" },
+                              counter: { type: "string" },
+                            },
+                            required: ["objection", "counter"],
+                          },
+                        },
+                      },
+                    },
+                    channelPlan: {
+                      type: "object",
+                      description: "Lane 3 only — where and how to run the launch.",
+                      properties: {
+                        primaryChannel: { type: "string" },
+                        rationale: { type: "string" },
+                        cadence: { type: "string" },
+                        channels: {
+                          type: "array",
+                          items: {
+                            type: "object",
+                            properties: {
+                              name: { type: "string" },
+                              why: { type: "string" },
+                              cadence: { type: "string" },
+                            },
+                            required: ["name", "why"],
+                          },
+                        },
+                      },
+                    },
+                    firstMove: {
+                      type: "object",
+                      description: "Lane 3 only — the very first move the founder will make this week. Copy must be complete and ready to send.",
+                      properties: {
+                        type: { type: "string", enum: ["post", "dm", "email"] },
+                        copy: { type: "string" },
+                        audience: { type: "string" },
+                        why: { type: "string" },
+                      },
+                      required: ["type", "copy", "audience", "why"],
+                    },
                     voiceGuidelines: {
                       type: "object",
                       properties: {
@@ -658,6 +837,7 @@ ${transcript}`,
         console.error("strength scoring failed", e);
       }
       parsed.strategy_lane = isLane2 ? "service" : "expertise";
+      if (isLane3) parsed.strategy_lane = "offer_gtm";
       // Brand rule: never persist em/en dashes in generated strategy copy.
       return sanitizeDashesDeep(parsed);
     };
@@ -672,6 +852,7 @@ ${transcript}`,
       const controller = new AbortController();
       const abortMs = compressionRan ? 300_000 : 180_000;
       const timer = setTimeout(() => controller.abort(), abortMs);
+      const startedAt = Date.now();
       try {
         const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
@@ -730,12 +911,15 @@ ${transcript}`,
           }
         }
         try { reader.releaseLock(); } catch {}
+        console.log(`[synthesize-strategy] lane=${isLane3 ? "lane3" : isLane2 ? "lane2" : "lane1"} generation_ms=${Date.now() - startedAt} tool_json_chars=${toolJson.length}`);
         return { ok: true, toolJson };
       } catch (e) {
         const err = e as Error;
         if (err?.name === "AbortError") {
+          console.log(`[synthesize-strategy] lane=${isLane3 ? "lane3" : isLane2 ? "lane2" : "lane1"} generation_ms=${Date.now() - startedAt} status=timeout`);
           return { ok: false, status: 408, detail: "SYNTHESIS_TIMEOUT" };
         }
+        console.log(`[synthesize-strategy] lane=${isLane3 ? "lane3" : isLane2 ? "lane2" : "lane1"} generation_ms=${Date.now() - startedAt} status=error`);
         return { ok: false, status: 0, detail: String(e) };
       } finally {
         clearTimeout(timer);

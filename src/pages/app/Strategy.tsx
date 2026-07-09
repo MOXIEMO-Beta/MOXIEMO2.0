@@ -25,6 +25,7 @@ import { ChannelsTab } from "@/components/strategy/tabs/ChannelsTab";
 import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
 import { ActionPlanTab } from "@/components/strategy/tabs/ActionPlanTab";
 import { CompetitiveAndMessagingSections } from "@/components/strategy/CompetitiveAndMessagingSections";
+import { OfferSections } from "@/components/strategy/OfferSections";
 
 // Defensive parse: a synthesis bug sometimes persists enhanced_foundation /
 // raw_foundation as a JSON-encoded string instead of an object. Parse so the
@@ -198,6 +199,7 @@ function OverviewTab() {
   const coreValues: any[] = ef.coreValues || [];
   const distribution = ef.distribution;
   const isService = strategy?.strategy_lane === "service";
+  const isOfferGtm = strategy?.strategy_lane === "offer_gtm";
 
   const colPencil = (col: string, label: string, description: string) => (
     <SectionPencil
@@ -244,6 +246,7 @@ function OverviewTab() {
 
   return (
     <div className="space-y-6 mt-0 report-page mx-auto" style={{ pageBreakAfter: "always" }}>
+      {isOfferGtm && <OfferSections strategy={strategy} />}
       {/* Top band: Brand Archetype + Brand Positioning quadrant */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
         {/* Brand archetype card (left) */}
