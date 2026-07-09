@@ -552,12 +552,9 @@ export default function Discovery() {
       }
       await persist(newHistory, sid, isComplete);
       if (isComplete) {
-        if (laneRef.current === "offer_gtm") {
-          // Phase 1: no strategy synthesis for the offer lane yet.
-          setOfferStage("done");
-        } else {
-          await synthesize(newHistory);
-        }
+        // Lane 3 (offer_gtm) now flows through the same synthesis path as
+        // Lane 1 / Lane 2. The strategy synthesizer branches internally.
+        await synthesize(newHistory);
       }
       lastHistoryRef.current = null;
     } catch (e: any) {
