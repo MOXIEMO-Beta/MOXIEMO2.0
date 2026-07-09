@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useFileDrop } from "@/hooks/useFileDrop";
+import MediaPickerModal from "@/components/media/MediaPickerModal";
 
 function DropUploadLabel({ onFile, accept, disabled, className, style, children }: {
   onFile: (f: File) => void;
@@ -135,6 +136,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   const [platformConnections, setPlatformConnections] = useState<Record<string, LinkedInConnection[]>>({});
   const [pickerFor, setPickerFor] = useState<{ post: SocialPost; options: LinkedInConnection[] } | null>(null);
   const [openMediaFor, setOpenMediaFor] = useState<string | null>(null);
+  const [libraryPickerFor, setLibraryPickerFor] = useState<string | null>(null);
   const [showPublishBanner, setShowPublishBanner] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
@@ -654,7 +656,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                   </div>
                   {!hasMedia && (
                     <button
-                      onClick={() => setOpenMediaFor(isOpen ? null : post.id)}
+                      onClick={() => setLibraryPickerFor(post.id)}
                       className="flex items-center gap-1.5 flex-shrink-0"
                       style={{
                         fontSize: 11, color: "#E85A46", fontWeight: 600,
@@ -684,7 +686,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
                     <button title="Edit" onClick={() => setEditingId(editingId === post.id ? null : post.id)}>
                       <Pencil size={13} color={editingId === post.id ? "#E85A46" : "#6B6860"} /></button>
-                    <button title="Media library" onClick={() => setOpenMediaFor(isOpen ? null : post.id)}>
+                    <button title="Media library" onClick={() => setLibraryPickerFor(post.id)}>
                       <ImageIcon size={13} color="#6B6860" /></button>
                     <button title="Delete" onClick={() => handleDelete(post)}>
                       <Trash2 size={13} color="#6B6860" /></button>
@@ -734,6 +736,28 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
           onConfirm={handlePickerPublish}
         />
       )}
+      <MediaPickerModal
+        open={!!libraryPickerFor}
+        onOpenChange={(o) => !o && setLibraryPickerFor(null)}
+        userId={userId}
+        onSelect={async (asset) => {
+          const postId = libraryPickerFor;
+          if (!postId) return;
+          const { error } = await supabase
+            .from("social_posts")
+            .update({ media_urls: [asset.url] })
+            .eq("id", postId);
+          if (error) {
+            toast.error(error.message);
+            return;
+          }
+          setPosts((arr) =>
+            arr.map((p) => (p.id === postId ? { ...p, media_urls: [asset.url] } : p)),
+          );
+          setLibraryPickerFor(null);
+          toast.success("Attached to post");
+        }}
+      />
     </div>
   );
 }
@@ -837,9 +861,8 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
   userId: string; postId: string; onClose: () => void; onAttached: (url: string) => void;
 }) {
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [tab, setTab] = useState<"all" | "images" | "videos" | "colors" | "stock">("all");
+  const [tab, setTab] = useState<"all" | "images" | "videos" | "stock">("all");
   const [selected, setSelected] = useState<string | null>(null);
-  const [brandColors, setBrandColors] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [signed, setSigned] = useState<Record<string, string>>({});
   const [stockQuery, setStockQuery] = useState("");
@@ -859,14 +882,13 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
 
   useEffect(() => {
     (async () => {
-      const [{ data: a }, { data: prof }] = await Promise.all([
-        supabase.from("social_media_assets").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-        supabase.from("profiles").select("brand_colors").eq("id", userId).maybeSingle(),
-      ]);
+      const { data: a } = await supabase
+        .from("social_media_assets")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
       const list = (a ?? []) as any[];
       setAssets(list as any);
-      const bc = (prof as any)?.brand_colors;
-      setBrandColors(Array.isArray(bc) ? bc : []);
       // sign all image URLs
       const pairs = await Promise.all(
         list.filter((x) => x.media_type !== "video").map(async (x) => [x.id, await signAssetUrl(x)] as [string, string])
@@ -1103,8 +1125,8 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       </DropUploadLabel>
 
       <div className="flex gap-2 mt-3">
-        {(["all","images","videos","colors","stock"] as const).map((t) => {
-          const labels: any = { all: "All", images: "Images", videos: "Videos", colors: "Brand Colors", stock: "Stock Photos" };
+        {(["all","images","videos","stock"] as const).map((t) => {
+          const labels: any = { all: "All", images: "Images", videos: "Videos", stock: "Stock Photos" };
           const active = tab === t;
           return (
             <button key={t} onClick={() => setTab(t)} className="text-[12px] font-medium"
@@ -1117,18 +1139,7 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         })}
       </div>
 
-      {tab === "colors" ? (
-        <div className="flex flex-wrap gap-3 mt-3">
-          {brandColors.length === 0 ? (
-            <div className="text-[12px]" style={{ color: "#9A9896" }}>No brand colors saved yet.</div>
-          ) : brandColors.map((c) => (
-            <div key={c} className="flex flex-col items-center gap-1">
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: c, border: "0.5px solid #ECEAE5" }} />
-              <div className="text-[11px]" style={{ color: "#6B6860" }}>{c}</div>
-            </div>
-          ))}
-        </div>
-      ) : tab === "stock" ? (
+      {tab === "stock" ? (
         <div className="mt-3">
           {/* Recommended for your brand — strategy-aware curated row */}
           {recAvailable !== false && (
@@ -1310,11 +1321,11 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         <div className="flex gap-2">
           <button onClick={onClose} className="text-[12px]"
             style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 14px", color: "#6B6860" }}>Cancel</button>
-          <button onClick={attach} disabled={!selected || tab === "colors" || tab === "stock"} className="text-[12px] font-semibold"
+          <button onClick={attach} disabled={!selected || tab === "stock"} className="text-[12px] font-semibold"
             style={{
               background: "#E85A46", color: "#fff",
               borderRadius: 20, padding: "5px 14px",
-              opacity: !selected || tab === "colors" || tab === "stock" ? 0.5 : 1,
+              opacity: !selected || tab === "stock" ? 0.5 : 1,
             }}>Attach to post</button>
         </div>
       </div>

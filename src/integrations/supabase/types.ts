@@ -16,31 +16,52 @@ export type Database = {
     Tables: {
       assets: {
         Row: {
+          asset_type: string
+          display_name: string | null
           file_size_kb: number | null
           file_type: string | null
           filename: string | null
           id: string
+          pexels_id: number | null
+          pexels_url: string | null
+          photographer: string | null
           platform_tag: string | null
+          source: string
+          tags: string[]
           uploaded_at: string | null
           url: string
           user_id: string | null
         }
         Insert: {
+          asset_type?: string
+          display_name?: string | null
           file_size_kb?: number | null
           file_type?: string | null
           filename?: string | null
           id?: string
+          pexels_id?: number | null
+          pexels_url?: string | null
+          photographer?: string | null
           platform_tag?: string | null
+          source?: string
+          tags?: string[]
           uploaded_at?: string | null
           url: string
           user_id?: string | null
         }
         Update: {
+          asset_type?: string
+          display_name?: string | null
           file_size_kb?: number | null
           file_type?: string | null
           filename?: string | null
           id?: string
+          pexels_id?: number | null
+          pexels_url?: string | null
+          photographer?: string | null
           platform_tag?: string | null
+          source?: string
+          tags?: string[]
           uploaded_at?: string | null
           url?: string
           user_id?: string | null
