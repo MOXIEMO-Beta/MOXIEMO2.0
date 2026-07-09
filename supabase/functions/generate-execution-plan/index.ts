@@ -66,6 +66,54 @@ Never return a week as a plain string.`;
 
 function todayISO() { return new Date().toISOString().slice(0, 10); }
 
+// Coerce actionPlan into a strict object shape.
+// - If any weekN arrived as a JSON-encoded string (observed from the model on
+//   launch prompts), JSON.parse it (handles single- and double-encoding).
+// - Remap alternate task keys ("text", "content") to "task".
+// - Ensure every task has a stable id.
+// This runs BEFORE completeness checks so a well-formed-but-stringified plan
+// does not trigger unnecessary retries.
+function coerceActionPlan(ap: any): any {
+  if (!ap || typeof ap !== "object") return ap;
+  for (const n of [1, 2, 3, 4]) {
+    const key = `week${n}`;
+    let w: any = ap[key];
+    if (typeof w === "string") {
+      const raw = w.trim();
+      try {
+        let p: any = JSON.parse(raw);
+        if (typeof p === "string") { try { p = JSON.parse(p); } catch { /* keep */ } }
+        w = p;
+        console.log(`execution-plan: coerced ${key} from JSON string`);
+      } catch (e) {
+        console.warn(`execution-plan: could not JSON.parse ${key} string:`, String(e));
+      }
+    }
+    if (w && typeof w === "object") {
+      // Unwrap accidental { weekN: {...} } nesting.
+      if (!w.title && !Array.isArray(w?.tasks) && w[key] && typeof w[key] === "object") {
+        w = w[key];
+      }
+      if (Array.isArray(w.tasks)) {
+        w.tasks = w.tasks.map((t: any, i: number) => {
+          if (t == null) return { id: `week-${n}-task-${i}`, task: "" };
+          if (typeof t === "string") return { id: `week-${n}-task-${i}`, task: t };
+          if (typeof t !== "object") return { id: `week-${n}-task-${i}`, task: String(t) };
+          const text = t.task ?? t.text ?? t.content ?? t.description ?? "";
+          return {
+            ...t,
+            id: t.id != null ? String(t.id) : `week-${n}-task-${i}`,
+            task: typeof text === "string" ? text : String(text ?? ""),
+            estimatedTime: t.estimatedTime ?? t.est ?? t.estimated ?? undefined,
+          };
+        });
+      }
+      ap[key] = w;
+    }
+  }
+  return ap;
+}
+
 function longFormDate(raw: unknown): string {
   const s = String(raw ?? "").trim();
   if (!s) return "";
@@ -94,6 +142,7 @@ function extractTargetDate(strategy: any): string | null {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const tStart = Date.now();
   try {
     const { strategy } = await req.json();
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
@@ -139,6 +188,7 @@ Business goal: ${strategy?.business_goal || "—"}
 
 Today's date: ${today}${launchContext}`;
 
+    const tFirst = Date.now();
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -565,6 +615,16 @@ Today's date: ${today}${launchContext}`;
     const data = await res.json();
     const args = data.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     let parsed = args ? JSON.parse(args) : {};
+    const firstPassMs = Date.now() - tFirst;
+    console.log(`execution-plan: first-pass ${firstPassMs}ms (isLaunch=${isLaunch})`);
+
+    // Coerce action plan BEFORE completeness checks so stringified weeks and
+    // "text"-keyed tasks do not trigger a false-positive retry.
+    try {
+      parsed.actionPlan = coerceActionPlan(parsed?.actionPlan);
+    } catch (e) {
+      console.error("execution-plan: coerceActionPlan threw", String(e));
+    }
 
     // Validate action plan week titles. If any are missing/empty, retry once
     // with a reinforced reminder targeting only the action plan.
@@ -595,11 +655,15 @@ Today's date: ${today}${launchContext}`;
     const badTasks = missingTasks(parsed?.actionPlan);
     let bad = Array.from(new Set([...badTitles, ...badTasks])).sort();
     if (bad.length > 0) {
-      console.error("execution-plan: missing week titles", {
+      const apPreview = (() => { try { return JSON.stringify(parsed?.actionPlan ?? null).slice(0, 500); } catch { return "(unstringifiable)"; } })();
+      console.error("execution-plan: missing week titles/tasks", {
         weeks: bad,
-        preview: JSON.stringify(parsed?.actionPlan).slice(0, 500),
+        badTitles,
+        badTasks,
+        preview: apPreview,
       });
       // Targeted retry: regenerate only the action plan section.
+      const tApRetry = Date.now();
       const retryRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -662,6 +726,8 @@ Today's date: ${today}${launchContext}`;
         const rd = await retryRes.json();
         const rArgs = rd.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
         const rParsed = rArgs ? JSON.parse(rArgs) : {};
+        // Coerce retry payload too — same model, same failure mode possible.
+        try { rParsed.actionPlan = coerceActionPlan(rParsed?.actionPlan); } catch { /* ignore */ }
         if (rParsed?.actionPlan) {
           // Merge per-week: only overwrite fields that improve the original.
           // Never drop real tasks in favor of empty/missing ones from the retry.
@@ -687,6 +753,9 @@ Today's date: ${today}${launchContext}`;
       } else {
         console.error("execution-plan: retry failed", retryRes.status, await retryRes.text());
       }
+      console.log(`execution-plan: actionPlan retry ${Date.now() - tApRetry}ms`);
+    } else {
+      console.log("execution-plan: actionPlan first-pass complete, no retry");
     }
 
     // Final safety net: strip any tasks with empty text so the UI never renders
@@ -734,6 +803,7 @@ Today's date: ${today}${launchContext}`;
     let smMiss = smMissing(parsed?.successMetrics);
     if (smMiss.length > 0) {
       console.error("execution-plan: missing successMetrics subsections", { missing: smMiss });
+      const tSmRetry = Date.now();
       const smRetry = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -887,6 +957,9 @@ Today's date: ${today}${launchContext}`;
       } else {
         console.error("execution-plan: successMetrics retry failed", smRetry.status, await smRetry.text());
       }
+      console.log(`execution-plan: successMetrics retry ${Date.now() - tSmRetry}ms`);
+    } else {
+      console.log("execution-plan: successMetrics first-pass complete, no retry");
     }
 
     // Report completeness so the client can decide to swap or hold.
@@ -899,9 +972,10 @@ Today's date: ${today}${launchContext}`;
       actionPlanEmpty,
     };
 
+    console.log(`execution-plan: TOTAL ${Date.now() - tStart}ms`);
     return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
-    console.error(e);
+    console.error("execution-plan: fatal", e instanceof Error ? `${e.message}\n${e.stack}` : String(e));
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });

@@ -18,11 +18,38 @@ function stripMarkdown(text: string): string {
 // Older strategies already store an object with a `tasks` array.
 function normalizeWeek(raw: any, weekNumber: number): { title: string; tasks: any[] } {
   if (!raw) return { title: `Week ${weekNumber}`, tasks: [] };
+  // If the edge function ever emits a week as a JSON-encoded string, parse it
+  // first so we can read the structured shape below. Falls back to markdown
+  // scanning only if JSON parsing fails.
+  if (typeof raw === "string") {
+    const s = raw.trim();
+    if (s.startsWith("{") || s.startsWith("[")) {
+      try {
+        let p: any = JSON.parse(s);
+        if (typeof p === "string") { try { p = JSON.parse(p); } catch { /* keep */ } }
+        if (p && typeof p === "object") raw = p;
+      } catch { /* fall through to markdown scan */ }
+    }
+  }
   if (typeof raw === "object" && Array.isArray(raw.tasks)) {
     const t =
       raw.theme ?? raw.title ?? raw.weekTheme ?? raw.focus ?? raw.weekFocus ?? null;
     const title = typeof t === "string" && t.trim() ? t.trim() : `Week ${weekNumber} — theme not generated`;
-    return { title, tasks: raw.tasks };
+    // Normalize each task: accept alternate keys ("text", "content") in
+    // addition to "task", and guarantee a stable id.
+    const tasks = raw.tasks.map((tk: any, i: number) => {
+      if (tk == null) return { id: `week-${weekNumber}-task-${i}`, task: "" };
+      if (typeof tk === "string") return { id: `week-${weekNumber}-task-${i}`, task: tk };
+      if (typeof tk !== "object") return { id: `week-${weekNumber}-task-${i}`, task: String(tk) };
+      const text = tk.task ?? tk.text ?? tk.content ?? tk.description ?? "";
+      return {
+        ...tk,
+        id: tk.id != null ? String(tk.id) : `week-${weekNumber}-task-${i}`,
+        task: typeof text === "string" ? text : String(text ?? ""),
+        estimatedTime: tk.estimatedTime ?? tk.est ?? tk.estimated,
+      };
+    });
+    return { title, tasks };
   }
   if (typeof raw === "string") {
     const lines = raw.split(/\r?\n/);
