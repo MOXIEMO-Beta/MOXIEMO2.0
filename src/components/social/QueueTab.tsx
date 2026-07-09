@@ -135,6 +135,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   const [platformConnections, setPlatformConnections] = useState<Record<string, LinkedInConnection[]>>({});
   const [pickerFor, setPickerFor] = useState<{ post: SocialPost; options: LinkedInConnection[] } | null>(null);
   const [openMediaFor, setOpenMediaFor] = useState<string | null>(null);
+  const [libraryPickerFor, setLibraryPickerFor] = useState<string | null>(null);
   const [showPublishBanner, setShowPublishBanner] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
@@ -1103,8 +1104,8 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
       </DropUploadLabel>
 
       <div className="flex gap-2 mt-3">
-        {(["all","images","videos","colors","stock"] as const).map((t) => {
-          const labels: any = { all: "All", images: "Images", videos: "Videos", colors: "Brand Colors", stock: "Stock Photos" };
+        {(["all","images","videos","stock"] as const).map((t) => {
+          const labels: any = { all: "All", images: "Images", videos: "Videos", stock: "Stock Photos" };
           const active = tab === t;
           return (
             <button key={t} onClick={() => setTab(t)} className="text-[12px] font-medium"
