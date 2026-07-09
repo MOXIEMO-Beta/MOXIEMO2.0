@@ -70,7 +70,7 @@ function SaveStatusIndicator() {
 }
 
 function StrategyHeader() {
-  const { editing, setEditing, status, saveNow, strategy, setEnhanced } = useStrategyEditor();
+  const { editing, setEditing, status, saveNow, strategy, setEnhanced, setField } = useStrategyEditor();
   const { user } = useAuth();
   const { reportData } = useReportData();
   const [exporting, setExporting] = useState(false);
