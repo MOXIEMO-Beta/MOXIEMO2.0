@@ -412,10 +412,11 @@ export default function MediaLibrary({ userId, mode = "page", onSelect, headerle
     toast.success("Deleted");
   }
 
-  function editInCanva(url: string) {
+  async function editInCanvaAsync(url: string) {
+    const resolved = await resolveDisplayUrl(url);
     try {
       const a = document.createElement("a");
-      a.href = url;
+      a.href = resolved;
       a.download = "moxiemo-image.jpg";
       a.target = "_blank";
       a.rel = "noopener noreferrer";
