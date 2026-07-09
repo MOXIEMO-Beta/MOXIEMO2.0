@@ -577,7 +577,23 @@ Today's date: ${today}${launchContext}`;
       }
       return bad;
     };
-    let bad = missingTitles(parsed?.actionPlan);
+    // Trigger action plan retry when either titles are missing OR any week has
+    // no non-empty tasks. Previously we only retried on missing titles, so a
+    // response with titles but empty tasks (observed on the launch prompt) fell
+    // through and produced an empty Action Plan tab.
+    const missingTasks = (ap: any): number[] => {
+      const bad: number[] = [];
+      for (const n of [1, 2, 3, 4]) {
+        const w = ap?.[`week${n}`];
+        const tasks = Array.isArray(w?.tasks) ? w.tasks : [];
+        const hasReal = tasks.some((t: any) => t && typeof t.task === "string" && t.task.trim().length > 0);
+        if (!hasReal) bad.push(n);
+      }
+      return bad;
+    };
+    const badTitles = missingTitles(parsed?.actionPlan);
+    const badTasks = missingTasks(parsed?.actionPlan);
+    let bad = Array.from(new Set([...badTitles, ...badTasks])).sort();
     if (bad.length > 0) {
       console.error("execution-plan: missing week titles", {
         weeks: bad,
@@ -592,7 +608,7 @@ Today's date: ${today}${launchContext}`;
           messages: [
             { role: "system", content: isLaunch ? SYSTEM_LAUNCH : SYSTEM },
             { role: "user", content: userBrief },
-            { role: "user", content: `RETRY: your previous response returned week(s) ${bad.join(", ")} without a "title" field. Regenerate ONLY the actionPlan. Every week MUST have a short 2-6 word thematic title AND a "tasks" array where each task has non-empty "id", "task" (the full task sentence), and "estimatedTime". Do NOT return weeks as strings and do NOT return empty task objects.` },
+            { role: "user", content: `RETRY: your previous actionPlan response was incomplete for week(s) ${bad.join(", ")} (missing title or empty/missing tasks). Regenerate ONLY the actionPlan. Every week MUST have a short 2-6 word thematic title AND a "tasks" array of 4-6 items where EACH task has non-empty "id", "task" (the full task sentence, specific to THIS founder's strategy), and "estimatedTime". Do NOT return weeks as strings and do NOT return empty task objects.` },
           ],
           tools: [{
             type: "function",
@@ -732,10 +748,104 @@ Today's date: ${today}${launchContext}`;
             type: "function",
             function: {
               name: "save_success_metrics",
-              description: "Save the successMetrics object only.",
+              description: "Save the successMetrics object only. Every subsection listed as missing MUST be populated with values grounded in the founder's foundation.",
               parameters: {
                 type: "object",
-                properties: { successMetrics: { type: "object" } },
+                properties: {
+                  successMetrics: {
+                    type: "object",
+                    properties: {
+                      primary: {
+                        type: "object",
+                        properties: {
+                          name: { type: "string" },
+                          target: {
+                            type: "object",
+                            properties: {
+                              weekly: { type: "string" },
+                              monthly: { type: "string" },
+                              total: { type: "string" },
+                            },
+                          },
+                          leadSources: {
+                            type: "array",
+                            description: "3-5 items grounded in this founder's channels.",
+                            items: {
+                              type: "object",
+                              properties: {
+                                source: { type: "string" },
+                                percentage: { type: "number" },
+                                perWeek: { type: "string" },
+                              },
+                              required: ["source", "percentage"],
+                            },
+                          },
+                          qualification: {
+                            type: "object",
+                            description: "REQUIRED. All three tiers, each with percentage and definition specific to who buys THIS offer.",
+                            properties: {
+                              highFit: {
+                                type: "object",
+                                properties: { percentage: { type: "number" }, definition: { type: "string" } },
+                                required: ["percentage", "definition"],
+                              },
+                              mediumFit: {
+                                type: "object",
+                                properties: { percentage: { type: "number" }, definition: { type: "string" } },
+                                required: ["percentage", "definition"],
+                              },
+                              lowFit: {
+                                type: "object",
+                                properties: { percentage: { type: "number" }, definition: { type: "string" } },
+                                required: ["percentage", "definition"],
+                              },
+                            },
+                            required: ["highFit", "mediumFit", "lowFit"],
+                          },
+                        },
+                      },
+                      contentPerformance: {
+                        type: "object",
+                        properties: {
+                          linkedin: {
+                            type: "object",
+                            properties: {
+                              engagementTarget: { type: "string" },
+                              profileViewsTarget: { type: "string" },
+                              postsPerWeek: { type: "string" },
+                            },
+                          },
+                          email: {
+                            type: "object",
+                            properties: {
+                              openRateTarget: { type: "string" },
+                              clickRateTarget: { type: "string" },
+                              sendsPerMonth: { type: "string" },
+                            },
+                          },
+                        },
+                      },
+                      businessGoals: {
+                        type: "object",
+                        description: "REQUIRED. Both fields, one sentence each, specific to this founder.",
+                        properties: {
+                          revenueGrowth: { type: "string" },
+                          scalingPlan: { type: "string" },
+                        },
+                        required: ["revenueGrowth", "scalingPlan"],
+                      },
+                      brandHealth: {
+                        type: "object",
+                        properties: {
+                          voiceConsistencyScore: { type: "number" },
+                          archetypeAlignment: { type: "number" },
+                          notes: { type: "string" },
+                        },
+                      },
+                    },
+                    required: ["primary", "contentPerformance", "businessGoals", "brandHealth"],
+                  },
+                },
                 required: ["successMetrics"],
               },
             },
