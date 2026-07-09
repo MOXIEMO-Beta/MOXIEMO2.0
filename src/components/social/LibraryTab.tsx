@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { DropZone } from "@/hooks/useFileDrop";
 import {
   Search,
   Upload,
@@ -340,8 +341,7 @@ export default function LibraryTab({
   /* ---------- File upload ---------- */
   const handleUploadClick = () => fileInputRef.current?.click();
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const uploadFile = async (file: File | undefined) => {
     if (!file || !userId) return;
     if (file.size > 50 * 1024 * 1024) {
       toast.error("File too large", { description: "Max size is 50MB" });
@@ -355,13 +355,18 @@ export default function LibraryTab({
       contentType: file.type,
     });
     setUploading(false);
-    if (e.target) e.target.value = "";
     if (error) {
       toast.error("Upload failed", { description: error.message });
       return;
     }
     toast.success("Uploaded");
     void loadAll();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (e.target) e.target.value = "";
+    await uploadFile(file);
   };
 
   const handleDeleteAsset = async (a: StorageAsset) => {
@@ -526,7 +531,14 @@ export default function LibraryTab({
   const templatesEmpty = !loading && showTemplatesSection && filteredPosts.length === 0;
 
   return (
-    <div className="space-y-5">
+    <DropZone
+      onFile={uploadFile}
+      accept="image/jpeg,image/png,image/gif,image/webp,video/mp4"
+      disabled={uploading}
+      className="space-y-5 rounded-lg p-1"
+      style={{ border: "1.5px dashed transparent", transition: "background 120ms ease, border-color 120ms ease" }}
+      activeStyle={{ border: "1.5px dashed hsl(var(--accent))", background: "hsl(var(--accent) / 0.06)" }}
+    >
       {/* hidden file input */}
       <input
         ref={fileInputRef}
@@ -747,7 +759,7 @@ export default function LibraryTab({
           </div>
         </div>
       )}
-    </div>
+    </DropZone>
   );
 }
 

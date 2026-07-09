@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import LibraryAssetsDrawer from "./LibraryAssetsDrawer";
+import { DropZone } from "@/hooks/useFileDrop";
 
 type ContentItem = {
   id: string;
@@ -298,7 +299,13 @@ export default function ImportFromContentDrawer({ open, onOpenChange, userId, pi
                           <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                             Add image
                           </label>
-                          <div className="flex flex-wrap items-center gap-2">
+                          <DropZone
+                            onFile={(f) => void handleUpload(f)}
+                            accept="image/*"
+                            className="flex flex-wrap items-center gap-2 rounded-md p-1"
+                            style={{ border: "1.5px dashed transparent", transition: "background 120ms ease, border-color 120ms ease" }}
+                            activeStyle={{ border: "1.5px dashed hsl(var(--accent))", background: "hsl(var(--accent) / 0.06)" }}
+                          >
                             <input
                               ref={fileInputRef}
                               type="file"
@@ -340,7 +347,7 @@ export default function ImportFromContentDrawer({ open, onOpenChange, userId, pi
                                 </button>
                               </div>
                             )}
-                          </div>
+                          </DropZone>
                         </div>
 
                         <div>
