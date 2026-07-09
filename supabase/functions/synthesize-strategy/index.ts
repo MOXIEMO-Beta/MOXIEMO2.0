@@ -61,6 +61,11 @@ MAPPINGS (use the intake fields as source of truth, sharpened by the chat):
 - business_goal: one short sentence about the launch outcome.
 - time_capacity: infer from the intake or leave a sensible default.
 
+HARD RULES FOR THIS LAUNCH (NON NEGOTIABLE):
+- successTarget on enhanced_foundation MUST be a single string with ONE number and ONE date, written verbatim from the intake in the exact form: "Sell {goal_sell_number} by {goal_by_date, long form Month D, YYYY}". Never compound. Never combine two metrics. Never add "and", "plus", "/".
+- Do NOT compute, derive, or emit any monthly recurring revenue, "MRR", "per month", "/mo", or "New Clients / Month" figure anywhere in success_definition, business_goal, enhanced_foundation, or any offer section. This is a one time launch, not a subscription.
+- Only reference a revenue figure if goal_revenue is explicitly present in the intake. If goal_revenue is blank, omit revenue entirely rather than derive it.
+
 enhanced_foundation must include:
 - positioningBreakdown: idealClient (buyer_who + buyer_trigger), painPoint (buyer_pain), transformation (offer_transformation), uniqueApproach (diff_why_you), method (offer_deliverables), outcome (goal_sell_number + goal_by_date).
 - messagingVariations: oneliner, short, elevator, all framed around THIS offer, in the founder's voice, no salesy tone.
@@ -581,6 +586,10 @@ ${transcript}`,
                         method: { type: "string" },
                         outcome: { type: "string" },
                       },
+                    },
+                    successTarget: {
+                      type: "string",
+                      description: "Lane 3 only. Single metric, single date, verbatim from the intake. Form: 'Sell N [unit] by Month D, YYYY'. Never compound.",
                     },
                     positioningVariations: {
                       type: "object",
