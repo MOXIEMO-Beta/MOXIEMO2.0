@@ -7,6 +7,34 @@ import {
   RotateCcw, X, Loader2, ImagePlus, Search, MessageCircle,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useFileDrop } from "@/hooks/useFileDrop";
+
+function DropUploadLabel({ onFile, accept, disabled, className, style, children }: {
+  onFile: (f: File) => void;
+  accept: string;
+  disabled?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const { isOver, dropProps } = useFileDrop({ onFile, accept, disabled });
+  return (
+    <label
+      {...dropProps}
+      className={className}
+      style={{
+        ...style,
+        borderColor: isOver ? "#E85A46" : (style as any)?.borderColor ?? "#ECEAE5",
+        background: isOver ? "rgba(232,90,70,0.06)" : (style as any)?.background ?? "#fff",
+        transition: "background 120ms ease, border-color 120ms ease",
+      }}
+    >
+      <input type="file" className="hidden" accept={accept}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.currentTarget.value = ""; }} />
+      {children}
+    </label>
+  );
+}
 
 async function invokeWithAuth<T = any>(name: string, body: any = {}) {
   const { data: { session } } = await supabase.auth.getSession();
