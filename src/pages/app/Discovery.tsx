@@ -748,6 +748,13 @@ export default function Discovery() {
                     <div className="text-xs text-muted-foreground mt-0.5">Connecting customers with service providers</div>
                   </button>
                   <button
+                    onClick={() => chooseLane("offer_gtm")}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">I have an offer to launch</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">You built the offer. Now we build the go to market that sells it.</div>
+                  </button>
+                  <button
                     onClick={() => setShowOtherDetector(true)}
                     className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
                   >
@@ -780,20 +787,43 @@ export default function Discovery() {
           </div>
         </div>
       )}
-      {lane !== null && uploadStage === "gate" && sessionId && (
+      {lane === "offer_gtm" && offerStage === "gate" && (
+        <OfferReadinessGate
+          value={offerGate}
+          onChange={(next) => {
+            setOfferGate(next);
+            persistOfferAnswers({ offer_gate: next });
+          }}
+          onProceed={() => setOfferStage("intake")}
+          onSwitchOffer={switchOffer}
+        />
+      )}
+      {lane === "offer_gtm" && offerStage === "intake" && (
+        <OfferIntakeForm
+          value={offerIntake}
+          onChange={setOfferIntake}
+          onSubmit={submitOfferIntake}
+        />
+      )}
+      {lane === "offer_gtm" && offerStage === "done" && (
+        <OfferGtmHoldingState />
+      )}
+      {lane !== null && lane !== "offer_gtm" && uploadStage === "gate" && sessionId && (
         <DiscoveryUploadGate
           onSkip={beginChat}
           onComplete={startWithPrefill}
         />
       )}
-      {lane !== null && uploadStage === "summary" && prefillResult && (
+      {lane !== null && lane !== "offer_gtm" && uploadStage === "summary" && prefillResult && (
         <DiscoveryPrefillSummary
           result={prefillResult}
           onContinue={beginChat}
           onSkip={beginChat}
         />
       )}
-      {lane !== null && uploadStage === "chat" && (
+      {lane !== null && (
+        (lane === "offer_gtm" ? offerStage === "chat" : uploadStage === "chat")
+      ) && (
         <>
       <NeedHelpButton
         currentQuestion={Math.min(answered + 1, total)}
