@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import LibraryAssetsDrawer from "./LibraryAssetsDrawer";
 import { cn } from "@/lib/utils";
+import { DropZone } from "@/hooks/useFileDrop";
 
 type Strategy = {
   positioning_statement?: string | null;
