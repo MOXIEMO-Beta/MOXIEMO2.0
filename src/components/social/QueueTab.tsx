@@ -1088,17 +1088,19 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
 
   return (
     <div style={{ background: "#F7F5F1", border: "0.5px solid #ECEAE5", borderRadius: 10, padding: 16, marginTop: 8, marginBottom: 8 }}>
-      <label
+      <DropUploadLabel
+        onFile={handleUpload}
+        accept="image/*,video/*"
+        disabled={uploading}
         className="block text-center cursor-pointer"
-        style={{ border: "0.5px dashed #ECEAE5", borderRadius: 8, padding: 20, background: "#fff" }}>
-        <input type="file" className="hidden" accept="image/*,video/*"
-          onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+        style={{ border: "1.5px dashed #ECEAE5", borderRadius: 8, padding: 20, background: "#fff" }}
+      >
         <CloudUpload size={22} color="#9A9896" className="mx-auto" />
         <div className="text-[12px] mt-1" style={{ color: "#9A9896" }}>
           {uploading ? "Uploading…" : "Drag and drop or click to upload"}
         </div>
         <div className="text-[11px]" style={{ color: "#9A9896" }}>PNG, JPG, GIF, MP4</div>
-      </label>
+      </DropUploadLabel>
 
       <div className="flex gap-2 mt-3">
         {(["all","images","videos","colors","stock"] as const).map((t) => {
@@ -1674,15 +1676,18 @@ function SimpleMediaUploader({ userId, onClose }: { userId: string; onClose: () 
     } finally { setUploading(false); }
   }
   return (
-    <label className="block text-center cursor-pointer"
-      style={{ border: "0.5px dashed #ECEAE5", borderRadius: 8, padding: 16, background: "#fff" }}>
-      <input type="file" className="hidden" accept="image/*,video/*"
-        onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])} />
+    <DropUploadLabel
+      onFile={handleUpload}
+      accept="image/*,video/*"
+      disabled={uploading}
+      className="block text-center cursor-pointer"
+      style={{ border: "1.5px dashed #ECEAE5", borderRadius: 8, padding: 16, background: "#fff" }}
+    >
       <CloudUpload size={20} color="#9A9896" className="mx-auto" />
       <div className="text-[12px] mt-1" style={{ color: "#9A9896" }}>
         {uploading ? "Uploading…" : "Drag and drop or click to upload"}
       </div>
-    </label>
+    </DropUploadLabel>
   );
 }
 
