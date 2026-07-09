@@ -216,7 +216,7 @@ export function CompetitiveAndMessagingSections() {
         whyYouWin: data.whyYouWin || "",
       };
       setEnhanced([], next);
-      toast.success("Competitive positioning generated — review and refine to make it yours.");
+      toast.success("Competitive positioning generated, review and refine to make it yours.");
     } catch (e: any) {
       console.error(e);
       toast.error(aiErrorMessage("generic", e));
@@ -250,7 +250,7 @@ export function CompetitiveAndMessagingSections() {
 
   return (
     <div className="space-y-6 mt-6">
-      {/* Section 1 — Competitive Positioning */}
+      {/* Section 1, Competitive Positioning */}
       <Card className="report-card border-border shadow-soft">
         <Collapsible open={open} onOpenChange={setOpen}>
           <div className="w-full flex items-start justify-between gap-4 p-7">
@@ -261,7 +261,7 @@ export function CompetitiveAndMessagingSections() {
               <div className="flex-1">
                 <h3 className="font-display text-2xl tracking-[-0.01em]">How You Stand Out</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Define your competitive position — who you're for, who you're not for, and why clients choose you.
+                  Define your competitive position, who you're for, who you're not for, and why clients choose you.
                 </p>
               </div>
               <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform shrink-0 mt-2 ${open ? "rotate-180" : ""}`} />
@@ -288,14 +288,14 @@ export function CompetitiveAndMessagingSections() {
               />
               <AlwaysEditableField
                 label="What are the alternatives to working with you?"
-                hint="Clients will compare you to these — know what you're up against"
+                hint="Clients will compare you to these, know what you're up against"
                 value={ef.alternatives || ""}
                 onSave={(v) => handleSaveField("alternatives", v)}
                 placeholder="e.g. DIY online courses, hiring a full-time CMO, doing nothing"
               />
               <AlwaysEditableField
                 label="When a client chooses you over alternatives, why?"
-                hint="This is your real differentiator — be ruthlessly specific"
+                hint="This is your real differentiator, be ruthlessly specific"
                 value={ef.whyYouWin || ""}
                 onSave={(v) => handleSaveField("whyYouWin", v)}
                 placeholder="e.g. I combine 10 years of real operator experience with a proven framework, not theory"
@@ -305,7 +305,7 @@ export function CompetitiveAndMessagingSections() {
         </Collapsible>
       </Card>
 
-      {/* Section 2 — Messaging Variations */}
+      {/* Section 2, Messaging Variations */}
       <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-start justify-between gap-4 mb-6">
           <div className="flex items-start gap-3">

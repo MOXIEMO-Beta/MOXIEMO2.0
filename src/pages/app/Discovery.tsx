@@ -186,7 +186,7 @@ export default function Discovery() {
   const isLane3 = lane === "offer_gtm";
   const total = isLane3 ? LANE3_TOTAL : isLane2 ? LANE2_TOTAL : TOTAL_QUESTIONS;
   const sections = isLane3 ? LANE3_SECTIONS : isLane2 ? LANE2_SECTIONS : SECTIONS;
-  // Latest [Q:N] tag from the most recent assistant message — this is the
+  // Latest [Q:N] tag from the most recent assistant message, this is the
   // source of truth for "which question is the user looking at right now".
   let latestAssistantQ = 0;
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -194,7 +194,7 @@ export default function Discovery() {
     const m = Q_TAG_RE.exec(messages[i].content);
     if (m) { latestAssistantQ = parseInt(m[1], 10) || 0; break; }
   }
-  // For Lane 2 the chat's Q tag is authoritative — drive the tracker from it
+  // For Lane 2 the chat's Q tag is authoritative, drive the tracker from it
   // so the "N/15" counter and section label match the chat bubble exactly.
   // For Lane 1 we keep the historical user-message count.
   const userMsgCount = messages.filter((m) => m.role === "user").length;
@@ -202,7 +202,7 @@ export default function Discovery() {
   const answeredDisplay = Math.min(answered, total);
   const progress = Math.min(100, Math.round((answered / total) * 100));
   // Lane 1: Sections 1-5 cover Q1-Q13 (~3 each); section 6 covers Q14-Q15 (optional).
-  // Lane 2: 5 sections — Q1-3 §1, Q4-7 §2, Q8-11 §3, Q12-14 §4, Q15 §5.
+  // Lane 2: 5 sections, Q1-3 §1, Q4-7 §2, Q8-11 §3, Q12-14 §4, Q15 §5.
   const currentSection = isLane3
     ? Math.min(4, Math.max(1, Math.ceil(Math.max(1, latestAssistantQ) / 2)))
     : isLane2
@@ -279,7 +279,7 @@ export default function Discovery() {
           }
         }
         // Pick the right offer stage for a returning Lane 3 user. A completed
-        // Lane 3 session now flows into the normal strategy page — send them there.
+        // Lane 3 session now flows into the normal strategy page, send them there.
         if (savedLane === "offer_gtm") {
           if (data.status === "completed") {
             navigate("/app/strategy");
@@ -295,7 +295,7 @@ export default function Discovery() {
         }
         if (data.status === "completed") setCompleted(true);
         if (!data.messages || (data.messages as any[]).length === 0) {
-          // New / empty session — show the upload gate before starting the conversation.
+          // New / empty session, show the upload gate before starting the conversation.
           setUploadStage("gate");
         } else {
           setUploadStage("chat");
@@ -493,7 +493,7 @@ export default function Discovery() {
       if (!resp.ok) {
         const errorText = await resp.text();
         console.error("Discovery chat error:", resp.status, errorText);
-        throw new Error(`Connection failed: ${resp.status} — ${errorText}`);
+        throw new Error(`Connection failed: ${resp.status}, ${errorText}`);
       }
 
       if (!resp.body) {
@@ -523,7 +523,7 @@ export default function Discovery() {
           try {
             const parsed = JSON.parse(data);
             if (parsed?.type === "error") {
-              streamError = parsed.message || "MOXIEMO had a moment — tap Send again to continue.";
+              streamError = parsed.message || "MOXIEMO had a moment, tap Send again to continue.";
               continue;
             }
             const chunk = parsed?.choices?.[0]?.delta?.content ?? "";
@@ -582,7 +582,7 @@ export default function Discovery() {
       const raw = typeof e?.message === "string" ? e.message : "";
       const message = raw.includes("MOXIEMO")
         ? raw
-        : "MOXIEMO is thinking — just a moment...";
+        : "MOXIEMO is thinking, just a moment...";
       setInlineError(message);
       // Auto-retry after 3s for the "thinking" message, no user tap required.
       if (message.includes("thinking") && lastHistoryRef.current && sid) {
@@ -687,7 +687,7 @@ export default function Discovery() {
       setStrategyReady(true);
     } catch (e: any) {
       console.error("synthesize dispatch error:", e);
-      // Even if dispatch failed, send the user to Strategy page — it will
+      // Even if dispatch failed, send the user to Strategy page, it will
       // detect the pending state and trigger synth on its own.
       setStrategyReady(true);
     } finally {
@@ -867,7 +867,7 @@ export default function Discovery() {
             <div className="flex-1">
               <p className="font-medium">Welcome to MOXIEMO{welcomeName ? `, ${welcomeName}` : ""}!</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Your account is ready. The best place to start is your marketing strategy — everything in MOXIEMO flows from here. Let's build it together.
+                Your account is ready. The best place to start is your marketing strategy, everything in MOXIEMO flows from here. Let's build it together.
               </p>
             </div>
             <button onClick={dismissWelcome} className="text-muted-foreground hover:text-foreground" aria-label="Dismiss">
@@ -882,7 +882,7 @@ export default function Discovery() {
           <div className="flex items-center gap-3">
             <Sparkles className="h-4 w-4 text-accent" />
             <span className="text-sm font-medium">MOXIEMO Discovery</span>
-            <span className="text-xs text-muted-foreground">Section {currentSection} of {sections.length} — {sections[currentSection - 1]}</span>
+            <span className="text-xs text-muted-foreground">Section {currentSection} of {sections.length}, {sections[currentSection - 1]}</span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium text-muted-foreground">
@@ -1014,7 +1014,7 @@ export default function Discovery() {
               {synthFailed ? (
                 <div className="flex flex-col items-center gap-3">
                   <p className="text-sm text-muted-foreground text-center max-w-md">
-                    Strategy generation hit a snag — your answers are saved. Click below to try again.
+                    Strategy generation hit a snag, your answers are saved. Click below to try again.
                   </p>
                   <Button onClick={retrySynthesize} className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
                     <Sparkles className="mr-2 h-4 w-4 text-accent" /> Generate Strategy
