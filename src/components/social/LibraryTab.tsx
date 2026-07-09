@@ -759,7 +759,7 @@ export default function LibraryTab({
           </div>
         </div>
       )}
-    </div>
+    </DropZone>
   );
 }
 
