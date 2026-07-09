@@ -1,3 +1,28 @@
+import * as React from "react";
+
+export function DropZone({
+  onFile,
+  accept,
+  disabled,
+  children,
+  className,
+  style,
+  activeStyle,
+  as: Tag = "div",
+}: {
+  onFile: (file: File) => void;
+  accept?: string;
+  disabled?: boolean;
+  children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  activeStyle?: React.CSSProperties;
+  as?: "div" | "label";
+}) {
+  const { isOver, dropProps } = useFileDrop({ onFile, accept, disabled });
+  const merged = { ...style, ...(isOver ? activeStyle : {}) };
+  return React.createElement(Tag as any, { ...dropProps, className, style: merged, "data-drop-active": isOver || undefined }, children);
+}
 import { useCallback, useState } from "react";
 
 type Options = {
