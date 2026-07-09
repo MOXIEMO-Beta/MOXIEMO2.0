@@ -14,6 +14,14 @@ import { StrategyEngineInterstitial } from "@/components/StrategyEngineInterstit
 import { DiscoveryUploadGate, DiscoveryPrefillSummary, type PrefillResult } from "@/components/discovery/DiscoveryUploadGate";
 import { NeedHelpButton } from "@/components/discovery/NeedHelpButton";
 import {
+  OfferReadinessGate,
+  OfferIntakeForm,
+  OfferGtmHoldingState,
+  emptyIntake,
+  type OfferGateAnswers,
+  type OfferIntake,
+} from "@/components/discovery/OfferGtmFlow";
+import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
@@ -39,6 +47,17 @@ const LANE2_SECTIONS = [
   "Vision",
 ];
 const LANE2_TOTAL = 15;
+
+const LANE3_SECTIONS = [
+  "Sharpen the offer",
+  "Sharpen the buyer",
+  "Sharpen the differentiation",
+  "Sharpen the goal",
+];
+const LANE3_TOTAL = 6;
+
+type Lane = "lane1" | "lane2" | "offer_gtm";
+type OfferStage = "gate" | "intake" | "chat" | "done";
 
 // Strip the hidden mode-tracking tag from assistant messages before displaying.
 const MODE_TAG_RE = /\n?\[MODE:(standard|coaching|placeholder)\]\s*\[Q:\d+\]\s*$/i;
@@ -128,10 +147,18 @@ export default function Discovery() {
   const [completed, setCompleted] = useState(false);
   const [uploadStage, setUploadStage] = useState<"gate" | "summary" | "chat">("chat");
   const [prefillResult, setPrefillResult] = useState<PrefillResult | null>(null);
-  const [lane, setLane] = useState<"lane1" | "lane2" | null>(null);
+  const [lane, setLane] = useState<Lane | null>(null);
   const [otherDetectorText, setOtherDetectorText] = useState("");
   const [showOtherDetector, setShowOtherDetector] = useState(false);
-  const laneRef = useRef<"lane1" | "lane2" | null>(null);
+  const laneRef = useRef<Lane | null>(null);
+  const [offerStage, setOfferStage] = useState<OfferStage>("gate");
+  const [offerGate, setOfferGate] = useState<OfferGateAnswers>({
+    can_deliver: null,
+    has_demand: null,
+    is_priced: null,
+  });
+  const [offerIntake, setOfferIntake] = useState<OfferIntake>(emptyIntake);
+  const offerIntakeRef = useRef<OfferIntake>(emptyIntake);
   const prefillByQRef = useRef<Record<number, string>>({});
   const lastPrefilledQRef = useRef<number | null>(null);
   const brandDataRef = useRef<Record<string, any> | null>(null);
@@ -155,8 +182,9 @@ export default function Discovery() {
   }, [input]);
 
   const isLane2 = lane === "lane2";
-  const total = isLane2 ? LANE2_TOTAL : TOTAL_QUESTIONS;
-  const sections = isLane2 ? LANE2_SECTIONS : SECTIONS;
+  const isLane3 = lane === "offer_gtm";
+  const total = isLane3 ? LANE3_TOTAL : isLane2 ? LANE2_TOTAL : TOTAL_QUESTIONS;
+  const sections = isLane3 ? LANE3_SECTIONS : isLane2 ? LANE2_SECTIONS : SECTIONS;
   // Latest [Q:N] tag from the most recent assistant message — this is the
   // source of truth for "which question is the user looking at right now".
   let latestAssistantQ = 0;
@@ -174,7 +202,9 @@ export default function Discovery() {
   const progress = Math.min(100, Math.round((answered / total) * 100));
   // Lane 1: Sections 1-5 cover Q1-Q13 (~3 each); section 6 covers Q14-Q15 (optional).
   // Lane 2: 5 sections — Q1-3 §1, Q4-7 §2, Q8-11 §3, Q12-14 §4, Q15 §5.
-  const currentSection = isLane2
+  const currentSection = isLane3
+    ? Math.min(4, Math.max(1, Math.ceil(Math.max(1, latestAssistantQ) / 2)))
+    : isLane2
     ? (latestAssistantQ >= 15 ? 5 : latestAssistantQ >= 12 ? 4 : latestAssistantQ >= 8 ? 3 : latestAssistantQ >= 4 ? 2 : 1)
     : (userMsgCount >= REQUIRED_QUESTIONS ? 6 : Math.min(5, Math.floor(userMsgCount / 3) + 1));
 
@@ -225,10 +255,37 @@ export default function Discovery() {
         setSessionId(data.id);
         setMessages((data.messages as Msg[]) || []);
         if ((data as any).brand_data) brandDataRef.current = (data as any).brand_data;
-        const savedLane = (data as any).lane as "lane1" | "lane2" | null | undefined;
-        if (savedLane === "lane1" || savedLane === "lane2") {
+        const savedLane = (data as any).lane as Lane | null | undefined;
+        if (savedLane === "lane1" || savedLane === "lane2" || savedLane === "offer_gtm") {
           setLane(savedLane);
           laneRef.current = savedLane;
+        }
+        // Rehydrate offer-lane intake + gate from answers jsonb so a returning
+        // Lane 3 user does not lose their worksheet or gate progress.
+        const ans = (data as any).answers as Record<string, any> | null | undefined;
+        if (ans && typeof ans === "object") {
+          if (ans.offer_intake && typeof ans.offer_intake === "object") {
+            const merged = { ...emptyIntake, ...(ans.offer_intake as Partial<OfferIntake>) };
+            setOfferIntake(merged);
+            offerIntakeRef.current = merged;
+          }
+          if (ans.offer_gate && typeof ans.offer_gate === "object") {
+            setOfferGate({
+              can_deliver: ans.offer_gate.can_deliver ?? null,
+              has_demand: ans.offer_gate.has_demand ?? null,
+              is_priced: ans.offer_gate.is_priced ?? null,
+            });
+          }
+        }
+        // Pick the right offer stage for a returning Lane 3 user.
+        if (savedLane === "offer_gtm") {
+          if ((data.messages as any[])?.length > 0) {
+            setOfferStage(data.status === "completed" ? "done" : "chat");
+          } else if (ans?.offer_intake) {
+            setOfferStage("intake");
+          } else {
+            setOfferStage("gate");
+          }
         }
         if (data.status === "completed") setCompleted(true);
         if (!data.messages || (data.messages as any[]).length === 0) {
@@ -298,7 +355,7 @@ export default function Discovery() {
     }
   }
 
-  async function chooseLane(next: "lane1" | "lane2") {
+  async function chooseLane(next: Lane) {
     setLane(next);
     laneRef.current = next;
     if (sessionId) {
@@ -307,11 +364,56 @@ export default function Discovery() {
         .update({ lane: next } as any)
         .eq("id", sessionId);
     }
+    // Lane 3 has its own pre-chat flow (offer readiness gate + intake).
+    // It skips the expertise-shaped upload gate entirely.
+    if (next === "offer_gtm") {
+      setOfferStage("gate");
+      return;
+    }
     // Only auto-start the conversation if we're already past the upload
     // gate (returning user mid-session). For new users, the upload gate
     // renders next and starts the conversation when they skip or complete.
     if (sessionId && messages.length === 0 && uploadStage === "chat") {
       await startConversation(sessionId);
+    }
+  }
+
+  async function persistOfferAnswers(patch: {
+    offer_gate?: OfferGateAnswers;
+    offer_intake?: OfferIntake;
+  }) {
+    if (!sessionId) return;
+    const { data } = await supabase
+      .from("discovery_sessions")
+      .select("answers")
+      .eq("id", sessionId)
+      .maybeSingle();
+    const prev = ((data as any)?.answers as Record<string, unknown>) || {};
+    const next = { ...prev, ...patch } as Record<string, unknown>;
+    await supabase
+      .from("discovery_sessions")
+      .update({ answers: next as any })
+      .eq("id", sessionId);
+  }
+
+  async function submitOfferIntake() {
+    offerIntakeRef.current = offerIntake;
+    await persistOfferAnswers({ offer_gate: offerGate, offer_intake: offerIntake });
+    setOfferStage("chat");
+    if (sessionId && messages.length === 0) {
+      await startConversation(sessionId);
+    }
+  }
+
+  function switchOffer() {
+    setOfferGate({ can_deliver: null, has_demand: null, is_priced: null });
+    setOfferIntake(emptyIntake);
+    offerIntakeRef.current = emptyIntake;
+    if (sessionId) {
+      supabase
+        .from("discovery_sessions")
+        .update({ answers: {} as any })
+        .eq("id", sessionId);
     }
   }
 
@@ -351,7 +453,12 @@ export default function Discovery() {
         throw new Error("Missing Supabase environment variables");
       }
 
-      const endpoint = laneRef.current === "lane2" ? "discovery-chat-lane2" : "discovery-chat";
+      const endpoint =
+        laneRef.current === "offer_gtm"
+          ? "discovery-chat-lane3"
+          : laneRef.current === "lane2"
+            ? "discovery-chat-lane2"
+            : "discovery-chat";
       const callUrl = `${supabaseUrl}/functions/v1/${endpoint}`;
       const { data: { session } } = await supabase.auth.getSession();
       const authToken = session?.access_token ?? supabaseKey;
@@ -366,6 +473,7 @@ export default function Discovery() {
         body: JSON.stringify({
           messages: history,
           userContext: userContextRef.current ?? undefined,
+          offerIntake: laneRef.current === "offer_gtm" ? offerIntakeRef.current : undefined,
           brandContext: laneRef.current !== "lane2" && brandDataRef.current
             ? {
                 voice_tone: brandDataRef.current.voice_tone ?? null,
@@ -443,7 +551,14 @@ export default function Discovery() {
         setMessages(newHistory);
       }
       await persist(newHistory, sid, isComplete);
-      if (isComplete) await synthesize(newHistory);
+      if (isComplete) {
+        if (laneRef.current === "offer_gtm") {
+          // Phase 1: no strategy synthesis for the offer lane yet.
+          setOfferStage("done");
+        } else {
+          await synthesize(newHistory);
+        }
+      }
       lastHistoryRef.current = null;
     } catch (e: any) {
       console.error("streamReply error:", e);
@@ -633,6 +748,13 @@ export default function Discovery() {
                     <div className="text-xs text-muted-foreground mt-0.5">Connecting customers with service providers</div>
                   </button>
                   <button
+                    onClick={() => chooseLane("offer_gtm")}
+                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                  >
+                    <div className="font-medium text-sm">I have an offer to launch</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">You built the offer. Now we build the go to market that sells it.</div>
+                  </button>
+                  <button
                     onClick={() => setShowOtherDetector(true)}
                     className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
                   >
@@ -665,20 +787,43 @@ export default function Discovery() {
           </div>
         </div>
       )}
-      {lane !== null && uploadStage === "gate" && sessionId && (
+      {lane === "offer_gtm" && offerStage === "gate" && (
+        <OfferReadinessGate
+          value={offerGate}
+          onChange={(next) => {
+            setOfferGate(next);
+            persistOfferAnswers({ offer_gate: next });
+          }}
+          onProceed={() => setOfferStage("intake")}
+          onSwitchOffer={switchOffer}
+        />
+      )}
+      {lane === "offer_gtm" && offerStage === "intake" && (
+        <OfferIntakeForm
+          value={offerIntake}
+          onChange={setOfferIntake}
+          onSubmit={submitOfferIntake}
+        />
+      )}
+      {lane === "offer_gtm" && offerStage === "done" && (
+        <OfferGtmHoldingState />
+      )}
+      {lane !== null && lane !== "offer_gtm" && uploadStage === "gate" && sessionId && (
         <DiscoveryUploadGate
           onSkip={beginChat}
           onComplete={startWithPrefill}
         />
       )}
-      {lane !== null && uploadStage === "summary" && prefillResult && (
+      {lane !== null && lane !== "offer_gtm" && uploadStage === "summary" && prefillResult && (
         <DiscoveryPrefillSummary
           result={prefillResult}
           onContinue={beginChat}
           onSkip={beginChat}
         />
       )}
-      {lane !== null && uploadStage === "chat" && (
+      {lane !== null && (
+        (lane === "offer_gtm" ? offerStage === "chat" : uploadStage === "chat")
+      ) && (
         <>
       <NeedHelpButton
         currentQuestion={Math.min(answered + 1, total)}
