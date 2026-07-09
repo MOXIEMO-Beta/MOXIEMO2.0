@@ -79,19 +79,32 @@ type Asset = {
   created_at: string;
 };
 
-// Resolve a signed URL for a stored asset. We persist the storage path in
-// `filename`; fall back to parsing the path out of legacy `url` values.
+// Resolve a stored value (path, public URL, or legacy signed URL) into the
+// bare storage path within the `social-assets` bucket.
+export function extractStoragePath(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const v = String(value);
+  // Full Supabase storage URL (public or signed) — strip prefix + querystring.
+  const m = v.match(/\/storage\/v1\/object\/(?:public|sign|authenticated)\/social-assets\/([^?#]+)/);
+  if (m) return decodeURIComponent(m[1]);
+  // Fallback: any "social-assets/…" segment.
+  const m2 = v.match(/social-assets\/([^?#]+)/);
+  if (m2) return decodeURIComponent(m2[1]);
+  // Already a bare path (contains "/", not a URL scheme).
+  if (!/^https?:/i.test(v) && v.includes("/")) return v;
+  return null;
+}
 function storagePathOf(a: Pick<Asset, "url" | "filename">): string | null {
-  if (a.filename && a.filename.includes("/")) return a.filename;
-  const m = a.url?.match(/social-assets\/(.+)$/);
-  if (m) return m[1];
-  return a.filename ?? null;
+  return extractStoragePath(a.filename) ?? extractStoragePath(a.url);
 }
 async function signAssetUrl(a: Pick<Asset, "url" | "filename">): Promise<string> {
   const path = storagePathOf(a);
   if (!path) return a.url ?? "";
-  const { data } = await supabase.storage.from("social-assets").createSignedUrl(path, 60 * 60);
-  return data?.signedUrl ?? a.url ?? "";
+  const { data, error } = await supabase.storage
+    .from("social-assets")
+    .createSignedUrl(path, 60 * 60);
+  if (error) console.warn("[QueueTab] signed URL failed", { path, error });
+  return data?.signedUrl ?? "";
 }
 
 const PLATFORM_META: Record<Platform, { bg: string; color: string; Icon: any; label: string }> = {
@@ -623,19 +636,36 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     <Icon size={16} color={meta.color} />
                   </div>
                   {thumb && (
-                    <img
-                      src={thumbUrls[post.id] ?? thumb}
-                      alt=""
-                      className="flex-shrink-0"
-                      style={{
-                        width: 46,
-                        height: 46,
-                        borderRadius: 8,
-                        objectFit: "cover",
-                        border: "1px solid #ECEAE5",
-                        background: "#F0EFEC",
-                      }}
-                    />
+                    thumbUrls[post.id] ? (
+                      <img
+                        src={thumbUrls[post.id]}
+                        alt=""
+                        className="flex-shrink-0"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                        }}
+                        style={{
+                          width: 46,
+                          height: 46,
+                          borderRadius: 8,
+                          objectFit: "cover",
+                          border: "1px solid #ECEAE5",
+                          background: "#F0EFEC",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="flex-shrink-0 flex items-center justify-center"
+                        style={{
+                          width: 46, height: 46, borderRadius: 8,
+                          border: "1px solid #ECEAE5", background: "#F0EFEC",
+                          color: "#9A9896",
+                        }}
+                        aria-label="image"
+                      >
+                        <ImageIcon size={16} />
+                      </div>
+                    )
                   )}
                   <div className="flex-1 min-w-0">
                     <div
@@ -743,17 +773,21 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         onSelect={async (asset) => {
           const postId = libraryPickerFor;
           if (!postId) return;
+          const path = extractStoragePath(asset.url) ?? asset.url;
           const { error } = await supabase
             .from("social_posts")
-            .update({ media_urls: [asset.url] })
+            .update({ media_urls: [path] })
             .eq("id", postId);
           if (error) {
             toast.error(error.message);
             return;
           }
           setPosts((arr) =>
-            arr.map((p) => (p.id === postId ? { ...p, media_urls: [asset.url] } : p)),
+            arr.map((p) => (p.id === postId ? { ...p, media_urls: [path] } : p)),
           );
+          // Pre-resolve a fresh signed URL for the thumbnail
+          const signed = await signAssetUrl({ url: path, filename: path });
+          if (signed) setThumbUrls((s) => ({ ...s, [postId]: signed }));
           setLibraryPickerFor(null);
           toast.success("Attached to post");
         }}
