@@ -115,6 +115,59 @@ function formatOfferIntake(intake: Record<string, unknown> | null | undefined, g
   ].join("\n");
 }
 
+// Long-form date helper: "2026-09-30" -> "September 30, 2026". Falls back to
+// the raw input if it cannot be parsed, so a founder's plain text ("end of
+// September") is preserved verbatim.
+function longFormDate(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "";
+  const iso = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) {
+    const d = new Date(`${iso[1]}-${iso[2]}-${iso[3]}T00:00:00Z`);
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+    }
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime()) && /\d/.test(s)) {
+    return d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+  }
+  return s;
+}
+
+// Compose the canonical single-metric target string from the intake.
+function buildSuccessTarget(intake: Record<string, unknown> | null | undefined): string {
+  if (!intake || typeof intake !== "object") return "";
+  const n = String((intake as any).goal_sell_number ?? "").trim();
+  const by = longFormDate((intake as any).goal_by_date);
+  if (!n || !by) return "";
+  const withBy = /^by\s/i.test(n) ? n : `${n} by ${by}`;
+  const startsSell = /^sell\b/i.test(withBy);
+  return startsSell ? withBy : `Sell ${withBy}`;
+}
+
+// Strip any recurring-revenue phrasing that Lane 3 must never emit. Operates
+// on strings inside enhanced_foundation. Non-strings pass through untouched.
+function stripRecurringRevenue<T>(value: T): T {
+  if (value == null) return value;
+  if (typeof value === "string") {
+    let out = value;
+    // "$5,000 / month", "$5000/mo", "5k per month", "MRR: $X"
+    out = out.replace(/\$?\s*[\d.,]+\s*[kKmM]?\s*(?:\/|per)\s*(?:mo(?:nth)?|wk|week)\b\.?/gi, "");
+    out = out.replace(/\b(?:MRR|ARR)\b[^.,;\n]*/gi, "");
+    out = out.replace(/\bNew\s+Clients\s*\/\s*Month\b[^.,;\n]*/gi, "");
+    out = out.replace(/[ \t]{2,}/g, " ").replace(/\s+([,.;])/g, "$1").trim();
+    return out as unknown as T;
+  }
+  if (Array.isArray(value)) return value.map((v) => stripRecurringRevenue(v)) as unknown as T;
+  if (typeof value === "object") {
+    const out: any = {};
+    for (const [k, v] of Object.entries(value as any)) out[k] = stripRecurringRevenue(v);
+    return out;
+  }
+  return value;
+}
+
 // ---- Strength scoring -------------------------------------------------------
 // Parse [MODE:...] [Q:#] tags appended by the discovery agent.
 function parseModes(transcript: string): Record<number, "standard" | "coaching" | "placeholder"> {
