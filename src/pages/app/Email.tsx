@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { DropZone } from "@/hooks/useFileDrop";
 import { useAuth } from "@/hooks/useAuth";
 import { aiErrorMessage } from "@/lib/aiErrors";
 import { usePlan } from "@/hooks/usePlan";
@@ -798,9 +799,12 @@ export default function Email() {
     URL.revokeObjectURL(url);
   }
 
-  async function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function processCsvFile(file: File | undefined) {
     if (!file || !user) return;
+    if (!/\.csv$/i.test(file.name) && file.type !== "text/csv") {
+      toast.error("Please upload a .csv file");
+      return;
+    }
     const text = await file.text();
     const lines = text.split(/\r?\n/).filter(Boolean);
     const header = lines[0]?.toLowerCase() || "";
@@ -829,6 +833,10 @@ export default function Email() {
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
     setCsvPending({ rows, selectedTags: [] });
+  }
+
+  async function handleCsvUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    await processCsvFile(e.target.files?.[0]);
   }
 
   async function confirmCsvImport() {
