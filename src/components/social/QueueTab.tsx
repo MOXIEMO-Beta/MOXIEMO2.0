@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useFileDrop } from "@/hooks/useFileDrop";
+import MediaPickerModal from "@/components/media/MediaPickerModal";
 
 function DropUploadLabel({ onFile, accept, disabled, className, style, children }: {
   onFile: (f: File) => void;
