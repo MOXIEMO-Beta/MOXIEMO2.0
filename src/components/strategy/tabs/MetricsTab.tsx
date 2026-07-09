@@ -117,11 +117,12 @@ export function MetricsTab() {
         </div>
       )}
 
-      {/* Content performance */}
+      {/* Content performance — hide the card entirely when nothing is populated */}
+      {(cp.linkedin || cp.email) && (
       <Card className="report-card p-7 border-border shadow-soft">
         <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4"><TrendingUp className="h-3.5 w-3.5" /> Content performance targets</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {cp.linkedin && (
+          {cp.linkedin && (cp.linkedin.engagementTarget || cp.linkedin.profileViewsTarget || cp.linkedin.postsPerWeek) && (
             <div className="p-4 rounded-lg border border-border">
               <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">{strategy?.primary_channel ?? 'LinkedIn'}</div>
               <ul className="text-sm space-y-1">
@@ -132,7 +133,7 @@ export function MetricsTab() {
               <NoDataNote>Will populate after first posts.</NoDataNote>
             </div>
           )}
-          {cp.email && (
+          {cp.email && (cp.email.openRateTarget || cp.email.clickRateTarget || cp.email.sendsPerMonth) && (
             <div className="p-4 rounded-lg border border-border">
               <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">Email</div>
               <ul className="text-sm space-y-1">
@@ -145,6 +146,7 @@ export function MetricsTab() {
           )}
         </div>
       </Card>
+      )}
 
       {/* Business goals */}
       {(bg.revenueGrowth || bg.scalingPlan) && (
