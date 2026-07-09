@@ -277,10 +277,15 @@ export default function Discovery() {
             });
           }
         }
-        // Pick the right offer stage for a returning Lane 3 user.
+        // Pick the right offer stage for a returning Lane 3 user. A completed
+        // Lane 3 session now flows into the normal strategy page — send them there.
         if (savedLane === "offer_gtm") {
+          if (data.status === "completed") {
+            navigate("/app/strategy");
+            return;
+          }
           if ((data.messages as any[])?.length > 0) {
-            setOfferStage(data.status === "completed" ? "done" : "chat");
+            setOfferStage("chat");
           } else if (ans?.offer_intake) {
             setOfferStage("intake");
           } else {
