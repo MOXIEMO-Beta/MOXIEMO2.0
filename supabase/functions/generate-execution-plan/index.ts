@@ -14,6 +14,13 @@ Generate a complete EXECUTION PLAN that includes:
 
 Be SPECIFIC and grounded in the foundation. Reference the user's actual ideal client, pillars, archetype, channel — never generic placeholders. Topic angles must progress logically (awareness → understanding → application). Tasks should reference the user's primary channel and positioning.
 
+SUCCESS METRICS COMPLETENESS — ALL SUBSECTIONS REQUIRED:
+successMetrics MUST include, all populated, all grounded in THIS founder's foundation (never sample copy, never blank):
+- primary.name, primary.target (weekly + monthly for recurring; or a single sell string for launches), primary.leadSources (3-5 items with source + percentage), primary.qualification.highFit / .mediumFit / .lowFit (each with percentage + definition).
+- contentPerformance.linkedin (engagementTarget, profileViewsTarget, postsPerWeek) AND contentPerformance.email (openRateTarget, clickRateTarget, sendsPerMonth). Include BOTH channels' targets even if email is secondary; use realistic starter values, never leave empty.
+- businessGoals.revenueGrowth AND businessGoals.scalingPlan — one sentence each, specific to this founder's stated goals.
+- brandHealth.voiceConsistencyScore, brandHealth.archetypeAlignment, brandHealth.notes (short baseline note).
+
 ACTION PLAN FORMAT — STRICT:
 Each of week1, week2, week3, week4 MUST be a structured OBJECT with:
   - "title": a short 2-6 word thematic phrase specific to this founder's strategy (e.g. "Foundation & Strategy Lock-in", "Launch & Initial Engagement", "Building Momentum & Conversations", "Analysis & Optimization"). Do NOT prefix with "Week N", "Task:", or any date range. Do NOT include time estimates like "(Est. 10 hours)" in the title. Time estimates belong on individual task lines.
@@ -42,6 +49,14 @@ HARD RULES:
 - Never use calendar quarter labels ("Q1 2027", "Q4 2026"). Use phase labels with date ranges.
 - Never derive or emit a monthly recurring revenue figure anywhere.
 - Never use em-dashes. Never use contractions.
+
+SUCCESS METRICS COMPLETENESS — ALL SUBSECTIONS REQUIRED:
+successMetrics MUST include, all populated, all grounded in THIS founder's launch (never sample copy, never blank):
+- primary.name (short label like "Enrollments sold"), primary.target.total = the founder's sell target string verbatim ("Sell N unit by Month D, YYYY"). Do NOT emit weekly/monthly recurring targets; if you set primary.target.weekly or .monthly at all, they must describe a launch-week pacing count (e.g. "3 seats sold this week"), never MRR.
+- primary.leadSources (3-5 items sized to the launch: warm list, referral partners, LinkedIn inbound, etc.), primary.qualification.highFit / .mediumFit / .lowFit (percentage + definition matched to who buys THIS offer).
+- contentPerformance.linkedin AND contentPerformance.email — realistic starter targets for the launch window, both channels.
+- businessGoals.revenueGrowth = one sentence about the launch revenue (one-time, not MRR); businessGoals.scalingPlan = the next move after this launch closes.
+- brandHealth.voiceConsistencyScore, brandHealth.archetypeAlignment, brandHealth.notes.
 
 ACTION PLAN FORMAT — STRICT:
 Each of week1, week2, week3, week4 MUST be a structured OBJECT with:
