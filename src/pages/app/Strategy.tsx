@@ -196,6 +196,24 @@ function StrategyHeader() {
 
   return (
     <div className="mb-7 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+      {generating && (
+        <div
+          aria-live="polite"
+          className="fixed inset-x-0 top-0 z-40 pointer-events-none"
+        >
+          <div
+            className="pointer-events-auto mx-auto mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-4 py-2 shadow-soft backdrop-blur"
+            style={{ display: "flex", width: "fit-content" }}
+          >
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+            <span className="text-xs font-medium text-foreground/80">Rebuilding your plan…</span>
+          </div>
+          <div
+            className="absolute inset-0 -z-10"
+            style={{ background: "rgba(14,15,16,0.04)" }}
+          />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <div className="inline-block text-[11px] font-bold uppercase tracking-[0.1em] text-accent mb-2">Your strategy</div>
         <h1 className="text-[20px] font-bold tracking-[-0.3px] text-foreground mb-1.5" style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif' }}>Marketing foundation</h1>
@@ -223,7 +241,9 @@ function StrategyHeader() {
       <div className="flex flex-row flex-nowrap items-center gap-2 shrink-0 whitespace-nowrap">
         <Button onClick={handleGenerate} size="sm" disabled={generating || !strategy} className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg">
           {generating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-2 h-3.5 w-3.5" />}
-          {hasExecutionPlan ? "Regenerate plan" : "Generate execution plan"}
+          {generating
+            ? (hasExecutionPlan ? "Rebuilding your plan…" : "Generating…")
+            : (hasExecutionPlan ? "Regenerate plan" : "Generate execution plan")}
         </Button>
         {editing ? (
           <>
