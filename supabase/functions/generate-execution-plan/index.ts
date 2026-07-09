@@ -19,6 +19,7 @@ successMetrics MUST include, all populated, all grounded in THIS founder's found
 - primary.name, primary.target (weekly + monthly for recurring; or a single sell string for launches), primary.leadSources (3-5 items with source + percentage), primary.qualification.highFit / .mediumFit / .lowFit (each with percentage + definition).
 - contentPerformance.linkedin (engagementTarget, profileViewsTarget, postsPerWeek) AND contentPerformance.email (openRateTarget, clickRateTarget, sendsPerMonth). Include BOTH channels' targets even if email is secondary; use realistic starter values, never leave empty.
 - businessGoals.revenueGrowth AND businessGoals.scalingPlan — one sentence each, specific to this founder's stated goals.
+- businessGoals.scalingPlan and businessGoals.revenueGrowth prose MUST be relative and date-free. Never use calendar quarter labels ("Q1 2027", "Q4 2026") or bare month/year references for future periods. Phrase post-launch moves as relative ("After a successful launch, ...", "Once the first cohort closes, ...").
 - brandHealth.voiceConsistencyScore, brandHealth.archetypeAlignment, brandHealth.notes (short baseline note).
 
 ACTION PLAN FORMAT — STRICT:
@@ -56,6 +57,7 @@ successMetrics MUST include, all populated, all grounded in THIS founder's launc
 - primary.leadSources (3-5 items sized to the launch: warm list, referral partners, LinkedIn inbound, etc.), primary.qualification.highFit / .mediumFit / .lowFit (percentage + definition matched to who buys THIS offer).
 - contentPerformance.linkedin AND contentPerformance.email — realistic starter targets for the launch window, both channels.
 - businessGoals.revenueGrowth = one sentence about the launch revenue (one-time, not MRR); businessGoals.scalingPlan = the next move after this launch closes.
+- businessGoals.scalingPlan MUST be relative and date-free. Never use calendar quarter labels ("Q1 2027") or "next quarter" phrasing. Reference the move as relative to launch close ("After a successful launch, plan the next retreat and add a graduate-level offer for continued support.").
 - brandHealth.voiceConsistencyScore, brandHealth.archetypeAlignment, brandHealth.notes.
 
 ACTION PLAN FORMAT — STRICT:
