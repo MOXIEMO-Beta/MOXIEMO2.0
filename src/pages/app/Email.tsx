@@ -1079,6 +1079,13 @@ export default function Email() {
       </Card>
 
       {/* 3. Subscribers */}
+      <DropZone
+        onFile={(f) => void processCsvFile(f)}
+        accept=".csv,text/csv"
+        className="rounded-lg"
+        style={{ border: "1.5px dashed transparent", transition: "background 120ms ease, border-color 120ms ease" }}
+        activeStyle={{ border: "1.5px dashed hsl(var(--accent))", background: "hsl(var(--accent) / 0.06)" }}
+      >
       <Card id="subscribers-card">
         <CardHeader>
           <div className="flex items-center justify-between">
