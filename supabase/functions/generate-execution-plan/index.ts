@@ -575,9 +575,9 @@ Today's date: ${today}${launchContext}`;
         body: JSON.stringify({
           model: "google/gemini-2.5-pro",
           messages: [
-            { role: "system", content: SYSTEM },
+            { role: "system", content: isLaunch ? SYSTEM_LAUNCH : SYSTEM },
             { role: "user", content: userBrief },
-            { role: "user", content: `RETRY: your previous response returned week(s) ${bad.join(", ")} without a "title" field. Regenerate ONLY the actionPlan. Every week MUST have a short 2-6 word thematic title. Do NOT return weeks as strings.` },
+            { role: "user", content: `RETRY: your previous response returned week(s) ${bad.join(", ")} without a "title" field. Regenerate ONLY the actionPlan. Every week MUST have a short 2-6 word thematic title AND a "tasks" array where each task has non-empty "id", "task" (the full task sentence), and "estimatedTime". Do NOT return weeks as strings and do NOT return empty task objects.` },
           ],
           tools: [{
             type: "function",
@@ -590,15 +590,37 @@ Today's date: ${today}${launchContext}`;
                   actionPlan: {
                     type: "object",
                     properties: {
-                      week1: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
-                      week2: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
-                      week3: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
-                      week4: { type: "object", properties: { title: { type: "string" }, tasks: { type: "array", items: { type: "object" } } }, required: ["title", "tasks"] },
+                      week1: { $ref: "#/$defs/week" },
+                      week2: { $ref: "#/$defs/week" },
+                      week3: { $ref: "#/$defs/week" },
+                      week4: { $ref: "#/$defs/week" },
                     },
                     required: ["week1", "week2", "week3", "week4"],
                   },
                 },
                 required: ["actionPlan"],
+                $defs: {
+                  week: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string", description: "REQUIRED. 2-6 word thematic phrase. No 'Week N' prefix." },
+                      tasks: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            id: { type: "string" },
+                            task: { type: "string", description: "REQUIRED. The full task sentence, non-empty." },
+                            estimatedTime: { type: "string" },
+                            linkedContent: { type: "string" },
+                          },
+                          required: ["id", "task", "estimatedTime"],
+                        },
+                      },
+                    },
+                    required: ["title", "tasks"],
+                  },
+                },
               },
             },
           }],
@@ -610,12 +632,46 @@ Today's date: ${today}${launchContext}`;
         const rArgs = rd.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
         const rParsed = rArgs ? JSON.parse(rArgs) : {};
         if (rParsed?.actionPlan) {
-          parsed.actionPlan = { ...(parsed.actionPlan || {}), ...rParsed.actionPlan };
+          // Merge per-week: only overwrite fields that improve the original.
+          // Never drop real tasks in favor of empty/missing ones from the retry.
+          const merged: any = { ...(parsed.actionPlan || {}) };
+          const taskHasText = (t: any) => t && typeof t.task === "string" && t.task.trim().length > 0;
+          for (const n of [1, 2, 3, 4]) {
+            const key = `week${n}`;
+            const orig = merged[key];
+            const next = rParsed.actionPlan[key];
+            if (!next || typeof next !== "object") continue;
+            const origTasks = Array.isArray(orig?.tasks) ? orig.tasks.filter(taskHasText) : [];
+            const nextTasks = Array.isArray(next?.tasks) ? next.tasks.filter(taskHasText) : [];
+            const chosenTasks = nextTasks.length >= origTasks.length ? nextTasks : origTasks;
+            const chosenTitle = (typeof next.title === "string" && next.title.trim())
+              ? next.title.trim()
+              : (typeof orig?.title === "string" ? orig.title : "");
+            merged[key] = { ...(orig || {}), ...next, title: chosenTitle, tasks: chosenTasks };
+          }
+          parsed.actionPlan = merged;
           const stillBad = missingTitles(parsed.actionPlan);
           if (stillBad.length > 0) console.error("execution-plan: retry still missing titles", stillBad);
         }
       } else {
         console.error("execution-plan: retry failed", retryRes.status, await retryRes.text());
+      }
+    }
+
+    // Final safety net: strip any tasks with empty text so the UI never renders
+    // blank rows, and log if a week has zero valid tasks after all retries.
+    if (parsed?.actionPlan) {
+      for (const n of [1, 2, 3, 4]) {
+        const key = `week${n}`;
+        const w = parsed.actionPlan[key];
+        if (w && Array.isArray(w.tasks)) {
+          const cleaned = w.tasks.filter((t: any) => t && typeof t.task === "string" && t.task.trim().length > 0);
+          if (cleaned.length !== w.tasks.length) {
+            console.warn(`execution-plan: dropped ${w.tasks.length - cleaned.length} empty tasks from ${key}`);
+          }
+          w.tasks = cleaned;
+          if (cleaned.length === 0) console.error(`execution-plan: ${key} has zero tasks after synthesis`);
+        }
       }
     }
 
