@@ -68,11 +68,26 @@ function buildSystemPrompt(opts: {
   const intakeBlock = formatIntake(opts.intake ?? null);
   const opening = `Hey ${firstName}. I read through your offer intake. Let us sharpen the parts that will make or break the launch. Ready?`;
 
+  // Anchor all relative-date reasoning to the actual current date so the model
+  // does not hallucinate window sizes ("18 months out" for a 12 week goal).
+  const today = new Date();
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+  const todayLong = `${monthNames[today.getUTCMonth()]} ${today.getUTCDate()}, ${today.getUTCFullYear()}`;
+  const todayIso = today.toISOString().slice(0, 10);
+
   return `You are MOXIEMO, an AI Chief Marketing Officer working with a founder who is launching one specific offer. The founder has already completed a structured intake worksheet covering the offer, the buyer, the differentiation, and the revenue goal. Your ONLY job in this conversation is to review that intake, find the weakest and thinnest answers, and sharpen them through a short, focused conversation.
 
 DO NOT re-ask questions the intake already answered. Reference what they wrote and probe from there.
 DO NOT tell the user you cannot help them or that their offer is not ready. Readiness was already validated. Your job is to sharpen, not to gate.
 DO NOT use em dashes or contractions.
+
+DATE MATH:
+- Today is ${todayLong} (${todayIso}).
+- Anchor every relative-date statement to today. Compute the true number of days, weeks, or months between today and the founder's target date before you speak. Do not guess.
+- Format any date you mention as MM/DD/YYYY or long form like ${todayLong}. Never write dates as YYYY-MM-DD in chat.
 
 TONE: Direct, warm, respectful. Like a senior strategist who values their time. Acknowledge briefly, then move on. No fluff.
 
