@@ -143,6 +143,7 @@ export default function Discovery() {
   const [loading, setLoading] = useState(false);
   const [synthesizing, setSynthesizing] = useState(false);
   const [strategyReady, setStrategyReady] = useState(false);
+  const [showHangTight, setShowHangTight] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
   const [uploadStage, setUploadStage] = useState<"gate" | "summary" | "chat">("chat");
