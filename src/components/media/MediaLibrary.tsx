@@ -80,6 +80,99 @@ const AUTO_LOAD_LIMIT = 3;
 const ACCEPT = "image/png,image/jpeg,image/svg+xml,image/gif,image/webp,video/mp4,video/quicktime";
 
 /* ------------------------------------------------------------------ */
+/*  Signed-URL resolution                                              */
+/* ------------------------------------------------------------------ */
+
+const STORAGE_BUCKET = "social-assets";
+const PUBLIC_MARKER = `/storage/v1/object/public/${STORAGE_BUCKET}/`;
+const SIGNED_MARKER = `/storage/v1/object/sign/${STORAGE_BUCKET}/`;
+
+function extractStoragePath(url: string): string | null {
+  if (!url) return null;
+  const pIdx = url.indexOf(PUBLIC_MARKER);
+  if (pIdx !== -1) return url.slice(pIdx + PUBLIC_MARKER.length).split("?")[0];
+  const sIdx = url.indexOf(SIGNED_MARKER);
+  if (sIdx !== -1) return url.slice(sIdx + SIGNED_MARKER.length).split("?")[0];
+  return null;
+}
+
+const signedUrlCache = new Map<string, { url: string; expires: number }>();
+
+async function resolveDisplayUrl(rawUrl: string): Promise<string> {
+  if (!rawUrl) return rawUrl;
+  const path = extractStoragePath(rawUrl);
+  if (!path) return rawUrl; // external (e.g. Pexels CDN)
+  const cached = signedUrlCache.get(path);
+  const now = Date.now();
+  if (cached && cached.expires > now + 30_000) return cached.url;
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl) {
+    console.warn("[MediaLibrary] signed URL failed", { path, error });
+    return rawUrl;
+  }
+  signedUrlCache.set(path, { url: data.signedUrl, expires: now + 3600 * 1000 });
+  return data.signedUrl;
+}
+
+function AssetImage({
+  rawUrl,
+  alt,
+  style,
+}: {
+  rawUrl: string;
+  alt: string;
+  style?: React.CSSProperties;
+}) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setFailed(false);
+    setSrc(null);
+    resolveDisplayUrl(rawUrl).then((u) => {
+      if (alive) setSrc(u);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [rawUrl]);
+
+  if (failed || !src) {
+    return (
+      <div
+        style={{
+          ...style,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#F0EFEC",
+          color: MUTED,
+        }}
+        aria-label={alt}
+      >
+        <ImageIcon size={22} />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      loading="lazy"
+      onError={() => {
+        console.warn("[MediaLibrary] image failed to load", { rawUrl, resolved: src });
+        setFailed(true);
+      }}
+      style={style}
+    />
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Utilities                                                          */
 /* ------------------------------------------------------------------ */
 
