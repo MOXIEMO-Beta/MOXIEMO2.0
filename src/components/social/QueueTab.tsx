@@ -756,17 +756,21 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         onSelect={async (asset) => {
           const postId = libraryPickerFor;
           if (!postId) return;
+          const path = extractStoragePath(asset.url) ?? asset.url;
           const { error } = await supabase
             .from("social_posts")
-            .update({ media_urls: [asset.url] })
+            .update({ media_urls: [path] })
             .eq("id", postId);
           if (error) {
             toast.error(error.message);
             return;
           }
           setPosts((arr) =>
-            arr.map((p) => (p.id === postId ? { ...p, media_urls: [asset.url] } : p)),
+            arr.map((p) => (p.id === postId ? { ...p, media_urls: [path] } : p)),
           );
+          // Pre-resolve a fresh signed URL for the thumbnail
+          const signed = await signAssetUrl({ url: path, filename: path });
+          if (signed) setThumbUrls((s) => ({ ...s, [postId]: signed }));
           setLibraryPickerFor(null);
           toast.success("Attached to post");
         }}
