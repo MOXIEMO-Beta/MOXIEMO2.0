@@ -748,10 +748,104 @@ Today's date: ${today}${launchContext}`;
             type: "function",
             function: {
               name: "save_success_metrics",
-              description: "Save the successMetrics object only.",
+              description: "Save the successMetrics object only. Every subsection listed as missing MUST be populated with values grounded in the founder's foundation.",
               parameters: {
                 type: "object",
-                properties: { successMetrics: { type: "object" } },
+                properties: {
+                  successMetrics: {
+                    type: "object",
+                    properties: {
+                      primary: {
+                        type: "object",
+                        properties: {
+                          name: { type: "string" },
+                          target: {
+                            type: "object",
+                            properties: {
+                              weekly: { type: "string" },
+                              monthly: { type: "string" },
+                              total: { type: "string" },
+                            },
+                          },
+                          leadSources: {
+                            type: "array",
+                            description: "3-5 items grounded in this founder's channels.",
+                            items: {
+                              type: "object",
+                              properties: {
+                                source: { type: "string" },
+                                percentage: { type: "number" },
+                                perWeek: { type: "string" },
+                              },
+                              required: ["source", "percentage"],
+                            },
+                          },
+                          qualification: {
+                            type: "object",
+                            description: "REQUIRED. All three tiers, each with percentage and definition specific to who buys THIS offer.",
+                            properties: {
+                              highFit: {
+                                type: "object",
+                                properties: { percentage: { type: "number" }, definition: { type: "string" } },
+                                required: ["percentage", "definition"],
+                              },
+                              mediumFit: {
+                                type: "object",
+                                properties: { percentage: { type: "number" }, definition: { type: "string" } },
+                                required: ["percentage", "definition"],
+                              },
+                              lowFit: {
+                                type: "object",
+                                properties: { percentage: { type: "number" }, definition: { type: "string" } },
+                                required: ["percentage", "definition"],
+                              },
+                            },
+                            required: ["highFit", "mediumFit", "lowFit"],
+                          },
+                        },
+                      },
+                      contentPerformance: {
+                        type: "object",
+                        properties: {
+                          linkedin: {
+                            type: "object",
+                            properties: {
+                              engagementTarget: { type: "string" },
+                              profileViewsTarget: { type: "string" },
+                              postsPerWeek: { type: "string" },
+                            },
+                          },
+                          email: {
+                            type: "object",
+                            properties: {
+                              openRateTarget: { type: "string" },
+                              clickRateTarget: { type: "string" },
+                              sendsPerMonth: { type: "string" },
+                            },
+                          },
+                        },
+                      },
+                      businessGoals: {
+                        type: "object",
+                        description: "REQUIRED. Both fields, one sentence each, specific to this founder.",
+                        properties: {
+                          revenueGrowth: { type: "string" },
+                          scalingPlan: { type: "string" },
+                        },
+                        required: ["revenueGrowth", "scalingPlan"],
+                      },
+                      brandHealth: {
+                        type: "object",
+                        properties: {
+                          voiceConsistencyScore: { type: "number" },
+                          archetypeAlignment: { type: "number" },
+                          notes: { type: "string" },
+                        },
+                      },
+                    },
+                    required: ["primary", "contentPerformance", "businessGoals", "brandHealth"],
+                  },
+                },
                 required: ["successMetrics"],
               },
             },
