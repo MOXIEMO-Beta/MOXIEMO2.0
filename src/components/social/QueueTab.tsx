@@ -859,14 +859,13 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
 
   useEffect(() => {
     (async () => {
-      const [{ data: a }, { data: prof }] = await Promise.all([
-        supabase.from("social_media_assets").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-        supabase.from("profiles").select("brand_colors").eq("id", userId).maybeSingle(),
-      ]);
+      const { data: a } = await supabase
+        .from("social_media_assets")
+        .select("*")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
       const list = (a ?? []) as any[];
       setAssets(list as any);
-      const bc = (prof as any)?.brand_colors;
-      setBrandColors(Array.isArray(bc) ? bc : []);
       // sign all image URLs
       const pairs = await Promise.all(
         list.filter((x) => x.media_type !== "video").map(async (x) => [x.id, await signAssetUrl(x)] as [string, string])
@@ -1117,18 +1116,7 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         })}
       </div>
 
-      {tab === "colors" ? (
-        <div className="flex flex-wrap gap-3 mt-3">
-          {brandColors.length === 0 ? (
-            <div className="text-[12px]" style={{ color: "#9A9896" }}>No brand colors saved yet.</div>
-          ) : brandColors.map((c) => (
-            <div key={c} className="flex flex-col items-center gap-1">
-              <div style={{ width: 32, height: 32, borderRadius: "50%", background: c, border: "0.5px solid #ECEAE5" }} />
-              <div className="text-[11px]" style={{ color: "#6B6860" }}>{c}</div>
-            </div>
-          ))}
-        </div>
-      ) : tab === "stock" ? (
+      {tab === "stock" ? (
         <div className="mt-3">
           {/* Recommended for your brand — strategy-aware curated row */}
           {recAvailable !== false && (
@@ -1310,11 +1298,11 @@ function MediaPanel({ userId, postId, onClose, onAttached }: {
         <div className="flex gap-2">
           <button onClick={onClose} className="text-[12px]"
             style={{ border: "0.5px solid #ECEAE5", borderRadius: 20, padding: "5px 14px", color: "#6B6860" }}>Cancel</button>
-          <button onClick={attach} disabled={!selected || tab === "colors" || tab === "stock"} className="text-[12px] font-semibold"
+          <button onClick={attach} disabled={!selected || tab === "stock"} className="text-[12px] font-semibold"
             style={{
               background: "#E85A46", color: "#fff",
               borderRadius: 20, padding: "5px 14px",
-              opacity: !selected || tab === "colors" || tab === "stock" ? 0.5 : 1,
+              opacity: !selected || tab === "stock" ? 0.5 : 1,
             }}>Attach to post</button>
         </div>
       </div>
