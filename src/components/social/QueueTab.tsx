@@ -636,19 +636,36 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     <Icon size={16} color={meta.color} />
                   </div>
                   {thumb && (
-                    <img
-                      src={thumbUrls[post.id] ?? thumb}
-                      alt=""
-                      className="flex-shrink-0"
-                      style={{
-                        width: 46,
-                        height: 46,
-                        borderRadius: 8,
-                        objectFit: "cover",
-                        border: "1px solid #ECEAE5",
-                        background: "#F0EFEC",
-                      }}
-                    />
+                    thumbUrls[post.id] ? (
+                      <img
+                        src={thumbUrls[post.id]}
+                        alt=""
+                        className="flex-shrink-0"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.visibility = "hidden";
+                        }}
+                        style={{
+                          width: 46,
+                          height: 46,
+                          borderRadius: 8,
+                          objectFit: "cover",
+                          border: "1px solid #ECEAE5",
+                          background: "#F0EFEC",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        className="flex-shrink-0 flex items-center justify-center"
+                        style={{
+                          width: 46, height: 46, borderRadius: 8,
+                          border: "1px solid #ECEAE5", background: "#F0EFEC",
+                          color: "#9A9896",
+                        }}
+                        aria-label="image"
+                      >
+                        <ImageIcon size={16} />
+                      </div>
+                    )
                   )}
                   <div className="flex-1 min-w-0">
                     <div
