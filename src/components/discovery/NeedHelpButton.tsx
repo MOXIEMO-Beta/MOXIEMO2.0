@@ -43,7 +43,7 @@ type Props = {
   currentQuestion: number;
   totalQuestions: number;
   firstName?: string;
-  lane?: "lane1" | "lane2" | null;
+ lane?: "lane1" | "lane2" | "offer_gtm" | null;
 };
 
 export function NeedHelpButton({ currentQuestion, totalQuestions, firstName, lane }: Props) {
@@ -51,7 +51,11 @@ export function NeedHelpButton({ currentQuestion, totalQuestions, firstName, lan
   const isMobile = useIsMobile();
 
   const safeQ = Math.min(Math.max(currentQuestion, 1), totalQuestions);
-  const hintMap = lane === "lane2" ? HINTS_LANE2 : HINTS_LANE1;
+  const hintMap = lane === "offer_gtm"
+    ? {}
+    : lane === "lane2"
+      ? HINTS_LANE2
+      : HINTS_LANE1;
   const hint = hintMap[safeQ];
 
   const mailto = `mailto:hello@buildwithmoxiemo.com?subject=${encodeURIComponent(
