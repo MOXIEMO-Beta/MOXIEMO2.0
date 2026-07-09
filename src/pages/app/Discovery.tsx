@@ -560,6 +560,11 @@ export default function Discovery() {
       if (isComplete) {
         // Lane 3 (offer_gtm) now flows through the same synthesis path as
         // Lane 1 / Lane 2. The strategy synthesizer branches internally.
+        // Brief confirmation beat before the black interstitial so the jump
+        // does not feel abrupt in a live demo.
+        setShowHangTight(true);
+        await new Promise((res) => setTimeout(res, 1800));
+        setShowHangTight(false);
         await synthesize(newHistory);
       }
       lastHistoryRef.current = null;
