@@ -70,7 +70,7 @@ function SaveStatusIndicator() {
 }
 
 function StrategyHeader() {
-  const { editing, setEditing, status, saveNow, strategy, setEnhanced } = useStrategyEditor();
+  const { editing, setEditing, status, saveNow, strategy, setEnhanced, setField } = useStrategyEditor();
   const { user } = useAuth();
   const { reportData } = useReportData();
   const [exporting, setExporting] = useState(false);
@@ -104,6 +104,9 @@ function StrategyHeader() {
         actionPlan: data.actionPlan,
       };
       setEnhanced([], merged);
+      // Idempotency: clear per-task completion so stale ids from a prior plan
+      // don't shadow fresh task rows and the "N of M complete" count is honest.
+      setField("task_completion", {});
       await saveNow();
       toast.success("Execution plan generated", { description: "Content, Channels, Metrics and Action Plan are ready." });
     } catch (e: any) {
