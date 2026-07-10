@@ -32,7 +32,7 @@ export async function sendResendEmail(context: string, payload: ResendPayload) {
   });
 
   const responseText = await response.text();
-  let body: unknown = {};
+  let body: Record<string, unknown> = {};
   try {
     body = responseText ? JSON.parse(responseText) : {};
   } catch {
