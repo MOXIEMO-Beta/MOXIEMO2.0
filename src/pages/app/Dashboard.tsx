@@ -922,7 +922,7 @@ export default function Dashboard() {
                 {focusItems.map((f, i) => (
                   <button
                     key={i}
-                    onClick={() => navigate(f.route)}
+                    onClick={() => (f.onClick ? f.onClick() : navigate(f.route))}
                     className="w-full text-left group flex items-center gap-4 p-4 rounded-xl border border-border hover:border-foreground/30 hover:shadow-soft transition"
                     style={f.urgent ? { borderLeft: `4px solid ${CORAL}` } : undefined}
                   >
