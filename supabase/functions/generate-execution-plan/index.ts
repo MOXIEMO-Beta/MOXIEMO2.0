@@ -145,8 +145,13 @@ function extractTargetDate(strategy: any): string | null {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const tStart = Date.now();
+  let requestId = "unknown";
+  let strategyId = "unknown";
   try {
-    const { strategy } = await req.json();
+    const body = await req.json();
+    const { strategy } = body || {};
+    requestId = typeof body?.requestId === "string" && body.requestId.trim() ? body.requestId.trim() : requestId;
+    strategyId = typeof strategy?.id === "string" && strategy.id.trim() ? strategy.id.trim() : strategyId;
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) throw new Error("LOVABLE_API_KEY missing");
 
@@ -157,6 +162,13 @@ Deno.serve(async (req) => {
     const isLaunch = strategy?.strategy_lane === "offer_gtm";
     const today = todayISO();
     const targetDateIso = isLaunch ? extractTargetDate(strategy) : null;
+    console.log("execution-plan: request start", {
+      requestId,
+      strategyId,
+      isLaunch,
+      hasExistingActionPlan: !!strategy?.enhanced_foundation?.actionPlan,
+      hasExistingMetrics: !!strategy?.enhanced_foundation?.successMetrics,
+    });
     let launchContext = "";
     if (isLaunch) {
       const targetLong = targetDateIso ? longFormDate(targetDateIso) : "";
@@ -191,6 +203,7 @@ Business goal: ${strategy?.business_goal || "—"}
 Today's date: ${today}${launchContext}`;
 
     const tFirst = Date.now();
+    console.log("execution-plan: gateway first-pass dispatch", { requestId, strategyId, isLaunch });
     const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -609,7 +622,7 @@ Today's date: ${today}${launchContext}`;
 
     if (!res.ok) {
       const t = await res.text();
-      console.error("execution-plan error", res.status, t);
+      console.error("execution-plan error", { requestId, strategyId, status: res.status, body: t });
       if (res.status === 429) return new Response(JSON.stringify({ error: "Rate limit reached, try again in a moment." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       if (res.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       return new Response(JSON.stringify({ error: "AI error" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -659,6 +672,8 @@ Today's date: ${today}${launchContext}`;
     if (bad.length > 0) {
       const apPreview = (() => { try { return JSON.stringify(parsed?.actionPlan ?? null).slice(0, 500); } catch { return "(unstringifiable)"; } })();
       console.error("execution-plan: missing week titles/tasks", {
+        requestId,
+        strategyId,
         weeks: bad,
         badTitles,
         badTasks,
@@ -750,10 +765,10 @@ Today's date: ${today}${launchContext}`;
           }
           parsed.actionPlan = merged;
           const stillBad = missingTitles(parsed.actionPlan);
-          if (stillBad.length > 0) console.error("execution-plan: retry still missing titles", stillBad);
+        if (stillBad.length > 0) console.error("execution-plan: retry still missing titles", { requestId, strategyId, stillBad });
         }
       } else {
-        console.error("execution-plan: retry failed", retryRes.status, await retryRes.text());
+        console.error("execution-plan: retry failed", { requestId, strategyId, status: retryRes.status, body: await retryRes.text() });
       }
       console.log(`execution-plan: actionPlan retry ${Date.now() - tApRetry}ms`);
     } else {
@@ -804,7 +819,7 @@ Today's date: ${today}${launchContext}`;
 
     let smMiss = smMissing(parsed?.successMetrics);
     if (smMiss.length > 0) {
-      console.error("execution-plan: missing successMetrics subsections", { missing: smMiss });
+      console.error("execution-plan: missing successMetrics subsections", { requestId, strategyId, missing: smMiss });
       const tSmRetry = Date.now();
       const smRetry = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -954,10 +969,10 @@ Today's date: ${today}${launchContext}`;
             brandHealth: pickBetter(prev.brandHealth, nextSm.brandHealth),
           };
           smMiss = smMissing(parsed.successMetrics);
-          if (smMiss.length > 0) console.error("execution-plan: successMetrics retry still missing", smMiss);
+          if (smMiss.length > 0) console.error("execution-plan: successMetrics retry still missing", { requestId, strategyId, missing: smMiss });
         }
       } else {
-        console.error("execution-plan: successMetrics retry failed", smRetry.status, await smRetry.text());
+        console.error("execution-plan: successMetrics retry failed", { requestId, strategyId, status: smRetry.status, body: await smRetry.text() });
       }
       console.log(`execution-plan: successMetrics retry ${Date.now() - tSmRetry}ms`);
     } else {
@@ -974,10 +989,10 @@ Today's date: ${today}${launchContext}`;
       actionPlanEmpty,
     };
 
-    console.log(`execution-plan: TOTAL ${Date.now() - tStart}ms`);
+    console.log(`execution-plan: TOTAL ${Date.now() - tStart}ms`, { requestId, strategyId });
     return new Response(JSON.stringify(parsed), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
-    console.error("execution-plan: fatal", e instanceof Error ? `${e.message}\n${e.stack}` : String(e));
+    console.error("execution-plan: fatal", { requestId, strategyId, error: e instanceof Error ? `${e.message}\n${e.stack}` : String(e) });
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
