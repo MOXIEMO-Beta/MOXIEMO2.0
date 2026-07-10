@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { sendResendEmail } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,9 +50,6 @@ Deno.serve(async (req) => {
     const typeLabel = labelMap[feedback_type] || feedback_type;
     const timestamp = new Date().toISOString();
 
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY missing");
-
     const subject = `MOXIEMO Feedback — ${typeLabel} from ${userName}`;
     const html = `
       <h2>New MOXIEMO Feedback</h2>
@@ -63,21 +61,12 @@ Deno.serve(async (req) => {
       <p style="white-space:pre-wrap">${String(message).replace(/</g, "&lt;")}</p>
     `;
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "MOXIEMO Feedback <hello@mail.buildwithmoxiemo.com>",
-        to: ["hello@buildwithmoxiemo.com"],
-        reply_to: userEmail !== "anonymous" ? userEmail : undefined,
-        subject,
-        html,
-      }),
+    const { response: res, body: result } = await sendResendEmail("send-feedback-email", {
+      to: ["hello@buildwithmoxiemo.com"],
+      reply_to: userEmail !== "anonymous" ? userEmail : undefined,
+      subject,
+      html,
     });
-    const result = await res.json();
     if (!res.ok) {
       return new Response(JSON.stringify({ error: result?.message ?? "Resend error", details: result }), {
         status: 400,

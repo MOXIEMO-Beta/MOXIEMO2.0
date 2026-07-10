@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { sendResendEmail } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -78,13 +79,7 @@ Deno.serve(async (req) => {
     console.log('From email setting:', from_email);
     console.log('Subject:', subject);
 
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY missing");
-
-    const fromHeader = `${from_name} <hello@mail.buildwithmoxiemo.com>`;
-
     const resendPayload = {
-      from: fromHeader,
       to: subscribers.map((s) => s.email),
       subject,
       html: body.replace(/\n/g, "<br>"),
@@ -92,16 +87,7 @@ Deno.serve(async (req) => {
     };
     console.log('Resend payload:', JSON.stringify(resendPayload));
 
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(resendPayload),
-    });
-
-    const result = await res.json();
+    const { response: res, body: result } = await sendResendEmail("send-email", resendPayload);
     console.log('Resend response status:', res.status);
     console.log('Resend response body:', JSON.stringify(result));
     if (!res.ok) {

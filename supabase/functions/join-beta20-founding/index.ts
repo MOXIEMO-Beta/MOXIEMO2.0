@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendResendEmail } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -85,11 +86,7 @@ serve(async (req) => {
 
       // Confirmation to applicant
       try {
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: "Karee at MOXIE <hello@mail.buildwithmoxiemo.com>",
+        await sendResendEmail("join-beta20-founding applicant", {
             reply_to: "hello@buildwithmoxiemo.com",
             to: [email],
             subject: "You are on the Beta 2.0 founding list.",
@@ -102,7 +99,6 @@ serve(async (req) => {
                 <p style="font-size:15px;line-height:1.6;margin:0;">Karee<br/>Founder, MOXIE</p>
               </div>
             `,
-          }),
         });
       } catch (e) {
         console.error("applicant email failed:", e);
@@ -110,11 +106,7 @@ serve(async (req) => {
 
       // Notify team
       try {
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: "MOXIEMO Beta 2.0 <hello@mail.buildwithmoxiemo.com>",
+        await sendResendEmail("join-beta20-founding admin", {
             to: ["hello@buildwithmoxiemo.com"],
             subject: `New Beta 2.0 Founding signup — ${first} (${tier})`,
             html: `
@@ -133,7 +125,6 @@ serve(async (req) => {
                 </table>
               </div>
             `,
-          }),
         });
       } catch (e) {
         console.error("admin email failed:", e);

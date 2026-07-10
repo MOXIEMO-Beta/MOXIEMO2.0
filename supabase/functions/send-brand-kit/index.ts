@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendResendEmail } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -102,29 +103,20 @@ serve(async (req) => {
     `;
 
     try {
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "MOXIEMO <hello@mail.buildwithmoxiemo.com>",
-          reply_to: "hello@buildwithmoxiemo.com",
-          to: [email],
-          subject,
-          html,
-          attachments: [
-            {
-              filename: "brand-kit.pdf",
-              content: pdfBase64,
-            },
-          ],
-        }),
+      const { response: res } = await sendResendEmail("send-brand-kit", {
+        reply_to: "hello@buildwithmoxiemo.com",
+        to: [email],
+        subject,
+        html,
+        attachments: [
+          {
+            filename: "brand-kit.pdf",
+            content: pdfBase64,
+          },
+        ],
       });
       if (!res.ok) {
-        const txt = await res.text();
-        console.error("Resend error:", res.status, txt);
+        console.error("Resend error:", res.status);
       }
     } catch (e) {
       console.error("Resend send failed:", e);
