@@ -374,6 +374,27 @@ export default function Dashboard() {
   const focusItems = useMemo(() => {
     const items: any[] = [];
 
+    // Lane 3 (offer_gtm) surfaces the strategy's firstMove as the top focus,
+    // pinned until the founder marks it done. Never rendered for other lanes.
+    const ef = strategy?.enhanced_foundation ?? {};
+    const fm = ef?.firstMove ?? null;
+    const isOfferGtm = strategy?.strategy_lane === "offer_gtm";
+    if (isOfferGtm && fm && typeof fm === "object" && fm.copy && !firstMoveDismissed) {
+      const typeLabel = fm.type === "dm" ? "Send DM"
+        : fm.type === "email" ? "Send email"
+        : fm.type === "post" ? "Publish post"
+        : "Make first move";
+      items.push({
+        icon: Rocket,
+        label: typeLabel + " to the warm list",
+        detail: fm.why || "Your launch starts here. Open to see the full message.",
+        action: "Open",
+        route: "/app/strategy",
+        urgent: true,
+        onClick: () => setFirstMoveOpen(true),
+      });
+    }
+
     if (totalDrafts > 0) {
       items.push({
         icon: PenSquare,
@@ -418,7 +439,7 @@ export default function Dashboard() {
       });
     }
     return [...items].sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0)).slice(0, 3);
-  }, [postsScheduledToday, socialPosts, totalDrafts, pillars]);
+  }, [postsScheduledToday, socialPosts, totalDrafts, pillars, strategy, firstMoveDismissed]);
 
   // ---------- quick actions w/ live subtitles ----------
   const lastGeneratedPost = socialPosts[0]?.created_at || contentItems[0]?.created_at || null;
