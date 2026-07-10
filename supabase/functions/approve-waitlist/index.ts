@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendResendEmail } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -41,20 +42,11 @@ serve(async (req) => {
       })
       .eq("id", waitlist_id);
 
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "Karee at MOXIEMO <hello@mail.buildwithmoxiemo.com>",
-        reply_to: "karee@studiosbagency.com",
-        to: [entry.email],
-        subject: "You're in — welcome to MOXIEMO 🎉",
-        html: `
+    const { response: resendResponse, body: resendBody } = await sendResendEmail("approve-waitlist", {
+      reply_to: "karee@studiosbagency.com",
+      to: [entry.email],
+      subject: "You're in — welcome to MOXIEMO 🎉",
+      html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
             <h1 style="font-size: 22px; margin: 0 0 16px;">Welcome to MOXIEMO, ${entry.name}.</h1>
             <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">
@@ -86,8 +78,14 @@ serve(async (req) => {
             </p>
           </div>
         `,
-      }),
     });
+
+    if (!resendResponse.ok) {
+      return new Response(JSON.stringify({ error: "resend_failed", details: resendBody }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

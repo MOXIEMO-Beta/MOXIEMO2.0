@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { sendResendEmail } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,7 +29,6 @@ serve(async (req) => {
       .slice(0, 80);
 
     const resendPayload = {
-      from: "MOXIEMO <hello@mail.buildwithmoxiemo.com>",
       reply_to: "hello@buildwithmoxiemo.com",
       to: [email],
       subject: "Your free brand kit from MOXIEMO",
@@ -52,16 +52,7 @@ serve(async (req) => {
         : [],
     };
 
-    const resendRes = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(resendPayload),
-    });
-
-    const resendData = await resendRes.json().catch(() => ({}));
+    const { response: resendRes, body: resendData } = await sendResendEmail("send-brand-kit-email", resendPayload);
     console.log("[brand-kit-email] Resend status:", resendRes.status);
     console.log("[brand-kit-email] Resend response:", JSON.stringify(resendData));
 

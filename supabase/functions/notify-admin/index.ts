@@ -1,3 +1,5 @@
+import { sendResendEmail } from "../_shared/resend.ts";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -9,15 +11,6 @@ Deno.serve(async (req) => {
   try {
     const { function_name, user_id, status, detail } = await req.json().catch(() => ({}));
     const timestamp = new Date().toISOString();
-    const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      console.error("notify-admin: RESEND_API_KEY missing");
-      return new Response(JSON.stringify({ ok: false }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const subject = "MOXIEMO API Alert — Credits exhausted";
     const text = [
       `Timestamp: ${timestamp}`,
@@ -36,24 +29,15 @@ Deno.serve(async (req) => {
       ${detail ? `<pre>${String(detail).slice(0, 1000)}</pre>` : ""}
     `;
 
-    const resp = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "MOXIEMO Alerts <alerts@buildwithmoxiemo.com>",
-        to: ["hello@buildwithmoxiemo.com"],
-        subject,
-        text,
-        html,
-      }),
+    const { response: resp } = await sendResendEmail("notify-admin", {
+      to: ["hello@buildwithmoxiemo.com"],
+      subject,
+      text,
+      html,
     });
 
     if (!resp.ok) {
-      const t = await resp.text().catch(() => "");
-      console.error("notify-admin resend error", resp.status, t);
+      console.error("notify-admin resend error", resp.status);
     }
 
     return new Response(JSON.stringify({ ok: true }), {

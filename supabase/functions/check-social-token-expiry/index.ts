@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { sendResendEmail } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -84,22 +85,12 @@ Deno.serve(async (req) => {
         </div>`;
 
       if (RESEND_API_KEY) {
-        const res = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${RESEND_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            from: "MOXIEMO <hello@mail.buildwithmoxiemo.com>",
-            to: [email],
-            subject,
-            html,
-          }),
+        const { response: res } = await sendResendEmail("check-social-token-expiry", {
+          to: [email],
+          subject,
+          html,
         });
         if (!res.ok) {
-          const txt = await res.text();
-          console.error("resend send failed", row.id, txt);
           results.push({ id: row.id, error: "resend_failed" });
           continue;
         }

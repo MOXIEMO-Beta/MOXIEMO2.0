@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { sendResendEmail } from "../_shared/resend.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -72,14 +73,7 @@ serve(async (req) => {
 
     // Confirmation email to applicant
     try {
-      const applicantRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "Karee at MOXIE <hello@mail.buildwithmoxiemo.com>",
+      const { response: applicantRes, body: applicantData } = await sendResendEmail("join-waitlist applicant", {
           reply_to: "hello@buildwithmoxiemo.com",
           to: [email],
           subject: `You are on the list - one step left, ${first}.`,
@@ -97,9 +91,7 @@ serve(async (req) => {
               <p style="font-size: 15px; line-height: 1.6; margin: 0;">Karee<br/>Founder, MOXIE<br/><a href="mailto:hello@buildwithmoxiemo.com" style="color:#ff6b6b;">hello@buildwithmoxiemo.com</a></p>
             </div>
           `,
-        }),
       });
-      const applicantData = await applicantRes.json().catch(() => ({}));
       console.log("Applicant email response:", applicantRes.status, JSON.stringify(applicantData));
       if (!applicantRes.ok) {
         console.error("Applicant email failed:", applicantRes.status, JSON.stringify(applicantData));
@@ -110,14 +102,7 @@ serve(async (req) => {
 
     // Notification email to team only — no confirmation to applicant
     try {
-      const adminRes = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: "MOXIEMO Founding <hello@mail.buildwithmoxiemo.com>",
+      const { response: adminRes, body: adminData } = await sendResendEmail("join-waitlist admin", {
           to: ["hello@buildwithmoxiemo.com"],
           subject: `New Founding Member Application — ${first} ${last}`.trim(),
           html: `
@@ -135,9 +120,7 @@ serve(async (req) => {
               </table>
             </div>
           `,
-        }),
       });
-      const adminData = await adminRes.json().catch(() => ({}));
       console.log("Admin email response:", adminRes.status, JSON.stringify(adminData));
       if (!adminRes.ok) {
         console.error("Admin email failed:", adminRes.status, JSON.stringify(adminData));
