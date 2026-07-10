@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { aiErrorMessage } from "@/lib/aiErrors";
@@ -75,15 +76,33 @@ function StrategyHeader() {
   const { reportData } = useReportData();
   const [exporting, setExporting] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const generationInFlightRef = useRef(false);
 
   const ef = (strategy?.enhanced_foundation || {}) as any;
   const hasExecutionPlan = !!(ef.quarterlyThemes?.length || ef.channelStrategy?.primary || ef.successMetrics?.primary || ef.actionPlan?.week1);
 
   const handleGenerate = async () => {
-    if (editing) await saveNow();
-    setGenerating(true);
+    if (generationInFlightRef.current) {
+      console.info("[execution-plan] duplicate click ignored; generation already in flight");
+      return;
+    }
+    generationInFlightRef.current = true;
+    const requestId =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `execution-plan-${Date.now()}`;
+    const startedAt = performance.now();
+    flushSync(() => setGenerating(true));
+    console.info("[execution-plan] click accepted", {
+      requestId,
+      strategyId: strategy?.id,
+      hasExecutionPlan,
+      editing,
+      saveStatus: status,
+    });
     try {
-      const { data, error } = await supabase.functions.invoke("generate-execution-plan", { body: { strategy } });
+      if (editing) await saveNow();
+      const { data, error } = await supabase.functions.invoke("generate-execution-plan", { body: { strategy, requestId } });
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
@@ -162,11 +181,13 @@ function StrategyHeader() {
       setEnhanced([], merged);
       setField("task_completion", {});
       await saveNow();
+      console.info("[execution-plan] completed", { requestId, durationMs: Math.round(performance.now() - startedAt) });
       toast.success("Execution plan generated", { description: "Content, Channels, Metrics and Action Plan are ready." });
     } catch (e: any) {
-      console.error(e);
+      console.error("[execution-plan] failed", { requestId, durationMs: Math.round(performance.now() - startedAt), error: e });
       toast.error("Couldn't generate plan", { description: e?.message || "Try again in a moment." });
     } finally {
+      generationInFlightRef.current = false;
       setGenerating(false);
     }
   };
@@ -206,7 +227,7 @@ function StrategyHeader() {
             style={{ display: "flex", width: "fit-content" }}
           >
             <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-            <span className="text-xs font-medium text-foreground/80">Rebuilding your plan…</span>
+            <span className="text-xs font-medium text-foreground/80">{hasExecutionPlan ? "Rebuilding your plan…" : "Generating your plan…"}</span>
           </div>
           <div
             className="absolute inset-0 -z-10"
@@ -239,7 +260,7 @@ function StrategyHeader() {
         <div className="mt-3"><SaveStatusIndicator /></div>
       </div>
       <div className="flex flex-row flex-nowrap items-center gap-2 shrink-0 whitespace-nowrap">
-        <Button onClick={handleGenerate} size="sm" disabled={generating || !strategy} className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg">
+        <Button onClick={handleGenerate} size="sm" disabled={generating || !strategy} aria-busy={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg">
           {generating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-2 h-3.5 w-3.5" />}
           {generating
             ? (hasExecutionPlan ? "Rebuilding your plan…" : "Generating…")
