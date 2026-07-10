@@ -32,7 +32,12 @@ export async function sendResendEmail(context: string, payload: ResendPayload) {
   });
 
   const responseText = await response.text();
-  const body = responseText ? JSON.parse(responseText) : {};
+  let body: unknown = {};
+  try {
+    body = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    body = { raw: responseText };
+  }
 
   console.log(`[${context}] Resend response status: ${response.status}`);
   if (!response.ok) {
