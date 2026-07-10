@@ -391,18 +391,18 @@ const Calendar = ({ data }: any) => {
   return (
     <SectionPage label="03B · 30-DAY CONTENT CALENDAR" title="Next 30 Days">
       <View style={{ flexDirection: "row", paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: C.rule, marginBottom: 4 }} fixed>
-        <Text style={{ width: 60, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>DATE</Text>
-        <Text style={{ width: 40, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>DAY</Text>
-        <Text style={{ width: 70, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>CHANNEL</Text>
-        <Text style={{ width: 90, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>FORMAT</Text>
+        <Text style={{ width: 58, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>DATE</Text>
+        <Text style={{ width: 34, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>DAY</Text>
+        <Text style={{ width: 130, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>CHANNEL</Text>
+        <Text style={{ width: 80, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>FORMAT</Text>
         <Text style={{ flex: 1, fontSize: 8, color: C.muted, fontFamily: "Helvetica-Bold", letterSpacing: 1 }}>TOPIC</Text>
       </View>
       {entries.map((e, i) => (
         <View key={i} style={{ flexDirection: "row", paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.rule, borderLeftWidth: 2, borderLeftColor: colorFor(e?.type), paddingLeft: 8 }} wrap={false}>
           <Text style={{ width: 58, fontSize: 9, color: C.ink, fontFamily: "Helvetica-Bold" }}>{safe(e.date)}</Text>
-          <Text style={{ width: 40, fontSize: 9, color: C.muted }}>{safe(e.dayName)}</Text>
-          <Text style={{ width: 70, fontSize: 9, color: C.coral, fontFamily: "Helvetica-Bold" }}>{safe(e.channel)}</Text>
-          <Text style={{ width: 90, fontSize: 9, color: C.body }}>{safe(e.type)}</Text>
+          <Text style={{ width: 34, fontSize: 9, color: C.muted }}>{safe(e.dayName)}</Text>
+          <Text style={{ width: 130, fontSize: 9, color: C.coral, fontFamily: "Helvetica-Bold" }}>{safe(e.channel)}</Text>
+          <Text style={{ width: 80, fontSize: 9, color: C.body }}>{safe(e.type)}</Text>
           <Text style={{ flex: 1, fontSize: 9, color: C.body }}>{safe(e.title)}</Text>
         </View>
       ))}
