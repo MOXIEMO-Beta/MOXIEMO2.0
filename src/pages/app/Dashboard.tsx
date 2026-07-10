@@ -170,6 +170,21 @@ export default function Dashboard() {
   } | null>(null);
   const [pageHasData, setPageHasData] = useState<boolean | null>(null);
 
+  // Lane 3 firstMove modal + local dismissal (per user).
+  const [firstMoveOpen, setFirstMoveOpen] = useState(false);
+  const firstMoveKey = user?.id ? `moxiemo:firstMove:dismissed:${user.id}` : null;
+  const [firstMoveDismissed, setFirstMoveDismissed] = useState<boolean>(false);
+  useEffect(() => {
+    if (!firstMoveKey) { setFirstMoveDismissed(false); return; }
+    try { setFirstMoveDismissed(localStorage.getItem(firstMoveKey) === "1"); }
+    catch { setFirstMoveDismissed(false); }
+  }, [firstMoveKey]);
+  const dismissFirstMove = () => {
+    setFirstMoveDismissed(true);
+    setFirstMoveOpen(false);
+    try { if (firstMoveKey) localStorage.setItem(firstMoveKey, "1"); } catch { /* ignore */ }
+  };
+
   useEffect(() => {
     if (!user) return;
     // Reset on user change to prevent prior session data bleeding through.
