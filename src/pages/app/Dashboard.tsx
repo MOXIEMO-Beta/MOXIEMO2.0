@@ -28,6 +28,8 @@ import {
   CheckCircle,
   User as UserIcon,
   BarChart3,
+  Rocket,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGoalDefinitions } from "@/hooks/useGoalDefinitions";
@@ -178,7 +180,7 @@ export default function Dashboard() {
       try {
         const [profileRes, strategyRes, socialPostsRes, contentItemsRes, goalRes, emailSendsRes, socialConnectionsRes, discoveryRes, analyticsRes] = await Promise.all([
           supabase.from("profiles").select("full_name, business_name, role, plan, intended_use").eq("id", user.id).maybeSingle(),
-          supabase.from("strategies").select("positioning_statement, strength_score, success_definition, business_goal, content_pillars, primary_channel, posting_frequency, ideal_client, voice_attributes, enhanced_foundation, created_at").eq("user_id", user.id).maybeSingle(),
+          supabase.from("strategies").select("positioning_statement, strength_score, success_definition, business_goal, content_pillars, primary_channel, posting_frequency, ideal_client, voice_attributes, enhanced_foundation, strategy_lane, created_at").eq("user_id", user.id).maybeSingle(),
           supabase.from("social_posts").select("id, status, platforms, pillar, scheduled_for, published_at, content_by_platform, topic, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
           supabase.from("content_items").select("id, status, platform, topic, body, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
           supabase.from("goal_entries").select("*").eq("user_id", user.id).order("week_of", { ascending: false }).limit(24),
