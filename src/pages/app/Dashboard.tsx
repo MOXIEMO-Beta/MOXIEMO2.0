@@ -614,6 +614,7 @@ export default function Dashboard() {
   }));
 
   return (
+    <>
     <div
       className="w-full px-6 lg:px-10 py-10 space-y-10 dashboard-skin"
       style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif", background: PAPER, minHeight: "100vh" }}
