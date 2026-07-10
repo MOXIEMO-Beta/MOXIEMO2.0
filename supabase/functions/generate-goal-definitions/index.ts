@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
 
     const { data: strategy } = await admin
       .from("strategies")
-      .select("id, business_goal, success_definition, transformation, ideal_client, positioning_statement, enhanced_foundation")
+      .select("id, business_goal, success_definition, transformation, ideal_client, positioning_statement, enhanced_foundation, strategy_lane")
       .eq("user_id", user.id)
       .maybeSingle();
 
@@ -105,6 +105,8 @@ Deno.serve(async (req) => {
       });
     }
 
+    const isOfferGtm = strategy.strategy_lane === "offer_gtm";
+    const ef = (strategy.enhanced_foundation ?? {}) as any;
     const payload = {
       business_goal: strategy.business_goal ?? null,
       success_definition: strategy.success_definition ?? null,
@@ -112,7 +114,34 @@ Deno.serve(async (req) => {
       ideal_client: strategy.ideal_client ?? null,
       positioning_statement: strategy.positioning_statement ?? null,
       enhanced_foundation: strategy.enhanced_foundation ?? null,
+      strategy_lane: strategy.strategy_lane ?? null,
+      // Explicit surfacing for the Lane 3 (offer launch) branch: the prompt
+      // must produce a launch-shaped goal set, not brand-shaped defaults.
+      offer_gtm: isOfferGtm ? {
+        offerPositioning: ef.offerPositioning ?? null,
+        firstMove: ef.firstMove ?? null,
+        launchMessaging: ef.launchMessaging ?? null,
+        channelPlan: ef.channelPlan ?? null,
+      } : null,
     };
+
+    const laneGuidance = isOfferGtm
+      ? `\n\nLANE OVERRIDE, strategy_lane = "offer_gtm":\n` +
+        `This founder is running a specific offer launch, not building brand equity.\n` +
+        `- North Star MUST be a single sell-N-by-date outcome for THIS offer, e.g.\n` +
+        `  "Sell 15 retreat seats by September 30, 2026". Pull the number, unit and\n` +
+        `  deadline from offer_gtm.offerPositioning / offer_gtm.firstMove /\n` +
+        `  business_goal. metric_key should reflect the offer unit (seats_sold,\n` +
+        `  deposits, spots_filled, revenue). Never use followers, subscribers, or\n` +
+        `  brand-shaped units here.\n` +
+        `- The 4 SMART cards MUST be launch-shaped: sales booked, deposits taken,\n` +
+        `  discovery calls held, warm-list conversations, conversion rate on the\n` +
+        `  launch channel, revenue against target. Never brand-shaped defaults\n` +
+        `  like "build authority", "grow following", or "post consistency" unless\n` +
+        `  the strategy itself names them as the launch mechanism.\n` +
+        `- tracked_by should mostly be "self" for offer launches (revenue, seats,\n` +
+        `  deposits, calls) unless the metric is content emitted by MOXIEMO.\n`
+      : "";
 
     const resp = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -124,7 +153,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "claude-sonnet-4-5-20250929",
         max_tokens: 2000,
-        system: SYSTEM,
+        system: SYSTEM + laneGuidance,
         messages: [{ role: "user", content: JSON.stringify(payload) }],
       }),
     });
