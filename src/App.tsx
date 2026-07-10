@@ -54,6 +54,7 @@ import Media from "./pages/app/Media.tsx";
 import Email from "./pages/app/Email.tsx";
 import BrandHub from "./pages/app/BrandHub.tsx";
 import WaitlistAdmin from "./pages/app/WaitlistAdmin.tsx";
+import PostForMeProbe from "./pages/app/PostForMeProbe.tsx";
 import Onboarding from "./pages/onboarding/Onboarding.tsx";
 import Shared from "./pages/Shared.tsx";
 import { AuthProvider } from "./hooks/useAuth.tsx";
@@ -134,6 +135,7 @@ const App = () => (
               <Route path="media" element={<ErrorBoundary><Media /></ErrorBoundary>} />
               <Route path="brand-hub" element={<ErrorBoundary><BrandHub /></ErrorBoundary>} />
               <Route path="admin/waitlist" element={<ErrorBoundary><WaitlistAdmin /></ErrorBoundary>} />
+              <Route path="admin/postforme-probe" element={<ErrorBoundary><PostForMeProbe /></ErrorBoundary>} />
             </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

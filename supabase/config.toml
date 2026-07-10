@@ -21,3 +21,5 @@ project_id = "mqhipuvkdsvapbhrrzjd"
     verify_jwt = false
   [functions.generate-brand-kit]
     verify_jwt = false
+  [functions.postforme-probe]
+    verify_jwt = true
