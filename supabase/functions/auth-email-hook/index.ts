@@ -3,7 +3,6 @@ import { renderAsync } from 'npm:@react-email/components@0.0.22'
 import { parseEmailWebhookPayload } from 'npm:@lovable.dev/email-js'
 import { WebhookError, verifyWebhookRequest } from 'npm:@lovable.dev/webhooks-js'
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { getResendFrom } from '../_shared/resend.ts'
 import { SignupEmail } from '../_shared/email-templates/signup.tsx'
 import { InviteEmail } from '../_shared/email-templates/invite.tsx'
 import { MagicLinkEmail } from '../_shared/email-templates/magic-link.tsx'
@@ -243,7 +242,11 @@ async function handleWebhook(req: Request): Promise<Response> {
   )
 
   const messageId = crypto.randomUUID()
-  const fromAddress = getResendFrom('auth-email-hook')
+  // Auth emails go through Lovable's managed email queue, which requires the
+  // from-address domain to match SENDER_DOMAIN (the Lovable-provisioned
+  // subdomain). Do NOT use RESEND_FROM here — that address lives on the
+  // Resend-verified domain and causes sender_domain_mismatch → DLQ.
+  const fromAddress = `MOXIEMO <hello@${SENDER_DOMAIN}>`
 
   // Log pending BEFORE enqueue so we have a record even if enqueue crashes
   await supabase.from('email_send_log').insert({
