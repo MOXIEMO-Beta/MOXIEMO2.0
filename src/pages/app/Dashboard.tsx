@@ -1109,6 +1109,91 @@ export default function Dashboard() {
         </div>
       </section>
     </div>
+    {firstMoveOpen && strategy?.enhanced_foundation?.firstMove ? (
+      <FirstMoveModal
+        firstMove={strategy.enhanced_foundation.firstMove}
+        onClose={() => setFirstMoveOpen(false)}
+        onDone={dismissFirstMove}
+      />
+    ) : null}
+    </>
+  );
+}
+
+function FirstMoveModal({
+  firstMove,
+  onClose,
+  onDone,
+}: {
+  firstMove: any;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const typeLabel = firstMove.type === "dm" ? "Direct message"
+    : firstMove.type === "email" ? "Email"
+    : firstMove.type === "post" ? "Post"
+    : "First move";
+  const copy = String(firstMove.copy ?? "").trim();
+  const audience = String(firstMove.audience ?? "").trim();
+  const why = String(firstMove.why ?? "").trim();
+  const [copied, setCopied] = useState(false);
+  const doCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(copy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* ignore */ }
+  };
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(14,15,16,0.55)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl rounded-2xl bg-background p-7 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">First move</div>
+            <h3 className="font-display text-2xl tracking-[-0.02em]">{typeLabel}</h3>
+          </div>
+          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground" aria-label="Close">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {audience ? (
+          <div className="mb-4">
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Send to</div>
+            <div className="text-sm">{audience}</div>
+          </div>
+        ) : null}
+        {copy ? (
+          <div className="mb-4">
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Message</div>
+            <div
+              className="text-sm whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-4 leading-relaxed"
+              style={{ maxHeight: 320, overflowY: "auto" }}
+            >
+              {copy}
+            </div>
+          </div>
+        ) : null}
+        {why ? (
+          <div className="mb-5">
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Why this first</div>
+            <div className="text-sm text-muted-foreground">{why}</div>
+          </div>
+        ) : null}
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={doCopy}>{copied ? "Copied" : "Copy message"}</Button>
+          <Button size="sm" onClick={onDone} style={{ background: "#E85A46" }}>Mark as sent</Button>
+        </div>
+      </div>
+    </div>
   );
 }
 
