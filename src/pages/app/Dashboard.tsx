@@ -28,6 +28,8 @@ import {
   CheckCircle,
   User as UserIcon,
   BarChart3,
+  Rocket,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useGoalDefinitions } from "@/hooks/useGoalDefinitions";
@@ -168,6 +170,21 @@ export default function Dashboard() {
   } | null>(null);
   const [pageHasData, setPageHasData] = useState<boolean | null>(null);
 
+  // Lane 3 firstMove modal + local dismissal (per user).
+  const [firstMoveOpen, setFirstMoveOpen] = useState(false);
+  const firstMoveKey = user?.id ? `moxiemo:firstMove:dismissed:${user.id}` : null;
+  const [firstMoveDismissed, setFirstMoveDismissed] = useState<boolean>(false);
+  useEffect(() => {
+    if (!firstMoveKey) { setFirstMoveDismissed(false); return; }
+    try { setFirstMoveDismissed(localStorage.getItem(firstMoveKey) === "1"); }
+    catch { setFirstMoveDismissed(false); }
+  }, [firstMoveKey]);
+  const dismissFirstMove = () => {
+    setFirstMoveDismissed(true);
+    setFirstMoveOpen(false);
+    try { if (firstMoveKey) localStorage.setItem(firstMoveKey, "1"); } catch { /* ignore */ }
+  };
+
   useEffect(() => {
     if (!user) return;
     // Reset on user change to prevent prior session data bleeding through.
@@ -178,7 +195,7 @@ export default function Dashboard() {
       try {
         const [profileRes, strategyRes, socialPostsRes, contentItemsRes, goalRes, emailSendsRes, socialConnectionsRes, discoveryRes, analyticsRes] = await Promise.all([
           supabase.from("profiles").select("full_name, business_name, role, plan, intended_use").eq("id", user.id).maybeSingle(),
-          supabase.from("strategies").select("positioning_statement, strength_score, success_definition, business_goal, content_pillars, primary_channel, posting_frequency, ideal_client, voice_attributes, enhanced_foundation, created_at").eq("user_id", user.id).maybeSingle(),
+          supabase.from("strategies").select("positioning_statement, strength_score, success_definition, business_goal, content_pillars, primary_channel, posting_frequency, ideal_client, voice_attributes, enhanced_foundation, strategy_lane, created_at").eq("user_id", user.id).maybeSingle(),
           supabase.from("social_posts").select("id, status, platforms, pillar, scheduled_for, published_at, content_by_platform, topic, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
           supabase.from("content_items").select("id, status, platform, topic, body, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
           supabase.from("goal_entries").select("*").eq("user_id", user.id).order("week_of", { ascending: false }).limit(24),
@@ -372,6 +389,27 @@ export default function Dashboard() {
   const focusItems = useMemo(() => {
     const items: any[] = [];
 
+    // Lane 3 (offer_gtm) surfaces the strategy's firstMove as the top focus,
+    // pinned until the founder marks it done. Never rendered for other lanes.
+    const ef = strategy?.enhanced_foundation ?? {};
+    const fm = ef?.firstMove ?? null;
+    const isOfferGtm = strategy?.strategy_lane === "offer_gtm";
+    if (isOfferGtm && fm && typeof fm === "object" && fm.copy && !firstMoveDismissed) {
+      const typeLabel = fm.type === "dm" ? "Send DM"
+        : fm.type === "email" ? "Send email"
+        : fm.type === "post" ? "Publish post"
+        : "Make first move";
+      items.push({
+        icon: Rocket,
+        label: typeLabel + " to the warm list",
+        detail: fm.why || "Your launch starts here. Open to see the full message.",
+        action: "Open",
+        route: "/app/strategy",
+        urgent: true,
+        onClick: () => setFirstMoveOpen(true),
+      });
+    }
+
     if (totalDrafts > 0) {
       items.push({
         icon: PenSquare,
@@ -416,7 +454,7 @@ export default function Dashboard() {
       });
     }
     return [...items].sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0)).slice(0, 3);
-  }, [postsScheduledToday, socialPosts, totalDrafts, pillars]);
+  }, [postsScheduledToday, socialPosts, totalDrafts, pillars, strategy, firstMoveDismissed]);
 
   // ---------- quick actions w/ live subtitles ----------
   const lastGeneratedPost = socialPosts[0]?.created_at || contentItems[0]?.created_at || null;
@@ -576,6 +614,7 @@ export default function Dashboard() {
   }));
 
   return (
+    <>
     <div
       className="w-full px-6 lg:px-10 py-10 space-y-10 dashboard-skin"
       style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif", background: PAPER, minHeight: "100vh" }}
@@ -884,7 +923,7 @@ export default function Dashboard() {
                 {focusItems.map((f, i) => (
                   <button
                     key={i}
-                    onClick={() => navigate(f.route)}
+                    onClick={() => (f.onClick ? f.onClick() : navigate(f.route))}
                     className="w-full text-left group flex items-center gap-4 p-4 rounded-xl border border-border hover:border-foreground/30 hover:shadow-soft transition"
                     style={f.urgent ? { borderLeft: `4px solid ${CORAL}` } : undefined}
                   >
@@ -1070,6 +1109,91 @@ export default function Dashboard() {
           </Card>
         </div>
       </section>
+    </div>
+    {firstMoveOpen && strategy?.enhanced_foundation?.firstMove ? (
+      <FirstMoveModal
+        firstMove={strategy.enhanced_foundation.firstMove}
+        onClose={() => setFirstMoveOpen(false)}
+        onDone={dismissFirstMove}
+      />
+    ) : null}
+    </>
+  );
+}
+
+function FirstMoveModal({
+  firstMove,
+  onClose,
+  onDone,
+}: {
+  firstMove: any;
+  onClose: () => void;
+  onDone: () => void;
+}) {
+  const typeLabel = firstMove.type === "dm" ? "Direct message"
+    : firstMove.type === "email" ? "Email"
+    : firstMove.type === "post" ? "Post"
+    : "First move";
+  const copy = String(firstMove.copy ?? "").trim();
+  const audience = String(firstMove.audience ?? "").trim();
+  const why = String(firstMove.why ?? "").trim();
+  const [copied, setCopied] = useState(false);
+  const doCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(copy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch { /* ignore */ }
+  };
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "rgba(14,15,16,0.55)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-xl rounded-2xl bg-background p-7 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">First move</div>
+            <h3 className="font-display text-2xl tracking-[-0.02em]">{typeLabel}</h3>
+          </div>
+          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground" aria-label="Close">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        {audience ? (
+          <div className="mb-4">
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Send to</div>
+            <div className="text-sm">{audience}</div>
+          </div>
+        ) : null}
+        {copy ? (
+          <div className="mb-4">
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Message</div>
+            <div
+              className="text-sm whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-4 leading-relaxed"
+              style={{ maxHeight: 320, overflowY: "auto" }}
+            >
+              {copy}
+            </div>
+          </div>
+        ) : null}
+        {why ? (
+          <div className="mb-5">
+            <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Why this first</div>
+            <div className="text-sm text-muted-foreground">{why}</div>
+          </div>
+        ) : null}
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={doCopy}>{copied ? "Copied" : "Copy message"}</Button>
+          <Button size="sm" onClick={onDone} style={{ background: "#E85A46" }}>Mark as sent</Button>
+        </div>
+      </div>
     </div>
   );
 }

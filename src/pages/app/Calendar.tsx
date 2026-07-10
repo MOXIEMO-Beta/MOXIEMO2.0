@@ -7,6 +7,7 @@ import CampaignCalendarTab from "@/components/calendar/CampaignCalendarTab";
 import CampaignsTab from "@/components/calendar/CampaignsTab";
 import IdeasTab from "@/components/calendar/IdeasTab";
 import StartCampaignTab, { CampaignWizardModal } from "@/components/calendar/StartCampaignTab";
+import { seedLaunchCampaign } from "@/lib/seedLaunchCampaign";
 
 const TABS = ["start", "schedule", "campaigns", "ideas"] as const;
 type TabKey = (typeof TABS)[number];
@@ -74,6 +75,22 @@ export default function CalendarPage() {
   }, [user]);
 
   useEffect(() => { void refresh(); }, [refresh]);
+
+  // Lane 3 seed: once per strategy, insert a launch campaign + execution items.
+  // Guarded by enhanced_foundation.launchCampaignSeeded inside the helper.
+  useEffect(() => {
+    if (!user || !strategy) return;
+    if (strategy.strategy_lane !== "offer_gtm") return;
+    if (strategy.enhanced_foundation?.launchCampaignSeeded === true) return;
+    let cancelled = false;
+    (async () => {
+      const res = await seedLaunchCampaign(strategy, user.id);
+      if (!cancelled && res.seeded) {
+        void refresh();
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, strategy, refresh]);
 
   const activeCampaigns = useMemo(
     () => (campaigns ?? []).filter((c: any) => !c?.archived),

@@ -290,7 +290,10 @@ function buildCalendar(s: any) {
     return src.map((e: any) => ({
       date:    e.date,
       dayName: e.dayName ?? e.day ?? getDayName(e.date),
-      channel: shortChannel(e.channel ?? s.primary_channel) ?? 'LinkedIn',
+      // Guard: render the calendar Channel cell verbatim from the stored
+      // channel/platform value. Never compose or clip; the strategy view and
+      // its PDF must show the full channelPlan channel name as authored.
+      channel: pickString(e.channel, e.platform, s.primary_channel) ?? 'LinkedIn',
       type:    e.contentType ?? e.type ?? 'Text Post',
       title:   pickString(e.title, e.topic, e.name, e.text) ?? '',
       pillar:  e.pillar ?? e.theme ?? '',
