@@ -11,6 +11,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 type ChannelPlanChannel = { name?: string; cadence?: string; note?: string };
 
+// Module-level in-flight lock. Prevents duplicate inserts when the Calendar
+// effect re-fires (StrictMode double-invoke, strategy state changes from
+// refresh(), tab remounts) before the DB guard round-trip completes.
+const inFlight = new Set<string>();
+
 function normalizeChannelName(raw: any): string {
   const s = typeof raw === "string" ? raw : raw?.name ?? "";
   const low = String(s).toLowerCase();
@@ -33,11 +38,49 @@ function toISODate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+function deriveOfferName(ef: any, strategy: any): string {
+  const candidates: any[] = [
+    ef?.offerPositioning?.offerName,
+    ef?.offerPositioning?.name,
+    ef?.offerName,
+    ef?.launchMessaging?.offerName,
+  ];
+  for (const c of candidates) {
+    const s = typeof c === "string" ? c.trim() : "";
+    if (s) return s;
+  }
+  // Extract a short noun phrase from offerPositioning.offer: text before " that "
+  const offer = typeof ef?.offerPositioning?.offer === "string" ? ef.offerPositioning.offer.trim() : "";
+  if (offer) {
+    const head = offer.split(/\s+that\s+/i)[0]?.replace(/^A\s+|^An\s+|^The\s+/i, "").trim();
+    if (head && head.length <= 80) return head;
+  }
+  const goal = typeof strategy?.business_goal === "string" ? strategy.business_goal.trim() : "";
+  if (goal) return goal.split(/[.,]/)[0].slice(0, 80);
+  return "Offer";
+}
+
 export async function seedLaunchCampaign(strategy: any, userId: string): Promise<{ seeded: boolean; reason?: string; campaignId?: string }> {
   if (!strategy || !userId) return { seeded: false, reason: "missing_inputs" };
   if (strategy.strategy_lane !== "offer_gtm") return { seeded: false, reason: "wrong_lane" };
   const ef = (strategy.enhanced_foundation ?? {}) as any;
   if (ef.launchCampaignSeeded === true) return { seeded: false, reason: "already_seeded" };
+
+  // Module-level lock: block concurrent invocations for the same user.
+  if (inFlight.has(userId)) return { seeded: false, reason: "in_flight" };
+  inFlight.add(userId);
+  try {
+
+  // DB-level guard: re-read the strategy under the lock. If another tab or an
+  // earlier invocation already seeded, bail before inserting.
+  const { data: fresh } = await supabase
+    .from("strategies")
+    .select("id, enhanced_foundation")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const freshEf = ((fresh?.enhanced_foundation as any) ?? {}) as any;
+  if (freshEf.launchCampaignSeeded === true) return { seeded: false, reason: "already_seeded_fresh" };
+  const strategyRowId = fresh?.id;
 
   const channelPlan = ef.channelPlan ?? {};
   const rawChannels: ChannelPlanChannel[] = Array.isArray(channelPlan?.channels) ? channelPlan.channels : [];
@@ -47,7 +90,7 @@ export async function seedLaunchCampaign(strategy: any, userId: string): Promise
   const uniqueChannels = Array.from(new Set(channelNames));
 
   const firstMove = ef.firstMove ?? null;
-  const offerName = (ef.offerPositioning?.offerName ?? ef.offerPositioning?.name ?? "Launch").toString().trim() || "Launch";
+  const offerName = deriveOfferName(ef, strategy);
   const successTarget = (ef.successTarget ?? strategy.business_goal ?? "").toString().trim();
 
   const today = new Date();
@@ -130,17 +173,23 @@ export async function seedLaunchCampaign(strategy: any, userId: string): Promise
 
   const { error: itemsErr } = await supabase.from("campaign_execution_items").insert(items);
   if (itemsErr) {
-    console.error("[seedLaunchCampaign] items insert failed", itemsErr);
-    // Leave the campaign row in place; user can still work with it.
+    // Atomic rollback: delete the campaign row so a partial seed does not
+    // masquerade as success. Do NOT flip the guard flag; the effect will retry.
+    console.error("[seedLaunchCampaign] items insert failed, rolling back campaign", itemsErr);
+    await supabase.from("campaigns").delete().eq("id", campaign.id);
+    return { seeded: false, reason: "items_insert_failed" };
   }
 
-  // Flip the guard so this never re-seeds.
+  // Flip the guard ONLY after both the campaign and its execution items land.
   const nextEf = { ...ef, launchCampaignSeeded: true, launchCampaignSeededAt: new Date().toISOString(), launchCampaignId: campaign.id };
-  const { error: efErr } = await supabase
-    .from("strategies")
-    .update({ enhanced_foundation: nextEf })
-    .eq("user_id", userId);
+  const guardUpdate = strategyRowId
+    ? supabase.from("strategies").update({ enhanced_foundation: nextEf }).eq("id", strategyRowId)
+    : supabase.from("strategies").update({ enhanced_foundation: nextEf }).eq("user_id", userId);
+  const { error: efErr } = await guardUpdate;
   if (efErr) console.error("[seedLaunchCampaign] guard update failed", efErr);
 
   return { seeded: true, campaignId: campaign.id };
+  } finally {
+    inFlight.delete(userId);
+  }
 }
