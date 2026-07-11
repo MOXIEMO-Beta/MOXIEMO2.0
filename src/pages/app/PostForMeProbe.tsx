@@ -19,6 +19,9 @@ export default function PostForMeProbe() {
   const [busy, setBusy] = useState<string | null>(null);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<any>(null);
+  const [testError, setTestError] = useState<string | null>(null);
+  const [polling, setPolling] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -43,6 +46,91 @@ export default function PostForMeProbe() {
       }
     } catch (e: any) {
       setError(e?.message ?? String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const FB_ACCOUNT = "spc_wQsqGsfdg68looIEPfwt";
+  const IG_ACCOUNT = "spc_zk30FSe9XU8iqTcEi6vW";
+  const CAPTION = "MOXIEMO integration test, please ignore";
+
+  const extractPostId = (body: any): string | null => {
+    if (!body || typeof body !== "object") return null;
+    return body.id ?? body.post_id ?? body.data?.id ?? null;
+  };
+
+  const extractStatus = (body: any): string | null => {
+    if (!body || typeof body !== "object") return null;
+    return body.status ?? body.data?.status ?? null;
+  };
+
+  const pollStatus = async (id: string) => {
+    setPolling(true);
+    try {
+      for (let i = 0; i < 12; i++) {
+        await new Promise((r) => setTimeout(r, 2500));
+        const { data, error } = await supabase.functions.invoke("postforme-probe", {
+          body: { action: "get_post", id },
+        });
+        if (error) { setTestError(error.message); break; }
+        setTestResult(data);
+        const s = extractStatus((data as any)?.body);
+        if (s && !["pending", "processing", "queued", "scheduled"].includes(String(s).toLowerCase())) break;
+      }
+    } finally {
+      setPolling(false);
+    }
+  };
+
+  const testPost = async (platform: "facebook" | "instagram") => {
+    const label = `test-${platform}`;
+    setBusy(label);
+    setTestError(null);
+    setTestResult(null);
+    try {
+      const payload: Record<string, unknown> = {
+        action: "post",
+        caption: CAPTION,
+        social_accounts: [platform === "facebook" ? FB_ACCOUNT : IG_ACCOUNT],
+      };
+
+      if (platform === "instagram") {
+        // IG requires media. Pick most recent public image asset for this admin.
+        const { data: userRes } = await supabase.auth.getUser();
+        const uid = userRes.user?.id;
+        if (!uid) throw new Error("Not signed in");
+        const { data: assets, error: aErr } = await supabase
+          .from("assets")
+          .select("id, url, file_type, uploaded_at")
+          .eq("user_id", uid)
+          .order("uploaded_at", { ascending: false })
+          .limit(20);
+        if (aErr) throw aErr;
+        const img = (assets ?? []).find(
+          (a: any) =>
+            (!a.file_type || String(a.file_type).startsWith("image/")) &&
+            typeof a.url === "string" &&
+            /^https?:\/\//i.test(a.url),
+        );
+        if (!img) {
+          throw new Error(
+            "No public image asset found in Media Library. Upload an image first.",
+          );
+        }
+        payload.media = [{ url: (img as any).url }];
+      }
+
+      const { data, error } = await supabase.functions.invoke("postforme-probe", { body: payload });
+      if (error) throw error;
+      setTestResult(data);
+      const id = extractPostId((data as any)?.body);
+      const status = extractStatus((data as any)?.body);
+      if (id && (!status || ["pending", "processing", "queued", "scheduled"].includes(String(status).toLowerCase()))) {
+        void pollStatus(id);
+      }
+    } catch (e: any) {
+      setTestError(e?.message ?? String(e));
     } finally {
       setBusy(null);
     }
@@ -79,6 +167,45 @@ export default function PostForMeProbe() {
           <pre className="text-xs whitespace-pre-wrap overflow-auto">{JSON.stringify(result, null, 2)}</pre>
         </Card>
       )}
+
+      <Card className="p-4 space-y-3 border-dashed">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">
+            TEMP — remove after verification
+          </div>
+          <h2 className="text-base font-semibold mt-1">Send test post</h2>
+          <p className="text-xs text-muted-foreground">
+            Fires a single live post through Post for Me. Caption: "{CAPTION}".
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button disabled={!!busy} onClick={() => testPost("facebook")}>
+            {busy === "test-facebook" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Test Facebook post"}
+          </Button>
+          <Button disabled={!!busy} onClick={() => testPost("instagram")}>
+            {busy === "test-instagram" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Test Instagram post"}
+          </Button>
+          {polling && (
+            <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              <Loader2 className="h-3 w-3 animate-spin" /> Polling status…
+            </span>
+          )}
+        </div>
+        {testError && (
+          <div className="text-sm text-destructive border border-destructive/40 rounded p-2">{testError}</div>
+        )}
+        {testResult && (
+          <div className="space-y-1">
+            <div className="text-xs text-muted-foreground">
+              post id: <span className="font-mono">{extractPostId((testResult as any)?.body) ?? "—"}</span>
+              {"  ·  "}status: <span className="font-mono">{extractStatus((testResult as any)?.body) ?? "—"}</span>
+            </div>
+            <pre className="text-xs whitespace-pre-wrap overflow-auto bg-muted p-2 rounded">
+              {JSON.stringify(testResult, null, 2)}
+            </pre>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
