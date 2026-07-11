@@ -93,7 +93,42 @@ Deno.serve(async (req) => {
       return json(200, { count: summary.length, accounts: summary, raw: parsed });
     }
 
-    return json(400, { error: "unknown action", allowed: ["auth_url", "list"] });
+    if (action === "post") {
+      const caption = (body?.caption as string | undefined) ?? "MOXIEMO integration test, please ignore";
+      const socialAccounts = body?.social_accounts as string[] | undefined;
+      const media = body?.media as Array<{ url: string }> | undefined;
+      if (!Array.isArray(socialAccounts) || socialAccounts.length === 0) {
+        return json(400, { error: "social_accounts required" });
+      }
+      const payload: Record<string, unknown> = {
+        caption,
+        social_accounts: socialAccounts,
+      };
+      if (media && media.length) payload.media = media;
+      const r = await fetch(`${PFM_BASE}/v1/social-posts`, {
+        method: "POST",
+        headers: pfmHeaders,
+        body: JSON.stringify(payload),
+      });
+      const text = await r.text();
+      console.log("[postforme-probe] post", r.status, text);
+      let parsed: unknown = text;
+      try { parsed = JSON.parse(text); } catch { /* keep text */ }
+      return json(r.ok ? 200 : r.status, { ok: r.ok, status: r.status, body: parsed });
+    }
+
+    if (action === "get_post") {
+      const id = body?.id as string | undefined;
+      if (!id) return json(400, { error: "id required" });
+      const r = await fetch(`${PFM_BASE}/v1/social-posts/${encodeURIComponent(id)}`, { headers: pfmHeaders });
+      const text = await r.text();
+      console.log("[postforme-probe] get_post", id, r.status, text);
+      let parsed: unknown = text;
+      try { parsed = JSON.parse(text); } catch { /* keep text */ }
+      return json(r.ok ? 200 : r.status, { ok: r.ok, status: r.status, body: parsed });
+    }
+
+    return json(400, { error: "unknown action", allowed: ["auth_url", "list", "post", "get_post"] });
   } catch (err) {
     console.error("[postforme-probe] error", err);
     return json(500, { error: (err as Error).message });
