@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,15 +78,21 @@ export default function CalendarPage() {
 
   // Lane 3 seed: once per strategy, insert a launch campaign + execution items.
   // Guarded by enhanced_foundation.launchCampaignSeeded inside the helper.
+  const seedRanRef = useRef(false);
   useEffect(() => {
     if (!user || !strategy) return;
     if (strategy.strategy_lane !== "offer_gtm") return;
     if (strategy.enhanced_foundation?.launchCampaignSeeded === true) return;
+    if (seedRanRef.current) return;
+    seedRanRef.current = true;
     let cancelled = false;
     (async () => {
       const res = await seedLaunchCampaign(strategy, user.id);
       if (!cancelled && res.seeded) {
         void refresh();
+      } else if (!res.seeded && res.reason && res.reason !== "already_seeded" && res.reason !== "already_seeded_fresh" && res.reason !== "in_flight" && res.reason !== "wrong_lane" && res.reason !== "missing_inputs") {
+        // Real failure (insert/rollback). Allow a retry on next mount.
+        seedRanRef.current = false;
       }
     })();
     return () => { cancelled = true; };
