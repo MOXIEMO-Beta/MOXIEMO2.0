@@ -125,6 +125,20 @@ Deno.serve(async (req) => {
       console.log("[postforme-probe] get_post", id, r.status, text);
       let parsed: unknown = text;
       try { parsed = JSON.parse(text); } catch { /* keep text */ }
+      if (r.status === 404) {
+        const r2 = await fetch(`${PFM_BASE}/v1/social-posts?ids=${encodeURIComponent(id)}`, { headers: pfmHeaders });
+        const text2 = await r2.text();
+        console.log("[postforme-probe] get_post fallback", id, r2.status, text2);
+        let parsed2: unknown = text2;
+        try { parsed2 = JSON.parse(text2); } catch { /* keep text */ }
+        return json(r2.ok ? 200 : r2.status, {
+          ok: r2.ok,
+          status: r2.status,
+          body: parsed2,
+          fallback: "list_by_ids",
+          primary: { status: r.status, body: parsed },
+        });
+      }
       return json(r.ok ? 200 : r.status, { ok: r.ok, status: r.status, body: parsed });
     }
 
