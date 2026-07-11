@@ -22,6 +22,9 @@ export default function PostForMeProbe() {
   const [testResult, setTestResult] = useState<any>(null);
   const [testError, setTestError] = useState<string | null>(null);
   const [polling, setPolling] = useState(false);
+  const [statusId, setStatusId] = useState("");
+  const [statusResult, setStatusResult] = useState<any>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -139,6 +142,25 @@ export default function PostForMeProbe() {
   if (isAdmin === null) return <div className="p-6"><Loader2 className="h-4 w-4 animate-spin" /></div>;
   if (!isAdmin) return <div className="p-6 text-sm text-muted-foreground">Admin only.</div>;
 
+  const checkStatus = async () => {
+    const id = statusId.trim();
+    if (!id) return;
+    setBusy("check-status");
+    setStatusError(null);
+    setStatusResult(null);
+    try {
+      const { data, error } = await supabase.functions.invoke("postforme-probe", {
+        body: { action: "get_post", id },
+      });
+      if (error) throw error;
+      setStatusResult(data);
+    } catch (e: any) {
+      setStatusError(e?.message ?? String(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div className="p-6 space-y-4 max-w-3xl">
       <div>
@@ -202,6 +224,44 @@ export default function PostForMeProbe() {
             </div>
             <pre className="text-xs whitespace-pre-wrap overflow-auto bg-muted p-2 rounded">
               {JSON.stringify(testResult, null, 2)}
+            </pre>
+          </div>
+        )}
+      </Card>
+
+      <Card className="p-4 space-y-3 border-dashed">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-wider text-amber-700">
+            TEMP — remove after verification
+          </div>
+          <h2 className="text-base font-semibold mt-1">Check post status</h2>
+          <p className="text-xs text-muted-foreground">Paste a Post for Me post id (sp_...).</p>
+        </div>
+        <div className="flex flex-wrap gap-2 items-center">
+          <input
+            type="text"
+            value={statusId}
+            onChange={(e) => setStatusId(e.target.value)}
+            placeholder="sp_..."
+            className="flex-1 min-w-[280px] font-mono text-xs px-3 py-2 border rounded bg-background"
+          />
+          <Button disabled={!!busy || !statusId.trim()} onClick={checkStatus}>
+            {busy === "check-status" ? <Loader2 className="h-4 w-4 animate-spin" /> : "Check status"}
+          </Button>
+        </div>
+        {statusError && (
+          <div className="text-sm text-destructive border border-destructive/40 rounded p-2">{statusError}</div>
+        )}
+        {statusResult && (
+          <div className="space-y-1">
+            <div className="text-xs text-muted-foreground">
+              status: <span className="font-mono">{extractStatus((statusResult as any)?.body) ?? "—"}</span>
+              {(statusResult as any)?.fallback && (
+                <>{"  ·  "}via <span className="font-mono">{(statusResult as any).fallback}</span></>
+              )}
+            </div>
+            <pre className="text-xs whitespace-pre-wrap overflow-auto bg-muted p-2 rounded">
+              {JSON.stringify(statusResult, null, 2)}
             </pre>
           </div>
         )}
