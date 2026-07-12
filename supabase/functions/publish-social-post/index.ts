@@ -259,7 +259,8 @@ async function publishViaPostForMe(args: {
     .maybeSingle();
   if (connErr) return json({ error: connErr.message }, 500);
   if (!conn || !conn.external_account_id) {
-    return json({ error: `no_${platform}_connection` }, 400);
+    const label = platform === "instagram" ? "Instagram" : "Facebook";
+    return json({ error: `${label} is not connected. Connect it in Settings and try again.` }, 400);
   }
 
   const mediaArr = Array.isArray(post.media_urls) ? post.media_urls : [];
