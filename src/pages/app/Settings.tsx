@@ -89,6 +89,98 @@ export default function Settings() {
   const [selectedPending, setSelectedPending] = useState<Record<string, boolean>>({});
   const [savingPending, setSavingPending] = useState(false);
   const [showLinkedInChooser, setShowLinkedInChooser] = useState(false);
+  const [metaConnecting, setMetaConnecting] = useState<null | "facebook" | "instagram">(null);
+  const [metaDisconnecting, setMetaDisconnecting] = useState<null | "facebook" | "instagram">(null);
+  const [metaError, setMetaError] = useState<string | null>(null);
+
+  const facebookConn = connections.find(
+    (c) => c.platform === "facebook" && (c.connection_type ?? "personal") === "personal",
+  );
+  const instagramConn = connections.find(
+    (c) => c.platform === "instagram" && (c.connection_type ?? "personal") === "personal",
+  );
+
+  async function reloadConnections() {
+    if (!user) return;
+    const { data } = await supabase
+      .from("social_connections")
+      .select("id, platform, profile_name, connection_type, organization_id, organization_name, expires_at")
+      .eq("user_id", user.id);
+    setConnections((data ?? []) as any);
+  }
+
+  async function connectMeta(platform: "facebook" | "instagram") {
+    if (!user) return;
+    setMetaError(null);
+    setMetaConnecting(platform);
+    try {
+      const redirect_url =
+        `${window.location.origin}/app/settings?pfm=synced&platform=${platform}#integrations-section`;
+      const { data, error } = await supabase.functions.invoke<any>("postforme-connect", {
+        body: { action: "auth_url", platform, redirect_url },
+      });
+      if (error) {
+        const ctx: any = (error as any).context;
+        let payload: any = null;
+        try { payload = await ctx?.json?.(); } catch {}
+        throw new Error(payload?.error ?? error.message ?? "Could not start connection");
+      }
+      if (data?.error) throw new Error(data.error);
+      if (!data?.url) throw new Error("Connection URL missing.");
+      window.location.href = data.url;
+    } catch (e: any) {
+      setMetaConnecting(null);
+      const msg = e?.message ?? "Could not start connection";
+      setMetaError(msg);
+      toast.error(msg);
+    }
+  }
+
+  async function disconnectMeta(platform: "facebook" | "instagram") {
+    setMetaDisconnecting(platform);
+    try {
+      const { data, error } = await supabase.functions.invoke<any>("postforme-connect", {
+        body: { action: "disconnect", platform },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      await reloadConnections();
+      toast.success("Disconnected");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not disconnect");
+    } finally {
+      setMetaDisconnecting(null);
+    }
+  }
+
+  // Handle the Post for Me redirect: sync spc_ ids to social_connections.
+  useEffect(() => {
+    if (!user) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("pfm") !== "synced") return;
+    const platform = params.get("platform");
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke<any>("postforme-connect", {
+          body: { action: "sync" },
+        });
+        if (error) throw new Error(error.message);
+        if (data?.error) throw new Error(data.error);
+        await reloadConnections();
+        const label = platform === "instagram" ? "Instagram" : platform === "facebook" ? "Facebook" : "Account";
+        const matched = (data?.accounts ?? []).some((a: any) => a.platform === platform);
+        if (matched) toast.success(`${label} connected.`);
+        else toast.message(`${label} connection was not returned by Post for Me. Try connecting again.`);
+      } catch (e: any) {
+        setMetaError(e?.message ?? "Could not finish connection.");
+        toast.error(e?.message ?? "Could not finish connection.");
+      } finally {
+        const cleanUrl = `${window.location.pathname}#integrations-section`;
+        window.history.replaceState({}, "", cleanUrl);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -496,29 +588,97 @@ export default function Settings() {
           </div>
         )}
 
-        <div className="flex items-center justify-between" style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center" style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #833AB4, #FD1D1D, #FCB045)" }}>
-              <Instagram size={18} color="#fff" />
+        {/* Facebook */}
+        <div style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center" style={{ width: 32, height: 32, background: "#E8F0FD", borderRadius: 8 }}>
+                <Facebook size={18} color="#1877F2" />
+              </div>
+              <div>
+                <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>
+                  {facebookConn?.profile_name || "Facebook"}
+                </div>
+                <div className="text-[12px]" style={{ color: "#6B6860" }}>
+                  {facebookConn
+                    ? "Posts publish natively to this Facebook Page."
+                    : "Connect a Facebook Page you administer to publish posts from MOXIEMO."}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>Instagram</div>
-              <div className="text-[11px]" style={{ color: "#9A9896" }}>Available after Meta business verification</div>
+            <div className="flex items-center gap-2">
+              {facebookConn ? (
+                <>
+                  <span className="text-[10px] font-semibold" style={{ background: "#EAF3DE", color: "#3B6D11", borderRadius: 4, padding: "2px 8px" }}>Connected</span>
+                  <button
+                    onClick={() => disconnectMeta("facebook")}
+                    disabled={metaDisconnecting === "facebook"}
+                    className="text-[12px]"
+                    style={{ border: "0.5px solid #ECEAE5", borderRadius: 6, height: 28, padding: "0 12px", color: "#6B6860" }}
+                  >
+                    {metaDisconnecting === "facebook" ? "Disconnecting…" : "Disconnect"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => connectMeta("facebook")}
+                  disabled={metaConnecting === "facebook"}
+                  className="text-[12px] font-semibold"
+                  style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 32, padding: "0 14px", boxShadow: "0 4px 14px rgba(232,90,70,0.25)" }}
+                >
+                  {metaConnecting === "facebook" ? "Connecting…" : "Connect"}
+                </button>
+              )}
             </div>
           </div>
-          <span className="text-[10px] font-semibold" style={{ background: "#FEF3C7", color: "#854F0B", borderRadius: 4, padding: "2px 8px" }}>Pending verification</span>
         </div>
-        <div className="flex items-center justify-between" style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center" style={{ width: 32, height: 32, background: "#E8F0FD", borderRadius: 8 }}>
-              <Facebook size={18} color="#1877F2" />
+
+        {/* Instagram */}
+        <div style={{ background: "#fff", border: "0.5px solid #ECEAE5", borderRadius: 12, padding: "16px 18px", marginBottom: 10 }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center" style={{ width: 32, height: 32, borderRadius: 8, background: "linear-gradient(135deg, #833AB4, #FD1D1D, #FCB045)" }}>
+                <Instagram size={18} color="#fff" />
+              </div>
+              <div>
+                <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>
+                  {instagramConn?.profile_name || "Instagram"}
+                </div>
+                <div className="text-[12px]" style={{ color: "#6B6860" }}>
+                  {instagramConn
+                    ? "Posts publish natively to this Instagram account."
+                    : "Your Instagram account must be a Business or Creator account linked to a Facebook Page you administer."}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="text-[14px] font-semibold" style={{ color: "#0E0F10" }}>Facebook</div>
-              <div className="text-[11px]" style={{ color: "#9A9896" }}>Available after Meta business verification</div>
+            <div className="flex items-center gap-2">
+              {instagramConn ? (
+                <>
+                  <span className="text-[10px] font-semibold" style={{ background: "#EAF3DE", color: "#3B6D11", borderRadius: 4, padding: "2px 8px" }}>Connected</span>
+                  <button
+                    onClick={() => disconnectMeta("instagram")}
+                    disabled={metaDisconnecting === "instagram"}
+                    className="text-[12px]"
+                    style={{ border: "0.5px solid #ECEAE5", borderRadius: 6, height: 28, padding: "0 12px", color: "#6B6860" }}
+                  >
+                    {metaDisconnecting === "instagram" ? "Disconnecting…" : "Disconnect"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => connectMeta("instagram")}
+                  disabled={metaConnecting === "instagram"}
+                  className="text-[12px] font-semibold"
+                  style={{ background: "#E85A46", color: "#fff", borderRadius: 6, height: 32, padding: "0 14px", boxShadow: "0 4px 14px rgba(232,90,70,0.25)" }}
+                >
+                  {metaConnecting === "instagram" ? "Connecting…" : "Connect"}
+                </button>
+              )}
             </div>
           </div>
-          <span className="text-[10px] font-semibold" style={{ background: "#FEF3C7", color: "#854F0B", borderRadius: 4, padding: "2px 8px" }}>Pending verification</span>
+          {metaError && metaConnecting === null && (
+            <div className="mt-2 text-[12px]" style={{ color: "#8A2C1D" }}>{metaError}</div>
+          )}
         </div>
         <LinkedInAnalyticsProbe />
       </div>
