@@ -27,3 +27,5 @@ project_id = "mqhipuvkdsvapbhrrzjd"
     verify_jwt = true
   [functions.postforme-webhook]
     verify_jwt = false
+  [functions.pfm-register-oneshot]
+    verify_jwt = false
