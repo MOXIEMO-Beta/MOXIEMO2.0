@@ -90,12 +90,14 @@ Deno.serve(async (req) => {
         external_id: externalIdFor(userId),
         permissions: ["posts"],
       };
-      // Post for Me requires connection_type for Instagram. We want Business/
-      // Creator Instagram accounts linked to a Facebook Page, which uses the
-      // "facebook" (Login with Facebook) connection type. Facebook itself does
+      // Post for Me requires connection_type inside platform_data.instagram.
+      // We want Business or Creator Instagram accounts linked to a Facebook
+      // Page, which uses the "facebook" connection type. Facebook itself does
       // not need the field.
       if (platform === "instagram") {
-        payload.connection_type = "facebook";
+        payload.platform_data = {
+          instagram: { connection_type: "facebook" },
+        };
       }
       // Do NOT pass redirect_url_override. Post for Me interprets this as the
       // Meta OAuth redirect_uri, which must remain the Post for Me hosted
@@ -109,7 +111,7 @@ Deno.serve(async (req) => {
           platform,
           url: `${PFM_BASE}/v1/social-accounts/auth-url`,
           body: serializedPayload,
-          connection_type: payload.connection_type ?? null,
+          connection_type: (payload.platform_data as any)?.instagram?.connection_type ?? null,
           has_connection_type_facebook: serializedPayload.includes('"connection_type":"facebook"'),
         }),
       );
