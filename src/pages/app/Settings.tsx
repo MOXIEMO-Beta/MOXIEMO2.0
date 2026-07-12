@@ -155,8 +155,22 @@ export default function Settings() {
   useEffect(() => {
     if (!user) return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("pfm") !== "synced") return;
-    const platform = params.get("platform");
+    const isSuccessRaw = params.get("isSuccess");
+    const provider = params.get("provider");
+    const accountIds = params.get("accountIds");
+    const legacyPfm = params.get("pfm") === "synced";
+    if (!legacyPfm && !isSuccessRaw && !provider && !accountIds) return;
+    const platform = provider ?? params.get("platform");
+    const cleanUrl = `${window.location.pathname}#integrations-section`;
+
+    if (isSuccessRaw && isSuccessRaw !== "true") {
+      const label = platform === "instagram" ? "Instagram" : platform === "facebook" ? "Facebook" : "Account";
+      const msg = `${label} connection was not completed. Please try again.`;
+      setMetaError(msg);
+      toast.error(msg);
+      window.history.replaceState({}, "", cleanUrl);
+      return;
+    }
     (async () => {
       try {
         const { data, error } = await supabase.functions.invoke<any>("postforme-connect", {
@@ -166,14 +180,17 @@ export default function Settings() {
         if (data?.error) throw new Error(data.error);
         await reloadConnections();
         const label = platform === "instagram" ? "Instagram" : platform === "facebook" ? "Facebook" : "Account";
-        const matched = (data?.accounts ?? []).some((a: any) => a.platform === platform);
+        const returned: any[] = data?.accounts ?? [];
+        const wantedIds = (accountIds ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+        const matched = wantedIds.length
+          ? returned.some((a) => wantedIds.includes(a.external_account_id))
+          : returned.some((a) => a.platform === platform);
         if (matched) toast.success(`${label} connected.`);
         else toast.message(`${label} connection was not returned by Post for Me. Try connecting again.`);
       } catch (e: any) {
         setMetaError(e?.message ?? "Could not finish connection.");
         toast.error(e?.message ?? "Could not finish connection.");
       } finally {
-        const cleanUrl = `${window.location.pathname}#integrations-section`;
         window.history.replaceState({}, "", cleanUrl);
       }
     })();
@@ -645,7 +662,7 @@ export default function Settings() {
                 <div className="text-[12px]" style={{ color: "#6B6860" }}>
                   {instagramConn
                     ? "Posts publish natively to this Instagram account."
-                    : "Your Instagram account must be a Business or Creator account linked to a Facebook Page you administer."}
+                    : "Connect an Instagram Business or Creator account. It must be linked to a Facebook Page you administer."}
                 </div>
               </div>
             </div>
