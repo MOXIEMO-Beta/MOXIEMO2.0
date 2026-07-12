@@ -1297,6 +1297,8 @@ export type Database = {
           connected_at: string
           connection_type: string
           expires_at: string | null
+          external_account_id: string | null
+          external_provider: string | null
           id: string
           organization_id: string | null
           organization_name: string | null
@@ -1313,6 +1315,8 @@ export type Database = {
           connected_at?: string
           connection_type?: string
           expires_at?: string | null
+          external_account_id?: string | null
+          external_provider?: string | null
           id?: string
           organization_id?: string | null
           organization_name?: string | null
@@ -1329,6 +1333,8 @@ export type Database = {
           connected_at?: string
           connection_type?: string
           expires_at?: string | null
+          external_account_id?: string | null
+          external_provider?: string | null
           id?: string
           organization_id?: string | null
           organization_name?: string | null
@@ -1383,6 +1389,7 @@ export type Database = {
           is_inspiration: boolean
           is_template: boolean
           media_urls: Json
+          pfm_post_id: string | null
           pillar: string | null
           platform_post_ids: Json
           platforms: string[]
@@ -1404,6 +1411,7 @@ export type Database = {
           is_inspiration?: boolean
           is_template?: boolean
           media_urls?: Json
+          pfm_post_id?: string | null
           pillar?: string | null
           platform_post_ids?: Json
           platforms?: string[]
@@ -1425,6 +1433,7 @@ export type Database = {
           is_inspiration?: boolean
           is_template?: boolean
           media_urls?: Json
+          pfm_post_id?: string | null
           pillar?: string | null
           platform_post_ids?: Json
           platforms?: string[]

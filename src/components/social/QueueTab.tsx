@@ -335,6 +335,30 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     return () => { cancelled = true; };
   }, [posts]);
 
+  // Poll while any post is in the "publishing" state so the webhook flip to
+  // published or failed is reflected without a refresh.
+  useEffect(() => {
+    if (!userId) return;
+    const publishingIds = posts.filter((p) => p.status === "publishing").map((p) => p.id);
+    if (publishingIds.length === 0) return;
+    const timer = setInterval(async () => {
+      const { data } = await supabase
+        .from("social_posts")
+        .select("id, status, published_at, platform_post_ids")
+        .in("id", publishingIds);
+      if (!data) return;
+      setPosts((arr) =>
+        arr.map((p) => {
+          const row = data.find((r: any) => r.id === p.id);
+          if (!row) return p;
+          if (row.status === p.status) return p;
+          return { ...p, status: row.status, published_at: row.published_at ?? p.published_at };
+        }),
+      );
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [posts, userId]);
+
   const filtered = useMemo(() => {
     if (filter === "all") return posts;
     return posts.filter((p) => primaryPlatform(p) === filter);
@@ -385,7 +409,11 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         return { ok: false, skipped: true };
       }
       if (data?.error) throw new Error(data.error);
-      return { ok: true, destination: data?.destination as string | undefined };
+      return {
+        ok: true,
+        destination: data?.destination as string | undefined,
+        pending: Boolean(data?.pending),
+      };
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Publish failed" };
     }
@@ -404,8 +432,13 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     }
     const result = await publishToConnection(post);
     if (result.ok) {
-      toast.success(result.destination ? `Published to ${result.destination}` : "Published!");
-      setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
+      if (result.pending) {
+        toast.success(`Sending to ${result.destination ?? plat}…`);
+        setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "publishing" } : p)));
+      } else {
+        toast.success(result.destination ? `Published to ${result.destination}` : "Published!");
+        setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
+      }
     } else if (!result.skipped) {
       toast.error(result.error ?? "Publish failed");
     }
@@ -426,10 +459,16 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       }),
     );
     const wins = results.filter((r) => r.ok);
+    const pendingWins = wins.filter((r: any) => r.pending);
+    const doneWins = wins.filter((r: any) => !r.pending);
     const fails = results.filter((r) => !r.ok && !r.skipped);
-    if (wins.length) {
-      toast.success(`Published to ${wins.map((w) => w.label).join(", ")}`);
+    if (doneWins.length) {
+      toast.success(`Published to ${doneWins.map((w) => w.label).join(", ")}`);
       setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
+    }
+    if (pendingWins.length) {
+      toast.success(`Sending to ${pendingWins.map((w) => w.label).join(", ")}…`);
+      setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: doneWins.length ? p.status : "publishing" } : p)));
     }
     for (const f of fails) {
       toast.error(`Failed to publish to ${f.label}`, { description: (f as any).error });
@@ -707,12 +746,29 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                   <span className="text-[10px] font-semibold whitespace-nowrap"
                     style={{
                       borderRadius: 6, padding: "2px 8px",
-                      background: status === "scheduled" ? "#E6F1FB" : status === "published" ? "#EAF3DE" : "#F0EFEC",
-                      color: status === "scheduled" ? "#185FA5" : status === "published" ? "#3B6D11" : "#6B6860",
+                      background: status === "scheduled" ? "#E6F1FB"
+                        : status === "published" ? "#EAF3DE"
+                        : status === "publishing" ? "#FEF3C7"
+                        : status === "failed" ? "#FDE1DC"
+                        : "#F0EFEC",
+                      color: status === "scheduled" ? "#185FA5"
+                        : status === "published" ? "#3B6D11"
+                        : status === "publishing" ? "#854F0B"
+                        : status === "failed" ? "#8A2C1D"
+                        : "#6B6860",
                       border: "none",
                     }}>
                     {status[0].toUpperCase() + status.slice(1)}
                   </span>
+                  {status === "failed" && (
+                    <button
+                      onClick={() => handlePublish(post)}
+                      title="Retry publish"
+                      style={{ background: "#fff", border: "0.5px solid #E85A46", color: "#E85A46", borderRadius: 8, height: 28, padding: "0 10px", fontSize: 11, fontWeight: 700 }}
+                    >
+                      Retry
+                    </button>
+                  )}
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
                     <button title="Edit" onClick={() => setEditingId(editingId === post.id ? null : post.id)}>
                       <Pencil size={13} color={editingId === post.id ? "#E85A46" : "#6B6860"} /></button>
