@@ -23,3 +23,7 @@ project_id = "mqhipuvkdsvapbhrrzjd"
     verify_jwt = false
   [functions.postforme-probe]
     verify_jwt = true
+  [functions.postforme-connect]
+    verify_jwt = true
+  [functions.postforme-webhook]
+    verify_jwt = false
