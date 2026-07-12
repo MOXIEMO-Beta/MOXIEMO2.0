@@ -16,6 +16,17 @@ function json(status: number, body: unknown) {
   });
 }
 
+// Constant-time string comparison to prevent timing attacks.
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const ab = enc.encode(a);
+  const bb = enc.encode(b);
+  if (ab.length !== bb.length) return false;
+  let diff = 0;
+  for (let i = 0; i < ab.length; i++) diff |= ab[i] ^ bb[i];
+  return diff === 0;
+}
+
 // Post for Me sends "status" values that we normalize onto our own set.
 function mapStatus(input: string | undefined): { status: string; publishedAt: string | null } | null {
   const s = String(input ?? "").toLowerCase();
@@ -38,6 +49,19 @@ function mapStatus(input: string | undefined): { status: string; publishedAt: st
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { error: "method_not_allowed" });
+
+  const expectedSecret = Deno.env.get("POST_FOR_ME_WEBHOOK_SECRET");
+  if (!expectedSecret) {
+    console.error("[postforme-webhook] POST_FOR_ME_WEBHOOK_SECRET not configured");
+    return json(500, { error: "webhook_secret_not_configured" });
+  }
+  const providedSecret = req.headers.get("Post-For-Me-Webhook-Secret")
+    ?? req.headers.get("post-for-me-webhook-secret")
+    ?? "";
+  if (!providedSecret || !timingSafeEqual(providedSecret, expectedSecret)) {
+    console.warn("[postforme-webhook] rejected: bad or missing secret header");
+    return json(401, { error: "unauthorized" });
+  }
 
   try {
     const admin = createClient(
