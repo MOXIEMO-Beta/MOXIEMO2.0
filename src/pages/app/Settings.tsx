@@ -114,10 +114,8 @@ export default function Settings() {
     setMetaError(null);
     setMetaConnecting(platform);
     try {
-      const redirect_url =
-        `${window.location.origin}/app/settings?pfm=synced&platform=${platform}#integrations-section`;
       const { data, error } = await supabase.functions.invoke<any>("postforme-connect", {
-        body: { action: "auth_url", platform, redirect_url },
+        body: { action: "auth_url", platform },
       });
       if (error) {
         const ctx: any = (error as any).context;
