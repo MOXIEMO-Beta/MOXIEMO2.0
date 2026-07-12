@@ -77,13 +77,16 @@ Deno.serve(async (req) => {
       if (!["facebook", "instagram"].includes(platform)) {
         return json(400, { error: "unsupported_platform" });
       }
-      const redirectUrl = String(body?.redirect_url ?? "");
       const payload: Record<string, unknown> = {
         platform,
         external_id: externalIdFor(userId),
         permissions: ["posts"],
       };
-      if (redirectUrl) payload.redirect_url_override = redirectUrl;
+      // Do NOT pass redirect_url_override. Post for Me interprets this as the
+      // Meta OAuth redirect_uri, which must remain the Post for Me hosted
+      // callback (app.postforme.dev/callback/proj_.../<platform>/account).
+      // The final bounce back into MOXIEMO is configured on the Post for Me
+      // project itself.
       const r = await fetch(`${PFM_BASE}/v1/social-accounts/auth-url`, {
         method: "POST",
         headers: pfmHeaders,
