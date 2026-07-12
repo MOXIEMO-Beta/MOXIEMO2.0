@@ -142,7 +142,33 @@ Deno.serve(async (req) => {
       return json(r.ok ? 200 : r.status, { ok: r.ok, status: r.status, body: parsed });
     }
 
-    return json(400, { error: "unknown action", allowed: ["auth_url", "list", "post", "get_post"] });
+    if (action === "register_webhook") {
+      const url = (body?.url as string | undefined)
+        ?? `${supabaseUrl}/functions/v1/postforme-webhook`;
+      const eventTypes = (body?.event_types as string[] | undefined)
+        ?? ["social.post.created", "social.post.updated"];
+      const r = await fetch(`${PFM_BASE}/v1/webhooks`, {
+        method: "POST",
+        headers: pfmHeaders,
+        body: JSON.stringify({ url, event_types: eventTypes }),
+      });
+      const text = await r.text();
+      console.log("[postforme-probe] register_webhook", r.status, text);
+      let parsed: any = text;
+      try { parsed = JSON.parse(text); } catch { /* keep text */ }
+      return json(r.ok ? 200 : r.status, { ok: r.ok, status: r.status, body: parsed });
+    }
+
+    if (action === "list_webhooks") {
+      const r = await fetch(`${PFM_BASE}/v1/webhooks`, { headers: pfmHeaders });
+      const text = await r.text();
+      console.log("[postforme-probe] list_webhooks", r.status, text);
+      let parsed: any = text;
+      try { parsed = JSON.parse(text); } catch { /* keep text */ }
+      return json(r.ok ? 200 : r.status, { ok: r.ok, status: r.status, body: parsed });
+    }
+
+    return json(400, { error: "unknown action", allowed: ["auth_url", "list", "post", "get_post", "register_webhook", "list_webhooks"] });
   } catch (err) {
     console.error("[postforme-probe] error", err);
     return json(500, { error: (err as Error).message });
