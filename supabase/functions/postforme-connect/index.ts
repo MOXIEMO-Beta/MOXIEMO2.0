@@ -82,20 +82,35 @@ Deno.serve(async (req) => {
         external_id: externalIdFor(userId),
         permissions: ["posts"],
       };
+      // Post for Me requires connection_type for Instagram. We want Business/
+      // Creator Instagram accounts linked to a Facebook Page, which uses the
+      // "facebook" (Login with Facebook) connection type. Facebook itself does
+      // not need the field.
+      if (platform === "instagram") {
+        payload.connection_type = "facebook";
+      }
       // Do NOT pass redirect_url_override. Post for Me interprets this as the
       // Meta OAuth redirect_uri, which must remain the Post for Me hosted
       // callback (app.postforme.dev/callback/proj_.../<platform>/account).
       // The final bounce back into MOXIEMO is configured on the Post for Me
       // project itself.
+      console.log(
+        "[postforme-connect] auth_url request",
+        JSON.stringify({ platform, payload }),
+      );
       const r = await fetch(`${PFM_BASE}/v1/social-accounts/auth-url`, {
         method: "POST",
         headers: pfmHeaders,
         body: JSON.stringify(payload),
       });
       const text = await r.text();
+      console.log(
+        "[postforme-connect] auth_url response",
+        JSON.stringify({ platform, status: r.status, body: text }),
+      );
       if (!r.ok) {
         console.error("[postforme-connect] auth_url failed", r.status, text);
-        return json(r.status, { error: humanPfmError(text) });
+        return json(r.status, { error: humanPfmError(text), pfm_status: r.status, pfm_body: text });
       }
       let parsed: any = {};
       try { parsed = JSON.parse(text); } catch { /* ignore */ }
