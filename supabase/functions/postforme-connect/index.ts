@@ -98,7 +98,12 @@ Deno.serve(async (req) => {
       try { parsed = JSON.parse(text); } catch { /* ignore */ }
       const url = parsed?.url ?? parsed?.auth_url ?? parsed?.data?.url;
       if (!url) return json(500, { error: "auth_url_missing" });
+      try {
+        const host = new URL(url).host;
+        console.log("[postforme-connect] auth_url host", host, "platform", platform);
+      } catch { /* ignore */ }
       return json(200, { url });
+
     }
 
     if (action === "sync") {
