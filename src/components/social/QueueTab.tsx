@@ -722,12 +722,29 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                   <span className="text-[10px] font-semibold whitespace-nowrap"
                     style={{
                       borderRadius: 6, padding: "2px 8px",
-                      background: status === "scheduled" ? "#E6F1FB" : status === "published" ? "#EAF3DE" : "#F0EFEC",
-                      color: status === "scheduled" ? "#185FA5" : status === "published" ? "#3B6D11" : "#6B6860",
+                      background: status === "scheduled" ? "#E6F1FB"
+                        : status === "published" ? "#EAF3DE"
+                        : status === "publishing" ? "#FEF3C7"
+                        : status === "failed" ? "#FDE1DC"
+                        : "#F0EFEC",
+                      color: status === "scheduled" ? "#185FA5"
+                        : status === "published" ? "#3B6D11"
+                        : status === "publishing" ? "#854F0B"
+                        : status === "failed" ? "#8A2C1D"
+                        : "#6B6860",
                       border: "none",
                     }}>
                     {status[0].toUpperCase() + status.slice(1)}
                   </span>
+                  {status === "failed" && (
+                    <button
+                      onClick={() => handlePublish(post)}
+                      title="Retry publish"
+                      style={{ background: "#fff", border: "0.5px solid #E85A46", color: "#E85A46", borderRadius: 8, height: 28, padding: "0 10px", fontSize: 11, fontWeight: 700 }}
+                    >
+                      Retry
+                    </button>
+                  )}
                   <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition">
                     <button title="Edit" onClick={() => setEditingId(editingId === post.id ? null : post.id)}>
                       <Pencil size={13} color={editingId === post.id ? "#E85A46" : "#6B6860"} /></button>
