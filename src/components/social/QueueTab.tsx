@@ -385,7 +385,11 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         return { ok: false, skipped: true };
       }
       if (data?.error) throw new Error(data.error);
-      return { ok: true, destination: data?.destination as string | undefined };
+      return {
+        ok: true,
+        destination: data?.destination as string | undefined,
+        pending: Boolean(data?.pending),
+      };
     } catch (e: any) {
       return { ok: false, error: e?.message ?? "Publish failed" };
     }
@@ -404,8 +408,13 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     }
     const result = await publishToConnection(post);
     if (result.ok) {
-      toast.success(result.destination ? `Published to ${result.destination}` : "Published!");
-      setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
+      if (result.pending) {
+        toast.success(`Sending to ${result.destination ?? plat}…`);
+        setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "publishing" } : p)));
+      } else {
+        toast.success(result.destination ? `Published to ${result.destination}` : "Published!");
+        setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
+      }
     } else if (!result.skipped) {
       toast.error(result.error ?? "Publish failed");
     }
@@ -426,10 +435,16 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       }),
     );
     const wins = results.filter((r) => r.ok);
+    const pendingWins = wins.filter((r: any) => r.pending);
+    const doneWins = wins.filter((r: any) => !r.pending);
     const fails = results.filter((r) => !r.ok && !r.skipped);
-    if (wins.length) {
-      toast.success(`Published to ${wins.map((w) => w.label).join(", ")}`);
+    if (doneWins.length) {
+      toast.success(`Published to ${doneWins.map((w) => w.label).join(", ")}`);
       setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: "published", published_at: new Date().toISOString() } : p)));
+    }
+    if (pendingWins.length) {
+      toast.success(`Sending to ${pendingWins.map((w) => w.label).join(", ")}…`);
+      setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, status: doneWins.length ? p.status : "publishing" } : p)));
     }
     for (const f of fails) {
       toast.error(`Failed to publish to ${f.label}`, { description: (f as any).error });
