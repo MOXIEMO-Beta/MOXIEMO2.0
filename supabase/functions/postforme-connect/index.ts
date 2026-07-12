@@ -102,14 +102,21 @@ Deno.serve(async (req) => {
       // callback (app.postforme.dev/callback/proj_.../<platform>/account).
       // The final bounce back into MOXIEMO is configured on the Post for Me
       // project itself.
+      const serializedPayload = JSON.stringify(payload);
       console.log(
-        "[postforme-connect] auth_url request",
-        JSON.stringify({ platform, payload }),
+        "[postforme-connect] auth_url outbound serialized request",
+        JSON.stringify({
+          platform,
+          url: `${PFM_BASE}/v1/social-accounts/auth-url`,
+          body: serializedPayload,
+          connection_type: payload.connection_type ?? null,
+          has_connection_type_facebook: serializedPayload.includes('"connection_type":"facebook"'),
+        }),
       );
       const r = await fetch(`${PFM_BASE}/v1/social-accounts/auth-url`, {
         method: "POST",
         headers: pfmHeaders,
-        body: JSON.stringify(payload),
+        body: serializedPayload,
       });
       const text = await r.text();
       console.log(
