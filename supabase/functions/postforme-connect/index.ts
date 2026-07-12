@@ -30,6 +30,13 @@ function externalIdFor(userId: string) {
 
 function humanPfmError(text: string): string {
   const lower = text.toLowerCase();
+  // Try to pull the real message field out of the PFM error body so the UI can
+  // show what Post for Me actually said instead of a generic fallback.
+  let pfmMessage = "";
+  try {
+    const parsed = JSON.parse(text);
+    pfmMessage = String(parsed?.message ?? parsed?.error ?? "").trim();
+  } catch { /* not JSON */ }
   if (
     lower.includes("instagram_business_account") ||
     lower.includes("professional") ||
@@ -40,6 +47,7 @@ function humanPfmError(text: string): string {
   if (lower.includes("page") && lower.includes("permission")) {
     return "We could not access a Facebook Page you administer. Make sure the account you connected has admin rights on a Facebook Page.";
   }
+  if (pfmMessage) return pfmMessage;
   return "Post for Me could not complete the connection. Please try again.";
 }
 
