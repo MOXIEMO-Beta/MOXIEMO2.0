@@ -335,6 +335,30 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     return () => { cancelled = true; };
   }, [posts]);
 
+  // Poll while any post is in the "publishing" state so the webhook flip to
+  // published or failed is reflected without a refresh.
+  useEffect(() => {
+    if (!userId) return;
+    const publishingIds = posts.filter((p) => p.status === "publishing").map((p) => p.id);
+    if (publishingIds.length === 0) return;
+    const timer = setInterval(async () => {
+      const { data } = await supabase
+        .from("social_posts")
+        .select("id, status, published_at, platform_post_ids")
+        .in("id", publishingIds);
+      if (!data) return;
+      setPosts((arr) =>
+        arr.map((p) => {
+          const row = data.find((r: any) => r.id === p.id);
+          if (!row) return p;
+          if (row.status === p.status) return p;
+          return { ...p, status: row.status, published_at: row.published_at ?? p.published_at };
+        }),
+      );
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [posts, userId]);
+
   const filtered = useMemo(() => {
     if (filter === "all") return posts;
     return posts.filter((p) => primaryPlatform(p) === filter);
