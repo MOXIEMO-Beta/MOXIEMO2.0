@@ -70,6 +70,15 @@ Deno.serve(async (req) => {
     if (!content) return json({ error: "post_has_no_content" }, 400);
 
     if (platform !== "linkedin") {
+      if (platform === "facebook" || platform === "instagram") {
+        return await publishViaPostForMe({
+          supabase,
+          user_id,
+          post,
+          platform,
+          content,
+        });
+      }
       return json({ error: `Direct publishing not yet supported for ${platform}` }, 400);
     }
 
@@ -189,3 +198,139 @@ Deno.serve(async (req) => {
     return json({ error: (err as Error).message }, 500);
   }
 });
+
+// Post for Me publish path for Facebook and Instagram. All media URLs must
+// resolve over anonymous public HTTP. Instagram enforces JPEG and 8MB.
+const PFM_BASE = "https://api.postforme.dev";
+const IG_MAX_BYTES = 8 * 1024 * 1024;
+
+function toPublicUrl(entry: unknown): string | null {
+  if (typeof entry !== "string" || !entry) return null;
+  if (/^https?:\/\//i.test(entry)) return entry;
+  const base = Deno.env.get("SUPABASE_URL")!.replace(/\/$/, "");
+  const clean = entry.replace(/^\/+/, "");
+  return `${base}/storage/v1/object/public/social-assets/${clean}`;
+}
+
+async function checkMedia(url: string, platform: string): Promise<string | null> {
+  let res: Response;
+  try {
+    res = await fetch(url, { method: "HEAD" });
+  } catch (e) {
+    return `The attached image could not be reached (${(e as Error).message}). Re-upload it and try again.`;
+  }
+  if (!res.ok) {
+    return `The attached image is not publicly reachable (HTTP ${res.status}). Re-upload it and try again.`;
+  }
+  const contentType = (res.headers.get("content-type") || "").toLowerCase();
+  if (!contentType.startsWith("image/")) {
+    return `The attached file is not an image (${contentType || "unknown type"}). ${platform === "instagram" ? "Instagram" : "Facebook"} requires an image.`;
+  }
+  if (platform === "instagram") {
+    if (!contentType.includes("jpeg") && !contentType.includes("jpg")) {
+      return `Instagram only accepts JPEG images through this integration. Re-save this file as JPEG and try again. (Received ${contentType}.)`;
+    }
+    const len = Number(res.headers.get("content-length") ?? 0);
+    if (len && len > IG_MAX_BYTES) {
+      return `Instagram rejects images over 8MB. This image is ${(len / (1024 * 1024)).toFixed(1)}MB. Compress or resize it and try again.`;
+    }
+  }
+  return null;
+}
+
+async function publishViaPostForMe(args: {
+  supabase: any;
+  user_id: string;
+  post: any;
+  platform: "facebook" | "instagram";
+  content: string;
+}) {
+  const { supabase, user_id, post, platform, content } = args;
+  const apiKey = Deno.env.get("POST_FOR_ME_API_KEY");
+  if (!apiKey) return json({ error: "POST_FOR_ME_API_KEY not configured" }, 500);
+
+  // Per-user isolation: only the caller's own spc_ id, ever.
+  const { data: conn, error: connErr } = await supabase
+    .from("social_connections")
+    .select("id, external_account_id, external_provider, profile_name")
+    .eq("user_id", user_id)
+    .eq("platform", platform)
+    .eq("connection_type", "personal")
+    .maybeSingle();
+  if (connErr) return json({ error: connErr.message }, 500);
+  if (!conn || !conn.external_account_id) {
+    return json({ error: `no_${platform}_connection` }, 400);
+  }
+
+  const mediaArr = Array.isArray(post.media_urls) ? post.media_urls : [];
+  const mediaUrls: string[] = mediaArr
+    .map(toPublicUrl)
+    .filter((v: string | null): v is string => Boolean(v));
+
+  if (platform === "instagram" && mediaUrls.length === 0) {
+    return json({ error: "Instagram posts require at least one image. Attach an image and try again." }, 400);
+  }
+
+  for (const url of mediaUrls) {
+    const problem = await checkMedia(url, platform);
+    if (problem) return json({ error: problem }, 400);
+  }
+
+  const payload: Record<string, unknown> = {
+    caption: content,
+    social_accounts: [conn.external_account_id],
+  };
+  if (mediaUrls.length) payload.media = mediaUrls.map((url) => ({ url }));
+
+  const r = await fetch(`${PFM_BASE}/v1/social-posts`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  const text = await r.text();
+  let parsed: any = {};
+  try { parsed = JSON.parse(text); } catch { /* ignore */ }
+  if (!r.ok) {
+    console.error("[publish-social-post] PFM error", r.status, text);
+    const msg =
+      parsed?.error?.message ??
+      parsed?.message ??
+      parsed?.error ??
+      `Post for Me rejected the publish (HTTP ${r.status}).`;
+    return json({ error: String(msg) }, 400);
+  }
+
+  const pfmPostId: string | undefined = parsed?.id ?? parsed?.data?.id;
+  if (!pfmPostId) {
+    console.error("[publish-social-post] PFM missing id", parsed);
+    return json({ error: "Post for Me accepted the post but did not return an id." }, 500);
+  }
+
+  // Transition to publishing; the webhook drives the final published/failed
+  // state. Do NOT mark as published from this synchronous response.
+  const { data: existing } = await supabase
+    .from("social_posts")
+    .select("platform_post_ids")
+    .eq("id", post.id)
+    .maybeSingle();
+  const prevIds = (existing?.platform_post_ids ?? {}) as Record<string, unknown>;
+  const nextIds = {
+    ...prevIds,
+    pfm: { pfm_post_id: pfmPostId, status: "publishing", accepted_at: new Date().toISOString() },
+  };
+  await supabase
+    .from("social_posts")
+    .update({ status: "publishing", pfm_post_id: pfmPostId, platform_post_ids: nextIds })
+    .eq("id", post.id);
+
+  return json({
+    success: true,
+    pending: true,
+    pfm_post_id: pfmPostId,
+    connection_id: conn.id,
+    destination: conn.profile_name ?? platform,
+  });
+}
