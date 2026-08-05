@@ -27,6 +27,7 @@ import CaseForOptimism from "./pages/blog/CaseForOptimism.tsx";
 import AiEverywhereStandOut from "./pages/blog/AiEverywhereStandOut.tsx";
 import RealFounderSitsDown from "./pages/blog/RealFounderSitsDown.tsx";
 import WhyMarketingFeelsLikeSecondJob from "./pages/blog/WhyMarketingFeelsLikeSecondJob.tsx";
+import AiMarketingStackAdvice from "./pages/blog/AiMarketingStackAdvice.tsx";
 import Resources from "./pages/marketing/Resources.tsx";
 import Changelog from "./pages/marketing/Changelog.tsx";
 import Founding from "./pages/marketing/Founding.tsx";
@@ -103,6 +104,7 @@ const App = () => (
             <Route path="/blog/ai-everywhere-how-you-stand-out" element={<AiEverywhereStandOut />} />
             <Route path="/blog/what-happens-when-a-real-founder-sits-down-with-your-product" element={<RealFounderSitsDown />} />
             <Route path="/blog/why-your-marketing-feels-like-a-second-job" element={<WhyMarketingFeelsLikeSecondJob />} />
+           <Route path="/blog/ai-marketing-stack-advice-solo-founders" element={<AiMarketingStackAdvice />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/changelog" element={<Changelog />} />
             <Route path="/founding" element={<Founding />} />
