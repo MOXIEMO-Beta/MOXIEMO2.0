@@ -17,8 +17,14 @@ import article7 from "@/assets/blog/article-7-optimism.jpg";
 import article8 from "@/assets/blog/article-8-ai-everywhere.jpg";
 import article9 from "@/assets/blog/article-9-real-founder.jpg";
 import article10 from "@/assets/blog/article-10-second-job.jpg";
+import article11Asset from "@/assets/blog/ai-marketing-stack.png.asset.json";
 
 const REAL_ARTICLES: Record<string, { image: string; href: string; date: string }> = {
+  "The AI Marketing Stack Advice Nobody Gives Solo Founders": {
+    image: article11Asset.url,
+    href: "/blog/ai-marketing-stack-advice-solo-founders",
+    date: "August 5, 2026",
+  },
   "Why Your Marketing Feels Like a Second Job (And What to Do About It)": {
     image: article10,
     href: "/blog/why-your-marketing-feels-like-a-second-job",
@@ -83,6 +89,7 @@ const CATEGORIES = [
 ];
 
 const ARTICLES = [
+  { category: "Strategy", title: "The AI Marketing Stack Advice Nobody Gives Solo Founders", excerpt: "Every AI marketing guide says the same thing: build a lean stack of six to eight tools. Good advice, written for a team you do not have. Here is what the stack conversation misses for expertise-based founders.", read: "5 min read" },
   { category: "Strategy", title: "Why Your Marketing Feels Like a Second Job (And What to Do About It)", excerpt: "You built a real business. So why does your marketing still feel like survival? The problem is not discipline. It is structure.", read: "6 min read" },
   { category: "Founder Mindset", title: "What Happens When a Real Founder Sits Down with Your Product", excerpt: "She would still pay for it. The features worked. And she still said it felt like work. That sentence is the most valuable thing anyone has said to me about this product.", read: "6 min read" },
   { category: "AI Marketing", title: "AI is everywhere. Here is how you still stand out.", excerpt: "AI is here to stay, and yes, the slop is real. That does not mean you have to blend in. A few honest strategies for staying original while using the same tools as everyone else.", read: "6 min read" },
