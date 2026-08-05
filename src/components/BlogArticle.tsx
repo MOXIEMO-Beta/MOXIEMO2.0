@@ -7,6 +7,7 @@ import { ArrowRight, ArrowLeft } from "lucide-react";
 
 export interface BlogArticleProps {
   heroImage: string;
+  heroAlt?: string;
   category: string;
   readTime: string;
   date: string;
@@ -14,7 +15,7 @@ export interface BlogArticleProps {
   children: ReactNode;
 }
 
-export function BlogArticle({ heroImage, category, readTime, date, headline, children }: BlogArticleProps) {
+export function BlogArticle({ heroImage, heroAlt, category, readTime, date, headline, children }: BlogArticleProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
@@ -22,7 +23,7 @@ export function BlogArticle({ heroImage, category, readTime, date, headline, chi
       <div className="w-full pt-20">
         <img
           src={heroImage}
-          alt={headline}
+          alt={heroAlt ?? headline}
           className="w-full object-cover rounded-b-2xl"
           style={{ maxHeight: 480, aspectRatio: "16 / 9" }}
         />
