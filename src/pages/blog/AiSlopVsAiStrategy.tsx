@@ -41,7 +41,7 @@ export default function AiSlopVsAiStrategy() {
       <H2>Why Most AI Marketing Tools Miss This</H2>
       <P>The AI marketing tool space is crowded right now. Dozens of platforms promising to generate more content, faster, with less effort.</P>
       <P>Most of them start at the prompt level. They give you templates, frameworks, fill-in-the-blank structures. Better than nothing. Still fundamentally limited because they skip the step that matters most.</P>
-      <P>MOXIEMO was built specifically to solve this problem. Before it generates a single word, it runs a 20-minute Discovery conversation that extracts your complete brand architecture. Your positioning statement, your ideal client, your transformation, your voice, your content pillars. That foundation is stored in the platform and used as the context layer for everything that follows.</P>
+      <P>MOXIEMO was built specifically to solve this problem. Before it generates a single word, it runs one guided session in Discovery that extracts your complete brand architecture. Your positioning statement, your ideal client, your transformation, your voice, your content pillars. That foundation is stored in the platform and used as the context layer for everything that follows.</P>
       <P>Every piece of content MOXIEMO generates is briefed against your specific foundation. The AI isn't guessing who you are. It already knows. And the outputs reflect that.</P>
       <P>This is strategy-first AI marketing. It is the difference between using AI to produce more content and using AI to produce better content that actually sounds like you and converts the right people.</P>
       <P>The foundation is the product. The content is what the foundation makes possible.</P>

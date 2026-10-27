@@ -95,13 +95,6 @@ const tried = [
   },
 ];
 
-const stats = [
-  { v: "18+", l: "hours back per week, spent steering instead of grinding", big: true },
-  { v: "4–6", l: "tools eliminated, replaced by one platform", big: true },
-  { v: "20 min", l: "to a full strategy, not months", big: false },
-  { v: "$93K", l: "saved annually. Agency-level strategy without the agency price.", big: false },
-];
-
 const convergences = [
   { n: "01", label: "AI matured", h: "The tools caught up to the vision.", b: "ChatGPT proved AI can create quality content. MOXIEMO goes further: AI that knows your business, your voice, and your strategy." },
   { n: "02", label: "Fragmentation hit a breaking point", h: "The market is rejecting complexity.", b: "Companies are walking away from bloated marketing automation. The stack era is over. One system that works is winning." },
@@ -211,7 +204,7 @@ export default function WhyMoxie() {
             <div style={{ padding: "28px 0 40px 40px" }}>
               <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(244,239,229,0.26)", marginBottom: 12 }}>Start here</div>
               <p style={{ fontSize: 15, lineHeight: 1.62, color: "rgba(244,239,229,0.5)", margin: "0 0 18px" }}>
-                Free Discovery. Full strategy in 20 minutes. No credit card required.
+                Free Discovery. Build your strategy in one guided session. No credit card required.
               </p>
               <Link to="/auth" style={{ background: CORAL, color: "#fff", fontWeight: 700, fontSize: 14, padding: "14px 24px", borderRadius: 999, textDecoration: "none", display: "inline-block" }}>
                 Start free Discovery →
@@ -273,27 +266,6 @@ export default function WhyMoxie() {
         <div className="wm-ticker">
           <TickerRun />
           <TickerRun />
-        </div>
-      </section>
-
-      {/* §3 STATS */}
-      <section style={{ background: INK, padding: "96px 40px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div className="rv" style={{ marginBottom: 64 }}>
-            <Eyebrow num="03" name="What MOXIEMO gives you back" color="rgba(244,239,229,0.28)" />
-            <h2 style={{ ...display, fontWeight: 600, fontSize: "clamp(32px,3.8vw,52px)", lineHeight: 1.05, letterSpacing: "-0.02em", color: CREAM, margin: 0, maxWidth: 660 }}>
-              Run Discovery once. Stop bleeding time, money, and focus into a broken stack.
-            </h2>
-          </div>
-
-          <div className="wm-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: "rgba(244,239,229,0.07)" }}>
-            {stats.map((s, i) => (
-              <div key={i} className={`rv d${i + 1}`} style={{ background: INK, padding: "44px 32px" }}>
-                <div style={{ ...display, fontWeight: 700, fontSize: s.big ? "clamp(58px,7vw,92px)" : "clamp(38px,4.8vw,68px)", lineHeight: 0.88, color: CORAL }}>{s.v}</div>
-                <div style={{ fontSize: 14, lineHeight: 1.58, color: "rgba(244,239,229,0.48)", marginTop: 18 }}>{s.l}</div>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

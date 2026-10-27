@@ -309,8 +309,8 @@ interface Step {
   active: string; mock: React.ReactNode;
 }
 const STEPS: Step[] = [
-  { n: "01", label: "Strategic foundation", time: "30 minutes", title: "MOXIEMO Discovery conversation",
-    body: "MOXIEMO's AI interviews you about who you serve, the transformation you provide, your unique positioning, and your voice. The strategic work most tools skip. Done in half an hour.",
+  { n: "01", label: "Strategic foundation", time: "One guided session", title: "MOXIEMO Discovery conversation",
+    body: "MOXIEMO's AI interviews you about who you serve, the transformation you provide, your unique positioning, and your voice. The strategic work most tools skip. Built through one guided session.",
     checks: ["Strategic positioning statement", "Brand voice guidelines", "Audience pain map", "Content theme clusters", "Channel prioritization", "Success metrics dashboard"],
     active: "Social", mock: <MockSocialCalendar /> },
   { n: "02", label: "Living strategy system", time: "Always on", title: "Strategy embedded in every tool",
@@ -322,7 +322,7 @@ const STEPS: Step[] = [
     checks: ["LinkedIn posts", "Email newsletters", "Blog articles", "Video scripts"],
     active: "Content", mock: <MockContent /> },
   { n: "04", label: "Execution without exhaustion", time: "2 hours / week", title: "Marketing that runs while you coach",
-    body: "Monday morning: review, approve, publish. Friday: check what worked. The other 18 hours go back to clients and growth.",
+    body: "Monday morning: review, approve, publish. Friday: check what worked.",
     checks: ["Review week's content (15 min)", "Approve & edit (30 min)", "Auto-publish across channels", "Friday analytics check (15 min)"],
     active: "Marketing Planner", mock: <MockPlanner /> },
   { n: "05", label: "Strategic analytics", time: "Weekly review", title: "Know what's working. Grow what matters.",
@@ -357,7 +357,7 @@ function StepCard({ step }: { step: Step }) {
    Page
    ============================================================ */
 export default function Platform() {
-  const marqueeItems = ["Strategy first", "Execution embedded", "18 hours back per week", "One platform, not four", "Your voice, every time"];
+  const marqueeItems = ["Strategy first", "Execution embedded", "Your voice, every time"];
   return (
     <div style={{ ...fontBody, background: C.cream, color: C.ink, minHeight: "100vh" }}>
       <SiteHeader />
@@ -422,7 +422,7 @@ export default function Platform() {
             </div>
             <div className="pf-copilot-grid" style={{ display: "grid", gridTemplateColumns: "1fr 300px 1fr", gap: 32, padding: "0 52px 44px", alignItems: "center" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
-                <Feature icon="sparkle" title="AI Strategic Discovery" body="30-minute conversation extracts your positioning, audience, and voice. The foundation everything else builds on, no consultant fees, no CMO hire." />
+                <Feature icon="sparkle" title="AI Strategic Discovery" body="One guided session extracts your positioning, audience, and voice. The foundation everything else builds on, no consultant fees, no CMO hire." />
                 <Feature icon="mail" title="Email Marketing" body="Welcome sequences, newsletters, broadcasts, and conversion flows that match your voice. Replaces ConvertKit, Mailchimp, and the rest." />
                 <Feature icon="pencil" title="Content Creation" body="Blog posts, articles, lead magnets, and video scripts written in your voice, aligned to your strategy, ready to publish." />
               </div>
@@ -477,45 +477,11 @@ export default function Platform() {
               ))}
             </div>
             <p style={{ ...fontBody, fontSize: 18, color: C.muted, margin: 0 }}>
-              Five stages. One platform. Built to give you back 18 hours a week.
+              Five stages. One platform.
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
             {STEPS.map(s => <StepCard key={s.n} step={s} />)}
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 5 — STATS */}
-      <section style={{ background: C.ink, color: "#f4efe5", padding: "112px 24px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <div style={{ marginBottom: 28 }}>
-            <div style={{ ...fontMono, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.2em", color: "#7a786e", display: "inline-flex", alignItems: "center", gap: 10 }}>
-              <span style={{ width: 8, height: 8, background: C.coral, display: "inline-block" }} />
-              § 03 · The numbers don't lie
-            </div>
-          </div>
-          <div className="pf-stats-head" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48, alignItems: "end", marginBottom: 64 }}>
-            <h2 style={{ ...fontDisplay, fontSize: "clamp(38px,5vw,68px)", lineHeight: 1.02, letterSpacing: "-0.02em", margin: 0 }}>
-              <span style={{ fontWeight: 600, display: "block", color: "#fff" }}>Every founder who runs</span>
-              <span style={{ fontWeight: 340, fontStyle: "italic", color: "#86847a", display: "block" }}>Discovery gets this.</span>
-            </h2>
-            <p style={{ ...fontBody, fontSize: 17, color: "#b3b1a6", lineHeight: 1.55, margin: 0, maxWidth: 460 }}>
-              Every founder who runs MOXIEMO Discovery gets a complete marketing strategy in minutes. Here is what founders stop wasting time and money on.
-            </p>
-          </div>
-          <div className="pf-stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderTop: "1px solid rgba(244,239,229,0.14)" }}>
-            {[
-              { v: "18+", l: "Hrs back per week" },
-              { v: "4–6", l: "Tools eliminated" },
-              { v: "20m", l: "To full strategy" },
-              { v: "$93K", l: "Saved annually" },
-            ].map((s, i) => (
-              <div key={s.l} style={{ padding: "40px 32px", borderLeft: i === 0 ? "none" : "1px solid rgba(244,239,229,0.14)" }}>
-                <div style={{ ...fontDisplay, fontWeight: 600, fontSize: "clamp(52px,6vw,84px)", color: C.coral, lineHeight: 1, letterSpacing: "-0.02em" }}>{s.v}</div>
-                <div style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.16em", color: "#7a786e", marginTop: 16 }}>{s.l}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -561,10 +527,10 @@ export default function Platform() {
           <div style={{ background: C.off, border: `1px solid ${C.border}`, borderRadius: 16, padding: 40, boxShadow: "0 30px 60px -40px rgba(30,45,55,0.3)", alignSelf: "start" }}>
             <div style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.18em", color: C.coral, marginBottom: 24, display: "inline-flex", alignItems: "center", gap: 10 }}>
               <span style={{ width: 8, height: 8, background: C.coral, display: "inline-block" }} />
-              Enterprise-grade security
+              Built on secure infrastructure
             </div>
             <div>
-              {["SOC 2 Type II certified", "End-to-end encryption", "GDPR compliant", "Your data never trains AI", "Daily backups", "99.9% uptime SLA"].map((item, i) => (
+              {["Encryption in transit (TLS)", "Encrypted storage for sensitive data", "Row-level security, so you only see your own data", "Export your data anytime", "We do not use your Discovery answers to train third-party AI models", "Formal security certifications are on our roadmap"].map((item, i) => (
                 <div key={item} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "16px 0", borderTop: i === 0 ? "none" : `1px solid ${C.border}`, ...fontBody, fontSize: 16, color: C.ink }}>
                   <CheckIcon />{item}
                 </div>

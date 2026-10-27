@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
-import { ResourcesMega } from "@/components/ResourcesMega";
 import { SiteFooter } from "@/components/SiteFooter";
 import heroCollage from "@/assets/redesign/hero-collage.jpg.asset.json";
 import watchBadge from "@/assets/redesign/watch-badge-3.svg.asset.json";
@@ -67,7 +66,7 @@ function Nav() {
   const links = [
     ["Platform", "/platform"],
     ["Solutions", "/solutions"],
-    ["Why Moxiemo", "/why-moxie"],
+    ["Why MOXIEMO", "/why-moxiemo"],
     ["Pricing", "/pricing"],
     ["Community", "/community"],
     ["About", "/about"],
@@ -81,17 +80,13 @@ function Nav() {
         </Link>
         <div className="hidden lg:flex items-center" style={{ gap: 22, flexWrap: "nowrap", flexShrink: 0 }}>
           <Link to="/platform" className="hover:text-[#ef6f53] transition-colors uppercase" style={linkStyle}>Platform</Link>
-          <ResourcesMega
-            triggerClassName="hover:text-[#ef6f53] transition-colors uppercase whitespace-nowrap"
-            triggerStyle={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, whiteSpace: "nowrap" }}
-          />
           {links.slice(1).map(([l, h]) => (
             <Link key={l} to={h} className="hover:text-[#ef6f53] transition-colors uppercase" style={linkStyle}>{l}</Link>
           ))}
         </div>
         <div className="flex items-center" style={{ gap: 16, flexWrap: "nowrap", flexShrink: 0 }}>
           <Link to="/auth?mode=signin" className="hidden sm:inline hover:text-[#ef6f53] uppercase" style={linkStyle}>Sign in</Link>
-          <span style={{ whiteSpace: "nowrap" }}><PillButton to="/founding">Join</PillButton></span>
+          <span style={{ whiteSpace: "nowrap" }}><PillButton to="/founding">Claim a spot</PillButton></span>
         </div>
       </div>
     </nav>
@@ -465,7 +460,7 @@ function PlatformSection() {
             </h2>
           </div>
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, alignSelf: "end" }}>
-            Click any tab to jump in. Discovery extracts your strategy in 20 minutes. Strategy synthesizes it. Content generates in your voice. Planner shows your whole quarter. One system, not a stack.
+            Click any tab to jump in. Discovery extracts your strategy in one guided session. Strategy synthesizes it. Content generates in your voice. Planner shows your whole quarter. One system, not a stack.
           </p>
         </div>
         <DemoWindow />
@@ -474,41 +469,10 @@ function PlatformSection() {
   );
 }
 
-/* ───────────── §03 Numbers ───────────── */
-function Numbers() {
-  const stats = [["18+", "Hrs back per week"], ["4–6", "Tools eliminated"], ["$93K", "Saved annually"], ["20m", "To full strategy"]];
-  return (
-    <section style={{ background: CREAM }}>
-      <div className="mx-auto" style={{ maxWidth: 1200, padding: "118px 40px" }}>
-        <div className="grid lg:grid-cols-2 gap-[72px]" style={{ marginBottom: 64 }}>
-          <div>
-            <Eyebrow>§ 03 · The numbers</Eyebrow>
-            <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px, 4.6vw, 60px)", lineHeight: 1.02, color: INK, marginTop: 22, letterSpacing: "-0.015em" }}>
-              Scattered to strategic{" "}
-              <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>in twenty minutes.</span>
-            </h2>
-          </div>
-          <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_CREAM, alignSelf: "end" }}>
-            Run Discovery once and stop bleeding time, money, and focus into a broken stack. These are the numbers founders report after switching.
-          </p>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map(([n, l], i) => (
-            <div key={l} style={{ borderTop: "1px solid rgba(19,19,15,0.12)", padding: "32px 24px 0", borderLeft: i > 0 ? "1px solid rgba(19,19,15,0.08)" : undefined }}>
-              <div style={{ ...serif, fontSize: "clamp(56px, 6vw, 84px)", fontWeight: 600, color: CORAL, lineHeight: 0.95, letterSpacing: "-0.02em" }}>{n}</div>
-              <div style={{ ...mono, fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_CREAM, marginTop: 16 }}>{l}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /* ───────────── §04 How it works ───────────── */
 function HowItWorks() {
   const steps = [
-    ["Discovery", "MOXIEMO Discovery", "A guided 20-minute conversation extracts your positioning, voice, audience, and goals."],
+    ["Discovery", "MOXIEMO Discovery", "One guided session extracts your positioning, voice, audience, and goals."],
     ["Synthesis", "Strategy synthesized", "Positioning, pillars, voice, channels, and metrics, connected to everything. Not sitting in a doc you never open."],
     ["Execution", "Execution embedded", "Every tool already knows your strategy. Generate content, plan campaigns, send emails. Approve, edit, publish."],
   ];
@@ -581,7 +545,7 @@ function BuiltForYou() {
 /* ───────────── §05.5 The Platform ───────────── */
 function ThePlatform() {
   const items = [
-    ["01", "Strategy", "Your foundation. Built in minutes.", "100/100 strategy strength"],
+    ["01", "Strategy", "Your foundation. Built through Discovery.", "100/100 strategy strength"],
     ["02", "Content", "Content that sounds like you. Every time.", "Yours / not generic AI"],
     ["03", "Planner", "See your whole quarter at a glance.", "90 days / always in view"],
   ];
@@ -825,20 +789,20 @@ function Footer() {
         </div>
         <div className="grid lg:grid-cols-2 gap-10 items-end" style={{ marginTop: 60, paddingBottom: 60, borderBottom: "1px solid rgba(244,239,229,0.12)" }}>
           <div>
-            <div style={{ ...serif, fontStyle: "italic", fontWeight: 340, fontSize: "clamp(28px, 3.4vw, 44px)", color: "#86847a", lineHeight: 1.1 }}>One platform. Confident marketing.</div>
+            <div style={{ ...serif, fontStyle: "italic", fontWeight: 340, fontSize: "clamp(28px, 3.4vw, 44px)", color: "#86847a", lineHeight: 1.1 }}>Built on strategy. Powered to execute.</div>
             <p style={{ ...sans, fontSize: 15, color: MUTED_DARK, marginTop: 16, maxWidth: 520, lineHeight: 1.6 }}>
-              The AI marketing platform built for founders who want strategy, not a stack. Currently in private beta.
+              The strategy-led marketing system for founders and growing businesses. MOXIEMO finds what moves your brand forward. MOXIE makes sure it happens.
             </p>
           </div>
           <div className="lg:text-right">
-            <PillButton to="/founding">Join as Founding Member <ArrowRight size={16} /></PillButton>
+            <PillButton to="/founding">Claim a first-100 spot</PillButton>
           </div>
         </div>
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4" style={{ paddingTop: 56 }}>
           <div>
             <img src={logoLight.url} alt="MOXIEMO" style={{ height: 42, marginBottom: 18 }} />
             <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_DARK, lineHeight: 1.7 }}>
-              Currently in private beta<br />Founding members free access
+              MOXIEMO 2.0 BETA<br />50% OFF FOR OUR FIRST 100 CUSTOMERS
             </div>
             <div className="flex" style={{ gap: 10, marginTop: 18 }}>
               {[Instagram, Facebook, Linkedin].map((Icon, i) => (
@@ -847,8 +811,8 @@ function Footer() {
             </div>
           </div>
           {[
-            ["Product", [["Platform", "/platform"], ["Solutions", "/solutions"], ["Why MOXIEMO", "/why-moxie"], ["Pricing", "/pricing"], ["About", "/about"]]],
-            ["Resources", [["Building with MOXIEMO", "/blog"], ["Changelog", "/changelog"], ["Free Brand Audit", "/brand-audit"], ["Free Brand Kit", "/brand-kit", true], ["Contact", "/about"]]],
+            ["Product", [["Platform", "/platform"], ["Solutions", "/solutions"], ["Why MOXIEMO", "/why-moxiemo"], ["Pricing", "/pricing"], ["About", "/about"]]],
+            ["Resources", [["Building with MOXIEMO", "/blog"], ["Changelog", "/changelog"], ["Free Brand Audit", "/brand-audit"], ["Free Brand Kit", "/brand-kit", true], ["Contact", "mailto:hello@buildwithmoxiemo.com"]]],
             ["Legal", [["Privacy", "/privacy"], ["Terms", "/terms"], ["Data Deletion", "/data-deletion"]]],
           ].map(([title, items]) => (
             <div key={title as string}>
@@ -938,7 +902,6 @@ export default function Index() {
       <Marquee />
       <Problem />
       <PlatformSection />
-      <Numbers />
       <HowItWorks />
       <BuiltForYou />
       <ThePlatform />

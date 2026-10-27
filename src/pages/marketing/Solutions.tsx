@@ -164,8 +164,8 @@ const faqGroups: { label: string; items: { q: string; a: string }[] }[] = [
     label: "How It Works",
     items: [
       { q: "What is the difference between having a brand and having a go-to-market?", a: "A brand tells people who you are. A go-to-market answers the harder questions: Who exactly is your ideal customer and what keeps them up at night? Where are they, and are you reaching them there? What do they need to hear from you, and are you saying it in a way that resonates? How do you turn attention into trust and trust into revenue? Most founders have invested in their brand but have never built a real go-to-market underneath it. The content is inconsistent, the distribution is accidental, and the results do not match the effort. That is not a hustle problem. It is a foundation problem. MOXIEMO builds the foundation first." },
-      { q: "How does MOXIEMO Discovery actually work?", a: "Discovery is a guided conversation, not a form and not a quiz. MOXIEMO asks you questions about your business: who you serve, the transformation you provide, your voice, your goals, and your biggest marketing challenges. You answer in your own words. The whole conversation takes about twenty minutes. When you are done, MOXIEMO synthesizes everything into your complete marketing foundation: positioning, ICP, content pillars, voice guidelines, and channel plan. It does not scrape your website. It builds from you." },
-      { q: "How long does it take to get set up?", a: "Most founders are set up and generating their first content within forty-five minutes of signing up. Discovery takes about twenty minutes. Strategy review takes five to ten minutes. Your first piece of content takes another five. There is no onboarding call required and no data migration." },
+      { q: "How does MOXIEMO Discovery actually work?", a: "Discovery is a guided conversation, not a form and not a quiz. MOXIEMO asks you questions about your business: who you serve, the transformation you provide, your voice, your goals, and your biggest marketing challenges. You answer in your own words. Build your foundation in one guided session. When you are done, MOXIEMO synthesizes everything into your complete marketing foundation: positioning, ICP, content pillars, voice guidelines, and channel plan. It does not scrape your website. It builds from you." },
+      { q: "How long does it take to get set up?", a: "Start with Discovery in one guided session, review your strategy, and create your first piece of content. There is no onboarding call required and no data migration." },
       { q: "What happens after I complete Discovery?", a: "Your marketing foundation is live in the platform. MOXIEMO uses it to generate content, plan your calendar, and run your campaigns. You never re-explain who you are or what you do. Every tool inside MOXIEMO already knows your strategy, so everything you generate from that point forward is anchored to your positioning, voice, and goals automatically." },
     ],
   },
@@ -435,13 +435,6 @@ export default function Solutions() {
     { phase: "Create", status: "Live now", items: ["AI content from your strategy","LinkedIn, Instagram, Facebook","YouTube video content","Email content in your voice","Platform formatting rules"], muted: [] },
     { phase: "Distribute", status: "Live now", items: ["Marketing planner","Content calendar","Direct publishing to LinkedIn","Facebook & Instagram (coming)"], muted: [3] },
     { phase: "Grow", status: "Live now", items: ["Publishing insights","Performance by strategy","Autonomous loop (Beta 2.0)"], muted: [2] },
-  ];
-
-  const stats = [
-    { v: "18+", l: "Hrs back per week", c: "Reclaimed from manual marketing tasks" },
-    { v: "4-6", l: "Tools eliminated", c: "Replaced by one unified platform" },
-    { v: "20", l: "Min to full strategy", c: "From first question to strategy doc" },
-    { v: "$93K", l: "Saved annually", c: "vs. equivalent agency retainer" },
   ];
 
   return (
@@ -727,33 +720,6 @@ export default function Solutions() {
         </div>
       </section>
 
-      {/* §7 Numbers */}
-      <section style={{ background: INK, position: "relative", overflow: "hidden" }}>
-        <span style={{ position: "absolute", right: -100, top: -80, width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(239,111,83,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
-        <div className="mx-auto" style={{ maxWidth: 1200, padding: "96px 40px", position: "relative" }}>
-          <div className="reveal" style={{ textAlign: "center", marginBottom: 72 }}>
-            <h2 style={{ ...display, fontWeight: 600, fontSize: "clamp(30px,3.8vw,52px)", color: "#f7f3ea", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.08 }}>
-              What MOXIEMO is built to give back.
-            </h2>
-            <p style={{ fontSize: 17, color: "rgba(244,239,229,0.55)", maxWidth: 520, margin: "20px auto 0" }}>
-              Here is what founders stop spending time and money on when the go-to-market actually runs.
-            </p>
-          </div>
-          <div className="sol-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 2, borderRadius: 16, overflow: "hidden", background: "rgba(244,239,229,0.06)" }}>
-            {stats.map((s, i) => (
-              <div key={s.l} className={`reveal d${i + 1}`} style={{ background: DARK, padding: "40px 32px", textAlign: "center" }}>
-                <div style={{ ...display, fontWeight: 600, fontSize: "clamp(44px,5vw,72px)", color: "#f7f3ea", letterSpacing: "-0.03em", lineHeight: 1 }}>{s.v}</div>
-                <div style={{ ...mono, fontSize: 11, textTransform: "uppercase", color: CORAL, letterSpacing: "0.16em", marginTop: 14, marginBottom: 6 }}>{s.l}</div>
-                <div style={{ fontSize: 13.5, color: "rgba(244,239,229,0.42)" }}>{s.c}</div>
-              </div>
-            ))}
-          </div>
-          <p className="reveal" style={{ ...mono, fontSize: 11, letterSpacing: "0.1em", color: "rgba(244,239,229,0.28)", maxWidth: 620, margin: "28px auto 0", textAlign: "center", lineHeight: 1.6 }}>
-            Based on the platform's designed workflow. Your results will reflect your business, your volume, and your starting point. Beta data from founding members will update these numbers.
-          </p>
-        </div>
-      </section>
-
       {/* §8 FAQ */}
       <section style={{ background: CREAM }}>
         <div className="mx-auto" style={{ maxWidth: 900, padding: "100px 40px" }}>
@@ -805,7 +771,7 @@ export default function Solutions() {
             <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: "#5f6a52" }}>Get Started Today</span>
           </div>
           <h2 className="reveal" style={{ ...display, fontWeight: 600, fontSize: "clamp(32px,5vw,68px)", color: INK, margin: 0, lineHeight: 1.0, letterSpacing: "-0.025em" }}>
-            Your go-to-market is not built yet. <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>It can be in twenty minutes.</span>
+            Your go-to-market is not built yet. <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>Build it through one guided session.</span>
           </h2>
           <p className="reveal" style={{ fontSize: 18, color: SAGE_BODY, maxWidth: 520, margin: "28px auto 40px", lineHeight: 1.6 }}>
             Start with Discovery. See what MOXIEMO builds from who you actually are.

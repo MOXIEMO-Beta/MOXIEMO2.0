@@ -343,38 +343,6 @@ export default function Pricing() {
         </div>
       </section>
 
-      {/* THE NUMBERS */}
-      <section style={{ background: PEACH, padding: "96px 40px" }}>
-        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-          <Eyebrow>THE NUMBERS</Eyebrow>
-          <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(36px,4.5vw,60px)", lineHeight: 1.08, letterSpacing: "-0.025em", margin: "0 0 14px", color: INK }}>What MOXIEMO is built to give back.</h2>
-          <p style={{ fontSize: 17, lineHeight: 1.65, color: "#56544c", margin: "0 0 60px", maxWidth: 680 }}>Every founder who runs MOXIEMO Discovery gets a complete marketing strategy in minutes. Here is what MOXIEMO is designed to save you, in time and in tools.</p>
-          <div className="mo-stats" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", borderRadius: 4, overflow: "hidden", gap: 1, background: "rgba(19,19,15,0.09)" }}>
-            {[
-              { num: "18+", lbl: "HRS BACK PER WEEK", icon: (
-                <svg width="54" height="54" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" fill="#FDE0D8" stroke={INK} strokeWidth="1.75" /><path d="M24 13v11l7.5 5" stroke={CORAL} strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" /><circle cx="24" cy="24" r="2.5" fill={CORAL} /></svg>
-              )},
-              { num: "4–6", lbl: "TOOLS ELIMINATED", icon: (
-                <svg width="54" height="54" viewBox="0 0 48 48" fill="none"><rect x="3" y="3" width="19" height="19" rx="4.5" fill="#F0B8A8" stroke={INK} strokeWidth="1.5" /><rect x="26" y="3" width="19" height="19" rx="4.5" fill="#E8C87A" stroke={INK} strokeWidth="1.5" /><rect x="3" y="26" width="19" height="19" rx="4.5" fill="#A8CBA8" stroke={INK} strokeWidth="1.5" /><rect x="26" y="26" width="19" height="19" rx="4.5" fill="#E4DFD8" stroke={INK} strokeWidth="1.5" /></svg>
-              )},
-              { num: "20", lbl: "MIN TO FULL STRATEGY", icon: (
-                <svg width="54" height="54" viewBox="0 0 48 48" fill="none"><path d="M29 3L12 28h14L21 45 40 20H26L29 3z" fill="#E8C87A" stroke={INK} strokeWidth="1.75" strokeLinejoin="round" /></svg>
-              )},
-              { num: "$93K", lbl: "SAVED ANNUALLY", icon: (
-                <svg width="54" height="54" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="18" fill="#A8CBA8" stroke={INK} strokeWidth="1.75" /><path d="M19.5 17.5c0-2.8 2.1-5 4.5-5s4.5 2.2 4.5 5c0 5.5-9 5.5-9 11 0 3.2 2.1 5.5 4.5 5.5s4.5-2.3 4.5-5.5" stroke="#fff" strokeWidth="2.25" strokeLinecap="round" /></svg>
-              )},
-            ].map((s) => (
-              <div key={s.lbl} style={{ background: PEACH, padding: "44px 36px 42px" }}>
-                <div style={{ marginBottom: 22 }}>{s.icon}</div>
-                <div style={{ ...serif, fontSize: "clamp(48px,5.5vw,80px)", fontWeight: 700, color: CORAL, lineHeight: 1, marginBottom: 10 }}>{s.num}</div>
-                <div style={{ ...mono, fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "#8a877a" }}>{s.lbl}</div>
-              </div>
-            ))}
-          </div>
-          <p style={{ fontSize: 13, color: "#9a9789", margin: "20px 0 0", fontStyle: "italic", maxWidth: 700, lineHeight: 1.6 }}>Based on the platform's designed workflow. Your results will reflect your business, your volume, and your starting point. Real numbers from private beta members will replace these as data comes in.</p>
-        </div>
-      </section>
-
       {/* EVERY PLAN INCLUDES */}
       <section style={{ background: CREAM, padding: "96px 40px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
@@ -388,7 +356,7 @@ export default function Pricing() {
             <div style={{ flex: 1, minWidth: 300 }}>
               <div className="mo-every-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 40px" }}>
                 {[
-                  "20-minute AI strategic discovery",
+                  "AI strategic discovery in one guided session",
                   "Marketing Planner and content calendar access",
                   "Marketing foundation: positioning, ICP, voice, and content pillars",
                   "Email content generation, in your voice",
