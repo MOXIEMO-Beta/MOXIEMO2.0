@@ -97,8 +97,7 @@ function Hero() {
     <section style={{ background: SAGE }}>
       <div className="mx-auto grid gap-[52px] lg:grid-cols-[0.92fr_1.18fr] items-center" style={{ maxWidth: 1200, padding: "96px 40px 110px" }}>
         <div>
-          <Eyebrow>MOXIEMO 2.0 BETA · 50% OFF FOR OUR FIRST 100 CUSTOMERS</Eyebrow>
-          <h1 style={{ ...serif, fontWeight: 600, fontSize: "clamp(54px, 7.4vw, 92px)", lineHeight: 0.95, color: INK, marginTop: 28, letterSpacing: "-0.02em" }}>
+          <h1 style={{ ...serif, fontWeight: 600, fontSize: "clamp(54px, 7.4vw, 92px)", lineHeight: 0.95, color: INK, marginTop: 0, letterSpacing: "-0.02em" }}>
             Built on strategy.<br />
             <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Powered to execute.</span>
           </h1>
