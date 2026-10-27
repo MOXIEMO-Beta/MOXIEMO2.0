@@ -10,6 +10,7 @@ beforeEach(() => {
   vi.useRealTimers();
   localStorage.clear();
   insert.mockClear();
+  insert.mockResolvedValue({ error: null });
   Object.defineProperty(navigator, "globalPrivacyControl", { value: false, configurable: true });
 });
 
