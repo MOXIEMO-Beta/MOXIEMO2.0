@@ -30,3 +30,8 @@
 - [x] Update requested copy, loop, moves, problems, operator tabs, included grid and FAQ.
 - [x] Remove autonomous card, beta labels and stats; keep community and mockup designs.
 - [x] Verify desktop/mobile layout, all three tabs, six problem accordions, thirteen FAQs and CTA links; preserve existing reveal animations and mockup sizing.
+
+# Why MOXIEMO page
+- [ ] Replace canonical long-form article with the legacy Why design and requested copy.
+- [ ] Add changes cards, founder note and route-specific metadata; keep replace redirect.
+- [ ] Verify canonical page, redirect, metadata, copy and CTA links on desktop/mobile.
