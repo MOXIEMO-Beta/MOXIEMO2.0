@@ -35,3 +35,8 @@
 - [x] Replace canonical long-form article with the legacy Why design and requested copy.
 - [x] Add changes cards, founder note and route-specific metadata; keep replace redirect.
 - [x] Verify canonical page, redirect history, single page description, copy and CTA links on desktop/mobile; no horizontal overflow or runtime errors.
+
+# About page
+- [x] Replace hero, story paragraphs, mission, vision, five rules, goal descriptions, North Star and final CTA copy while preserving layout, styling, photo, badges and credentials ticker.
+- [x] Remove em dashes from the photo caption, signature and The Table label; delete the obsolete closing line.
+- [x] Verify copy, ticker items, CTA destinations, mobile headline wrapping and no horizontal overflow.
