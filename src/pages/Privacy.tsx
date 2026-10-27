@@ -249,24 +249,119 @@ export default function Privacy() {
 
       <LegalSection heading="8. Cookies and Tracking Technologies">
         <p>
-          Strictly necessary cookies are always on. Preferences, analytics, and marketing are off until You choose to allow them. Microsoft Clarity loads only when You allow analytics. Analytics consent permits usage measurement and session replays; marketing consent separately permits Microsoft to use site data for advertising. Learn more at <a className="text-foreground underline" href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener noreferrer">Microsoft Privacy Statement</a>.
+          <span className="text-foreground font-medium">8.1 What we use.</span> Cookies are small text files stored on Your device. We also use similar technologies, such as pixel tags and web beacons in emails, to see whether a message was opened or a link was clicked.
         </p>
         <p>
-          Open Cookie settings in the footer to review or withdraw Your choices at any time. Withdrawing analytics stops Clarity and removes its _clck and _clsk cookies. When Your browser sends Global Privacy Control and You have no saved choice, we turn off optional categories automatically. You can explicitly change these choices in the preferences panel.
+          <span className="text-foreground font-medium">8.2 Categories.</span>
         </p>
         <p>
-          We store Your choices locally for up to six months under notice version 2026-11-01. We also keep an append-only consent record containing a random visitor identifier, notice version, category choices, Global Privacy Control signal, choice source, page path, and time. This record does not contain Your IP address and preserves earlier choices when You later withdraw permission. An updated notice version requires a new choice. Accepting this Privacy Policy or browsing the site does not grant permission for optional cookies.
+          <span className="text-foreground font-medium">Strictly necessary:</span> Keep the Sites and Your Account working, including sign-in, security, routing and remembering Your cookie choices. Always on.
         </p>
         <p>
-          We use cookies and similar technologies including pixel tags and web beacons to operate the Platform, understand how it is used, and improve Your experience. A summary of the technologies we use:
+          <span className="text-foreground font-medium">Preferences:</span> Remember settings You choose. Off unless You allow them.
         </p>
-        <LegalList items={[
-          "Cookies: Small text files stored on Your device that allow the Platform to recognize You across sessions, maintain Your login state, and remember Your preferences.",
-          "Pixel tags: Transparent images embedded in web pages or emails that signal when a page or email has been opened or an action has been taken.",
-          "Web beacons: Similar to pixel tags, used to track email open rates and link click rates in our communications.",
-        ]} />
         <p>
-          You can control cookies through Your browser's privacy settings. Disabling essential cookies will impair Platform functionality, including Your ability to remain logged in. Disabling analytics or marketing cookies will not affect Your core use of the Platform.
+          <span className="text-foreground font-medium">Analytics:</span> Help us understand how visitors use the Sites so we can fix problems and improve pages. We use Microsoft Clarity, which records interactions such as clicks, scrolls and page movement to create heatmaps and session replays. Off unless You allow them.
+        </p>
+        <p>
+          <span className="text-foreground font-medium">Marketing:</span> Help us measure our advertising and campaigns. If You allow them, Microsoft may use data from the Sites for advertising. Off unless You allow them.
+        </p>
+        <p>
+          <span className="text-foreground font-medium">8.3 Cookies and similar technologies we use.</span>
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[620px] text-[13px] leading-[1.6]">
+            <thead>
+              <tr>
+                <th className="py-2 pr-3 text-left text-[11px] font-bold uppercase tracking-[1px] text-accent border-b border-border">Name</th>
+                <th className="py-2 pr-3 text-left text-[11px] font-bold uppercase tracking-[1px] text-accent border-b border-border">Provider</th>
+                <th className="py-2 pr-3 text-left text-[11px] font-bold uppercase tracking-[1px] text-accent border-b border-border">Purpose</th>
+                <th className="py-2 pr-3 text-left text-[11px] font-bold uppercase tracking-[1px] text-accent border-b border-border">Category</th>
+                <th className="py-2 text-left text-[11px] font-bold uppercase tracking-[1px] text-accent border-b border-border">Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">moxiemo_consent</td>
+                <td className="py-2 pr-3 align-top">MOXIEMO</td>
+                <td className="py-2 pr-3 align-top">Stores Your cookie choices</td>
+                <td className="py-2 pr-3 align-top">Strictly necessary</td>
+                <td className="py-2 align-top">6 months</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">moxiemo_anon_id</td>
+                <td className="py-2 pr-3 align-top">MOXIEMO</td>
+                <td className="py-2 pr-3 align-top">Random ID used to record Your consent choice</td>
+                <td className="py-2 pr-3 align-top">Strictly necessary</td>
+                <td className="py-2 align-top">Until You clear it</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">sb-[project]-auth-token</td>
+                <td className="py-2 pr-3 align-top">Supabase</td>
+                <td className="py-2 pr-3 align-top">Keeps You signed in</td>
+                <td className="py-2 pr-3 align-top">Strictly necessary</td>
+                <td className="py-2 align-top">Until You sign out</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">__dpl</td>
+                <td className="py-2 pr-3 align-top">Lovable (hosting)</td>
+                <td className="py-2 pr-3 align-top">Routes requests to the current version of the Sites</td>
+                <td className="py-2 pr-3 align-top">Strictly necessary</td>
+                <td className="py-2 align-top">[confirm]</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">session-id</td>
+                <td className="py-2 pr-3 align-top">[confirm]</td>
+                <td className="py-2 pr-3 align-top">[confirm]</td>
+                <td className="py-2 pr-3 align-top">[confirm]</td>
+                <td className="py-2 align-top">[confirm]</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">_clck</td>
+                <td className="py-2 pr-3 align-top">Microsoft Clarity</td>
+                <td className="py-2 pr-3 align-top">Keeps a Clarity visitor ID so visits connect</td>
+                <td className="py-2 pr-3 align-top">Analytics</td>
+                <td className="py-2 align-top">1 year</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">_clsk</td>
+                <td className="py-2 pr-3 align-top">Microsoft Clarity</td>
+                <td className="py-2 pr-3 align-top">Groups page views into one session</td>
+                <td className="py-2 pr-3 align-top">Analytics</td>
+                <td className="py-2 align-top">1 day</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">CLID</td>
+                <td className="py-2 pr-3 align-top">Microsoft Clarity (third party)</td>
+                <td className="py-2 pr-3 align-top">Records when Clarity first saw this browser on any site that uses Clarity</td>
+                <td className="py-2 pr-3 align-top">Analytics</td>
+                <td className="py-2 align-top">1 year</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">MUID</td>
+                <td className="py-2 pr-3 align-top">Microsoft (third party)</td>
+                <td className="py-2 pr-3 align-top">Identifies browsers across Microsoft sites, used for advertising, analytics and operations</td>
+                <td className="py-2 pr-3 align-top">Marketing</td>
+                <td className="py-2 align-top">1 year</td>
+              </tr>
+              <tr className="border-b border-border">
+                <td className="py-2 pr-3 text-foreground align-top">ANONCHK, MR, SM</td>
+                <td className="py-2 pr-3 align-top">Microsoft (third party)</td>
+                <td className="py-2 pr-3 align-top">Support the MUID cookie</td>
+                <td className="py-2 pr-3 align-top">Marketing</td>
+                <td className="py-2 align-top">Session to 1 year</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <span className="text-foreground font-medium">8.4 Your choices.</span> When You first visit, our cookie banner lets You accept all, reject all or choose by category. You can change Your choices anytime by selecting Cookie settings at the bottom of any page. If You withdraw consent, we stop using those cookies going forward and remove Microsoft Clarity cookies from Your browser. You can also block or delete cookies in Your browser settings, though blocking strictly necessary cookies may stop parts of the Sites from working.
+        </p>
+        <p>
+          <span className="text-foreground font-medium">8.5 Global Privacy Control.</span> If Your browser sends a Global Privacy Control signal, we treat it as a request to opt out of analytics and marketing cookies, and of any sale or sharing of personal information for targeted advertising, for that browser.
+        </p>
+        <p>
+          <span className="text-foreground font-medium">8.6 How long we keep Your choice.</span> We keep Your cookie choices for 6 months, or until we change this policy in a way that affects cookies. Then we will ask again. We keep a record of each choice, with the date and policy version, to show consent. We do not store Your IP address with that record.
         </p>
       </LegalSection>
       <LegalDivider />
