@@ -2,6 +2,49 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --cookie-surface: #f4efe5;
+  --cookie-ink: #13130f;
+  --cookie-copy: #56544c;
+  --cookie-border: #b5b0a5;
+  --cookie-hover: #34342e;
+  --cookie-soft: #dce3d2;
+  --cookie-shadow: 0 12px 40px rgba(19, 19, 15, 0.2);
+}
+.cookie-surface {
+  font-family: 'Hanken Grotesk', system-ui, sans-serif;
+  color: var(--cookie-ink);
+  background: var(--cookie-surface);
+  border: 1px solid var(--cookie-border);
+  box-shadow: var(--cookie-shadow);
+  letter-spacing: 0;
+}
+.cookie-banner { position: fixed; z-index: 10001; left: 24px; bottom: 24px; width: min(460px, calc(100vw - 48px)); padding: 24px; border-radius: 8px; max-height: calc(100dvh - 48px); overflow-y: auto; }
+.cookie-panel { z-index: 10003; width: calc(100% - 32px); max-width: 600px; max-height: calc(100dvh - 48px); overflow-y: auto; border-radius: 8px; padding: 28px; }
+body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 10002; }
+.cookie-surface .cookie-title { font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 600; line-height: 1.2; letter-spacing: 0; margin-bottom: 12px; color: var(--cookie-ink); }
+.cookie-copy { font-size: 14px; line-height: 1.6; color: var(--cookie-copy); letter-spacing: 0; }
+.cookie-link { color: var(--cookie-ink); text-decoration: underline; text-underline-offset: 3px; }
+.cookie-link:focus-visible { outline: 2px solid var(--cookie-ink); outline-offset: 4px; }
+.cookie-surface .cookie-button { border-radius: 999px; height: 44px; padding: 10px 18px; font-size: 14px; font-weight: 600; letter-spacing: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+.cookie-button-solid { background: var(--cookie-ink); color: var(--cookie-surface); border: 1px solid var(--cookie-ink); }
+.cookie-button-solid:hover { background: var(--cookie-hover); }
+.cookie-button-outline { background: transparent; color: var(--cookie-ink); border: 1px solid var(--cookie-ink); }
+.cookie-button-outline:hover { background: var(--cookie-soft); }
+.cookie-surface .cookie-button:focus-visible, .cookie-toggle:focus-visible { outline: 2px solid var(--cookie-ink); outline-offset: 4px; box-shadow: none; }
+.cookie-category { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 20px; align-items: start; padding: 18px 0; border-top: 1px solid var(--cookie-border); }
+.cookie-label { font-size: 16px; font-weight: 600; color: var(--cookie-ink); }
+.cookie-always { display: block; font-size: 12px; color: var(--cookie-copy); font-weight: 500; }
+.cookie-toggle[data-state="checked"] { background: var(--cookie-ink); }
+.cookie-toggle[data-state="unchecked"] { background: var(--cookie-border); }
+.cookie-toggle > span { background: var(--cookie-surface); }
+.cookie-toggle:disabled { opacity: 1; }
+.cookie-gpc { background: var(--cookie-soft); padding: 12px; border-radius: 4px; }
+@media (max-width: 639px) {
+  .cookie-banner { left: 0; bottom: 0; width: 100%; border-radius: 8px 8px 0 0; max-height: 75dvh; padding: 20px; }
+  .cookie-panel { padding: 24px 20px; }
+}
+
 /* MOXIEMO Design System — warm cream + ink + coral. Inspired by monday.com cleanness. */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');

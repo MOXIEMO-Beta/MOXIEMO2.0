@@ -87,8 +87,8 @@ export default function Privacy() {
         <LegalList items={[
           "Essential cookies: Required for the Platform to function. These keep You logged in and maintain Your session. These cannot be disabled without affecting Platform functionality.",
           "Preference cookies: Remember Your settings and preferences across sessions.",
-          "Analytics cookies: Help us understand how the Platform is used, which features are most valuable, and where users encounter difficulty. This data is aggregated and anonymized.",
-          "Marketing cookies: Used to measure the effectiveness of our communications and marketing campaigns.",
+          "Analytics cookies: With Your permission, Microsoft Clarity records clicks, scrolls, page movement, and device and usage data for heatmaps and session replays that help us improve the site.",
+          "Marketing cookies: With Your permission, site data may be shared with Microsoft for advertising and campaign measurement.",
         ]} />
         <p>
           You can control cookie settings through Your browser. Note that disabling certain cookies may limit Your ability to use some features of the Platform. We may also use pixel tags and web beacons in emails and on the Platform to understand whether messages have been opened and to track engagement.
@@ -256,6 +256,15 @@ export default function Privacy() {
       <LegalDivider />
 
       <LegalSection heading="8. Cookies and Tracking Technologies">
+        <p>
+          Strictly necessary cookies are always on. Preferences, analytics, and marketing are off until You choose to allow them. Microsoft Clarity loads only when You allow analytics. Analytics consent permits usage measurement and session replays; marketing consent separately permits Microsoft to use site data for advertising. Learn more at <a className="text-foreground underline" href="https://privacy.microsoft.com/privacystatement" target="_blank" rel="noopener noreferrer">Microsoft Privacy Statement</a>.
+        </p>
+        <p>
+          Open Cookie settings in the footer to review or withdraw Your choices at any time. Withdrawing analytics stops Clarity and removes its _clck and _clsk cookies. When Your browser sends Global Privacy Control and You have no saved choice, we turn off optional categories automatically. You can explicitly change these choices in the preferences panel.
+        </p>
+        <p>
+          We store Your choices locally for up to six months under notice version 2026-11-01. We also keep an append-only consent record containing a random visitor identifier, notice version, category choices, Global Privacy Control signal, choice source, page path, and time. This record does not contain Your IP address and preserves earlier choices when You later withdraw permission. An updated notice version requires a new choice. Accepting this Privacy Policy or browsing the site does not grant permission for optional cookies.
+        </p>
         <p>
           We use cookies and similar technologies including pixel tags and web beacons to operate the Platform, understand how it is used, and improve Your experience. A summary of the technologies we use:
         </p>

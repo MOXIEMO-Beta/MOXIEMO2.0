@@ -1,5 +1,7 @@
 import { Link } from "react-router-dom";
 import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
+import { Button } from "@/components/ui/button";
+import { openCookieSettings } from "@/lib/cookieConsent";
 
 const C = {
   bg: "#13130f",
@@ -191,6 +193,7 @@ export function SiteFooter() {
             <div style={headerStyle}>Legal</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
               {legalLinks.map(([l, h]) => <FooterLink key={l} to={h}>{l}</FooterLink>)}
+              <Button variant="link" onClick={openCookieSettings} className="sf-link h-auto justify-start p-0 font-normal" style={{ ...fontBody, fontSize: 15, color: C.link, textDecoration: "none" }}>Cookie settings</Button>
             </div>
           </div>
         </div>
