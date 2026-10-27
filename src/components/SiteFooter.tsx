@@ -39,7 +39,7 @@ const resourceLinks: Array<[string, string, boolean?]> = [
   ["Changelog", "/changelog"],
   ["Free Brand Audit", "/brand-audit"],
   ["Free Brand Kit", "/brand-kit", true],
-  ["Contact", "/about"],
+  ["Contact", "mailto:hello@buildwithmoxiemo.com"],
 ];
 const legalLinks: Array<[string, string]> = [
   ["Privacy", "/privacy"],
@@ -110,10 +110,10 @@ export function SiteFooter() {
         <div style={{ padding: "32px 40px 56px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 32, flexWrap: "wrap" }}>
           <div>
             <div style={{ ...fontItalic, fontStyle: "italic", fontSize: "clamp(22px, 2.8vw, 36px)", color: C.tagline, maxWidth: 560, lineHeight: 1.15 }}>
-              One platform. Confident marketing.
+              Built on strategy. Powered to execute.
             </div>
             <div style={{ ...fontBody, fontSize: 16, color: C.muted, maxWidth: 460, marginTop: 14, lineHeight: 1.55 }}>
-              The AI CMO for expertise-based founders who&apos;ve outgrown DIY marketing.
+              The strategy-led marketing system for founders and growing businesses. MOXIEMO finds what moves your brand forward. MOXIE makes sure it happens.
             </div>
           </div>
           <Link
@@ -126,7 +126,7 @@ export function SiteFooter() {
               transition: "background 0.2s ease",
             }}
           >
-            Join as Founding Member →
+            Claim a first-100 spot
           </Link>
         </div>
       </div>
@@ -147,7 +147,7 @@ export function SiteFooter() {
           <div>
             <img src={logoLight.url} alt="MOXIEMO" style={{ height: 32, display: "block" }} />
             <div style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: C.muted, lineHeight: 1.8, marginTop: 18 }}>
-              Currently in private beta<br />Founding members free access
+              MOXIEMO 2.0 BETA<br />50% OFF FOR OUR FIRST 100 CUSTOMERS
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
               {socials.map(({ Icon, href, label }) => (

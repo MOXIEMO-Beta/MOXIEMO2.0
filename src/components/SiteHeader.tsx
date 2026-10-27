@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
-import { ResourcesMega } from "@/components/ResourcesMega";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
 import { useLocation } from "react-router-dom";
 
@@ -17,7 +16,7 @@ export function SiteHeader(_props: SiteHeaderProps = {}) {
   const { pathname } = useLocation();
   const links: Array<readonly [string, string]> = [
     ["Solutions", "/solutions"],
-    ["Why Moxiemo", "/why-moxie"],
+    ["Why MOXIEMO", "/why-moxiemo"],
     ["Pricing", "/pricing"],
     ["Community", "/community"],
     ["About", "/about"],
@@ -70,10 +69,6 @@ export function SiteHeader(_props: SiteHeaderProps = {}) {
           <Link to="/platform" className="hover:text-[#ef6f53] transition-colors uppercase" style={linkStyle}>
             Platform
           </Link>
-          <ResourcesMega
-            triggerClassName="hover:text-[#ef6f53] transition-colors uppercase whitespace-nowrap"
-            triggerStyle={{ ...mono, fontSize: 12, letterSpacing: "0.14em", color: INK, whiteSpace: "nowrap" }}
-          />
           {links.map(([l, h]) => {
             const active = pathname === h;
             return (
@@ -100,7 +95,7 @@ export function SiteHeader(_props: SiteHeaderProps = {}) {
           >
             Sign in
           </Link>
-          <Link to="/founding" style={pill}>Join</Link>
+          <Link to="/founding" style={pill}>Claim a spot</Link>
         </div>
       </div>
     </nav>
