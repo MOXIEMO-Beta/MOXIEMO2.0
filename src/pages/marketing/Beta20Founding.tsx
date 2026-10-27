@@ -51,7 +51,7 @@ export default function Beta20Founding() {
   });
 
   useEffect(() => {
-    document.title = "Beta 2.0 Founding Member · MOXIEMO";
+    document.title = "MOXIEMO | Built on strategy. Powered to execute.";
   }, []);
 
   const update = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>

@@ -40,15 +40,15 @@ function streamClientError(message: string, upstreamStatus = 0, detail = ""): Re
 }
 
 const OPENING_BY_ROLE: Record<string, (n: string) => string> = {
-  "Founder": (n) => `Hey ${n}, I'm MOXIEMO, your AI CMO. Let's build the marketing foundation for your business. I'll ask you 15 questions and turn your answers into a complete strategy. Takes about 15-20 minutes. Ready?`,
-  "Consultant": (n) => `Hey ${n}, I'm MOXIEMO. Let's create a strategy that positions your consulting expertise and drives qualified leads. 15 questions, about 15-20 minutes, and you'll have a complete marketing foundation. Let's go.`,
-  "Solopreneur": (n) => `Hey ${n}, I'm MOXIEMO, your AI CMO. Let's build a lean, focused marketing engine that works while you work. 15 questions and about 15-20 minutes and we'll have your strategy locked in. Ready?`,
-  "Fractional Executive": (n) => `Hey ${n}, I'm MOXIEMO. Let's position your fractional practice to attract the right retainer clients. 15 questions, about 15-20 minutes, and we'll build the foundation that makes your expertise unmistakable. Let's go.`,
-  "Agency Owner": (n) => `Hey ${n}, I'm MOXIEMO. Let's build the strategy behind your agency's own brand, because the cobbler's kids need shoes too. 15 questions, about 15-20 minutes, and you'll have a complete marketing foundation. Ready?`,
-  "Marketer": (n) => `Hey ${n}, I'm MOXIEMO. Let's build the strategic foundation your marketing will execute against. 15 questions, about 15-20 minutes, and we'll have a complete strategy locked in. Ready?`,
-  "Business Owner": (n) => `Hey ${n}, I'm MOXIEMO, your AI CMO. Let's build a marketing strategy that actually fits your business, not a template. 15 questions, about 15-20 minutes, and we'll have your foundation ready. Let's go.`,
-  "Marketing Team": (n) => `Hey ${n}, I'm MOXIEMO. Let's align your team around a clear marketing strategy. 15 questions, about 15-20 minutes, and we'll build the foundation that keeps everyone on the same page. Ready?`,
-  "default": (n) => `Hey ${n}, I'm MOXIEMO, your AI Chief Marketing Officer. I'll ask you 15 questions to build your complete marketing strategy. Everything in MOXIEMO flows from here. This takes about 15-20 minutes and I'll go one question at a time. The more specific you are, the stronger your strategy. Ready to build?`,
+  "Founder": (n) => `Hey ${n}, I'm MOXIEMO, your AI CMO. Let's build the marketing foundation for your business. I'll ask you 15 questions and turn your answers into a complete strategy. We will build it in one guided session. Ready?`,
+  "Consultant": (n) => `Hey ${n}, I'm MOXIEMO. Let's create a strategy that positions your consulting expertise and drives qualified leads. 15 questions in one guided session, and you'll have a complete marketing foundation. Let's go.`,
+  "Solopreneur": (n) => `Hey ${n}, I'm MOXIEMO, your AI CMO. Let's build a lean, focused marketing engine that works while you work. 15 questions in one guided session and we'll have your strategy locked in. Ready?`,
+  "Fractional Executive": (n) => `Hey ${n}, I'm MOXIEMO. Let's position your fractional practice to attract the right retainer clients. 15 questions in one guided session, and we'll build the foundation that makes your expertise unmistakable. Let's go.`,
+  "Agency Owner": (n) => `Hey ${n}, I'm MOXIEMO. Let's build the strategy behind your agency's own brand, because the cobbler's kids need shoes too. 15 questions in one guided session, and you'll have a complete marketing foundation. Ready?`,
+  "Marketer": (n) => `Hey ${n}, I'm MOXIEMO. Let's build the strategic foundation your marketing will execute against. 15 questions in one guided session, and we'll have a complete strategy locked in. Ready?`,
+  "Business Owner": (n) => `Hey ${n}, I'm MOXIEMO, your AI CMO. Let's build a marketing strategy that actually fits your business, not a template. 15 questions in one guided session, and we'll have your foundation ready. Let's go.`,
+  "Marketing Team": (n) => `Hey ${n}, I'm MOXIEMO. Let's align your team around a clear marketing strategy. 15 questions in one guided session, and we'll build the foundation that keeps everyone on the same page. Ready?`,
+  "default": (n) => `Hey ${n}, I'm MOXIEMO, your AI Chief Marketing Officer. I'll ask you 15 questions to build your complete marketing strategy. Everything in MOXIEMO flows from here. We will work through one guided session and I will go one question at a time. The more specific you are, the stronger your strategy. Ready to build?`,
 };
 
 const Q4_BY_ROLE: Record<string, string> = {
@@ -79,7 +79,7 @@ ${bc.social_proof ? `- Social proof on their site: ${bc.social_proof}. When you 
 
   return `You are MOXIEMO, an AI Chief Marketing Officer conducting a strategic discovery conversation with an expertise-based founder generating $250K or more in revenue.
 
-Your job: extract a complete, SPECIFIC marketing strategy through 15 questions across 6 sections in 30-45 minutes. Vague answers produce vague strategies — push for specifics.
+Your job: extract a complete, SPECIFIC marketing strategy through 15 questions across 6 sections in one guided session. Vague answers produce vague strategies, so push for specifics.
 
 TONE: Direct, warm, respectful. Like a senior strategist who values their time. Never corporate, never overly casual. Acknowledge briefly, then move on. No fluff.
 

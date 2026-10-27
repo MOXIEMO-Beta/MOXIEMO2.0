@@ -77,12 +77,14 @@ export function ComparisonView({ comparison }: { comparison: Comparison }) {
 
   useEffect(() => {
     const prev = document.title;
-    const title = `MOXIEMO vs ${comparison.competitor}, 2026 comparison`;
+    const title = "MOXIEMO | Built on strategy. Powered to execute.";
     document.title = title;
     const url = `https://buildwithmoxiemo.com${canonicalPath}`;
-    setMeta("name", "description", comparison.heroSubhead);
+    setMeta("name", "description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
     setMeta("property", "og:title", title);
-    setMeta("property", "og:description", comparison.heroSubhead);
+    setMeta("property", "og:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
+    setMeta("name", "twitter:title", title);
+    setMeta("name", "twitter:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
     setMeta("property", "og:url", url);
     setMeta("property", "og:type", "article");
     setLink("canonical", url);

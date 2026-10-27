@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,7 +12,6 @@ import AuthCallback from "./pages/auth/Callback.tsx";
 import LinkedInCallback from "./pages/auth/LinkedInCallback.tsx";
 import Platform from "./pages/marketing/Platform.tsx";
 import Solutions from "./pages/marketing/Solutions.tsx";
-import WhyMoxie from "./pages/marketing/WhyMoxie.tsx";
 import Pricing from "./pages/marketing/Pricing.tsx";
 import Community from "./pages/marketing/Community.tsx";
 import About from "./pages/marketing/About.tsx";
@@ -89,7 +88,7 @@ const App = () => (
             <Route path="/auth/linkedin/callback" element={<LinkedInCallback />} />
             <Route path="/platform" element={<Platform />} />
             <Route path="/solutions" element={<Solutions />} />
-            <Route path="/why-moxie" element={<WhyMoxie />} />
+            <Route path="/why-moxie" element={<Navigate to="/why-moxiemo" replace />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/community" element={<Community />} />
             <Route path="/about" element={<About />} />

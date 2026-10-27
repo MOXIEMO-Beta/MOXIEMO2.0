@@ -143,11 +143,6 @@ export default function Auth() {
               </p>
             </>
           )}
-          <div className="mt-12 grid grid-cols-3 gap-4 text-sm">
-            <div><div className="font-display text-3xl text-accent">18+</div><div className="text-background/60">hrs back per week</div></div>
-            <div><div className="font-display text-3xl text-accent">4–6</div><div className="text-background/60">tools replaced</div></div>
-            <div><div className="font-display text-3xl text-accent">20 min</div><div className="text-background/60">to full strategy</div></div>
-          </div>
           {mode === "signup" && (
             <ul className="mt-10 space-y-2" style={{ color: "rgba(255,255,255,0.75)", fontSize: 13 }}>
               <li><span style={{ color: "#ff6b6b" }}>✓</span> Free for founding members — forever</li>
