@@ -32,6 +32,6 @@
 - [x] Verify desktop/mobile layout, all three tabs, six problem accordions, thirteen FAQs and CTA links; preserve existing reveal animations and mockup sizing.
 
 # Why MOXIEMO page
-- [ ] Replace canonical long-form article with the legacy Why design and requested copy.
-- [ ] Add changes cards, founder note and route-specific metadata; keep replace redirect.
-- [ ] Verify canonical page, redirect, metadata, copy and CTA links on desktop/mobile.
+- [x] Replace canonical long-form article with the legacy Why design and requested copy.
+- [x] Add changes cards, founder note and route-specific metadata; keep replace redirect.
+- [x] Verify canonical page, redirect history, single page description, copy and CTA links on desktop/mobile; no horizontal overflow or runtime errors.
