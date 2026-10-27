@@ -185,10 +185,10 @@ function MockStrategy() {
         <span style={{ display: "inline-block", width: 6, height: 6, background: C.coral, marginRight: 6 }} />Positioning Statement
       </div>
       <div style={{ ...fontDisplay, fontSize: 16, lineHeight: 1.35, color: "#fff", marginBottom: 16 }}>
-        We help founder-coaches build authority through strategy-led marketing — not louder execution.
+        We help founder-led service firms win better clients with a clear point of view.
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        {[{ k: "Who", v: "Founder-coaches scaling past $300K" }, { k: "Problem", v: "Drowning in execution, missing strategy" }].map(b => (
+        {[{ k: "Who", v: "Founder-led service firms" }, { k: "Problem", v: "Busy marketing, unclear priorities" }].map(b => (
           <div key={b.k} style={{ border: `1px solid rgba(244,239,229,0.18)`, borderRadius: 6, padding: 10 }}>
             <div style={{ ...fontMono, fontSize: 8, letterSpacing: "0.18em", textTransform: "uppercase", color: "#7a786e", marginBottom: 4 }}>{b.k}</div>
             <div style={{ ...fontBody, fontSize: 11, color: "#d9d6cb" }}>{b.v}</div>
@@ -221,7 +221,7 @@ function MockContent() {
           <div style={{ ...fontBody, fontSize: 11, fontWeight: 600, color: C.ink }}>Kate L. <span style={{ color: C.lightMuted, fontWeight: 400 }}>· 1m</span></div>
         </div>
         <div style={{ ...fontBody, fontSize: 10.5, color: C.ink, lineHeight: 1.5, flex: 1 }}>
-          The reason most coaches plateau isn't pricing. It's positioning. Three signals tell you it's time to reposition…
+          Three signs it is time to reposition your offer, and what to fix first.
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
           <div style={{ ...fontMono, fontSize: 8, color: "#7ba87a", textTransform: "uppercase", letterSpacing: "0.16em" }}>● In your voice</div>
@@ -272,6 +272,7 @@ function MockAnalytics() {
   const bars = [{ k: "LinkedIn", v: 85 }, { k: "Email", v: 72 }, { k: "Instagram", v: 58 }];
   return (
     <div>
+      <div style={tinyMono}>SAMPLE DATA</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 12 }}>
         {metrics.map(m => (
           <div key={m.k} style={{ background: "#fff", border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 9px" }}>
@@ -309,25 +310,25 @@ interface Step {
   active: string; mock: React.ReactNode;
 }
 const STEPS: Step[] = [
-  { n: "01", label: "Strategic foundation", time: "One guided session", title: "MOXIEMO Discovery conversation",
-    body: "MOXIEMO's AI interviews you about who you serve, the transformation you provide, your unique positioning, and your voice. The strategic work most tools skip. Built through one guided session.",
-    checks: ["Strategic positioning statement", "Brand voice guidelines", "Audience pain map", "Content theme clusters", "Channel prioritization", "Success metrics dashboard"],
+  { n: "01", label: "DISCOVER AND DIAGNOSE", time: "One guided session", title: "Start with the truth about your brand.",
+    body: "MOXIEMO asks founder-built questions drawn from This Is Branding: your goals, audience, offer, proof, current activity and constraints. Then it compares your answers with what your brand and channels show today and names the gap.",
+    checks: ["Business goals and success measure", "Audience and offer", "Proof and current activity", "Brand and channel review", "The gap between your goal and today"],
     active: "Social", mock: <MockSocialCalendar /> },
-  { n: "02", label: "Living strategy system", time: "Always on", title: "Strategy embedded in every tool",
-    body: "Your strategy isn't a PDF in a folder. It's wired into the email tool, the social tool, the content creator, the analytics, guiding every output automatically.",
-    checks: ["Email subject lines align to positioning", "Social posts build a narrative", "Content sounds like you", "Analytics tracks YOUR success metric"],
+  { n: "02", label: "DEFINE", time: "Always on", title: "A strategy you can use every day.",
+    body: "Positioning, messaging, audience priorities and content pillars, written in plain language and built into every tool you use in MOXIEMO.",
+    checks: ["Positioning statement", "Messaging", "Audience priorities", "Content pillars", "Brand voice"],
     active: "Strategy", mock: <MockStrategy /> },
-  { n: "03", label: "Content creation", time: "Always on", title: "Content that sounds like you, every time",
-    body: "Pick a content pillar, drop in an idea, and MOXIEMO writes in your voice. LinkedIn posts, newsletters, long-form articles, video scripts. Not generic AI output. Yours.",
+  { n: "03", label: "PRIORITIZE", time: "Weekly", title: "Know what comes first.",
+    body: "Your strategy becomes a roadmap with milestones and next best actions, in order. When something slips, you see it. When something works, it moves up.",
+    checks: ["Measurable roadmap", "Milestones", "Next best actions", "Growth tests with clear success criteria"],
+    active: "Marketing Planner", mock: <MockPlanner /> },
+  { n: "04", label: "EXECUTE", time: "You approve", title: "Ready-to-approve work, in your voice.",
+    body: "Pick a pillar or a priority and MOXIEMO drafts the post, newsletter, article or script. You edit and approve. With your accounts connected, it publishes on the schedule you set, and MOXIE can text you when something is ready.",
     checks: ["LinkedIn posts", "Email newsletters", "Blog articles", "Video scripts"],
     active: "Content", mock: <MockContent /> },
-  { n: "04", label: "Execution without exhaustion", time: "2 hours / week", title: "Marketing that runs while you coach",
-    body: "Monday morning: review, approve, publish. Friday: check what worked.",
-    checks: ["Review week's content (15 min)", "Approve & edit (30 min)", "Auto-publish across channels", "Friday analytics check (15 min)"],
-    active: "Marketing Planner", mock: <MockPlanner /> },
-  { n: "05", label: "Strategic analytics", time: "Weekly review", title: "Know what's working. Grow what matters.",
-    body: "Track your real success metric, not follower counts. Weekly insights tied to your strategy, attribution on what's driving results, and specific recommendations on what to do next.",
-    checks: ["Custom success metrics", "Attribution tracking", "Weekly insights digest", "Growth recommendations"],
+  { n: "05", label: "MEASURE AND ADAPT", time: "Weekly review", title: "See what moved. Decide what is next.",
+    body: "Results come from your connected data and are read against the goal you set. You see what worked, what to drop and what to try next.",
+    checks: ["Your success measure", "Results by channel and pillar", "Weekly summary, by text from MOXIE if you want it", "Recommendations for the next round"],
     active: "Analytics", mock: <MockAnalytics /> },
 ];
 
@@ -357,7 +358,7 @@ function StepCard({ step }: { step: Step }) {
    Page
    ============================================================ */
 export default function Platform() {
-  const marqueeItems = ["Strategy first", "Execution embedded", "Your voice, every time"];
+  const marqueeItems = ["STRATEGY FIRST", "EXECUTION THAT MOVES", "YOU APPROVE WHAT GOES OUT", "MOXIE KEEPS IT MOVING", "YOUR VOICE, EVERY TIME"];
   return (
     <div style={{ ...fontBody, background: C.cream, color: C.ink, minHeight: "100vh" }}>
       <SiteHeader />
@@ -377,35 +378,35 @@ export default function Platform() {
         }
       `}</style>
 
-      {/* SECTION 1 — HERO */}
+      {/* SECTION 1 · HERO */}
       <section style={{ background: C.sage }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "104px 40px 120px", textAlign: "center" }}>
           <div style={{ display: "inline-block", marginBottom: 24 }}>
             <Eyebrow>§ · The Platform</Eyebrow>
           </div>
           <h1 style={{ ...fontDisplay, fontSize: "clamp(48px,6.5vw,96px)", lineHeight: 1.02, letterSpacing: "-0.02em", margin: 0 }}>
-            <span style={{ fontWeight: 600, color: C.ink, display: "block" }}>The only platform</span>
-            <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e", display: "block" }}>that starts with strategy.</span>
+            <span style={{ fontWeight: 600, color: C.ink, display: "block" }}>Strategy first.</span>
+            <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e", display: "block" }}>Execution that moves.</span>
           </h1>
           <p style={{ ...fontBody, fontSize: 20, color: "#48533c", maxWidth: 580, margin: "32px auto 40px", lineHeight: 1.55 }}>
-            MOXIEMO isn't better execution tools. We're the only marketing platform that creates your strategic foundation first, then embeds it into every tool you use.
+            MOXIEMO is a strategy-led marketing system. It works out what moves your brand forward, creates and publishes the work with your approval, and measures what happened.
           </p>
           <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
-            <Link to="/auth" style={{ ...fontBody, background: C.ink, color: "#f7f3ea", fontWeight: 600, padding: "16px 28px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
-              Start for free <span style={{ color: C.coral }}>→</span>
+            <Link to="/brand-audit" style={{ ...fontBody, background: C.ink, color: "#f7f3ea", fontWeight: 600, padding: "16px 28px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
+              Run my free Brand Audit <span style={{ color: C.coral }}>→</span>
             </Link>
-            <a href="#how-it-works" style={{ ...fontBody, background: "transparent", color: C.ink, fontWeight: 600, padding: "14.5px 28px", borderRadius: 999, border: `1.5px solid ${C.ink}`, textDecoration: "none" }}>
-              See how it works
-            </a>
+            <Link to="/pricing" style={{ ...fontBody, background: "transparent", color: C.ink, fontWeight: 600, padding: "14.5px 28px", borderRadius: 999, border: `1.5px solid ${C.ink}`, textDecoration: "none" }}>
+              See pricing
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* SECTION 2 — AI CO-PILOT */}
+      {/* SECTION 2 · AI CO-PILOT */}
       <section style={{ background: C.cream, padding: "96px 24px" }}>
         <div style={{ maxWidth: 1200, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 28 }}>
-            <Eyebrow>§ 01 · Your AI co-pilot</Eyebrow>
+            <Eyebrow>§ 01 · WHAT MOXIEMO DOES</Eyebrow>
           </div>
           <div style={{
             background: `radial-gradient(ellipse at 50% 108%, rgba(239,111,83,0.09) 0%, ${C.off} 58%)`,
@@ -414,37 +415,37 @@ export default function Platform() {
           }}>
             <div style={{ textAlign: "center", padding: "52px 40px 36px" }}>
               <h2 style={{ ...fontDisplay, fontWeight: 600, fontSize: "clamp(32px,4vw,54px)", letterSpacing: "-0.02em", margin: 0, color: C.ink, lineHeight: 1.05 }}>
-                Your AI marketing co-pilot.
+                A strategic advisor and an execution partner in one.
               </h2>
               <p style={{ ...fontBody, fontSize: 18, color: C.muted, margin: "16px auto 0", maxWidth: 560 }}>
-                Strategy, content, email, and analytics. Done for you.
+                You set the direction. MOXIEMO handles the steps between.
               </p>
             </div>
             <div className="pf-copilot-grid" style={{ display: "grid", gridTemplateColumns: "1fr 300px 1fr", gap: 32, padding: "0 52px 44px", alignItems: "center" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
-                <Feature icon="sparkle" title="AI Strategic Discovery" body="One guided session extracts your positioning, audience, and voice. The foundation everything else builds on, no consultant fees, no CMO hire." />
-                <Feature icon="mail" title="Email Marketing" body="Welcome sequences, newsletters, broadcasts, and conversion flows that match your voice. Replaces ConvertKit, Mailchimp, and the rest." />
-                <Feature icon="pencil" title="Content Creation" body="Blog posts, articles, lead magnets, and video scripts written in your voice, aligned to your strategy, ready to publish." />
+                <Feature icon="sparkle" title="Discovery and diagnosis" body="Guided questions built on the This Is Branding brand architecture, plus a read on your brand and channels today." />
+                <Feature icon="mail" title="Positioning and content pillars" body="Clear positioning, messaging, audience priorities and the pillars your content stands on." />
+                <Feature icon="pencil" title="Roadmap and next best actions" body="Milestones and priorities in order, so you always know what comes first." />
               </div>
               <div style={{ height: 440, borderRadius: 18, overflow: "hidden", background: "linear-gradient(140deg, #f9b96e 0%, #ef6f53 38%, #de5fa0 70%, #a87cc8 100%)" }}>
                 <img src={heroMaskAsset.url} alt="Founder wearing MOXIEMO mask" style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center 15%", mixBlendMode: "multiply" }} />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
-                <Feature icon="calendar" title="Content Calendar & Themes" body="90-day roadmap with quarterly themes and weekly topics, all aligned to your transformation journey. Never 'what should I post today?' again." />
-                <Feature icon="megaphone" title="Social Publishing" body="LinkedIn, Instagram, Facebook publishing with content that builds your narrative. Replaces Buffer, Later, Hootsuite." />
-                <Feature icon="bars" title="Strategic Analytics" body="Tracks YOUR success metric with attribution and recommendations, not vanity metrics." />
+                <Feature icon="calendar" title="Content creation" body="Posts, newsletters, articles and scripts in your voice, ready for your approval." />
+                <Feature icon="megaphone" title="Publishing and workflows" body="Publish to the channels you connect, on the schedule you approved." />
+                <Feature icon="bars" title="Performance and recommendations" body="Results read against your goal, with clear next steps." />
               </div>
             </div>
             <div style={{ textAlign: "center", paddingBottom: 52 }}>
-              <Link to="/auth" style={{ ...fontBody, background: C.coral, color: "#fff", fontWeight: 600, padding: "17px 34px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10, boxShadow: "0 8px 24px -8px rgba(239,111,83,0.45)" }}>
-                Get started →
+              <Link to="/pricing" style={{ ...fontBody, background: C.coral, color: "#fff", fontWeight: 600, padding: "17px 34px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10, boxShadow: "0 8px 24px -8px rgba(239,111,83,0.45)" }}>
+                See pricing →
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* SECTION 3 — MARQUEE */}
+      {/* SECTION 3 · MARQUEE */}
       <section style={{ background: C.ink, padding: "15px 0", overflow: "hidden" }}>
         <div style={{ display: "flex", width: "max-content", animation: "pf-scroll 32s linear infinite" }}>
           {[0, 1].map(loop => (
@@ -460,24 +461,24 @@ export default function Platform() {
         </div>
       </section>
 
-      {/* SECTION 4 — FIVE STAGES */}
+      {/* SECTION 4 · FIVE STAGES */}
       <section id="how-it-works" style={{ background: C.cream, padding: "112px 24px" }}>
         <div style={{ maxWidth: 1120, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56, maxWidth: 840, marginInline: "auto" }}>
-            <div style={{ marginBottom: 24 }}><Eyebrow>§ 02 · Five stages</Eyebrow></div>
+            <div style={{ marginBottom: 24 }}><Eyebrow>§ 02 · THE LOOP</Eyebrow></div>
             <h2 style={{ ...fontDisplay, fontSize: "clamp(38px,5vw,72px)", letterSpacing: "-0.02em", lineHeight: 1.02, margin: 0 }}>
-              <span style={{ fontWeight: 600, color: C.ink, display: "block" }}>Five stages.</span>
-              <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e", display: "block" }}>One platform.</span>
+              <span style={{ fontWeight: 600, color: C.ink, display: "block" }}>Six stages.</span>
+              <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e", display: "block" }}>One plan.</span>
             </h2>
             <div style={{ display: "flex", justifyContent: "center", gap: 10, flexWrap: "wrap", margin: "28px 0 18px" }}>
-              {[["Discovery", false], ["Strategy", false], ["Content", false], ["Execution", false], ["Measurement", true]].map(([t, last], i, arr) => (
+              {[["DISCOVER", false], ["DIAGNOSE", false], ["DEFINE", false], ["PRIORITIZE", false], ["EXECUTE", false], ["MEASURE + ADAPT", true]].map(([t, last], i, arr) => (
                 <span key={String(t)} style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.18em", color: last ? C.coral : C.lightMuted, fontWeight: last ? 700 : 400, display: "inline-flex", alignItems: "center", gap: 10 }}>
                   {t}{i < arr.length - 1 && <span style={{ color: C.coral }}>→</span>}
                 </span>
               ))}
             </div>
             <p style={{ ...fontBody, fontSize: 18, color: C.muted, margin: 0 }}>
-              Five stages. One platform.
+              Every round makes the next one sharper.
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -486,18 +487,34 @@ export default function Platform() {
         </div>
       </section>
 
-      {/* SECTION 6 — MIGRATION + SECURITY */}
+      <section style={{ background: C.sage, padding: "112px 24px" }}>
+        <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+          <Eyebrow>§ 03 · HOW WE ARE BUILDING IT</Eyebrow>
+          <h2 style={{ ...fontDisplay, fontWeight: 600, fontSize: "clamp(34px,4vw,54px)", lineHeight: 1.05, color: C.ink, margin: "24px 0" }}>Built in stages, in the right order.</h2>
+          <p style={{ ...fontBody, fontSize: 17, lineHeight: 1.6, color: C.muted, marginBottom: 40 }}>Every connector and feature is sequenced so the strategy comes first. Check the changelog to see what is live.</p>
+          <div className="grid gap-8 md:grid-cols-2">
+            {[
+              ["01", "FOUNDATION", "Guided discovery, diagnosis, goals, brand architecture, a priority roadmap and content pillars."],
+              ["02", "ACTIVATION", "Ready-to-approve content, task tracking, MOXIE reminders and weekly progress summaries."],
+              ["03", "EXECUTION", "Connected publishing and marketing platforms, two-way approvals by text and results back in your dashboard."],
+              ["04", "OPTIMIZATION", "Deeper growth tests, search and AI answer insights, attribution, cross-brand views and carefully controlled ad tools."],
+            ].map(([n, title, body]) => <div key={n} style={{ borderTop: `1px solid ${C.border}`, paddingTop: 24 }}>
+              <div style={{ ...fontMono, fontSize: 12, color: C.coral }}>{n} {title}</div>
+              <p style={{ ...fontBody, fontSize: 16, lineHeight: 1.6, color: C.muted, marginTop: 14 }}>{body}</p>
+            </div>)}
+          </div>
+          <Link to="/changelog" style={{ ...fontBody, color: C.ink, display: "inline-block", marginTop: 36 }}>See the changelog →</Link>
+        </div>
+      </section>
+
+      {/* SECTION 6 · MIGRATION + SECURITY */}
       <section style={{ background: C.cream, padding: "112px 24px" }}>
         <div className="pf-mig-grid" style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 72 }}>
           <div>
-            <div style={{ marginBottom: 22 }}><Eyebrow>§ 04 · Migration</Eyebrow></div>
+            <div style={{ marginBottom: 22 }}><Eyebrow>§ 04 · GETTING STARTED</Eyebrow></div>
             <h2 style={{ ...fontDisplay, fontSize: "clamp(34px,4vw,54px)", letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
-              <span style={{ fontWeight: 600, color: C.ink, display: "block" }}>Seamless migration from</span>
-              <span style={{ fontWeight: 340, fontStyle: "italic", color: "#9a988e", display: "block" }}>your current tools.</span>
+              <span style={{ fontWeight: 600, color: C.ink, display: "block" }}>How you get going.</span>
             </h2>
-            <p style={{ ...fontBody, fontSize: 17, color: C.muted, lineHeight: 1.55, margin: "24px 0 36px" }}>
-              We handle the heavy lifting: subscribers, content calendars, automations, social accounts, analytics history. White-glove migration is included on Enterprise.
-            </p>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 28 }}>
               {[1, 2, 3, 4].map((n, i) => (
                 <div key={n} style={{ display: "flex", alignItems: "center", flex: i < 3 ? 1 : 0 }}>
@@ -507,14 +524,14 @@ export default function Platform() {
               ))}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 28, ...fontMono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: C.lightMuted }}>
-              {[1, 2, 3, 4].map(n => <span key={n}>Week {n}</span>)}
+              {[1, 2, 3, 4].map(n => <span key={n}>{String(n).padStart(2, "0")}</span>)}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               {[
-                ["Week 1", "Discovery + strategy"],
-                ["Week 2", "Data migration + setup"],
-                ["Week 3", "Content generation begins"],
-                ["Week 4", "Full switch to MOXIEMO"],
+                ["01", "Run discovery"],
+                ["02", "Review your diagnosis and strategy"],
+                ["03", "Connect your channels and set up MOXIE"],
+                ["04", "Approve your first actions"],
               ].map(([w, t]) => (
                 <div key={w} style={{ display: "flex", alignItems: "center", gap: 14, ...fontBody, fontSize: 16, color: C.ink }}>
                   <span style={{ color: C.coral, fontWeight: 700 }}>→</span>
@@ -540,26 +557,27 @@ export default function Platform() {
         </div>
       </section>
 
-      {/* SECTION 7 — FINAL CTA */}
+      {/* SECTION 7 · FINAL CTA */}
       <section style={{ background: C.sage, padding: "112px 24px", textAlign: "center" }}>
         <div style={{ maxWidth: 1000, margin: "0 auto" }}>
           <h2 style={{ ...fontDisplay, fontSize: "clamp(40px,6vw,84px)", lineHeight: 1.02, letterSpacing: "-0.02em", margin: "0 auto 36px", maxWidth: 800 }}>
             <span style={{ fontWeight: 600, color: C.ink, display: "block" }}>Ready when you are.</span>
-            <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e", display: "block" }}>Start in under a minute.</span>
           </h2>
+          <p style={{ ...fontBody, fontSize: 18, color: C.muted, lineHeight: 1.6, marginBottom: 32 }}>Start with the free Brand Audit. Then claim one of our first 100 spots at 50% off.</p>
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
-            <Link to="/auth" style={{ ...fontBody, background: C.ink, color: "#fff", fontWeight: 600, fontSize: 15.5, padding: "16px 28px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
-              Start your MOXIEMO Discovery <span style={{ color: C.coral }}>→</span>
+            <Link to="/brand-audit" style={{ ...fontBody, background: C.ink, color: "#fff", fontWeight: 600, fontSize: 15.5, padding: "16px 28px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
+              Run my free Brand Audit <span style={{ color: C.coral }}>→</span>
             </Link>
+            <Link to="/founding" style={{ ...fontBody, color: C.ink, fontWeight: 600, padding: "14.5px 28px", borderRadius: 999, border: `1.5px solid ${C.ink}`, textDecoration: "none" }}>Claim a first-100 spot</Link>
             <span style={{ ...fontMono, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.16em", color: "#5f6a52", display: "inline-flex", alignItems: "center", gap: 10 }}>
               <span style={{ width: 8, height: 8, background: C.coral, display: "inline-block" }} />
-              Free access with beta · No credit card required
+              50% OFF FOR OUR FIRST 100 CUSTOMERS DURING THE MOXIEMO 2.0 BETA
             </span>
           </div>
         </div>
       </section>
 
-      {/* SECTION 8 — FOOTER */}
+      {/* SECTION 8 · FOOTER */}
       <SiteFooter />
     </div>
   );
