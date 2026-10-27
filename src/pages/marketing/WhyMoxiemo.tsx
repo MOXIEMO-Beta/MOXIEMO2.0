@@ -219,12 +219,24 @@ function TickerRun() {
 
 export default function WhyMoxiemo() {
   useEffect(() => {
+    // Temporarily suspend fallback tags while this route owns these fields.
+    const selector = [
+      'meta[name="description"]', 'meta[name="twitter:title"]',
+      'meta[name="twitter:description"]', 'meta[property="og:title"]',
+      'meta[property="og:description"]', 'meta[property="og:url"]',
+      'meta[property="og:type"]', 'link[rel="canonical"]',
+    ].map((tag) => `${tag}:not([data-rh])`).join(",");
+    const fallbacks = Array.from(document.head.querySelectorAll(selector));
+    fallbacks.forEach((tag) => tag.remove());
     const obs = new IntersectionObserver(
       (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("in"); }),
       { threshold: 0.08, rootMargin: "0px 0px -40px 0px" }
     );
     document.querySelectorAll(".rv,.rvl,.rvr").forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
+    return () => {
+      obs.disconnect();
+      fallbacks.forEach((tag) => document.head.appendChild(tag));
+    };
   }, []);
 
   return (
