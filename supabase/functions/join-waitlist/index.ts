@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendResendEmail } from "../_shared/resend.ts";
-import { validBrandCount } from "./brand-count.ts";
+import { validBrandCount, validPlanInterest } from "./brand-count.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,10 +17,17 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { name, email, role, website_url, company_name, referral_source, brand_count, source } = await req.json();
+    const { name, email, role, website_url, company_name, referral_source, brand_count, plan_interest, source } = await req.json();
 
     if (!validBrandCount(brand_count, source)) {
       return new Response(JSON.stringify({ error: "Please select how many brands you run." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!validPlanInterest(plan_interest, source)) {
+      return new Response(JSON.stringify({ error: "Please select which plan you are leaning toward." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -53,7 +60,7 @@ serve(async (req) => {
 
     const { error: dbError } = await supabase
       .from("waitlist")
-      .insert({ name, email, role, website_url, company_name, referral_source, brand_count: brand_count ?? null, user_id });
+      .insert({ name, email, role, website_url, company_name, referral_source, brand_count: brand_count ?? null, plan_interest: plan_interest ?? null, user_id });
 
     if (dbError) {
       if ((dbError as any).code === "23505") {
@@ -84,8 +91,15 @@ serve(async (req) => {
       const { response: applicantRes, body: applicantData } = await sendResendEmail("join-waitlist applicant", {
           reply_to: "hello@buildwithmoxiemo.com",
           to: [email],
-          subject: `You are on the list - one step left, ${first}.`,
-          html: `
+          subject: source === "founding_first100" ? `You're on the list, ${first}.` : `You are on the list - one step left, ${first}.`,
+          html: source === "founding_first100" ? `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">Hi ${first},</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">You're on the list for one of our first 100 spots. We'll be in touch soon to confirm your plan.</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">If you have any questions in the meantime, reply to this email directly.</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0;">Karee<br/>Founder, MOXIEMO<br/><a href="mailto:hello@buildwithmoxiemo.com" style="color:#ff6b6b;">hello@buildwithmoxiemo.com</a></p>
+            </div>
+          ` : `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
               <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">Hi ${first},</p>
               <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">You are officially on the MOXIE Founding Member list. Welcome.</p>
@@ -125,6 +139,7 @@ serve(async (req) => {
                 <tr><td style="padding-right: 16px; color: #666;">Website</td><td>${website_url ?? "—"}</td></tr>
                 <tr><td style="padding-right: 16px; color: #666;">Referral source</td><td>${referral_source ?? "—"}</td></tr>
                 <tr><td style="padding-right: 16px; color: #666;">Brands</td><td>${brand_count ?? "Not provided"}</td></tr>
+                <tr><td style="padding-right: 16px; color: #666;">Plan</td><td>${plan_interest ?? "Not provided"}</td></tr>
                 <tr><td style="padding-right: 16px; color: #666;">Submitted at</td><td>${submittedAt}</td></tr>
               </table>
             </div>
