@@ -2,7 +2,7 @@ import { LegalPage, LegalSection, LegalDivider, LegalList } from "@/components/L
 
 export default function Terms() {
   return (
-    <LegalPage title="Terms of Service" lastUpdated="Effective Date: May 28, 2026 · Last Updated: May 28, 2026 · Version 1.0">
+    <LegalPage title="Terms of Service" lastUpdated="Effective Date: October 27, 2026 · Last Updated: October 27, 2026 · Version 1.2">
       <LegalSection heading="Issued By">
         <p>KLMG US Ltd, doing business as MOXIEMO.</p>
         <p>
@@ -28,6 +28,8 @@ export default function Terms() {
           "AI-powered content generation tools for creating marketing copy, social posts, newsletters, and other content",
           "A content scheduling and publishing system, including integrations with third-party platforms",
           "Analytics, performance tracking, and campaign management tools",
+          "MOXIE, an optional text-message companion that sends reminders, approval requests and progress updates about Your account",
+          "A separate strategy and workspace for each brand on plans that include more than one brand",
           "Additional features and services as developed and released by MOXIEMO over time",
         ]} />
         <p>
@@ -62,34 +64,19 @@ export default function Terms() {
       </LegalSection>
       <LegalDivider />
 
-      <LegalSection heading="4. Founding Member Program">
+      <LegalSection heading="4. First 100 Offer and Beta Programs">
         <p>
-          <span className="text-foreground font-medium">4.1 Founding Member Access.</span> MOXIEMO offers a Founding Member program to early users who join during the designated beta period. Founding Members receive free access to the Platform for as long as the Founding Member tier remains active and in good standing, subject to the terms of this Agreement and any supplementary Founding Member terms provided at sign-up.
+          <span className="text-foreground font-medium">4.1 MOXIEMO 2.0 Beta Offer.</span> During the MOXIEMO 2.0 beta, the first 100 customers to start a paid plan receive 50% off the standard price of that plan, monthly or annual, for as long as the MOXIEMO 2.0 beta runs. The offer is limited to one account per customer, cannot be combined with other offers and has no cash value.
         </p>
         <p>
-          Founding Member access is provided at no cost during the beta period. MOXIEMO reserves the right to modify, limit, or discontinue the Founding Member tier at any time, with reasonable advance notice to affected users. In the event the Founding Member tier is discontinued, affected users will be offered the opportunity to transition to a paid plan at the then-current pricing.
-        </p>
-        <p>
-          <span className="text-foreground font-medium">4.2 Founding Member Benefits.</span> Current Founding Member benefits include:
-        </p>
-        <LegalList items={[
-          "Free forever access to the Platform (subject to Section 4.1)",
-          "A personal 1:1 onboarding call with Karee Laing, Founder of MOXIEMO",
-          "Direct feedback access to the product team during the first 30 days",
-          "First access to new features before public release",
-        ]} />
-        <p>
-          MOXIEMO reserves the right to modify the benefits associated with the Founding Member tier. Material reductions in benefits will be communicated to Founding Members with reasonable advance notice.
-        </p>
-        <p>
-          <span className="text-foreground font-medium">4.3 Beta Period Conduct.</span> Founding Members and beta users acknowledge that the Platform is in active development. You may encounter bugs, incomplete features, or unexpected behavior. By participating in the beta, You agree to: (1) provide honest feedback when requested; (2) not publicly share screenshots, outputs, or details of unreleased features without MOXIEMO's prior written consent; and (3) understand that features available during beta may be modified, moved to paid tiers, or discontinued at general availability.
+          <span className="text-foreground font-medium">4.2 Beta Conduct.</span> Founding Members and beta users acknowledge that the Platform is in active development. You may encounter bugs, incomplete features, or unexpected behavior. By participating in the beta, You agree to: (1) provide honest feedback when requested; (2) not publicly share screenshots, outputs, or details of unreleased features without MOXIEMO's prior written consent; and (3) understand that features available during beta may be modified, moved to paid tiers, or discontinued at general availability.
         </p>
       </LegalSection>
       <LegalDivider />
 
       <LegalSection heading="5. Payments and Subscriptions">
         <p>
-          <span className="text-foreground font-medium">5.1 Paid Plans.</span> MOXIEMO offers subscription-based access to the Platform in addition to the Founding Member free tier. Current paid plans include the Growth tier at $79 per month. Pricing is subject to change with advance notice to active subscribers. By subscribing to a paid plan, You authorize MOXIEMO to charge Your designated payment method on a recurring basis according to Your selected billing cycle.
+          <span className="text-foreground font-medium">5.1 Paid Plans.</span> MOXIEMO offers three subscription plans: Clarity ($99 per month, includes 1 brand), Momentum ($149 per month, includes 2 brands) and Multiply ($249 per month, includes 3 brands). Annual billing is available at $990, $1,490 and $2,490 per year. A brand is a distinct offer and market identity with its own strategy. Paid media spend and fees charged by third-party platforms are not included. Pricing is subject to change with advance notice to active subscribers. By subscribing to a paid plan, You authorize MOXIEMO to charge Your designated payment method on a recurring basis according to Your selected billing cycle.
         </p>
         <p>
           <span className="text-foreground font-medium">5.2 Payment Processor.</span> All payments are processed by Stripe, a third-party payment processor. By providing payment information, You agree to Stripe's terms of service. MOXIEMO does not store full credit card information. In the event of a failed payment, MOXIEMO may retry the charge and may suspend access to the Services until payment is resolved.
@@ -101,9 +88,13 @@ export default function Terms() {
           <span className="text-foreground font-medium">5.4 Free Trials.</span> If MOXIEMO offers a free trial, the trial period begins on the date of sign-up. You may cancel at any time during the trial period with no charge. If You do not cancel before the trial period ends, You will be automatically charged for the applicable subscription plan. Credit card information may be required to begin a free trial.
         </p>
         <p>
-          <span className="text-foreground font-medium">5.5 Refund Policy.</span> Due to the nature of MOXIEMO's AI-generated digital services and outputs, all payments are non-refundable unless explicitly stated otherwise or required by applicable law. By agreeing to these terms, You acknowledge that You understand and accept this refund policy. Any attempt to initiate a chargeback without first contacting MOXIEMO at{" "}
+          <span className="text-foreground font-medium">5.5 Refund Policy.</span> Except as stated in Section 5.6, due to the nature of MOXIEMO's AI-generated digital services and outputs, all payments are non-refundable unless explicitly stated otherwise or required by applicable law. By agreeing to these terms, You acknowledge that You understand and accept this refund policy. Any attempt to initiate a chargeback without first contacting MOXIEMO at{" "}
           <a className="text-foreground underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a>{" "}
           may result in suspension of Your Account and recovery of fees associated with the chargeback process.
+        </p>
+        <p>
+          <span className="text-foreground font-medium">5.6 30-Day Guarantee.</span> If You are on a paid plan, You may request a full refund within 30 days of Your first payment by emailing{" "}
+          <a className="text-foreground underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a>.
         </p>
       </LegalSection>
       <LegalDivider />
@@ -197,7 +188,7 @@ export default function Terms() {
 
       <LegalSection heading="10. Privacy and Data">
         <p>
-          Your privacy is important to MOXIEMO. Our Privacy Policy, incorporated by reference into this Agreement, describes how we collect, use, store, and protect Your personal information and business data. By using the Platform, You consent to the data practices described in our Privacy Policy. Please review it carefully at buildwithmoxiemo.com/privacy.
+          Your privacy is important to MOXIEMO. Our Privacy Policy, incorporated by reference into this Agreement, describes how we collect, use, store, and protect Your personal information and business data. By using the Platform, You consent to the data practices described in our Privacy Policy. Please review it carefully at buildwithmoxiemo.com/privacy. You can manage cookies on the Sites at any time through Cookie settings at the bottom of any page.
         </p>
       </LegalSection>
       <LegalDivider />
@@ -240,6 +231,9 @@ export default function Terms() {
       <LegalSection heading="13. Communications">
         <p>
           By creating an Account and agreeing to this Agreement, You consent to receive communications from MOXIEMO including: (1) transactional emails related to Your Account, subscription, and use of the Platform; (2) product updates, feature announcements, and platform news; and (3) marketing communications, subject to Your opt-in preferences and applicable law.
+        </p>
+        <p>
+          <span className="text-foreground font-medium">13.1 MOXIE Text Messages.</span> MOXIE text messages are optional and sent only to mobile numbers that have opted in. Message frequency varies with Your settings. Message and data rates may apply. Reply STOP to opt out or HELP for help. Carriers are not liable for delayed or undelivered messages. A reply such as YES approves only the specific action described in that message. MOXIEMO will ask for stronger confirmation before any action that spends money, publishes sensitive content, changes account settings or affects billing. If a reply is unclear, out of date or could match more than one pending item, MOXIEMO will ask You to confirm instead of acting. You are responsible for keeping Your mobile number current and for any teammates You authorize to receive MOXIE messages.
         </p>
         <p>
           You may opt out of marketing communications at any time by clicking the unsubscribe link in any email or by contacting MOXIEMO at{" "}
@@ -298,11 +292,11 @@ export default function Terms() {
           By using the MOXIEMO Platform or clicking "Get Started," You acknowledge that You have read, understood, and agree to be bound by these Terms of Service.
         </p>
         <p>
-          Effective Date: May 28, 2026
+          Effective Date: October 27, 2026
           <br />
-          Last Updated: May 28, 2026
+          Last Updated: October 27, 2026
           <br />
-          Version: 1.0
+          Version: 1.2
         </p>
       </LegalSection>
     </LegalPage>

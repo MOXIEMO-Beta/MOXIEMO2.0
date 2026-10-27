@@ -2,7 +2,7 @@ import { LegalPage, LegalSection, LegalDivider, LegalList } from "@/components/L
 
 export default function Privacy() {
   return (
-    <LegalPage title="Privacy Policy" lastUpdated="Effective Date: October 27, 2026 · Last Updated: October 27, 2026 · Version 1.1">
+    <LegalPage title="Privacy Policy" lastUpdated="Effective Date: October 27, 2026 · Last Updated: October 27, 2026 · Version 1.2">
       <LegalSection heading="Issued By">
         <p>KLMG US Ltd, doing business as MOXIEMO.</p>
         <p>
@@ -209,7 +209,7 @@ export default function Privacy() {
           <span className="text-foreground font-medium">6.4 Right to Data Portability.</span> You have the right to request Your data in a structured, commonly used, machine-readable format. We can provide Your Discovery responses, strategy outputs, and account data in a portable format upon request.
         </p>
         <p>
-          <span className="text-foreground font-medium">6.5 Right to Opt Out of Marketing.</span> You may opt out of marketing communications at any time by: (1) clicking the unsubscribe link in any marketing email; (2) replying STOP to any SMS message; or (3) contacting us at{" "}
+          <span className="text-foreground font-medium">6.5 Right to Opt Out of Marketing.</span> You may opt out of marketing communications at any time by: (1) clicking the unsubscribe link in any marketing email; (2) replying STOP to any MOXIE text message (this stops text messages only); or (3) contacting us at{" "}
           <a className="text-foreground underline" href="mailto:hello@buildwithmoxiemo.com">hello@buildwithmoxiemo.com</a>. Opting out of marketing does not affect transactional communications related to Your Account.
         </p>
         <p>
@@ -232,18 +232,17 @@ export default function Privacy() {
           If You opt out of marketing emails, You will continue to receive transactional emails that are necessary for the operation of Your Account and the delivery of Services.
         </p>
         <p>
-          <span className="text-foreground font-medium">7.2 SMS Communications.</span> MOXIEMO may offer SMS communications for account alerts, onboarding support, and platform updates. SMS communications are opt-in only. By opting in to SMS communications, You agree to receive text messages from MOXIEMO at the mobile number You provide.
+          <span className="text-foreground font-medium">7.2 MOXIE Text Messages.</span> MOXIE is MOXIEMO's text-message companion. If You opt in, MOXIE sends text messages to the mobile number You verify, about Your own MOXIEMO account. These include reminders of actions in Your plan, requests to approve content or decisions, progress summaries, results from tests You set up and check-ins You schedule. You can reply to approve, review, snooze or mark tasks done.
         </p>
         <LegalList items={[
-          "Message and data rates may apply depending on Your carrier and plan.",
-          "Message frequency may vary.",
-          "To opt out of SMS messages, reply STOP to any message from us. You will receive a confirmation and no further messages will be sent.",
-          "To get help with SMS communications, reply HELP or contact us at hello@buildwithmoxiemo.com.",
-          "We will not share Your SMS opt-in status with any third party for purposes unrelated to delivering the SMS service You have requested.",
+          "SMS consent is separate from agreeing to our Terms of Service and is not required to use MOXIEMO.",
+          "Message frequency varies with Your settings and activity. You choose a contact style, quiet hours and the days MOXIE may text You.",
+          "Message and data rates may apply.",
+          "Reply STOP to any message to opt out. Reply HELP for help, or email hello@buildwithmoxiemo.com.",
+          "We keep a record of Your opt-in and opt-out, including the date, time and mobile number.",
+          "MOXIE texts account holders and the teammates they authorize. MOXIE does not send messages to Your customers.",
+          "No mobile information will be shared with third parties or affiliates for marketing or promotional purposes. All the above categories exclude text messaging originator opt-in data and consent; this information will not be shared with any third parties.",
         ]} />
-        <p className="italic">
-          MOXIEMO will not use SMS to send unsolicited marketing messages. SMS will be used only for service-related communications to users who have explicitly opted in.
-        </p>
       </LegalSection>
       <LegalDivider />
 
@@ -468,11 +467,11 @@ export default function Privacy() {
           By using the MOXIEMO Platform, You acknowledge that You have read and understood this Privacy Policy. Optional cookie permission is controlled separately through Cookie settings.
         </p>
         <p>
-          Effective Date: May 28, 2026
+          Effective Date: October 27, 2026
           <br />
-          Last Updated: May 28, 2026
+          Last Updated: October 27, 2026
           <br />
-          Version: 1.0
+          Version: 1.2
         </p>
       </LegalSection>
     </LegalPage>
