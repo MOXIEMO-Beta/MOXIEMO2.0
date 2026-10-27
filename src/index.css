@@ -35,10 +35,10 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 .cookie-category { display: grid; grid-template-columns: minmax(0, 1fr) 44px; gap: 20px; align-items: start; padding: 18px 0; border-top: 1px solid var(--cookie-border); }
 .cookie-label { font-size: 16px; font-weight: 600; color: var(--cookie-ink); }
 .cookie-always { display: block; font-size: 12px; color: var(--cookie-copy); font-weight: 500; }
-.cookie-toggle[data-state="checked"] { background: var(--cookie-ink); }
-.cookie-toggle[data-state="unchecked"] { background: var(--cookie-border); }
-.cookie-toggle > span { background: var(--cookie-surface); }
-.cookie-toggle:disabled { opacity: 1; }
+.cookie-surface .cookie-toggle[data-state="checked"] { background: var(--cookie-ink) !important; }
+.cookie-surface .cookie-toggle[data-state="unchecked"] { background: var(--cookie-border) !important; }
+.cookie-surface .cookie-toggle > span { background: var(--cookie-surface) !important; }
+.cookie-surface .cookie-toggle:disabled { opacity: 1 !important; }
 .cookie-gpc { background: var(--cookie-soft); padding: 12px; border-radius: 4px; }
 @media (max-width: 639px) {
   .cookie-banner { left: 0; bottom: 0; width: 100%; border-radius: 8px 8px 0 0; max-height: 75dvh; padding: 20px; }

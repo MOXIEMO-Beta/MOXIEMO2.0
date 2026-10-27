@@ -22,7 +22,7 @@ export default function Privacy() {
           This Privacy Policy applies to all users of the MOXIEMO Platform, including Founding Members, beta users, paid subscribers, and visitors to the Sites. It does not apply to the data practices of third-party platforms or services that MOXIEMO may integrate with, link to, or partner with. We encourage You to review the privacy policies of any third-party platforms You connect to through MOXIEMO.
         </p>
         <p>
-          <span className="text-foreground font-medium">1.1 Consent.</span> By accessing or using the MOXIEMO Platform, creating an account, completing the Discovery session, or otherwise interacting with the Sites, You consent to the collection, use, and sharing practices described in this Privacy Policy, as updated from time to time. If You do not agree with this Privacy Policy, please stop using the Platform immediately.
+          <span className="text-foreground font-medium">1.1 Consent.</span> This Privacy Policy describes the collection, use, and sharing practices that support the MOXIEMO Platform. Optional preferences, analytics, and marketing cookies require Your separate choice in our cookie controls. Browsing the Sites, creating an account, or accepting this Privacy Policy does not grant that optional permission.
         </p>
         <p>
           <span className="text-foreground font-medium">1.2 What This Policy Does Not Cover.</span> This Privacy Policy does not address the data practices of: (1) third-party platforms You connect to through MOXIEMO integrations (such as LinkedIn, Meta, TikTok, Google, or email service providers); (2) third-party websites that may be linked to from the Platform; or (3) payment processors operating under their own privacy frameworks. Each of these parties operates under their own privacy policies, which We encourage You to review.
@@ -378,7 +378,7 @@ export default function Privacy() {
           We will respond to all privacy-related inquiries within 30 days. For data deletion requests or to exercise any rights described in Section 6, please include "Privacy Request" in the subject line of Your email.
         </p>
         <p className="text-foreground font-medium uppercase text-[15px]">
-          By using the MOXIEMO Platform, You acknowledge that You have read and understood this Privacy Policy and consent to the collection, use, and sharing of Your information as described herein.
+          By using the MOXIEMO Platform, You acknowledge that You have read and understood this Privacy Policy. Optional cookie permission is controlled separately through Cookie settings.
         </p>
         <p>
           Effective Date: May 28, 2026
