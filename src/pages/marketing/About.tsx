@@ -244,8 +244,8 @@ export default function About() {
             </div>
 
             <h1 className="mo-serif" style={{ fontWeight: 600, fontSize: "clamp(52px, 6.8vw, 98px)", lineHeight: 0.93, letterSpacing: "-0.026em", color: COLORS.cream, marginBottom: 30, maxWidth: 520, animation: "mo-chip-in 0.9s 0.25s ease both" }}>
-              Built so<br />founders know<br />what comes<br />
-              <span className="mo-serif" style={{ fontWeight: 320, fontStyle: "italic", color: "rgba(244,239,229,0.45)" }}>first.</span>
+              Built so<br />founders<br />know what<br />
+              <span className="mo-serif" style={{ fontWeight: 320, fontStyle: "italic", color: "rgba(244,239,229,0.45)" }}>comes first.</span>
             </h1>
 
             <p style={{ fontSize: 18, lineHeight: 1.65, color: "rgba(244,239,229,0.58)", maxWidth: 450, marginBottom: 46, animation: "mo-chip-in 0.9s 0.4s ease both" }}>
