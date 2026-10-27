@@ -191,7 +191,10 @@ export default function BrandAudit() {
               The brand audit a CMO would charge for. Yours free.
             </h1>
             <p className="text-lg md:text-xl text-[#4a4d57] leading-relaxed max-w-2xl mx-auto mb-10">
-              Enter your website and get an honest read on your positioning, your message, and your visibility. See what is working, what is holding you back, and what to fix first. In minutes.
+              Enter your website for a quick, honest read on your positioning, your message and your visibility. See what is working, what is holding you back and what to fix first.
+            </p>
+            <p className="text-sm md:text-base text-[#7a7e8c] leading-relaxed max-w-xl mx-auto -mt-6 mb-10">
+              Your website is one piece of evidence. The full MOXIEMO discovery goes further, with your goals, audience, offer and proof.
             </p>
 
             {error && (
@@ -221,7 +224,7 @@ export default function BrandAudit() {
               </Button>
             </form>
             <p className="text-sm text-[#7a7e8c] mt-4">
-              Free. No credit card required. No login.
+              Free. No credit card. No login.
             </p>
           </div>
         </section>

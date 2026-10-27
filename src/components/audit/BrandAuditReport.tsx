@@ -476,13 +476,13 @@ function CtaClose({ handoff }: { handoff?: string }) {
         Close the Gap
       </div>
       <h2 style={{ fontFamily: HEADING, fontSize: 30, fontWeight: 700, color: "#FFFFFF", margin: "0 0 12px", lineHeight: 1.2 }}>
-        Close the gap with MOXIEMO
+        Want the full picture?
       </h2>
       <p style={{ fontFamily: BODY, fontSize: 15, color: "rgba(255,255,255,0.75)", margin: "0 auto 22px", maxWidth: 520, lineHeight: 1.55 }}>
-        {handoff || "Turn every fix on this page into on-brand strategy, content, and cadence, handled by your MOXIEMO team."}
+        Your audit shows where your website stands. MOXIEMO discovery adds your goals, audience and offer, then builds the plan and the work.
       </p>
       <a
-        href="/signup"
+        href="/founding"
         style={{
           display: "inline-block",
           background: CORAL,
@@ -495,8 +495,11 @@ function CtaClose({ handoff }: { handoff?: string }) {
           textDecoration: "none",
         }}
       >
-        Start with MOXIEMO
+        Claim a first-100 spot
       </a>
+      <p style={{ fontFamily: BODY, fontSize: 13, color: "rgba(255,255,255,0.65)", margin: "14px 0 0" }}>
+        50% off any plan for our first 100 customers.
+      </p>
     </section>
   );
 }
