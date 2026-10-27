@@ -27,6 +27,7 @@ export function applyClarityConsent(choice: ConsentChoice | null) {
   const marketing = choice?.marketing === true;
   if (!analytics) {
     sendClarityConsent(false, false);
+    window.clarity?.("stop");
     deleteClarityCookies();
     if (previouslyAllowed && clarityRequested) {
       // A loaded third-party script cannot be unloaded. Restart with its loader blocked.

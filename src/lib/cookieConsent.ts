@@ -72,11 +72,16 @@ export function saveConsent(choices: OptionalChoices, source: ConsentSource): Co
   memoryChoice = choice;
   try { localStorage.setItem(CONSENT_KEY, JSON.stringify(choice)); } catch { /* Keep the choice in memory for this visit. */ }
   notify();
-  void supabase.from("cookie_consents").insert({
-    anon_id: anonId(), version: choice.version, preferences: choice.preferences,
-    analytics: choice.analytics, marketing: choice.marketing, gpc: choice.gpc,
-    source, page_path: window.location.pathname,
-  }).then(({ error }) => { if (error) console.error("Cookie consent log could not be saved:", error.message); });
+  void (async () => {
+    try {
+      const { error } = await supabase.from("cookie_consents").insert({
+        anon_id: anonId(), version: choice.version, preferences: choice.preferences,
+        analytics: choice.analytics, marketing: choice.marketing, gpc: choice.gpc,
+        source, page_path: window.location.pathname,
+      });
+      if (error) console.error("Cookie consent log could not be saved:", error.message);
+    } catch { console.error("Cookie consent log could not be saved."); }
+  })();
   return { ...choice };
 }
 
