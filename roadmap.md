@@ -27,6 +27,6 @@
 - [x] Verify copy and links on desktop/mobile; existing narrow mobile mockup clipping remains unchanged to preserve requested designs.
 
 # Solutions page
-- [ ] Update requested copy, loop, moves, problems, operator tabs, included grid and FAQ.
-- [ ] Remove autonomous card, beta labels and stats; keep community and mockup designs.
-- [ ] Verify desktop/mobile layout, tabs, accordions and CTA links.
+- [x] Update requested copy, loop, moves, problems, operator tabs, included grid and FAQ.
+- [x] Remove autonomous card, beta labels and stats; keep community and mockup designs.
+- [x] Verify desktop/mobile layout, all three tabs, six problem accordions, thirteen FAQs and CTA links; preserve existing reveal animations and mockup sizing.
