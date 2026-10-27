@@ -407,7 +407,7 @@ export default function WhyMoxie() {
               Ready when<br />you are.
             </h2>
             <div style={{ ...display, fontWeight: 300, fontStyle: "italic", fontSize: "clamp(22px,3vw,40px)", lineHeight: 1.2, color: "#6d7a5e" }}>
-              Start your MOXIEMO Discovery in under a minute.
+              Build your foundation with MOXIEMO Discovery in one guided session.
             </div>
           </div>
           <div className="rv d1" style={{ display: "flex", flexWrap: "wrap", gap: 18, marginBottom: 28 }}>
