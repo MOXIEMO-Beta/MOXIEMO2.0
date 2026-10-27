@@ -1726,6 +1726,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           beta_code_sent: string | null
+          brand_count: string | null
           company_name: string | null
           created_at: string | null
           email: string
@@ -1744,6 +1745,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           beta_code_sent?: string | null
+          brand_count?: string | null
           company_name?: string | null
           created_at?: string | null
           email: string
@@ -1762,6 +1764,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           beta_code_sent?: string | null
+          brand_count?: string | null
           company_name?: string | null
           created_at?: string | null
           email?: string
