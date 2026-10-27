@@ -3,15 +3,13 @@ import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
+import { HomeMoxie } from "@/components/HomeMoxie";
+import { Button } from "@/components/ui/button";
+import { BRAND_COUNTS, HOME_ROLES, isBrandCount } from "@/lib/homeForm";
 import heroCollage from "@/assets/redesign/hero-collage.jpg.asset.json";
 import watchBadge from "@/assets/redesign/watch-badge-3.svg.asset.json";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
 import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
-import pAgency from "@/assets/redesign/persona-agency-owner.jpg.asset.json";
-import pConsult from "@/assets/redesign/persona-consultant.jpg.asset.json";
-import pCourse from "@/assets/redesign/persona-course-creator.jpg.asset.json";
-import pCoach from "@/assets/redesign/persona-executive-coach.jpg.asset.json";
-import pFounder from "@/assets/redesign/persona-tech-founder.jpg.asset.json";
 
 /* ───────────── design tokens ───────────── */
 const CREAM = "#f4efe5";
@@ -99,18 +97,19 @@ function Hero() {
     <section style={{ background: SAGE }}>
       <div className="mx-auto grid gap-[52px] lg:grid-cols-[0.92fr_1.18fr] items-center" style={{ maxWidth: 1200, padding: "96px 40px 110px" }}>
         <div>
-          <Eyebrow>In private beta / Founding members free access</Eyebrow>
+          <Eyebrow>MOXIEMO 2.0 BETA · 50% OFF FOR OUR FIRST 100 CUSTOMERS</Eyebrow>
           <h1 style={{ ...serif, fontWeight: 600, fontSize: "clamp(54px, 7.4vw, 92px)", lineHeight: 0.95, color: INK, marginTop: 28, letterSpacing: "-0.02em" }}>
-            One platform.<br />
-            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Confident marketing.</span>
+            Built on strategy.<br />
+            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Powered to execute.</span>
           </h1>
           <p style={{ ...sans, fontSize: 19, lineHeight: 1.55, color: MUTED_SAGE, maxWidth: 480, marginTop: 28 }}>
-            MOXIEMO is your AI CMO: one platform that learns your brand, builds your complete marketing strategy, and publishes your content. No more tool chaos. No more starting from scratch.
+            MOXIEMO figures out what moves your brand forward. MOXIE makes sure it happens.
           </p>
+          <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, maxWidth: 480, marginTop: 20 }}>Start with a guided discovery built on the This Is Branding brand architecture. MOXIEMO finds the gap between where your brand is and where you want it to go, sets your priorities and creates the work to close it. You approve. It gets done.</p>
           <div className="flex flex-wrap items-center" style={{ gap: 24, marginTop: 36 }}>
             <div className="flex flex-col gap-3">
               <PillButton to="/brand-audit">Run my free Brand Audit <ArrowRight size={16} /></PillButton>
-              <PillButton to="/founding" dark={false}>Join as a Founding Member</PillButton>
+              <PillButton to="/founding" dark={false}>Claim a first-100 spot</PillButton>
             </div>
             <a
               href="#platform"
@@ -125,7 +124,7 @@ function Hero() {
               <img src={watchBadge.url} alt="Watch how it works, two minutes" width={120} height={120} style={{ width: 120, height: 120, display: "block" }} />
             </a>
           </div>
-          <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_SAGE, marginTop: 24 }}>Founding members get free access. No card required.</div>
+          <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_SAGE, marginTop: 24 }}>50% off any plan while the 2.0 beta runs. Limited to our first 100 customers.</div>
         </div>
         <div style={{ position: "relative" }}>
           <div style={{ aspectRatio: "1 / 1.12", borderRadius: 6, overflow: "hidden", boxShadow: "0 30px 80px rgba(19,19,15,0.18)" }}>
@@ -142,13 +141,7 @@ function Hero() {
 
 /* ───────────── marquee ───────────── */
 function Marquee() {
-  const items = [
-    "Currently in private beta",
-    "Founding member access",
-    "1:1 kickoff with Karee",
-    "No credit card required",
-    "Start creating now",
-  ];
+  const items = ["STRATEGY FIRST", "DISCOVER", "DIAGNOSE", "DEFINE", "PRIORITIZE", "EXECUTE", "MEASURE", "MOXIE KEEPS IT MOVING", "50% OFF FOR THE FIRST 100"];
   const Row = () => (
     <div className="flex items-center shrink-0" style={{ gap: 36, paddingRight: 36 }}>
       {items.map((t, i) => (
@@ -171,9 +164,9 @@ function Marquee() {
 /* ───────────── §01 Problem ───────────── */
 function Problem() {
   const items = [
-    ["01", "Four+ tools, zero connection", "Your Notion, Canva, ChatGPT, and Buffer do not talk to each other. Your strategy lives in three places. Your voice drifts every time you switch tabs."],
-    ["02", "20+ hours a week on content", "Writing, second-guessing, posting, repeating. You are the strategist, the writer, the designer, and the scheduler. That is not a business. That is a treadmill."],
-    ["03", "A strategy that lives in your head", "You know what you want to say. You cannot get it out consistently. Without one source of truth, every post starts from scratch."],
+    ["01", "BUSY WITHOUT A PLAN", "You are posting, emailing and testing. You are not sure which of it is moving the business."],
+    ["02", "A STRATEGY THAT LIVES IN YOUR HEAD", "You know what you want to say. Until it is written down and built into your tools, every post starts from scratch."],
+    ["03", "THINGS STALL BETWEEN LOGINS", "The approval waits in a tab. The newsletter slips a week. Nobody nudges you, so nothing moves."],
   ];
   return (
     <section style={{ background: CREAM }}>
@@ -181,11 +174,11 @@ function Problem() {
         <div>
           <Eyebrow>§ 01 · Sound familiar?</Eyebrow>
           <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px, 4.6vw, 60px)", lineHeight: 1.02, color: INK, marginTop: 24, letterSpacing: "-0.015em" }}>
-            You built a real business.{" "}
-            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Why does marketing still feel like a mess?</span>
+            You built something real.{" "}
+            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>So why does marketing still feel like guessing?</span>
           </h2>
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_CREAM, marginTop: 28, maxWidth: 460 }}>
-            You are doing six jobs across six tabs. None of them connect. Most days, marketing feels like guessing in public. It does not have to.
+            There is always another post to write, another tool to open and another idea worth trying. It all feels urgent, and very little of it ties back to a goal. MOXIEMO starts one step earlier, with what your business is trying to achieve and what needs to happen first.
           </p>
         </div>
         <div>
@@ -237,6 +230,7 @@ function DemoWindow() {
         <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#ef6f53" }} />
         <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#e7c14a" }} />
         <span style={{ width: 11, height: 11, borderRadius: "50%", background: "#7fb069" }} />
+        <span className="home-sample-label">SAMPLE WORKSPACE</span>
         <div className="hidden sm:block" style={{ ...mono, fontSize: 11, color: MUTED_CREAM, background: CREAM, padding: "5px 14px", borderRadius: 6, marginLeft: 16, border: "1px solid rgba(19,19,15,0.08)" }}>app.buildwithmoxiemo.com</div>
       </div>
       <div className="grid" style={{ gridTemplateColumns: "214px 1fr", minHeight: 520 }}>
@@ -251,7 +245,7 @@ function DemoWindow() {
               return (
                 <button key={n} type="button" onClick={() => !greyed && pick(n as Screen)} style={{ position: "relative", display: "block", width: "100%", textAlign: "left", padding: "12px 14px", height: 42, marginBottom: 8, borderRadius: 10, ...sans, fontSize: 13, fontWeight: sel ? 600 : 500, color: greyed ? "#bdb8aa" : sel ? CORAL : INK, background: "transparent", border: 0, cursor: greyed ? "default" : "pointer" }}>
                   {n}{greyed && <span style={{ ...mono, fontSize: 9, marginLeft: 6, color: "#bdb8aa" }}>SOON</span>}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -287,7 +281,7 @@ function ScreenContent({ screen }: { screen: Screen }) {
     const kpis = [["Published", "24", "+18%"], ["Engagement", "4.6%", "+0.8%"], ["Leads", "31", "+12"], ["Consistency", "94%", "+6%"]];
     return (
       <div>
-        <h3 style={{ ...serif, fontSize: 30, fontWeight: 600, color: INK, marginBottom: 4 }}>Good afternoon, Karee.</h3>
+        <h3 style={{ ...serif, fontSize: 30, fontWeight: 600, color: INK, marginBottom: 4 }}>Good afternoon, Jordan.</h3>
         <p style={{ ...sans, fontSize: 13, color: MUTED_CREAM, marginBottom: 18 }}>Here is what is moving this week.</p>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
           {kpis.map(([l, v, d], i) => (
@@ -455,12 +449,12 @@ function PlatformSection() {
           <div>
             <Eyebrow>§ 02 · Inside MOXIEMO</Eyebrow>
             <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(38px, 4.4vw, 56px)", lineHeight: 1.02, color: INK, marginTop: 22, letterSpacing: "-0.015em" }}>
-              One platform.{" "}
-              <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Every step.</span>
+              One plan behind{" "}
+              <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>every next step.</span>
             </h2>
           </div>
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, alignSelf: "end" }}>
-            Click any tab to jump in. Discovery extracts your strategy in one guided session. Strategy synthesizes it. Content generates in your voice. Planner shows your whole quarter. One system, not a stack.
+            Discovery captures your goals and your brand. Diagnosis shows where you stand. Your roadmap sets the priorities, and every piece of content, campaign and result ties back to it.
           </p>
         </div>
         <DemoWindow />
@@ -472,9 +466,12 @@ function PlatformSection() {
 /* ───────────── §04 How it works ───────────── */
 function HowItWorks() {
   const steps = [
-    ["Discovery", "MOXIEMO Discovery", "One guided session extracts your positioning, voice, audience, and goals."],
-    ["Synthesis", "Strategy synthesized", "Positioning, pillars, voice, channels, and metrics, connected to everything. Not sitting in a doc you never open."],
-    ["Execution", "Execution embedded", "Every tool already knows your strategy. Generate content, plan campaigns, send emails. Approve, edit, publish."],
+    ["01", "DISCOVER", "Answer guided questions built on This Is Branding: your goals, audience, offer, proof and constraints."],
+    ["02", "DIAGNOSE", "See the gap between where you want to go and where your brand stands today."],
+    ["03", "DEFINE", "Get clear positioning, messaging, audience priorities and content pillars."],
+    ["04", "PRIORITIZE", "Turn the strategy into a roadmap with milestones and your next best actions."],
+    ["05", "EXECUTE", "Approve ready-to-go content and campaigns, published to the channels you connect."],
+    ["06", "MEASURE AND ADAPT", "See results against your goals and adjust the next round."],
   ];
   return (
     <section style={{ background: INK, color: CREAM }}>
@@ -483,8 +480,8 @@ function HowItWorks() {
           <div>
             <Eyebrow dark>§ 04 · How it works</Eyebrow>
             <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px, 4.6vw, 60px)", lineHeight: 1.02, color: CREAM, marginTop: 22, letterSpacing: "-0.015em" }}>
-              From messy middle{" "}
-              <span style={{ fontStyle: "italic", fontWeight: 340, color: "#86847a" }}>to one source of truth.</span>
+              From first question{" "}
+              <span style={{ fontStyle: "italic", fontWeight: 340, color: "#86847a" }}>to measurable progress.</span>
             </h2>
           </div>
         </div>
@@ -505,11 +502,9 @@ function HowItWorks() {
 /* ───────────── §05 Built for you ───────────── */
 function BuiltForYou() {
   const personas = [
-    [pCourse.url, "The course creator", "I finally sound like myself without spending Sundays writing."],
-    [pCoach.url, "The executive coach", "My strategy and my posts are the same conversation now."],
-    [pFounder.url, "The tech founder", "One platform replaced four tools and a freelancer."],
-    [pConsult.url, "The consultant", "It runs my marketing while I run my book of business."],
-    [pAgency.url, "The agency owner", "We use it as our internal CMO across every client."],
+    ["SOLO OWNER", "One brand and a lot of hats. Know where you stand and where to go.", "Clarity plan"],
+    ["GROWING OPERATOR", "Your direction is clear. Now it needs to show up every week.", "Momentum plan"],
+    ["PORTFOLIO OPERATOR", "Several brands, each with its own voice and goals, run from one account.", "Multiply plan"],
   ];
   return (
     <section style={{ background: CREAM }}>
@@ -518,22 +513,20 @@ function BuiltForYou() {
           <div>
             <Eyebrow>§ 05 · Built for you</Eyebrow>
             <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px, 4.6vw, 60px)", lineHeight: 1.02, color: INK, marginTop: 22, letterSpacing: "-0.015em" }}>
-              Not for everyone.{" "}
-              <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Specifically for you.</span>
+              Built for the stage{" "}
+              <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>you are in.</span>
             </h2>
           </div>
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_CREAM, alignSelf: "end" }}>
-            Founders and operators doing $250K to $5M, running marketing themselves or with one freelancer. Built for the people who refuse to let their voice get lost in the noise.
+            One brand or several, every plan starts with your strategy.
           </p>
         </div>
-        <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-          {personas.map(([img, label, quote]) => (
-            <div key={label}>
-              <div style={{ aspectRatio: "4 / 5", borderRadius: 6, overflow: "hidden", background: SAGE }}>
-                <img src={img} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
-              </div>
-              <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: CORAL, marginTop: 14 }}>{label}</div>
-              <p style={{ ...serif, fontStyle: "italic", fontWeight: 340, fontSize: 16, lineHeight: 1.4, color: INK, marginTop: 8 }}>"{quote}"</p>
+        <div className="grid gap-6 md:grid-cols-3">
+          {personas.map(([label, body, link]) => (
+            <div key={label} className="home-operator-card">
+              <div className="home-operator-label">{label}</div>
+              <p>{body}</p>
+              <PillButton to="/pricing" dark={false}>{link} <ArrowRight size={16} /></PillButton>
             </div>
           ))}
         </div>
@@ -545,9 +538,9 @@ function BuiltForYou() {
 /* ───────────── §05.5 The Platform ───────────── */
 function ThePlatform() {
   const items = [
-    ["01", "Strategy", "Your foundation. Built through Discovery.", "100/100 strategy strength"],
-    ["02", "Content", "Content that sounds like you. Every time.", "Yours / not generic AI"],
-    ["03", "Planner", "See your whole quarter at a glance.", "90 days / always in view"],
+    ["01", "Strategy", "Your foundation, built from discovery and diagnosis.", "DISCOVER · DIAGNOSE · DEFINE"],
+    ["02", "Content", "Drafts in your voice, tied to your goals.", "READY TO APPROVE"],
+    ["03", "Planner", "Your priorities and milestones in one view.", "NEXT BEST ACTIONS"],
   ];
   return (
     <section style={{ background: INK, color: CREAM }}>
@@ -561,7 +554,7 @@ function ThePlatform() {
             </h2>
           </div>
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_DARK, alignSelf: "end" }}>
-            Strategy, content, calendar, analytics. All wired to one source of truth.
+            Strategy, content, planning and results, all working from the same plan.
           </p>
         </div>
         <div className="grid md:grid-cols-3 gap-10">
@@ -582,11 +575,11 @@ function ThePlatform() {
 /* ───────────── §06 Why ───────────── */
 function Why() {
   const bullets = [
-    "End fragmentation. Replace tools, not just integrate them.",
-    "Strategy embedded in execution, not sitting in a static PDF.",
-    "Built for $250K+ founders, not startups or enterprises.",
-    "Honest urgency over hype. Real ROI, no exaggeration.",
-    "Your voice in every output. Not generic AI slop.",
+    "Diagnosis comes before content. Your website is one piece of evidence. Your goals lead.",
+    "You approve what goes out.",
+    "One strategy behind every channel you connect.",
+    "Your voice in every draft.",
+    "Results from your connected data, read against your goals.",
   ];
   return (
     <section id="why" style={{ background: SAGE }}>
@@ -594,11 +587,11 @@ function Why() {
         <div>
           <Eyebrow>§ 06 · Why MOXIEMO</Eyebrow>
           <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px, 4.6vw, 60px)", lineHeight: 1.02, color: INK, marginTop: 22, letterSpacing: "-0.015em" }}>
-            You became a founder to build something.{" "}
-            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Not to run a tool stack.</span>
+            Strategy first. Then the work.{" "}
+            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Then the follow-through.</span>
           </h2>
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, marginTop: 28 }}>
-            ConvertKit. Buffer. Kajabi. Calendly. Dubsado. GA. Twenty hours a week on tools that do not talk to each other. MOXIEMO is one platform that replaces the stack and embeds your strategy in every output.
+            Most marketing tools take the message you already have and help you make more of it. MOXIEMO starts earlier, with what you are trying to achieve, what is true about your brand today and what needs to change. Then it helps you do the work and keeps it moving.
           </p>
         </div>
         <div style={{ background: CREAM, borderRadius: 16, padding: "32px 30px", border: "1px solid rgba(19,19,15,0.08)" }}>
@@ -617,16 +610,17 @@ function Why() {
 }
 
 /* ───────────── §07 Founding members + form ───────────── */
-const ROLES = ["Founder", "Solopreneur", "Consultant", "Fractional Executive", "Agency Owner", "Business Owner", "Marketer", "Other"];
+const ROLES = HOME_ROLES;
 const REFERRAL_SOURCES = ["LinkedIn", "Instagram", "A friend or colleague", "Podcast", "Google search", "An event", "Other"];
 
 function FoundingSection() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("Founder");
+  const [role, setRole] = useState("Solo business owner");
   const [companyName, setCompanyName] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
   const [referralSource, setReferralSource] = useState("");
+  const [brandCount, setBrandCount] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -635,6 +629,7 @@ function FoundingSection() {
     e.preventDefault();
     setError(null);
     if (!name.trim() || !email.trim()) { setError("Please fill in your name and email."); return; }
+    if (!isBrandCount(brandCount)) { setError("Please select how many brands you run."); return; }
     setSubmitting(true);
     try {
       const { data, error: invokeError } = await supabase.functions.invoke("join-waitlist", {
@@ -645,6 +640,8 @@ function FoundingSection() {
           website_url: websiteUrl.trim() || null,
           company_name: companyName.trim() || null,
           referral_source: referralSource || null,
+          brand_count: brandCount,
+          source: "home_first100",
         },
       });
       let bodyError: string | undefined = (data as any)?.error;
@@ -658,7 +655,7 @@ function FoundingSection() {
         setError("Looks like you are already on the list. Check your email for next steps.");
         return;
       }
-      if (invokeError) { setError("Something went wrong. Please try again."); return; }
+      if (invokeError || bodyError) { setError("Something went wrong. Please try again."); return; }
       setSuccess(true);
     } catch {
       setError("Something went wrong. Please try again.");
@@ -666,10 +663,11 @@ function FoundingSection() {
   }
 
   const bullets = [
-    "Founding Member access, free forever",
-    "Personal 1:1 kickoff call with Karee before you start",
-    "First access to new features before public release",
-    "Direct line to the team during your first 30 days",
+    "50% off Clarity, Momentum or Multiply",
+    "Discovery and brand diagnosis on every plan",
+    "MOXIE text check-ins included",
+    "First access to new features as they ship",
+    "A direct line to the team during the beta",
   ];
 
   const labelStyle: React.CSSProperties = { ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_DARK, display: "block", marginBottom: 8 };
@@ -679,13 +677,13 @@ function FoundingSection() {
     <section id="join" style={{ background: INK, color: CREAM }}>
       <div className="mx-auto grid lg:grid-cols-[1fr_1.05fr] gap-[64px] items-start" style={{ maxWidth: 1200, padding: "118px 40px" }}>
         <div>
-          <Eyebrow dark>§ 07 · Founding members</Eyebrow>
+          <Eyebrow dark>§ 07 · THE FIRST 100</Eyebrow>
           <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px, 4.6vw, 60px)", lineHeight: 1.02, color: CREAM, marginTop: 22, letterSpacing: "-0.015em" }}>
-            Be a MOXIEMO{" "}
-            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#86847a" }}>founding member.</span>
+            Be one of our first{" "}
+            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#86847a" }}>100 customers.</span>
           </h2>
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_DARK, marginTop: 24, maxWidth: 460 }}>
-            Founding member access is free forever. Submit your details and book your 1:1 kickoff with Karee. Spots close when beta closes.
+            The MOXIEMO 2.0 beta is open to 100 customers. Join now and get 50% off any plan, monthly or annual, for as long as the beta runs.
           </p>
           <div style={{ marginTop: 28 }}>
             {bullets.map((b) => (
@@ -709,40 +707,47 @@ function FoundingSection() {
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={labelStyle}>First name</label>
-                  <input style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
+                  <label htmlFor="home-name" style={labelStyle}>First name</label>
+                  <input id="home-name" style={inputStyle} value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Email</label>
-                  <input type="email" style={inputStyle} value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={255} />
+                  <label htmlFor="home-email" style={labelStyle}>Email</label>
+                  <input id="home-email" type="email" style={inputStyle} value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={255} />
                 </div>
               </div>
               <div>
-                <label style={labelStyle}>What best describes you?</label>
-                <select style={{ ...inputStyle, appearance: "none", backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23b3b1a6' fill='none' stroke-width='1.5'/></svg>")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 34 }} value={role} onChange={(e) => setRole(e.target.value)}>
+                <label htmlFor="home-role" style={labelStyle}>What best describes you?</label>
+                <select id="home-role" style={{ ...inputStyle, appearance: "none", backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23b3b1a6' fill='none' stroke-width='1.5'/></svg>")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 34 }} value={role} onChange={(e) => setRole(e.target.value)}>
                   {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div>
-                <label style={labelStyle}>How did you hear about us?</label>
-                <select style={{ ...inputStyle, appearance: "none", backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23b3b1a6' fill='none' stroke-width='1.5'/></svg>")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 34 }} value={referralSource} onChange={(e) => setReferralSource(e.target.value)}>
+                <label htmlFor="home-brands" style={labelStyle}>How many brands do you run?</label>
+                <select id="home-brands" style={inputStyle} value={brandCount} onChange={e => setBrandCount(e.target.value)} required>
+                  <option value="" disabled>Select...</option>
+                  {BRAND_COUNTS.map(count => <option key={count} value={count}>{count}</option>)}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="home-referral" style={labelStyle}>How did you hear about us?</label>
+                <select id="home-referral" style={{ ...inputStyle, appearance: "none", backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' stroke='%23b3b1a6' fill='none' stroke-width='1.5'/></svg>")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 34 }} value={referralSource} onChange={(e) => setReferralSource(e.target.value)}>
                   <option value="">Select...</option>
                   {REFERRAL_SOURCES.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label style={labelStyle}>Company (optional)</label>
-                  <input style={inputStyle} value={companyName} onChange={(e) => setCompanyName(e.target.value)} maxLength={150} />
+                  <label htmlFor="home-company" style={labelStyle}>Company (optional)</label>
+                  <input id="home-company" style={inputStyle} value={companyName} onChange={(e) => setCompanyName(e.target.value)} maxLength={150} />
                 </div>
                 <div>
-                  <label style={labelStyle}>Website (optional)</label>
-                  <input style={inputStyle} value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} maxLength={250} placeholder="https://" />
+                  <label htmlFor="home-website" style={labelStyle}>Website (optional)</label>
+                  <input id="home-website" style={inputStyle} value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} maxLength={250} placeholder="https://" />
                 </div>
               </div>
-              <button type="submit" disabled={submitting} style={{ ...sans, width: "100%", background: CORAL, color: CREAM, border: 0, borderRadius: 999, padding: "14px 22px", fontSize: 14, fontWeight: 600, cursor: submitting ? "default" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
-                {submitting ? <><Loader2 size={16} className="animate-spin" /> Joining...</> : <>Join the founding member waitlist <ArrowRight size={16} /></>}
-              </button>
+              <Button type="submit" className="h-auto whitespace-normal" disabled={submitting} style={{ ...sans, width: "100%", background: CORAL, color: CREAM, border: 0, borderRadius: 999, padding: "14px 22px", fontSize: 14, fontWeight: 600, cursor: submitting ? "default" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
+                {submitting ? <><Loader2 size={16} className="animate-spin" /> Joining...</> : <>Claim my spot <ArrowRight size={16} /></>}
+              </Button>
               {error && <p style={{ ...sans, fontSize: 13, color: "#f6b9af", textAlign: "center", marginTop: 6 }}>{error}</p>}
               <p style={{ ...sans, fontSize: 13, color: MUTED_DARK, textAlign: "center", marginTop: 6 }}>
                 Already have access? <Link to="/auth" style={{ color: CREAM, textDecoration: "underline" }}>Sign in →</Link>
@@ -761,14 +766,16 @@ function FinalCta() {
     <section style={{ background: SAGE }}>
       <div className="mx-auto text-center" style={{ maxWidth: 900, padding: "118px 40px" }}>
         <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(44px, 5.6vw, 76px)", lineHeight: 1.02, color: INK, letterSpacing: "-0.02em" }}>
-          Stop guessing.{" "}
-          <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Start marketing with moxie.</span>
+          Find out{" "}
+          <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>what comes first.</span>
         </h2>
+        <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, marginTop: 28 }}>Run the free Brand Audit for a quick read on your brand. Then let MOXIEMO build the plan and MOXIE keep it moving.</p>
         <div className="flex flex-wrap items-center justify-center" style={{ gap: 20, marginTop: 36 }}>
           <PillButton to="/brand-audit">Run my free Brand Audit <ArrowRight size={16} /></PillButton>
+          <PillButton to="/pricing" dark={false}>See pricing</PillButton>
           <div className="flex items-center" style={{ gap: 10, ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED_SAGE }}>
             <span style={{ width: 7, height: 7, background: CORAL, display: "inline-block" }} />
-            Free access with beta · No credit card required
+            50% OFF FOR OUR FIRST 100 CUSTOMERS DURING THE MOXIEMO 2.0 BETA
           </div>
         </div>
       </div>
@@ -902,6 +909,7 @@ export default function Index() {
       <Marquee />
       <Problem />
       <PlatformSection />
+      <HomeMoxie />
       <HowItWorks />
       <BuiltForYou />
       <ThePlatform />
