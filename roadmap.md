@@ -14,3 +14,9 @@
 - [x] Replace hero, ticker, offer, plans, essentials, guarantee and FAQ copy while preserving existing styles.
 - [x] Add capability comparison and MOXIE block; retain security section unchanged.
 - [x] Test prices, brand limits and offer rules, and verify monthly/annual pricing and mobile table scrolling.
+
+# Home page
+- [ ] Update requested copy, links, sample workspace label and cards while preserving section order and existing styling.
+- [ ] Add the MOXIE text thread and six-step process.
+- [ ] Add required brand count to the first-100 form and persist it with the submission.
+- [ ] Test form rules and verify desktop/mobile home page and submission flow.
