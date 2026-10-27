@@ -6,7 +6,6 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-const ZOOM_LINK = "https://scheduler.zoom.us/klmg-ltd/moxie-beta-kickoff";
 
 const fontsHref =
   "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap";
@@ -45,6 +44,8 @@ export default function Founding() {
   const [company, setCompany] = useState("");
   const [website, setWebsite] = useState("");
   const [referral, setReferral] = useState("");
+  const [brandCount, setBrandCount] = useState("");
+  const [planInterest, setPlanInterest] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<null | "already_registered" | "generic">(null);
@@ -59,7 +60,7 @@ export default function Founding() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!firstName.trim() || !email.trim() || !role) {
+    if (!firstName.trim() || !email.trim() || !role || !brandCount || !planInterest) {
       setError("generic");
       return;
     }
@@ -73,6 +74,9 @@ export default function Founding() {
           website_url: website.trim() || null,
           company_name: company.trim() || null,
           referral_source: referral || null,
+          brand_count: brandCount,
+          plan_interest: planInterest,
+          source: "founding_first100",
         },
       });
       let bodyError: string | undefined = (data as any)?.error;
@@ -163,7 +167,7 @@ export default function Founding() {
             }}
           >
             <span style={{ width: 6, height: 6, background: "#ef6f53", borderRadius: "50%", display: "inline-block" }} />
-            PRIVATE BETA &nbsp;·&nbsp; LIMITED SPOTS
+            MOXIEMO 2.0 BETA &nbsp;·&nbsp; FIRST 100 CUSTOMERS
           </div>
 
           {/* Headline */}
@@ -179,9 +183,9 @@ export default function Founding() {
               textAlign: "center",
             }}
           >
-            Join as a Private Beta
+            Be one of
             <br />
-            <span style={{ fontWeight: 300, fontStyle: "italic", color: "#ef6f53" }}>Founding Member.</span>
+            <span style={{ fontWeight: 300, fontStyle: "italic", color: "#ef6f53" }}>our first 100.</span>
           </h1>
 
           {/* Subhead */}
@@ -196,7 +200,7 @@ export default function Founding() {
               textWrap: "pretty" as any,
             }}
           >
-            Join the private beta and get full platform access, free for as long as the private beta runs. We personally schedule a 1:1 kickoff call with every founding member before granting access.
+            Get 50% off any MOXIEMO plan, monthly or annual, for as long as the 2.0 beta runs. Once 100 spots are filled, new customers pay standard pricing.
           </p>
 
           {/* CARD */}
@@ -223,14 +227,17 @@ export default function Founding() {
                   marginBottom: 10,
                 }}
               >
-                Private Beta Founding Member
+                First 100
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ fontFamily: "'Newsreader', serif", fontSize: 30, fontWeight: 600, color: "#fff", lineHeight: 1.15 }}>
-                  Free during private beta.
+                  50% off any plan.
                 </div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.7)", letterSpacing: "0.06em" }}>
-                  1:1 kickoff call included
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#fff", letterSpacing: "0.04em", lineHeight: 1.6 }}>
+                  Clarity $49.50/month · Momentum $74.50/month · Multiply $124.50/month
+                </div>
+                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.75)", letterSpacing: "0.06em", lineHeight: 1.6 }}>
+                  Standard pricing is $99, $149 and $249 a month. Pay annually and save 17%.
                 </div>
               </div>
             </div>
@@ -239,11 +246,11 @@ export default function Founding() {
             <div style={{ padding: "22px 32px 20px", borderBottom: "1px solid rgba(19,19,15,0.07)" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
-                  "Founding Member access, free for as long as private beta runs",
-                  "Personal 1:1 kickoff call with Karee before you start",
-                  "First access to new features before public release",
-                  "Direct line to the team during your first 30 days",
-                  "A direct offer to Beta 2.0 founding access at 50 percent off for life, before it opens to anyone else",
+                  "50% off Clarity, Momentum or Multiply, monthly or annual",
+                  "Discovery and brand diagnosis on every plan",
+                  "MOXIE text check-ins included",
+                  "First access to new features as they ship",
+                  "A direct line to the team during the beta",
                 ].map((perk) => (
                   <div key={perk} style={{ display: "flex", gap: 11, alignItems: "flex-start" }}>
                     <svg width="17" height="17" viewBox="0 0 17 17" fill="none" style={{ flex: "none", marginTop: 2 }}>
@@ -252,6 +259,11 @@ export default function Founding() {
                     <span style={{ fontSize: 14.5, color: "#3a382f", lineHeight: 1.4 }}>{perk}</span>
                   </div>
                 ))}
+              </div>
+              <div style={{ marginTop: 16, fontSize: 14 }}>
+                <Link to="/pricing" className="fm-signin" style={{ color: "#ef6f53", textDecoration: "none", fontWeight: 600 }}>
+                  Compare plans →
+                </Link>
               </div>
             </div>
 
@@ -299,13 +311,9 @@ export default function Founding() {
                       required
                     >
                       <option value="">Select one...</option>
-                      <option value="Founder">Founder / CEO</option>
-                      <option value="Consultant">Consultant</option>
-                      <option value="Agency Owner">Agency Owner</option>
-                      <option value="Executive or Business Coach">Executive or Business Coach</option>
-                      <option value="Course Creator">Course Creator</option>
-                      <option value="Service Business Owner">Service Business Owner</option>
-                      <option value="Other">Other</option>
+                      {["Solo business owner", "Founder or CEO", "Consultant or coach", "Fractional executive", "Agency owner", "Multi-brand or portfolio operator", "Marketer", "Other"].map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -337,6 +345,23 @@ export default function Founding() {
                         value={website}
                         onChange={(e) => setWebsite(e.target.value)}
                       />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+                    <div>
+                      <label style={labelStyle}>How many brands do you run?</label>
+                      <select className="fm-input" style={inputStyle} name="brandCount" value={brandCount} onChange={(e) => setBrandCount(e.target.value)} required>
+                        <option value="">Select one...</option>
+                        {["1", "2", "3", "4 or more"].map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Which plan are you leaning toward?</label>
+                      <select className="fm-input" style={inputStyle} name="planInterest" value={planInterest} onChange={(e) => setPlanInterest(e.target.value)} required>
+                        <option value="">Select one...</option>
+                        {["Clarity", "Momentum", "Multiply", "Not sure yet"].map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
                     </div>
                   </div>
 
@@ -383,7 +408,7 @@ export default function Founding() {
                       transition: "background .15s",
                     }}
                   >
-                    {submitting ? "Joining..." : "Join the Founding Member waitlist"}
+                    {submitting ? "Claiming..." : "Claim my spot"}
                     {!submitting && (
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M3 8h10M8 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
@@ -401,12 +426,12 @@ export default function Founding() {
                       marginBottom: 14,
                     }}
                   >
-                    No credit card required &nbsp;·&nbsp; Free for as long as beta runs
+                    No payment today. We will email you to confirm your spot and plan.
                   </div>
 
                   {error === "already_registered" && (
                     <p style={{ fontSize: 13, textAlign: "center", color: "#56544c", background: "#faf6ef", border: "1px solid rgba(19,19,15,0.08)", borderRadius: 8, padding: 12, marginBottom: 12 }}>
-                      Looks like you're already on the list! Check your email for next steps, or{" "}
+                      Looks like you're already on the list. Check your email for next steps, or{" "}
                       <Link to="/auth" style={{ color: "#ef6f53", fontWeight: 600 }}>sign in</Link>{" "}
                       if you already have access.
                     </p>
@@ -455,49 +480,11 @@ export default function Founding() {
                     color: "#13130f",
                   }}
                 >
-                  You are in{firstName ? `, ${firstName.split(" ")[0]}` : ""}.
+                  You're on the list{firstName ? `, ${firstName.split(" ")[0]}` : ""}.
                 </h2>
-                <p style={{ fontSize: 16, lineHeight: 1.65, color: "#56544c", maxWidth: 380, margin: "0 auto 20px" }}>
-                  Use the button below to book your personal 1:1 kickoff call with Karee. You will receive platform access after your call.
+                <p style={{ fontSize: 16, lineHeight: 1.65, color: "#56544c", maxWidth: 380, margin: "0 auto" }}>
+                  You're on the list for one of our first 100 spots. We'll be in touch soon to confirm your plan.
                 </p>
-                <a
-                  href={ZOOM_LINK}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="fm-cta"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
-                    background: "#ef6f53",
-                    color: "#fff",
-                    fontFamily: "'Hanken Grotesk', sans-serif",
-                    fontWeight: 700,
-                    fontSize: 15,
-                    padding: "14px 22px",
-                    borderRadius: 10,
-                    textDecoration: "none",
-                    marginBottom: 24,
-                    transition: "background .15s",
-                  }}
-                >
-                  Schedule your kickoff call
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8h10M8 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </a>
-                <div
-                  style={{
-                    fontFamily: "'IBM Plex Mono', monospace",
-                    fontSize: 11.5,
-                    letterSpacing: "0.12em",
-                    textTransform: "uppercase",
-                    color: "#9a9789",
-                  }}
-                >
-                  Spots are limited. Welcome to the founding round.
-                </div>
               </div>
             )}
           </div>
@@ -515,7 +502,8 @@ export default function Founding() {
               lineHeight: 1.6,
             }}
           >
-            Access is by invitation only and is not guaranteed to remain open indefinitely. Founding Member access locks in 50% off Beta 2.0 pricing for life.
+            Limited to our first 100 customers. The 50% discount applies for as long as the MOXIEMO 2.0 beta runs. Plans renew automatically until cancelled. See our{" "}
+            <Link to="/terms" style={{ color: "#ef6f53" }}>Terms of Service</Link>.
           </p>
         </main>
       </div>

@@ -1733,6 +1733,7 @@ export type Database = {
           id: string
           name: string
           notes: string | null
+          plan_interest: string | null
           referral_source: string | null
           role: string | null
           scheduled_call_at: string | null
@@ -1752,6 +1753,7 @@ export type Database = {
           id?: string
           name: string
           notes?: string | null
+          plan_interest?: string | null
           referral_source?: string | null
           role?: string | null
           scheduled_call_at?: string | null
@@ -1771,6 +1773,7 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          plan_interest?: string | null
           referral_source?: string | null
           role?: string | null
           scheduled_call_at?: string | null
