@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import heroAsset from "@/assets/karee-hero.png.asset.json";
@@ -134,18 +135,18 @@ export default function About() {
   };
 
   const milestones = [
-    { yr: "YEAR 1 · 2026", num: "500", desc: "founders and business owners find what makes them valuable, and start building real content around it.", side: "left", size: 18 },
-    { yr: "YEAR 2 · 2027", num: "1,000", desc: "founders distributing their content consistently, without doing it by hand.", side: "right", size: 20 },
-    { yr: "YEAR 3 · 2028", num: "3,000", desc: "businesses and personal brands running on autonomous distribution, organic and paid.", side: "left", size: 22 },
+    { yr: "YEAR 1 · 2026", num: "500", desc: "founders and business owners get clear on what comes first.", side: "left", size: 18 },
+    { yr: "YEAR 2 · 2027", num: "1,000", desc: "founders running their marketing from one plan, with MOXIE keeping it moving.", side: "right", size: 20 },
+    { yr: "YEAR 3 · 2028", num: "3,000", desc: "businesses and personal brands executing across their connected channels, organic and paid.", side: "left", size: 22 },
     { yr: "YEAR 4 · 2029", num: "5,000", desc: "founders who can see, in real numbers, what their marketing is doing for their business.", side: "right", size: 24 },
-    { yr: "YEAR 5 · 2030", num: "10,000", desc: "founders and businesses growing on one system. Proof, not guesswork, as the standard.", side: "left", size: 28 },
+    { yr: "YEAR 5 · 2030", num: "10,000", desc: "founders and businesses growing on one system, with proof as the standard.", side: "left", size: 28 },
   ] as const;
 
   const rules = [
-    { n: "01", t: "End fragmentation, don't add to it.", d: "Every feature should reduce tools, not add layers. We're not making better integrations, we're replacing fragmented systems entirely.", f: "Does this end fragmentation or perpetuate it?" },
-    { n: "02", t: "Respect time as currency.", d: "Customers are drowning in 20 hours/week of tool management. Every minute we waste is time they could spend on their business.", f: "Does this save more time than it takes?" },
-    { n: "03", t: "Built for operators, not engineers.", d: "An executive coach building her personal brand. A local service business owner growing his company. Neither is a developer. If a feature requires technical knowledge, we've failed.", f: "Can a founder or business owner use this without frustration?" },
-    { n: "04", t: "Honest urgency over hype.", d: "The problem is real: hours lost every week to managing disconnected tools. The fix is real too — one autonomous growth system instead of a stack of tools, freelancers, and subscriptions you don't need anymore. We don't need to exaggerate it.", f: "Is this true and specific, or vague hype?" },
+    { n: "01", t: "Strategy comes first.", d: "Every feature starts from the goal and the brand, before the content.", f: "Does this start from the goal?" },
+    { n: "02", t: "Ask before acting.", d: "MOXIEMO and MOXIE act only on what the owner approved, one action at a time. Bigger decisions always ask for more.", f: "Did the owner approve this exact action?" },
+    { n: "03", t: "Never invent a result.", d: "Every number we show comes from connected, trustworthy data. If a task did not run, we say so.", f: "Is this true, specific and sourced?" },
+    { n: "04", t: "Built for operators.", d: "An executive coach building her personal brand. A local service business owner growing his company. Neither is a developer. If a feature needs technical knowledge, we have failed.", f: "Can a founder or business owner use this without frustration?" },
   ];
 
   const tickerItems = [
@@ -193,7 +194,7 @@ export default function About() {
           >
             <img
               src={heroAsset.url}
-              alt="Karee Laing — Founder of MOXIEMO"
+              alt="Karee Laing, Founder of MOXIEMO"
               style={{ height: "100%", width: "auto", objectFit: "contain", objectPosition: "top center", filter: "brightness(0.88)", flex: "none" }}
             />
             <div aria-hidden style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 220, background: "linear-gradient(to right, #0d0d0a, transparent)", zIndex: 2, pointerEvents: "none" }} />
@@ -231,7 +232,7 @@ export default function About() {
 
             {/* Photo caption */}
             <div style={{ position: "absolute", bottom: 30, right: 40, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, letterSpacing: "0.1em", color: "rgba(244,239,229,0.3)", zIndex: 4 }}>
-              Karee Laing — Founder, Brand Strategist, 4x Entrepreneur
+              Karee Laing · Founder, Brand Strategist, 4x Entrepreneur
             </div>
           </div>
 
@@ -243,12 +244,12 @@ export default function About() {
             </div>
 
             <h1 className="mo-serif" style={{ fontWeight: 600, fontSize: "clamp(52px, 6.8vw, 98px)", lineHeight: 0.93, letterSpacing: "-0.026em", color: COLORS.cream, marginBottom: 30, maxWidth: 520, animation: "mo-chip-in 0.9s 0.25s ease both" }}>
-              Ending<br />the tool<br />
-              <span className="mo-serif" style={{ fontWeight: 320, fontStyle: "italic", color: "rgba(244,239,229,0.45)" }}>fragmentation era.</span>
+              Built so<br />founders know<br />what comes<br />
+              <span className="mo-serif" style={{ fontWeight: 320, fontStyle: "italic", color: "rgba(244,239,229,0.45)" }}>first.</span>
             </h1>
 
             <p style={{ fontSize: 18, lineHeight: 1.65, color: "rgba(244,239,229,0.58)", maxWidth: 450, marginBottom: 46, animation: "mo-chip-in 0.9s 0.4s ease both" }}>
-              MOXIEMO is the growth system that replaces it. Built so brilliant entrepreneurs become strategic leaders, not exhausted system administrators.
+              MOXIEMO helps founders and growing businesses find what moves their brand forward, then get it done.
             </p>
 
             <div style={{ display: "flex", alignItems: "center", gap: 16, animation: "mo-chip-in 0.9s 0.55s ease both" }}>
@@ -274,7 +275,7 @@ export default function About() {
                 <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: COLORS.coral }} />
               </div>
               <div style={{ marginTop: 22, paddingLeft: 4 }}>
-                <div style={{ fontFamily: "'Hanken Grotesk', sans-serif", fontWeight: 600, fontSize: 16, color: COLORS.near, marginBottom: 4 }}>— Karee Laing</div>
+                <div style={{ fontFamily: "'Hanken Grotesk', sans-serif", fontWeight: 600, fontSize: 16, color: COLORS.near, marginBottom: 4 }}>Karee Laing</div>
                 <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: COLORS.warmMuted, marginBottom: 18 }}>Founder, MOXIEMO</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {["Brand Strategist","JD/MBA","Goldman Sachs 10KSB Scholar","HBJ 40 Under 40"].map((c) => (
@@ -290,12 +291,11 @@ export default function About() {
               <div style={{ display: "flex", flexDirection: "column", gap: 22, color: "#3a382f", fontSize: 17, lineHeight: 1.72 }}>
                 <p className="mo-reveal" style={{ transitionDelay: "160ms" }}>I've lived the Monday night tool panic. You know the one where it's 9 PM and you need to prep and schedule the Tuesday morning newsletter, but first you have to pull the list from your website, check Analytics for what performed best, find that graphic in Canva, copy the caption from Claude, and format it all while updating the CTA. Two hours later, you've sent one email.</p>
                 <p className="mo-reveal" style={{ transitionDelay: "240ms" }}>I've spent 15+ years in marketing. I should know better. But I was still drowning in tools, building Zapier automations at 11 PM, wondering why marketing felt like IT work instead of strategy. If I was struggling, what about the founders I work with? The ones building real businesses, whether it's coaching practices, consulting firms, or service companies who never signed up to become software administrators.</p>
-                <p className="mo-reveal" style={{ transitionDelay: "320ms" }}>Here's what I kept seeing: Brilliant founders spending 20+ hours a week on marketing operations, copying content between platforms, troubleshooting integrations, managing subscriptions, and zero hours on marketing strategy. No time to think about positioning, building a consistent narrative, or creating content that actually moves the needle. Just managing systems.</p>
+                <p className="mo-reveal" style={{ transitionDelay: "320ms" }}>Here is what I kept seeing. Brilliant founders spending most of their marketing time on operations: copying content between platforms, fixing integrations and managing subscriptions. Almost none of it went to strategy, like positioning, a consistent story or content that moves the business.</p>
                 <p className="mo-reveal" style={{ borderLeft: `3px solid ${COLORS.coral}`, paddingLeft: 22, transitionDelay: "400ms" }}>
-                  <strong style={{ color: COLORS.near }}>That's the real problem.</strong> It's not too many tools — every tool jumps straight to execution without fully asking the strategic questions: Who are you? Who do you serve? What makes you different? What's your actual narrative? You can't build a business that lasts on random posts and duct-taped automations.
+                  <strong style={{ color: COLORS.near }}>The real problem was the order.</strong> Every tool jumped straight to execution without asking the strategic questions first. Who are you? Who do you serve? What makes you different? What should you do first? And even with a plan, things stalled between logins because nobody was there to nudge.
                 </p>
-                <p className="mo-reveal" style={{ transitionDelay: "480ms" }}>So, I built MOXIEMO. Not another tool to manage, but a growth system that works like your actual Chief Marketing Officer: it asks the strategic questions, creates your foundation, then executes it consistently so you can get back to building the business you actually started. Because you didn't become a founder to be a system administrator. You became one to build a legacy.</p>
-                <p className="mo-reveal" style={{ fontWeight: 600, fontSize: 18, lineHeight: 1.55, color: COLORS.near, transitionDelay: "560ms" }}>MOXIEMO is the growth system that gives that back to you.</p>
+                <p className="mo-reveal" style={{ transitionDelay: "480ms" }}>So I built MOXIEMO. It asks the strategic questions, diagnoses where your brand stands, builds the plan and helps you do the work. Then I built MOXIE to make sure it happens, with a text when something needs you. You became a founder to build something that lasts. MOXIEMO is here to help you do that.</p>
               </div>
             </div>
           </div>
@@ -311,7 +311,7 @@ export default function About() {
 
             <div className="mo-experience-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
               {[
-                { src: tableAsset.url, caption: "The Table — curated dinners for women founders in Houston", alt: "The Table dinner" },
+                { src: tableAsset.url, caption: "The Table · curated dinners for women founders in Houston", alt: "The Table dinner" },
                 { src: quoteAsset.url, caption: "15+ years. Hundreds of founders. One recurring problem.", alt: "Karee Laing" },
               ].map((c, i) => (
                 <div key={i} className="mo-reveal" style={{ borderRadius: 8, overflow: "hidden", position: "relative", height: 370, transitionDelay: `${i*100}ms` }}>
@@ -323,7 +323,7 @@ export default function About() {
               <div className="mo-reveal" style={{ background: COLORS.near, borderRadius: 8, padding: "40px 34px", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 370, transitionDelay: "200ms" }}>
                 <div style={{ width: 28, height: 2.5, background: COLORS.coral, borderRadius: 2, marginBottom: 30 }} />
                 <p className="mo-serif" style={{ fontWeight: 500, fontSize: "clamp(22px, 2.4vw, 30px)", lineHeight: 1.28, color: COLORS.cream, letterSpacing: "-0.01em", marginBottom: 24 }}>
-                  You're not missing knowledge. You're missing a growth system.
+                  The question is always the same: what do I do first?
                 </p>
                 <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "rgba(244,239,229,0.4)" }}>That's why MOXIEMO exists.</div>
               </div>
@@ -340,10 +340,10 @@ export default function About() {
 
             <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.26em", color: COLORS.coral, marginBottom: 30, display: "inline-block", position: "relative" }}>OUR MISSION</div>
             <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(30px, 4.8vw, 64px)", lineHeight: 1.02, letterSpacing: "-0.024em", color: COLORS.cream, marginBottom: 34, textWrap: "balance", position: "relative", transitionDelay: "100ms" } as React.CSSProperties}>
-              We're turning exhausted operators into strategic leaders, with a growth system that finds what makes you valuable, puts it in market, and proves it grows your business.
+              We help founders and growing businesses know what comes first, get it done and see what it moved.
             </h2>
             <p className="mo-reveal" style={{ fontSize: 18, lineHeight: 1.7, color: "rgba(244,239,229,0.48)", maxWidth: 640, margin: "0 auto", position: "relative", transitionDelay: "200ms" }}>
-              In five years, we want tool fragmentation to feel as outdated as fax machines, and "is this actually growing my business" to always have a clear answer. The default answer should be: just use MOXIEMO.
+              In five years, we want every founder who uses MOXIEMO to have a clear answer to the question: is my marketing working?
             </p>
           </div>
         </section>
@@ -369,8 +369,8 @@ export default function About() {
               <div className="mo-reveal mo-rule-card-5" style={{ gridColumn: "1 / -1", border: "1px solid rgba(19,19,15,0.10)", borderRadius: 8, padding: "38px 34px", display: "grid", gridTemplateColumns: "auto 1fr", gap: "0 48px", alignItems: "start", transitionDelay: "320ms" }}>
                 <div className="mo-serif" style={{ fontSize: 40, color: COLORS.coral, lineHeight: 1 }}>05</div>
                 <div>
-                  <h3 style={{ fontWeight: 700, fontSize: 18, color: COLORS.near, letterSpacing: "-0.01em", marginBottom: 14 }}>Compound simplicity over feature bloat.</h3>
-                  <p style={{ fontSize: 16, lineHeight: 1.65, color: COLORS.muted, marginBottom: 22, maxWidth: 680 }}>Fewer features that multiply each other's value. Tool-fatigued users don't want more, they want fewer, better.</p>
+                  <h3 style={{ fontWeight: 700, fontSize: 18, color: COLORS.near, letterSpacing: "-0.01em", marginBottom: 14 }}>Fewer, better features.</h3>
+                  <p style={{ fontSize: 16, lineHeight: 1.65, color: COLORS.muted, marginBottom: 22, maxWidth: 680 }}>Every feature should make the others more useful. Busy founders want fewer, better tools.</p>
                   <div style={{ borderLeft: "3px solid rgba(19,19,15,0.10)", paddingLeft: 18 }}>
                     <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: COLORS.coral, marginBottom: 7 }}>DECISION FILTER</div>
                     <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: COLORS.lightMuted, lineHeight: 1.5 }}>"Does this make the platform simpler or more complex?"</div>
@@ -387,7 +387,7 @@ export default function About() {
             <div style={{ textAlign: "center", marginBottom: 88 }}>
               <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(42px, 5.5vw, 74px)", lineHeight: 0.95, letterSpacing: "-0.026em", color: COLORS.cream, marginBottom: 20 }}>Where we're going.</h2>
               <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, letterSpacing: "0.12em", color: COLORS.coral, fontStyle: "italic", transitionDelay: "100ms" }}>
-                We measure success in growth you can prove and hours you get back. Not vanity metrics.
+                Our goals. We measure success in progress you can prove.
               </div>
             </div>
 
@@ -425,7 +425,7 @@ export default function About() {
 
             <div className="mo-reveal" style={{ marginTop: 80, paddingTop: 56, borderTop: "1px solid rgba(244,239,229,0.06)", textAlign: "center" }}>
               <div className="mo-serif" style={{ fontStyle: "italic", fontSize: "clamp(18px, 2.2vw, 26px)", color: "rgba(244,239,229,0.38)" }}>
-                "I'm a strategist again, not an operator." That's the North Star.
+                "I know what comes first, and it gets done." That's the North Star.
               </div>
             </div>
           </div>
@@ -438,14 +438,14 @@ export default function About() {
               Ready when you are.
             </h2>
             <p className="mo-reveal" style={{ fontSize: 18, lineHeight: 1.7, color: COLORS.muted, maxWidth: 580, margin: "0 auto 48px", transitionDelay: "100ms" }}>
-              Start your MOXIEMO Discovery, free while private beta is open. Build your full strategy in one guided session, and it is yours by the end of it. Or get on the list for Beta 2.0, with founding pricing locked in for life.
+              Start with the free Brand Audit, then claim one of our first 100 spots at 50% off any plan during the MOXIEMO 2.0 beta.
             </p>
             <div className="mo-reveal" style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 26, transitionDelay: "200ms" }}>
-              <a href="https://buildwithmoxiemo.com/founding" target="_blank" rel="noopener noreferrer" className="mo-btn-primary">Start your Discovery →</a>
-              <a href="https://buildwithmoxiemo.com/beta20-founding?tier=growth" target="_blank" rel="noopener noreferrer" className="mo-btn-outline">Join the Beta 2.0 waitlist →</a>
+              <Link to="/brand-audit" className="mo-btn-primary">Run my free Brand Audit →</Link>
+              <Link to="/founding" className="mo-btn-outline">Claim a first-100 spot →</Link>
             </div>
             <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: COLORS.warmMuted, transitionDelay: "300ms" }}>
-              Private beta is free while it's open · Beta 2.0 founding members get 50% off for life
+              Plans from $99 a month · 50% off for our first 100 customers
             </div>
           </div>
         </section>
