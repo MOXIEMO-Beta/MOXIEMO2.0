@@ -68,7 +68,7 @@ function anonId() {
 }
 
 export function saveConsent(choices: OptionalChoices, source: ConsentSource): ConsentChoice {
-  const choice: ConsentChoice = { version: CONSENT_VERSION, timestamp: new Date().toISOString(), necessary: true, ...choices, gpc: hasGpc() };
+  const choice: ConsentChoice = { version: CONSENT_VERSION, timestamp: new Date().toISOString(), necessary: true, preferences: choices.preferences, analytics: choices.analytics, marketing: choices.marketing, gpc: hasGpc() };
   memoryChoice = choice;
   try { localStorage.setItem(CONSENT_KEY, JSON.stringify(choice)); } catch { /* Keep the choice in memory for this visit. */ }
   notify();
