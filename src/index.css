@@ -591,6 +591,49 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 .pricing-card-price span { font-size: 14px; color: var(--pricing-copy); }
 .pricing-card-price-dark { color: var(--pricing-surface); }
 .pricing-card-price-dark > s, .pricing-card-price-dark span { color: var(--pricing-dark-muted); }
+:root {
+  --home-surface: #f4efe5;
+  --home-ink: #13130f;
+  --home-soft: #dce3d2;
+  --home-coral: #ef6f53;
+  --home-copy: #56544c;
+  --home-emphasis: #6d7a5e;
+  --home-border: rgba(19, 19, 15, 0.12);
+  --home-phone-shadow: 0 30px 80px rgba(19, 19, 15, 0.18);
+}
+.home-moxie { background: var(--home-surface); color: var(--home-ink); font-family: 'Hanken Grotesk', sans-serif; }
+.home-moxie-inner { max-width: 1200px; margin: 0 auto; padding: 118px 40px; }
+.home-moxie-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 72px; align-items: center; }
+.home-moxie-eyebrow, .home-operator-label, .home-sample-label { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0; color: var(--home-copy); }
+.home-moxie-eyebrow::before { content: ''; display: inline-block; width: 7px; height: 7px; background: var(--home-coral); margin-right: 8px; }
+.home-moxie h2 { font-family: 'Newsreader', Georgia, serif; font-size: 60px; font-weight: 600; line-height: 1.02; letter-spacing: 0; margin-top: 24px; }
+.home-moxie h2 em { color: var(--home-emphasis); font-weight: 340; }
+.home-moxie-body { font-size: 17px; line-height: 1.65; color: var(--home-copy); margin-top: 28px; }
+.home-moxie h3 { font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 600; letter-spacing: 0; margin: 32px 0 18px; }
+.home-moxie-paces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.home-moxie-paces > div { border: 1px solid var(--home-border); border-radius: 6px; padding: 16px 12px; }
+.home-moxie-paces h4 { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--home-coral); letter-spacing: 0; font-weight: 500; }
+.home-moxie-paces p { font-size: 14px; line-height: 1.5; margin-top: 8px; }
+.home-moxie-phone { max-width: 380px; margin: 0 auto; border: 6px solid var(--home-ink); border-radius: 28px; padding: 24px 18px; background: var(--home-soft); box-shadow: var(--home-phone-shadow); }
+.home-moxie-phone-header { text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px; border-bottom: 1px solid var(--home-border); padding: 4px 0 18px; margin-bottom: 20px; }
+.home-moxie-message { max-width: 90%; background: var(--home-surface); border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 14px; line-height: 1.6; }
+.home-moxie-message span { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; margin-bottom: 6px; }
+.home-moxie-reply { width: fit-content; margin-left: auto; background: var(--home-ink); color: var(--home-surface); min-width: 90px; }
+.home-moxie-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 24px; }
+.home-moxie-pills span { border: 1px solid var(--home-border); border-radius: 999px; font-size: 11px; padding: 7px 12px; }
+.home-moxie-fine { font-size: 13px; line-height: 1.7; color: var(--home-copy); margin-top: 40px; }
+.home-operator-card { border-top: 1px solid var(--home-border); padding-top: 28px; }
+.home-operator-label { color: var(--home-coral); }
+.home-operator-card p { font-size: 17px; line-height: 1.65; color: var(--home-copy); margin: 18px 0 24px; min-height: 84px; }
+.home-sample-label { font-size: 9px; white-space: nowrap; }
+@media (max-width: 1023px) {
+  .home-moxie-grid { grid-template-columns: minmax(0, 1fr); gap: 48px; }
+  .home-moxie h2 { font-size: 40px; }
+}
+@media (max-width: 639px) {
+  .home-moxie-inner { padding: 80px 24px; }
+  .home-moxie-paces { grid-template-columns: minmax(0, 1fr); }
+}
 @media (max-width: 639px) {
   .pricing-comparison, .pricing-moxie { padding: 64px 24px; }
   .pricing-section-heading { font-size: 34px; }

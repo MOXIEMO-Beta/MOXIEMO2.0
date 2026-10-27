@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendResendEmail } from "../_shared/resend.ts";
+import { validBrandCount } from "./brand-count.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -16,7 +17,14 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { name, email, role, website_url, company_name, referral_source } = await req.json();
+    const { name, email, role, website_url, company_name, referral_source, brand_count, source } = await req.json();
+
+    if (!validBrandCount(brand_count, source)) {
+      return new Response(JSON.stringify({ error: "Please select how many brands you run." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!name || !email) {
       return new Response(JSON.stringify({ error: "Name and email are required" }), {
@@ -45,7 +53,7 @@ serve(async (req) => {
 
     const { error: dbError } = await supabase
       .from("waitlist")
-      .insert({ name, email, role, website_url, company_name, referral_source, user_id });
+      .insert({ name, email, role, website_url, company_name, referral_source, brand_count: brand_count ?? null, user_id });
 
     if (dbError) {
       if ((dbError as any).code === "23505") {
@@ -85,7 +93,7 @@ serve(async (req) => {
               <p style="margin: 0 0 24px;">
                 <a href="${ZOOM_LINK}" style="display: inline-block; background: #ff6b6b; color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600;">Book your kickoff call →</a>
               </p>
-              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">Your founding member access is free forever and your spot is held. But platform access is granted after your kickoff call, so grab a time that works for you.</p>
+              <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">${source === "home_first100" ? "The MOXIEMO 2.0 beta offers 50% off any plan for our first 100 customers. Book your kickoff call to discuss your next steps." : "Your founding member access is free forever and your spot is held. But platform access is granted after your kickoff call, so grab a time that works for you."}</p>
               <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">If you have any questions before your call, reply to this email directly.</p>
               <p style="font-size: 15px; line-height: 1.6; margin: 0 0 16px;">See you soon.</p>
               <p style="font-size: 15px; line-height: 1.6; margin: 0;">Karee<br/>Founder, MOXIE<br/><a href="mailto:hello@buildwithmoxiemo.com" style="color:#ff6b6b;">hello@buildwithmoxiemo.com</a></p>
@@ -104,7 +112,7 @@ serve(async (req) => {
     try {
       const { response: adminRes, body: adminData } = await sendResendEmail("join-waitlist admin", {
           to: ["hello@buildwithmoxiemo.com"],
-          subject: `New Founding Member Application — ${first} ${last}`.trim(),
+          subject: `New Founding Member Application: ${first} ${last}`.trim(),
           html: `
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #111;">
               <h2 style="font-size: 18px; margin: 0 0 16px;">New Founding Member Application</h2>
@@ -116,6 +124,7 @@ serve(async (req) => {
                 <tr><td style="padding-right: 16px; color: #666;">Company</td><td>${company_name ?? "—"}</td></tr>
                 <tr><td style="padding-right: 16px; color: #666;">Website</td><td>${website_url ?? "—"}</td></tr>
                 <tr><td style="padding-right: 16px; color: #666;">Referral source</td><td>${referral_source ?? "—"}</td></tr>
+                <tr><td style="padding-right: 16px; color: #666;">Brands</td><td>${brand_count ?? "Not provided"}</td></tr>
                 <tr><td style="padding-right: 16px; color: #666;">Submitted at</td><td>${submittedAt}</td></tr>
               </table>
             </div>
