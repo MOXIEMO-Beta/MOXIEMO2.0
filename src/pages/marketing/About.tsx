@@ -438,7 +438,7 @@ export default function About() {
               Ready when you are.
             </h2>
             <p className="mo-reveal" style={{ fontSize: 18, lineHeight: 1.7, color: COLORS.muted, maxWidth: 580, margin: "0 auto 48px", transitionDelay: "100ms" }}>
-              Start your MOXIEMO Discovery in under a minute, free while private beta is open. The full strategy takes about 20 to 25 minutes, and it's yours by the end of it. Or get on the list for Beta 2.0, with founding pricing locked in for life.
+              Start your MOXIEMO Discovery, free while private beta is open. Build your full strategy in one guided session, and it is yours by the end of it. Or get on the list for Beta 2.0, with founding pricing locked in for life.
             </p>
             <div className="mo-reveal" style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 26, transitionDelay: "200ms" }}>
               <a href="https://buildwithmoxiemo.com/founding" target="_blank" rel="noopener noreferrer" className="mo-btn-primary">Start your Discovery →</a>

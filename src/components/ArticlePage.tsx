@@ -71,16 +71,16 @@ export function ArticlePage({
 
   useEffect(() => {
     previousTitle.current = document.title;
-    document.title = metaTitle;
+    document.title = "MOXIEMO | Built on strategy. Powered to execute.";
 
     const canonicalUrl = `https://buildwithmoxiemo.com${canonicalPath}`;
-    setMeta("name", "description", metaDescription);
-    setMeta("property", "og:title", metaTitle);
-    setMeta("property", "og:description", metaDescription);
+    setMeta("name", "description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
+    setMeta("property", "og:title", "MOXIEMO | Built on strategy. Powered to execute.");
+    setMeta("property", "og:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
     setMeta("property", "og:url", canonicalUrl);
     setMeta("property", "og:type", "article");
-    setMeta("name", "twitter:title", metaTitle);
-    setMeta("name", "twitter:description", metaDescription);
+    setMeta("name", "twitter:title", "MOXIEMO | Built on strategy. Powered to execute.");
+    setMeta("name", "twitter:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
     setLink("canonical", canonicalUrl);
 
     const ld = document.createElement("script");

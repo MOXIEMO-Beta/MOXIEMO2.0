@@ -226,7 +226,7 @@ export default function Solutions() {
       hI: "worth choosing.",
       paras: [
         "Discovery is a guided conversation. MOXIEMO asks the questions, you answer in your own words, and the system synthesizes a real marketing foundation underneath your business.",
-        "Twenty minutes in, you have positioning, an ideal client framework, brand voice, and content pillars. Not a slide deck. A live foundation that powers everything else.",
+        "After one guided session, you have positioning, an ideal client framework, brand voice, and content pillars. Not a slide deck. A live foundation that powers everything else.",
       ],
       bullets: [
         "Strategic brand discovery through guided conversation",
