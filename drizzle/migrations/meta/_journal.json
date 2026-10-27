@@ -8,6 +8,13 @@
       "when": 1793069997149,
       "tag": "0000_create_cookie_consents",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793070784942,
+      "tag": "0001_add_waitlist_brand_count",
+      "breakpoints": true
     }
   ]
 }
