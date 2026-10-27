@@ -245,7 +245,7 @@ function DemoWindow() {
               return (
                 <button key={n} type="button" onClick={() => !greyed && pick(n as Screen)} style={{ position: "relative", display: "block", width: "100%", textAlign: "left", padding: "12px 14px", height: 42, marginBottom: 8, borderRadius: 10, ...sans, fontSize: 13, fontWeight: sel ? 600 : 500, color: greyed ? "#bdb8aa" : sel ? CORAL : INK, background: "transparent", border: 0, cursor: greyed ? "default" : "pointer" }}>
                   {n}{greyed && <span style={{ ...mono, fontSize: 9, marginLeft: 6, color: "#bdb8aa" }}>SOON</span>}
-                </Button>
+                </button>
               );
             })}
           </div>
