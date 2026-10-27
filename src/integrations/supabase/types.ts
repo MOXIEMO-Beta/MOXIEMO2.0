@@ -623,6 +623,45 @@ export type Database = {
           },
         ]
       }
+      cookie_consents: {
+        Row: {
+          analytics: boolean
+          anon_id: string
+          created_at: string
+          gpc: boolean
+          id: string
+          marketing: boolean
+          page_path: string
+          preferences: boolean
+          source: string
+          version: string
+        }
+        Insert: {
+          analytics?: boolean
+          anon_id: string
+          created_at?: string
+          gpc?: boolean
+          id?: string
+          marketing?: boolean
+          page_path: string
+          preferences?: boolean
+          source: string
+          version: string
+        }
+        Update: {
+          analytics?: boolean
+          anon_id?: string
+          created_at?: string
+          gpc?: boolean
+          id?: string
+          marketing?: boolean
+          page_path?: string
+          preferences?: boolean
+          source?: string
+          version?: string
+        }
+        Relationships: []
+      }
       discovery_sessions: {
         Row: {
           answers: Json

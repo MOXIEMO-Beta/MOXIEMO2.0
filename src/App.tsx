@@ -66,6 +66,7 @@ import Privacy from "./pages/Privacy.tsx";
 import DataDeletion from "./pages/DataDeletion.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
+import { CookieConsent } from "./components/CookieConsent";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,7 @@ const App = () => (
             <Sonner />
             <UpgradeDialog />
             <ScrollToTop />
+            <CookieConsent />
             <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
