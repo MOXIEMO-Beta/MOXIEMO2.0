@@ -474,7 +474,7 @@ export default function Solutions() {
             </div>
           </div>
 
-          <div className="reveal-r" style={{ gridColumn: "1 / -1", background: INK, borderRadius: 22, padding: "32px 28px", border: "1px solid rgba(244,239,229,0.08)", boxShadow: "0 40px 80px -40px rgba(19,19,15,0.55)" }}>
+          <div className="reveal-r" style={{ background: INK, borderRadius: 22, padding: "32px 28px", border: "1px solid rgba(244,239,229,0.08)", boxShadow: "0 40px 80px -40px rgba(19,19,15,0.55)" }}>
             <div style={{ ...mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(244,239,229,0.35)", marginBottom: 28 }}>
               THE LOOP
             </div>
