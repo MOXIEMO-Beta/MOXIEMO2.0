@@ -11,6 +11,6 @@
 - [x] Run consent rule tests and browser checks for fresh, rejected, accepted, saved, and withdrawn choices.
 
 # Pricing page
-- [ ] Replace hero, ticker, offer, plans, essentials, guarantee and FAQ copy while preserving existing styles.
-- [ ] Add capability comparison and MOXIE block; retain security section unchanged.
-- [ ] Test prices, brand limits and offer rules, and verify monthly/annual pricing and mobile table scrolling.
+- [x] Replace hero, ticker, offer, plans, essentials, guarantee and FAQ copy while preserving existing styles.
+- [x] Add capability comparison and MOXIE block; retain security section unchanged.
+- [x] Test prices, brand limits and offer rules, and verify monthly/annual pricing and mobile table scrolling.
