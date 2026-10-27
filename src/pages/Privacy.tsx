@@ -2,7 +2,7 @@ import { LegalPage, LegalSection, LegalDivider, LegalList } from "@/components/L
 
 export default function Privacy() {
   return (
-    <LegalPage title="Privacy Policy" lastUpdated="Effective Date: May 28, 2026 · Last Updated: May 28, 2026 · Version 1.0">
+    <LegalPage title="Privacy Policy" lastUpdated="Effective Date: October 27, 2026 · Last Updated: October 27, 2026 · Version 1.1">
       <LegalSection heading="Issued By">
         <p>KLMG US Ltd, doing business as MOXIEMO.</p>
         <p>
@@ -82,16 +82,7 @@ export default function Privacy() {
           <span className="text-foreground font-medium">Device and Technical Information.</span> We collect device and browser information including: IP address, browser type and version, operating system, device type and identifiers, screen resolution, referring URLs, and language settings.
         </p>
         <p>
-          <span className="text-foreground font-medium">Cookies and Similar Technologies.</span> We use cookies (small text files stored on Your device) and similar tracking technologies including pixel tags and web beacons. Cookies we use include:
-        </p>
-        <LegalList items={[
-          "Essential cookies: Required for the Platform to function. These keep You logged in and maintain Your session. These cannot be disabled without affecting Platform functionality.",
-          "Preference cookies: Remember Your settings and preferences across sessions.",
-          "Analytics cookies: With Your permission, Microsoft Clarity records clicks, scrolls, page movement, and device and usage data for heatmaps and session replays that help us improve the site.",
-          "Marketing cookies: With Your permission, site data may be shared with Microsoft for advertising and campaign measurement.",
-        ]} />
-        <p>
-          You can control cookie settings through Your browser. Note that disabling certain cookies may limit Your ability to use some features of the Platform. We may also use pixel tags and web beacons in emails and on the Platform to understand whether messages have been opened and to track engagement.
+          <span className="text-foreground font-medium">Cookies and Similar Technologies.</span> We use cookies and similar technologies, including pixel tags and web beacons. Strictly necessary cookies are always on. We use preferences, analytics and marketing cookies only if You allow them through our cookie banner. Section 8 explains each type and how to change Your choices.
         </p>
         <p>
           <span className="text-foreground font-medium">2.3 Information from Third-Party Integrations.</span> If You connect third-party accounts to MOXIEMO (such as LinkedIn, Facebook, Instagram, Google, or email service providers), we receive limited data from those platforms as authorized by You and subject to their respective terms of service and privacy policies. This may include basic profile information, page or account identifiers, and performance data from content published through those connections.
@@ -162,6 +153,7 @@ export default function Privacy() {
           "Anthropic — AI content generation and strategy processing (anthropic.com/privacy)",
           "Stripe — payment processing (stripe.com/privacy)",
           "Email service providers — for sending transactional and marketing emails",
+          "Microsoft Clarity: website analytics, heatmaps and session replays, used only with Your consent (privacy.microsoft.com/privacystatement)",
           "Analytics providers — for understanding Platform usage",
         ]} />
         <p>
