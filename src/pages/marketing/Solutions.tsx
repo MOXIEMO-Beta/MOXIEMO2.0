@@ -24,6 +24,7 @@ const mono: CSSProperties = { fontFamily: "'IBM Plex Mono', ui-monospace, monosp
 
 const PAGE_CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,340;1,400;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+.sol-loop-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;}
 .sol-page { background:${CREAM}; color:${INK}; font-family:'Hanken Grotesk', system-ui, sans-serif; }
 .sol-grain { position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:.45; mix-blend-mode:multiply; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E"); background-size:200px; }
 .reveal{opacity:0;transform:translateY(40px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);}
@@ -47,6 +48,7 @@ const PAGE_CSS = `
 @media (max-width: 900px){
   .sol-grid-2,.sol-grid-2-rev,.sol-hero-grid{grid-template-columns:1fr !important;}
   .sol-grid-4{grid-template-columns:1fr 1fr !important;}
+  .sol-loop-grid{grid-template-columns:1fr !important;}
 }
 @media (max-width:600px){.sol-grid-4{grid-template-columns:1fr !important;}}
 `;
@@ -97,102 +99,110 @@ function MockupShell({ title, children }: { title: string; children: React.React
 
 const problems = [
   {
-    t: "The backwards go-to-market problem",
-    p: "You are asking \"what should I post this week?\" before you have answered who you are posting for, what they need to hear, or whether you are reaching them where they are.",
-    a: "Discovery answers the foundation questions first. Every piece of content and every distribution decision runs from that foundation. Not the other way around.",
+    "t": "The backwards order problem",
+    "p": "Most founders start with what to post this week. MOXIEMO starts with the goal, the audience and the gap, then decides what to post."
   },
   {
-    t: "The tool chaos problem",
-    p: "You have six tools. The data is scattered. Integrations break. You hired a VA to manage it and spent more time managing the VA than the marketing.",
-    a: "One platform handles strategy, content creation, and publishing. Strategy to published, without the stack.",
+    "t": "The busy-but-stuck problem",
+    "p": "Lots of activity, little progress. MOXIEMO ties every action to a milestone, so you can see what is moving the business."
   },
   {
-    t: "The disconnected content problem",
-    p: "You post when you remember. You email when you have something to say. Nothing connects to a coherent narrative, and it does not sound like a brand with a strategy behind it.",
-    a: "Your content pillars and campaign themes give every piece of content a reason to exist. Random posts become a brand narrative.",
+    "t": "The disconnected content problem",
+    "p": "Your strategy lives in one place and your content in five others. In MOXIEMO, every draft starts from the same plan."
   },
   {
-    t: "The blank screen problem",
-    p: "It is Wednesday. You open LinkedIn. Nothing comes. You write something generic, delete it, and close the tab.",
-    a: "Strategy-aligned topics tied to your content pillars and audience pain points are always waiting. The blank screen is not a MOXIEMO problem.",
+    "t": "The blank screen problem",
+    "p": "Every week starts from zero. MOXIEMO hands you drafts in your voice, tied to your pillars and ready to approve."
   },
   {
-    t: "The scale problem",
-    p: "You cannot grow without more marketing hours. More marketing hours means less time on the work that actually earns revenue. The equation does not balance.",
-    a: "The system scales. You get back the hours that were going to managing tools and starting from scratch each week. That time goes back to your business.",
+    "t": "The follow-through problem",
+    "p": "Things stall between logins. MOXIE texts you when a decision is waiting or a priority slips, so the plan keeps moving."
   },
+  {
+    "t": "The more-brands problem",
+    "p": "Each brand needs its own voice and goals. On Multiply, every brand gets its own strategy and workspace under one account."
+  }
 ];
 
 const personas = [
-  {
-    chip: "Expertise-Based Founders",
-    img: expertiseImg.url,
-    h: "Coaches, consultants, fractional executives, and advisors.",
-    p: "Your expertise is the product. Your marketing should reflect the depth of what you know and the track record you have built. Instead it is inconsistent, disconnected from your positioning, and falling behind the work you do for clients.",
-    bullets: [
-      "A strategy foundation that reflects your real depth",
-      "Content that communicates the transformation you create",
-      "A system that runs so you are not choosing between client work and marketing",
-    ],
-  },
-  {
-    chip: "Service-Based Businesses",
-    img: serviceImg.url,
-    h: "Agencies and service businesses that deliver exceptional work.",
-    p: "Your own go-to-market is the afterthought. Your team is busy serving clients. Your visibility suffers for it. You know the value is there — the market does not always know you exist.",
-    bullets: [
-      "A clear positioning and distribution strategy",
-      "Content that communicates what you do and why it matters",
-      "A system that keeps you visible without pulling the team off client work",
-    ],
-  },
-  {
-    chip: "Growing Businesses",
-    img: growingImg.url,
-    h: "Businesses that have outgrown the scrappy phase and are ready to systematize.",
-    p: "Your marketing is still being done the way you did it in year one: manual, fragmented, reactive. You are making real money. You are ready for a system, not another tool.",
-    bullets: [
-      "A go-to-market that is actually built, not improvised",
-      "Content and distribution that runs from strategy",
-      "A platform that grows with you into the autonomous phase in Beta 2.0",
-    ],
-  },
+{ chip: "SOLO OWNERS", img: expertiseImg.url, h: "SOLO OWNERS", p: "You are the strategist, the writer and the one who hits publish. You need to know what matters most and get it done without a team.", bullets: ["A clear plan for one brand", "Drafts in your voice, ready to approve", "MOXIE nudges so things do not slip"], link: "See the Clarity plan" },
+{ chip: "GROWING OPERATORS", img: serviceImg.url, h: "GROWING OPERATORS", p: "Your direction is set and the business is growing. Marketing needs to show up every week, across more than one brand or offer.", bullets: ["An expanded action plan", "More content and publishing", "Reporting that shows what moved"], link: "See the Momentum plan" },
+{ chip: "PORTFOLIO OPERATORS", img: growingImg.url, h: "PORTFOLIO OPERATORS", p: "You run several brands, each with its own customers and voice. You need one place to run them without mixing them up.", bullets: ["A separate strategy and workspace for each brand", "Cross-brand planning and reporting", "MOXIE messages that name the brand and the action"], link: "See the Multiply plan" }
 ];
 
-const faqGroups: { label: string; items: { q: string; a: string }[] }[] = [
+const faqGroups = [
   {
-    label: "How It Works",
-    items: [
-      { q: "What is the difference between having a brand and having a go-to-market?", a: "A brand tells people who you are. A go-to-market answers the harder questions: Who exactly is your ideal customer and what keeps them up at night? Where are they, and are you reaching them there? What do they need to hear from you, and are you saying it in a way that resonates? How do you turn attention into trust and trust into revenue? Most founders have invested in their brand but have never built a real go-to-market underneath it. The content is inconsistent, the distribution is accidental, and the results do not match the effort. That is not a hustle problem. It is a foundation problem. MOXIEMO builds the foundation first." },
-      { q: "How does MOXIEMO Discovery actually work?", a: "Discovery is a guided conversation, not a form and not a quiz. MOXIEMO asks you questions about your business: who you serve, the transformation you provide, your voice, your goals, and your biggest marketing challenges. You answer in your own words. Build your foundation in one guided session. When you are done, MOXIEMO synthesizes everything into your complete marketing foundation: positioning, ICP, content pillars, voice guidelines, and channel plan. It does not scrape your website. It builds from you." },
-      { q: "How long does it take to get set up?", a: "Start with Discovery in one guided session, review your strategy, and create your first piece of content. There is no onboarding call required and no data migration." },
-      { q: "What happens after I complete Discovery?", a: "Your marketing foundation is live in the platform. MOXIEMO uses it to generate content, plan your calendar, and run your campaigns. You never re-explain who you are or what you do. Every tool inside MOXIEMO already knows your strategy, so everything you generate from that point forward is anchored to your positioning, voice, and goals automatically." },
-    ],
+    "label": "HOW IT WORKS",
+    "items": [
+      {
+        "q": "What is the difference between a brand and a go-to-market?",
+        "a": "Your brand is who you are and how you look and sound. Your go-to-market is who you sell to, where you reach them, what you say and what you do first. MOXIEMO builds both from the same discovery."
+      },
+      {
+        "q": "How does discovery work?",
+        "a": "You answer guided questions about your goals, audience, offer, proof, current activity and constraints. The questions are built on the This Is Branding brand architecture. MOXIEMO then reviews your brand and channels and shows you the gap."
+      },
+      {
+        "q": "Why diagnose before creating content?",
+        "a": "Content built on the wrong message spreads the wrong message faster. Diagnosis makes sure the first thing you make is the right thing."
+      },
+      {
+        "q": "What happens after discovery?",
+        "a": "You get your positioning, messaging, content pillars and a roadmap with your next best actions. From there you create, approve and publish, and MOXIE helps you keep moving."
+      }
+    ]
   },
   {
-    label: "The AI Angle",
-    items: [
-      { q: "Will the content actually sound like me, or will it sound like AI?", a: "It depends on how much you put into Discovery, and that is the honest answer. Before any AI touches your content, it reads your full strategy: your voice, your ideal customer, your positioning, your content pillars, and the exact language you used in Discovery. The more specific you are, the more your content sounds like you. The output is AI-generated, which means you should review it, edit it, and put your real fingerprint on what goes out. MOXIEMO gives you a strong, on-strategy starting point. You make it final." },
-      { q: "Do I need to know anything about AI to use MOXIEMO?", a: "No. MOXIEMO is built for operators, not engineers. You do not configure anything, you do not write prompts, and you do not need to understand how the AI works underneath. You answer questions in Discovery, review the content before it publishes, and give a direction when something needs adjusting." },
-      { q: "What AI does MOXIEMO use?", a: "MOXIEMO is built on Claude by Anthropic, chosen specifically for its strength in reasoning and voice-accurate writing. That matters when the point is to sound like you rather than like everyone else. Your Discovery responses and strategy data are used only to generate your content. We do not use your data to train AI models." },
-    ],
+    "label": "THE AI AND MOXIE",
+    "items": [
+      {
+        "q": "Will the content sound like me?",
+        "a": "Every draft starts from your discovery answers and brand voice. You edit and approve everything before it goes out."
+      },
+      {
+        "q": "What is MOXIE?",
+        "a": "MOXIE is your text companion. It reminds you of what you planned, asks for approvals, flags stalled priorities and shares weekly wins. You choose how often it checks in."
+      },
+      {
+        "q": "Can MOXIE publish without me?",
+        "a": "Only what you approve. A YES approves one specific action. Bigger decisions, like ad spend, billing or account changes, always need more than a one-word reply."
+      },
+      {
+        "q": "What AI does MOXIEMO use?",
+        "a": "MOXIEMO uses Anthropic's Claude models to generate strategy and content. We do not use your Discovery answers to train third-party AI models."
+      }
+    ]
   },
   {
-    label: "Practical Concerns",
-    items: [
-      { q: "What tools does MOXIEMO replace?", a: "For most founders, MOXIEMO replaces a content scheduler, a social publisher, a content planner, a strategy document, and a content calendar tool, along with the time spent coordinating between all of them. Most founding members come in with four to six tools and consolidate to one." },
-      { q: "Can I edit the content MOXIEMO generates?", a: "Yes, always. Every piece of content lands in a fully editable area before it goes anywhere. You can rewrite sentences, change the tone, add a personal story, or give MOXIEMO a single instruction like \"make this shorter.\" Nothing publishes without your approval." },
-      { q: "What if I want to change my strategy later?", a: "Your strategy is a living document, not a locked file. You can edit any section of your marketing foundation at any time. When you update your strategy, all future content generation automatically reflects the changes. You can also run a full Discovery refresh anytime you want a complete reset." },
-    ],
+    "label": "PRACTICAL",
+    "items": [
+      {
+        "q": "Can I edit what MOXIEMO creates?",
+        "a": "Yes. Nothing goes out until you approve it."
+      },
+      {
+        "q": "What if my strategy changes?",
+        "a": "Update it anytime. Your plan, content and recommendations follow the new direction."
+      },
+      {
+        "q": "Do I need to know anything about AI?",
+        "a": "No. If you can answer questions about your business, you can use MOXIEMO."
+      }
+    ]
   },
   {
-    label: "Pricing and Commitment",
-    items: [
-      { q: "What does founding member access include?", a: "Founding members get free platform access during the private beta: MOXIEMO Discovery, your complete marketing foundation, content generation, the marketing planner, and LinkedIn publishing. When paid tiers launch publicly, founding members get first access to every new feature and the lowest available pricing. You will always pay less than anyone who joins after you." },
-      { q: "Is there a contract, or can I cancel anytime?", a: "No contracts, ever. Paid plans are month to month and you can cancel anytime from your account settings. No fees, no friction, no calls required. For founding members, there is nothing to cancel. Your founding member access is free and it continues." },
-      { q: "What happens when the beta ends?", a: "Your founding member access stays free permanently. That is the founding member promise. When we move out of beta, new users pay standard pricing. Founding members who want expanded features get first access and locked-in rates well below what new users pay. The founding member Discord is live — submit feedback, request features, and talk directly with Karee about what comes next." },
-    ],
-  },
+    "label": "PRICING",
+    "items": [
+      {
+        "q": "How much does it cost?",
+        "a": "Plans are $99, $149 and $249 a month, or save 17% when you pay annually. Our first 100 customers get 50% off during the MOXIEMO 2.0 beta."
+      },
+      {
+        "q": "Can I cancel anytime?",
+        "a": "Yes. Cancel from your account settings and your plan ends at the close of your billing period."
+      }
+    ]
+  }
 ];
 
 export default function Solutions() {
@@ -221,19 +231,11 @@ export default function Solutions() {
   const moves = [
     {
       num: "01",
-      label: "Discover",
-      h: "Find what makes you",
-      hI: "worth choosing.",
-      paras: [
-        "Discovery is a guided conversation. MOXIEMO asks the questions, you answer in your own words, and the system synthesizes a real marketing foundation underneath your business.",
-        "After one guided session, you have positioning, an ideal client framework, brand voice, and content pillars. Not a slide deck. A live foundation that powers everything else.",
-      ],
-      bullets: [
-        "Strategic brand discovery through guided conversation",
-        "Positioning, ICP, and messaging framework",
-        "Content pillars and brand voice system",
-        "Downloadable strategy foundation document",
-      ],
+      label: "Discover and diagnose",
+      h: "Find what is true about",
+      hI: "your brand today.",
+      paras: ["Discovery is a guided conversation built on the This Is Branding brand architecture. You answer in your own words. MOXIEMO then reviews your brand and channels and shows the gap between where you are and where you want to go."],
+      bullets: ["Guided discovery", "A diagnosis of your current brand and channels", "Your goals and success measure", "A downloadable strategy foundation"],
       mock: (
         <MockupShell title="Discovery Session">
           <div style={{ padding: "20px 20px 12px" }}>
@@ -280,19 +282,11 @@ export default function Solutions() {
     },
     {
       num: "02",
-      label: "Create",
-      h: "Turn your strategy into content,",
-      hI: "not guesses.",
-      paras: [
-        "Every piece of content starts from your foundation. The tool already knows your voice, your audience, and what you stand for, so you are not feeding a blank prompt every time.",
-        "You generate, you edit, you approve. The starting point is on-strategy. The final word is always yours.",
-      ],
-      bullets: [
-        "Content generated from your strategy, not generic prompts",
-        "Social content across Facebook, LinkedIn, Instagram, and YouTube",
-        "Email content in your voice",
-        "Platform-specific content rules built in",
-      ],
+      label: "Define and prioritize",
+      h: "Turn the diagnosis",
+      hI: "into a plan.",
+      paras: ["MOXIEMO writes your positioning, messaging and content pillars, then turns them into a roadmap with milestones and your next best actions. You always know what comes first."],
+      bullets: ["Positioning and messaging", "Audience priorities and content pillars", "A measurable roadmap", "Next best actions, in order"],
       mock: (
         <MockupShell title="Content Generator">
           <div style={{ padding: "14px 16px 10px", borderBottom: "1px solid rgba(244,239,229,0.07)" }}>
@@ -327,23 +321,15 @@ export default function Solutions() {
     },
     {
       num: "03",
-      label: "Distribute",
-      h: "Put it in market.",
-      hI: "Deliberately.",
-      paras: [
-        "Distribution stops being a thing you remember to do on Wednesdays. You see the month at a glance, your campaign themes, and exactly what is going out, where, and when.",
-        "Publishing is built in. LinkedIn is live now. Facebook and Instagram are coming next.",
-      ],
-      bullets: [
-        "Marketing planner and content calendar",
-        "Campaign planning and quarterly themes",
-        "Direct publishing to LinkedIn",
-        "Facebook & Instagram publishing  (coming)",
-      ],
+      label: "Execute",
+      h: "Put it in market,",
+      hI: "deliberately.",
+      paras: ["Every draft starts from your strategy, in your voice. You edit and approve, and MOXIEMO publishes to the channels you connect. MOXIE texts you when something needs a decision, so nothing waits in a tab."],
+      bullets: ["Content from your strategy", "Social and email content in your voice", "Marketing planner and calendar", "Publishing to connected channels", "MOXIE approvals and reminders by text"],
       mock: (
         <MockupShell title="Marketing Planner">
           <div style={{ padding: "14px 16px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", color: "rgba(244,239,229,0.65)" }}>June 2025</span>
+            <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", color: "rgba(244,239,229,0.65)" }}>NOVEMBER 2026</span>
             <span style={{ ...mono, fontSize: 10, padding: "4px 10px", borderRadius: 999, background: "rgba(239,111,83,0.15)", color: CORAL }}>Q2: Authority</span>
           </div>
           <div style={{ padding: "0 16px" }}>
@@ -386,18 +372,11 @@ export default function Solutions() {
     },
     {
       num: "04",
-      label: "Grow",
-      h: "Prove it is working.",
+      label: "Measure and adapt",
+      h: "See what moved.",
       hI: "Then do more of it.",
-      paras: [
-        "Numbers without context are noise. MOXIEMO ties what you posted back to what you said mattered: your pillars, your campaigns, your strategy.",
-        "Beta 2.0 closes the loop. The system will recommend what to do more of, what to drop, and where to push next.",
-      ],
-      bullets: [
-        "Insights on your publishing",
-        "Performance tied back to your strategy",
-        "Autonomous loop with recommendations  (Beta 2.0)",
-      ],
+      paras: ["Results come from your connected data and tie back to your goal, your pillars and your campaigns. MOXIEMO recommends what to keep, what to drop and where to push next."],
+      bullets: ["Results tied to your strategy", "Weekly progress summaries", "Recommendations for the next round"],
       mock: (
         <MockupShell title="Publishing Insights">
           <div style={{ padding: 16 }}>
@@ -418,12 +397,7 @@ export default function Solutions() {
                 return <span key={i} style={{ flex: 1, height: `${h}%`, background: bg, borderRadius: "3px 3px 0 0" }} />;
               })}
             </div>
-            <div style={{ border: "1px solid rgba(239,111,83,0.22)", borderRadius: 10, padding: 12, marginTop: 13 }}>
-              <div style={{ ...mono, fontSize: 9, textTransform: "uppercase", color: CORAL, marginBottom: 6 }}>Beta 2.0 · Coming</div>
-              <div style={{ fontSize: 12.5, color: "rgba(244,239,229,0.55)", lineHeight: 1.5 }}>
-                Autonomous loop: plan, create, distribute, and optimize without starting from scratch each cycle.
-              </div>
-            </div>
+
           </div>
         </MockupShell>
       ),
@@ -431,11 +405,47 @@ export default function Solutions() {
   ];
 
   const features = [
-    { phase: "Discover", status: "Live now", items: ["Guided brand discovery","Positioning & ICP framework","Messaging & brand voice","Content pillars","Campaign planning","Strategy foundation doc"], muted: [] as number[] },
-    { phase: "Create", status: "Live now", items: ["AI content from your strategy","LinkedIn, Instagram, Facebook","YouTube video content","Email content in your voice","Platform formatting rules"], muted: [] },
-    { phase: "Distribute", status: "Live now", items: ["Marketing planner","Content calendar","Direct publishing to LinkedIn","Facebook & Instagram (coming)"], muted: [3] },
-    { phase: "Grow", status: "Live now", items: ["Publishing insights","Performance by strategy","Autonomous loop (Beta 2.0)"], muted: [2] },
-  ];
+  {
+    "phase": "DISCOVER AND DIAGNOSE",
+    "items": [
+      "Guided discovery",
+      "Brand and channel diagnosis",
+      "Goals and success measure",
+      "Strategy foundation document"
+    ],
+    "muted": []
+  },
+  {
+    "phase": "DEFINE AND PRIORITIZE",
+    "items": [
+      "Positioning and messaging",
+      "Audience priorities",
+      "Content pillars and brand voice",
+      "Roadmap and next best actions"
+    ],
+    "muted": []
+  },
+  {
+    "phase": "EXECUTE",
+    "items": [
+      "Content in your voice",
+      "Social and email content",
+      "Marketing planner and calendar",
+      "Publishing to connected channels"
+    ],
+    "muted": []
+  },
+  {
+    "phase": "MEASURE AND MOXIE",
+    "items": [
+      "Results tied to your goals",
+      "Weekly progress summaries",
+      "MOXIE text check-ins",
+      "Recommendations for the next round"
+    ],
+    "muted": []
+  }
+];
 
   return (
     <div className="sol-page" style={body}>
@@ -452,28 +462,24 @@ export default function Solutions() {
               <span style={{ ...mono, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.2em", color: "#5f6a52" }}>For Founders and Growing Businesses</span>
             </div>
             <h1 className="reveal d1" style={{ ...display, margin: 0, lineHeight: 1.0, letterSpacing: "-0.025em" }}>
-              <span style={{ display: "block", fontWeight: 600, fontSize: "clamp(42px, 5.4vw, 76px)", color: INK }}>Your brand is built.</span>
-              <span style={{ display: "block", fontWeight: 340, fontStyle: "italic", fontSize: "clamp(42px, 5.4vw, 76px)", color: "#6d7a5e" }}>Your go-to-market is not.</span>
+              <span style={{ display: "block", fontWeight: 600, fontSize: "clamp(42px, 5.4vw, 76px)", color: INK }}>Know what moves your brand forward.</span>
+              <span style={{ display: "block", fontWeight: 340, fontStyle: "italic", fontSize: "clamp(42px, 5.4vw, 76px)", color: "#6d7a5e" }}>Then make it happen.</span>
             </h1>
             <p className="reveal d2" style={{ fontSize: 18, color: SAGE_BODY, maxWidth: 520, marginTop: 28, marginBottom: 40, lineHeight: 1.55 }}>
-              MOXIEMO is the AI CMO that builds your strategy, generates your content, and distributes it across channels. One system. One foundation. In order.
+              MOXIEMO diagnoses where your brand stands, builds the plan and creates the work. MOXIE keeps it moving between logins.
             </p>
             <div className="reveal d3" style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
               <Link to="/brand-audit" className="sol-cta-primary">Run my free Brand Audit →</Link>
-              <Link to="/founding" className="sol-cta-secondary">Join as Founding Member</Link>
+              <Link to="/founding" className="sol-cta-secondary">Claim a first-100 spot</Link>
             </div>
           </div>
 
           <div className="reveal-r" style={{ background: INK, borderRadius: 22, padding: "32px 28px", border: "1px solid rgba(244,239,229,0.08)", boxShadow: "0 40px 80px -40px rgba(19,19,15,0.55)" }}>
             <div style={{ ...mono, fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(244,239,229,0.35)", marginBottom: 28 }}>
-              One system. Four moves.
+              THE LOOP
             </div>
-            {[
-              { n: "01", l: "Discover", d: "Build your complete marketing foundation through guided conversation." },
-              { n: "02", l: "Create", d: "Generate content in your voice, from your strategy, for every platform." },
-              { n: "03", l: "Distribute", d: "Publish to your channels with a real calendar and publishing system." },
-              { n: "04", l: "Grow", d: "See what performed and close the loop with the autonomous system." },
-            ].map((row, i, arr) => {
+            <div className="sol-loop-grid">
+            {[{"n": "01", "l": "DISCOVER", "d": "Your goals, audience, offer and proof."}, {"n": "02", "l": "DIAGNOSE", "d": "Where your brand stands today."}, {"n": "03", "l": "DEFINE", "d": "Positioning, messaging and pillars."}, {"n": "04", "l": "PRIORITIZE", "d": "Your next best actions, in order."}, {"n": "05", "l": "EXECUTE", "d": "Content and campaigns you approve."}, {"n": "06", "l": "MEASURE", "d": "What moved, and what is next."}].map((row, i, arr) => {
               const active = i === 0;
               return (
                 <div key={row.n} style={{ display: "flex", gap: 16 }}>
@@ -486,7 +492,7 @@ export default function Solutions() {
                       ...mono, fontSize: 11,
                       color: active ? "#fff" : "rgba(244,239,229,0.4)",
                     }}>{row.n}</span>
-                    {i < arr.length - 1 && <span style={{ width: 1.5, flex: 1, minHeight: 24, background: "rgba(244,239,229,0.1)" }} />}
+
                   </div>
                   <div style={{ paddingBottom: i < arr.length - 1 ? 18 : 0 }}>
                     <div style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: active ? CORAL : "rgba(244,239,229,0.38)", marginBottom: 6 }}>{row.l}</div>
@@ -495,6 +501,7 @@ export default function Solutions() {
                 </div>
               );
             })}
+            </div>
           </div>
         </div>
       </section>
@@ -506,18 +513,17 @@ export default function Solutions() {
             <Eyebrow num="01" name="The Problem" />
           </div>
           <div className="reveal" style={{ paddingBottom: 72, borderBottom: "1px solid rgba(19,19,15,0.08)" }}>
-            <h2 style={{ ...display, fontWeight: 600, fontSize: "clamp(52px, 7.6vw, 108px)", lineHeight: 0.94, letterSpacing: "-0.03em", color: INK, margin: 0, marginBottom: 6 }}>You have a brand.</h2>
-            <p style={{ ...display, fontWeight: 340, fontStyle: "italic", fontSize: "clamp(42px, 6.2vw, 90px)", lineHeight: 0.96, letterSpacing: "-0.03em", color: "#6d7a5e", margin: 0 }}>That is not the same as a go-to-market.</p>
+            <h2 style={{ ...display, fontWeight: 600, fontSize: "clamp(52px, 7.6vw, 108px)", lineHeight: 0.94, letterSpacing: "-0.03em", color: INK, margin: 0, marginBottom: 6 }}>A good-looking brand is a start.</h2>
+            <p style={{ ...display, fontWeight: 340, fontStyle: "italic", fontSize: "clamp(42px, 6.2vw, 90px)", lineHeight: 0.96, letterSpacing: "-0.03em", color: "#6d7a5e", margin: 0 }}>Growth needs a plan behind it.</p>
           </div>
           <div className="sol-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 80, padding: "72px 0 100px", alignItems: "start" }}>
             <div className="reveal-l" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-              <p style={{ fontSize: 18, color: SAGE_BODY, lineHeight: 1.6, margin: 0 }}>Most founders have done the brand work. A logo, brand colors, a website that looks good, maybe even a brand guide in a folder somewhere.</p>
-              <p style={{ fontSize: 18, color: SAGE_BODY, lineHeight: 1.6, margin: 0 }}>But a brand tells people who you are.</p>
-              <p style={{ fontSize: 18, color: SAGE_BODY, lineHeight: 1.6, margin: 0 }}>A go-to-market answers harder questions. Who exactly is your ideal customer, and what keeps them up at night? Where are they, and are you reaching them where they actually are? What do they need to hear from you, and are you saying it in a way that resonates?</p>
+              <p style={{ fontSize: 18, color: SAGE_BODY, lineHeight: 1.6, margin: 0 }}>Most founders have done some brand work. A logo, colors, a website that looks good, maybe a brand guide in a folder somewhere.</p>
+              <p style={{ fontSize: 18, color: SAGE_BODY, lineHeight: 1.6, margin: 0 }}>A brand tells people who you are. Growth takes answers to harder questions. Who exactly do you serve, and what keeps them up at night? Where are they? What do they need to hear from you? And with limited time, what should you do first?</p>
             </div>
             <div className="reveal-r">
               <p style={{ fontSize: 18, color: SAGE_BODY, lineHeight: 1.6, marginBottom: 32 }}>
-                Distribution is not a tactic. It is a decision. Without a real strategy underneath it, even the best content disappears into the noise.
+                Content without those answers disappears into the noise. MOXIEMO answers them first, then builds everything else on top.
               </p>
               <div style={{ background: SAGE, borderRadius: 14, padding: "22px 24px", display: "flex", gap: 14 }}>
                 <span style={{ width: 8, height: 8, background: CORAL, flexShrink: 0, marginTop: 10 }} />
@@ -536,7 +542,7 @@ export default function Solutions() {
           <div className="reveal" style={{ textAlign: "center", marginBottom: 96 }}>
             <div style={{ display: "inline-flex" }}><Eyebrow num="02" name="How It Works" /></div>
             <h2 style={{ ...display, fontWeight: 600, fontSize: "clamp(36px,5vw,68px)", letterSpacing: "-0.025em", color: INK, margin: 0, lineHeight: 1.05 }}>
-              One system. Four moves. <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>In order.</span>
+              Four moves. <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>In order.</span>
             </h2>
             <p style={{ fontSize: 18, color: MUTED, maxWidth: 460, margin: "20px auto 0" }}>Each move depends on the one before it. That is the point.</p>
           </div>
@@ -590,9 +596,9 @@ export default function Solutions() {
           <div className="reveal" style={{ marginBottom: 56 }}>
             <Eyebrow num="03" name="The Problems" />
             <h2 style={{ ...display, fontWeight: 600, fontSize: "clamp(30px,4vw,54px)", color: INK, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.08 }}>
-              The problems MOXIEMO <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>actually solves.</span>
+              The problems MOXIEMO <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>solves.</span>
             </h2>
-            <p style={{ fontSize: 17, color: MUTED, maxWidth: 560, marginTop: 18 }}>These are not tool problems. They are go-to-market problems. Five of them. You will recognize at least three.</p>
+            <p style={{ fontSize: 17, color: MUTED, maxWidth: 560, marginTop: 18 }}>Six of them. You will probably recognize at least three.</p>
           </div>
           <div>
             {problems.map((pr, i) => {
@@ -609,13 +615,7 @@ export default function Solutions() {
                   {open && (
                     <div style={{ marginTop: 22 }}>
                       <p style={{ fontSize: 16, color: MUTED, maxWidth: 680, lineHeight: 1.6, margin: 0 }}>{pr.p}</p>
-                      <div style={{ display: "flex", gap: 14, marginTop: 22, alignItems: "flex-start" }}>
-                        <span style={{ width: 7, height: 7, background: CORAL, marginTop: 8, flexShrink: 0 }} />
-                        <div>
-                          <div style={{ ...mono, fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.18em", color: "#5f6a52", marginBottom: 6 }}>With MOXIEMO</div>
-                          <p style={{ fontSize: 15, color: "#2e3a28", margin: 0, lineHeight: 1.55 }}>{pr.a}</p>
-                        </div>
-                      </div>
+
                     </div>
                   )}
                 </div>
@@ -631,10 +631,10 @@ export default function Solutions() {
           <div className="reveal" style={{ textAlign: "center", marginBottom: 50 }}>
             <div style={{ display: "inline-flex" }}><Eyebrow num="04" name="Who This Is For" color="#5f6a52" /></div>
             <h2 style={{ ...display, fontWeight: 600, fontSize: "clamp(28px,3.8vw,52px)", color: INK, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.08 }}>
-              Not for everyone. <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>Built for a specific kind of founder.</span>
+              Built for the stage <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>you are in.</span>
             </h2>
             <p style={{ fontSize: 17, color: SAGE_BODY, maxWidth: 560, margin: "20px auto 0" }}>
-              For founders and growing businesses who are past the scrappy start and serious about showing up consistently, without hiring a full marketing team.
+              One brand or several, every plan starts with your strategy.
             </p>
           </div>
           <div className="reveal" style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 48, justifyContent: "center" }}>
@@ -657,6 +657,7 @@ export default function Solutions() {
                   ))}
                 </ul>
               </div>
+              <Link to="/pricing" className="sol-cta-secondary" style={{ marginTop: 26 }}>{p.link}</Link>
             </div>
             <div className="reveal-r">
               <img src={p.img} alt={p.chip} style={{ width: "100%", height: 400, objectFit: "cover", objectPosition: "center 20%", display: "block", borderRadius: 20, boxShadow: "0 24px 60px -28px rgba(19,19,15,0.32)" }} />
@@ -671,16 +672,15 @@ export default function Solutions() {
           <div className="reveal" style={{ marginBottom: 56 }}>
             <Eyebrow num="05" name="What Is Included" />
             <h2 style={{ ...display, fontWeight: 600, fontSize: "clamp(30px,4vw,54px)", color: INK, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.08 }}>
-              Everything in one place. <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>Nothing you do not need.</span>
+              Everything in one place.
             </h2>
-            <p style={{ fontSize: 17, color: MUTED, marginTop: 18 }}>Here is exactly what is live today, and what is arriving in Beta 2.0.</p>
+            <p style={{ fontSize: 17, color: MUTED, marginTop: 18 }}>Every plan includes the full strategy foundation. Publishing integrations roll out in stages, and the changelog shows what is live.</p>
           </div>
 
           <div className="reveal sol-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 2, background: "rgba(19,19,15,0.08)", borderRadius: 16, overflow: "hidden", marginBottom: 16 }}>
             {features.map((f) => (
               <div key={f.phase} style={{ background: OFFWHITE, padding: "28px 24px" }}>
                 <div style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: CORAL, marginBottom: 5, letterSpacing: "0.16em" }}>{f.phase}</div>
-                <div style={{ ...mono, fontSize: 9.5, textTransform: "uppercase", color: LIGHT_MUTED, marginBottom: 18, letterSpacing: "0.16em" }}>{f.status}</div>
                 <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {f.items.map((it, idx) => {
                     const muted = f.muted.includes(idx);
@@ -696,16 +696,7 @@ export default function Solutions() {
             ))}
           </div>
 
-          <div className="reveal sol-grid-2" style={{ display: "grid", gridTemplateColumns: "1.4fr 0.6fr", gap: 20 }}>
-            <div style={{ background: INK, borderRadius: 18, padding: "32px 30px" }}>
-              <div style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: CORAL, letterSpacing: "0.16em", marginBottom: 8 }}>Beta 2.0 · Coming</div>
-              <h4 style={{ ...display, fontWeight: 600, fontSize: 20, color: "#f7f3ea", margin: 0, marginBottom: 18 }}>The autonomous loop</h4>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                {["Autonomous plan, create, distribute","Multi-seat access","Email provider integration","MCP integration"].map((x) => (
-                  <div key={x} style={{ fontSize: 13.5, color: "rgba(244,239,229,0.6)" }}>{x}</div>
-                ))}
-              </div>
-            </div>
+          <div className="reveal sol-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr", gap: 20 }}>
             <div style={{ background: SAGE, borderRadius: 18, padding: "32px 30px" }}>
               <div style={{ ...mono, fontSize: 10, textTransform: "uppercase", color: "#5f6a52", letterSpacing: "0.16em", marginBottom: 8 }}>Community · Live</div>
               <h4 style={{ ...display, fontWeight: 600, fontSize: 20, color: INK, margin: 0, marginBottom: 14 }}>Founding member Discord</h4>
@@ -726,9 +717,8 @@ export default function Solutions() {
           <div className="reveal" style={{ textAlign: "center", marginBottom: 72 }}>
             <div style={{ display: "inline-flex" }}><Eyebrow num="06" name="FAQ" /></div>
             <h2 style={{ ...display, fontWeight: 600, fontSize: "clamp(30px,4vw,50px)", color: INK, margin: 0, letterSpacing: "-0.02em", lineHeight: 1.08 }}>
-              Everything you want to know <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>before you get started.</span>
+              Straight answers <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>before you start.</span>
             </h2>
-            <p style={{ fontSize: 17, color: MUTED, maxWidth: 500, margin: "20px auto 0" }}>No fluff. No non-answers. Straight answers to the questions we hear every week.</p>
           </div>
           {faqGroups.map((g, gi) => (
             <div key={g.label} style={{ marginBottom: 40 }}>
@@ -771,14 +761,14 @@ export default function Solutions() {
             <span style={{ ...mono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.2em", color: "#5f6a52" }}>Get Started Today</span>
           </div>
           <h2 className="reveal" style={{ ...display, fontWeight: 600, fontSize: "clamp(32px,5vw,68px)", color: INK, margin: 0, lineHeight: 1.0, letterSpacing: "-0.025em" }}>
-            Your go-to-market is not built yet. <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>Build it through one guided session.</span>
+            Find out <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>what comes first.</span>
           </h2>
           <p className="reveal" style={{ fontSize: 18, color: SAGE_BODY, maxWidth: 520, margin: "28px auto 40px", lineHeight: 1.6 }}>
-            Start with Discovery. See what MOXIEMO builds from who you actually are.
+            Start with the free Brand Audit. Then let MOXIEMO build the plan.
           </p>
           <div className="reveal" style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center" }}>
             <Link to="/brand-audit" style={{ background: CORAL, color: "#fff", fontWeight: 700, fontSize: 16, padding: "17px 30px", borderRadius: 999, textDecoration: "none" }}>Run my free Brand Audit →</Link>
-            <Link to="/founding" style={{ background: INK, color: "#f7f3ea", fontWeight: 600, fontSize: 16, padding: "17px 30px", borderRadius: 999, textDecoration: "none" }}>Join as Founding Member</Link>
+            <Link to="/founding" style={{ background: INK, color: "#f7f3ea", fontWeight: 600, fontSize: 16, padding: "17px 30px", borderRadius: 999, textDecoration: "none" }}>Claim a first-100 spot</Link>
           </div>
         </div>
       </section>
