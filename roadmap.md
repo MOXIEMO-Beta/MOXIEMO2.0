@@ -9,3 +9,8 @@
 - [x] Add insert-only visitor consent logging and update the privacy disclosure.
 - [x] Gate Clarity, honor GPC, and handle withdrawal and cross-tab changes.
 - [x] Run consent rule tests and browser checks for fresh, rejected, accepted, saved, and withdrawn choices.
+
+# Pricing page
+- [ ] Replace hero, ticker, offer, plans, essentials, guarantee and FAQ copy while preserving existing styles.
+- [ ] Add capability comparison and MOXIE block; retain security section unchanged.
+- [ ] Test prices, brand limits and offer rules, and verify monthly/annual pricing and mobile table scrolling.
