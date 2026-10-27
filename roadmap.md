@@ -20,3 +20,8 @@
 - [x] Add the MOXIE text thread and six-step process.
 - [x] Add required brand count to the first-100 form and persist it with the submission.
 - [x] Test form rules and verify desktop/mobile home page and submission flow.
+
+# Platform page
+- [ ] Update copy, feature cards, loop stages and mockup sample text.
+- [ ] Add building stages and replace migration timeline, retaining security unchanged.
+- [ ] Verify copy, links and mockup display on desktop and mobile.
