@@ -16,11 +16,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://buildwithmoxiemo.com/why-moxie</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://buildwithmoxiemo.com/why-moxiemo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -77,6 +72,26 @@
   </url>
   <url>
     <loc>https://buildwithmoxiemo.com/blog/case-for-optimism-best-time-to-build</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://buildwithmoxiemo.com/blog/ai-marketing-stack-advice-solo-founders</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://buildwithmoxiemo.com/blog/why-your-marketing-feels-like-a-second-job</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://buildwithmoxiemo.com/blog/what-happens-when-a-real-founder-sits-down-with-your-product</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://buildwithmoxiemo.com/blog/ai-everywhere-how-you-stand-out</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

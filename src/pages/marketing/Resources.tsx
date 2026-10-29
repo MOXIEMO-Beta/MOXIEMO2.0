@@ -1,6 +1,7 @@
 import { useState, useRef, FormEvent, type CSSProperties } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { RouteMetadata } from "@/components/RouteMetadata";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import collage1 from "@/assets/redesign/collage-1.jpg.asset.json";
@@ -812,6 +813,7 @@ function Library() {
 export default function Resources() {
   return (
     <div style={{ background: CREAM, minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      <RouteMetadata title="Free AI prompt packs and toolkits | MOXIEMO" description="Free prompts, frameworks and toolkits for founders and growing businesses, from website copy to pitch decks to deep research. No signup required." />
       <style>{`
         .lib-cta:hover, .lib-cta:active {
           background: ${CORAL} !important;
