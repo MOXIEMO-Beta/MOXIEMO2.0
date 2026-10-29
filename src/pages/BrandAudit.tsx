@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { MoxieAvatar } from "@/components/MoxieAvatar";
 
 const GOALS = [
   { value: "more_leads", label: "More qualified leads" },
@@ -183,7 +184,27 @@ export default function BrandAudit() {
 
       {step === 1 ? (
         <section className="flex-1 px-4 py-16 md:py-24">
-          <div className="max-w-3xl mx-auto text-center">
+          <style>{`
+            .ba-moxie-layout { display: flex; align-items: center; gap: 48px; max-width: 1120px; margin: 0 auto; }
+            .ba-moxie-content { flex: 1; min-width: 0; }
+            .ba-moxie-figure { flex: none; opacity: 0; transform: translateY(12px); animation: ba-moxie-in 600ms ease-out forwards; }
+            @keyframes ba-moxie-in { to { opacity: 1; transform: translateY(0); } }
+            .ba-moxie-float { position: relative; display: flex; flex-direction: column; align-items: center; animation: ba-moxie-float 4.5s ease-in-out 700ms infinite; }
+            @keyframes ba-moxie-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+            .ba-moxie-bubble { position: absolute; right: 58%; bottom: 64%; }
+            @media (prefers-reduced-motion: reduce) {
+              .ba-moxie-figure { animation: none; opacity: 1; transform: none; }
+              .ba-moxie-float { animation: none; }
+            }
+            @media (max-width: 767px) {
+              .ba-moxie-layout { flex-direction: column; gap: 36px; }
+              .ba-moxie-figure { order: -1; align-self: center; }
+              .ba-moxie-float img { width: 180px !important; }
+              .ba-moxie-bubble { position: static; margin-top: 16px; }
+            }
+          `}</style>
+          <div className="ba-moxie-layout">
+          <div className="ba-moxie-content max-w-3xl text-center">
             <div className="text-xs font-semibold uppercase tracking-[0.22em] text-[#FF6B5C] mb-5">
               Your free brand audit
             </div>
