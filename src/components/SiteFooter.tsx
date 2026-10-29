@@ -40,7 +40,7 @@ const productLinks: Array<[string, string]> = [
 const resourceLinks: Array<[string, string, boolean?]> = [
   ["Building with MOXIEMO", "/blog"],
   ["Changelog", "/changelog"],
-  ["Free Brand Audit", "/brand-audit"],
+  ["Free growth assessment", "/brand-audit"],
   ["Free Brand Kit", "/brand-kit", true],
   ["Contact", "mailto:hello@buildwithmoxiemo.com"],
 ];
@@ -155,7 +155,7 @@ export function SiteFooter() {
           <div>
             <img src={logoLight.url} alt="MOXIEMO" style={{ height: 32, display: "block" }} />
             <div style={{ ...fontMono, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: C.muted, lineHeight: 1.8, marginTop: 18 }}>
-              MOXIEMO 2.0 BETA<br />50% OFF FOR OUR FIRST 100 CUSTOMERS
+              MOXIEMO 2.0 BETA<br />50% OFF FOR LIFE · 100 FOUNDING SEATS
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
               {socials.map(({ Icon, href, label }) => (

@@ -17,7 +17,7 @@ const resourceColumns: { heading: string; items: ResourceItem[] }[] = [
   {
     heading: "Free tools",
     items: [
-      { label: "Brand Audit Report", description: "Score your brand and see what to fix first.", href: "/brand-audit", status: "new" },
+      { label: "Free growth assessment", description: "Score your brand and see what to fix first.", href: "/brand-audit", status: "new" },
       { label: "Brand Kit", description: "Turn your site into a polished brand kit.", href: "/brand-kit", status: "live" },
       { label: "Prompt packs", description: "Proven prompts for content that sounds like you.", href: "/resources", status: "live" },
     ],

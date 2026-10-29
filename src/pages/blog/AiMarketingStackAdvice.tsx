@@ -83,12 +83,12 @@ export default function AiMarketingStackAdvice() {
       <P>The articles are right that disciplined judgement is the most valuable capability in an era of endless AI announcements. Here is ours: you built a real business on real expertise. Your marketing should run on a system that already knows what makes you valuable. Not on your Sunday nights.</P>
 
       <H2>Start With the Diagnosis, Not the Tools</H2>
-      <P>If this hit close to home, do not go shopping. Do what the smart advice actually says and map the work first. The free MOXIEMO Brand Audit reads your web presence the way your market does and shows you exactly where your expertise is not landing: what is invisible, what is unclear, and what is costing you attention you have already earned.</P>
+      <P>If this hit close to home, do not go shopping. Do what the smart advice actually says and map the work first. The MOXIEMO free growth assessment reads your web presence the way your market does and shows you exactly where your expertise is not landing: what is invisible, what is unclear, and what is costing you attention you have already earned.</P>
       <P>It takes minutes. It costs nothing. And it gives you the one thing every stack decision should start with: an honest picture of the gap.</P>
 
       <div className="text-center mt-10">
         <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-white h-12 px-7 rounded-full font-semibold">
-          <Link to="/brand-audit">Run your free Brand Audit <ArrowRight className="ml-2 h-4 w-4" /></Link>
+          <Link to="/brand-audit">Get your free growth assessment <ArrowRight className="ml-2 h-4 w-4" /></Link>
         </Button>
       </div>
     </BlogArticle>

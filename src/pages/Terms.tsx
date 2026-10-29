@@ -64,9 +64,9 @@ export default function Terms() {
       </LegalSection>
       <LegalDivider />
 
-      <LegalSection heading="4. First 100 Offer and Beta Programs">
+      <LegalSection heading="4. Founding Member Offer and Beta Programs">
         <p>
-          <span className="text-foreground font-medium">4.1 MOXIEMO 2.0 Beta Offer.</span> During the MOXIEMO 2.0 beta, the first 100 customers to start a paid plan receive 50% off the standard price of that plan, monthly or annual, for as long as the MOXIEMO 2.0 beta runs. The offer is limited to one account per customer, cannot be combined with other offers and has no cash value.
+          <span className="text-foreground font-medium">4.1 MOXIEMO 2.0 Beta Offer.</span> During the MOXIEMO 2.0 beta, the first 100 customers to start a paid plan become founding members and receive 50% off the standard price of that plan, monthly or annual, for as long as they keep that founding membership active. If a founding membership is cancelled or lapses, the founding rate ends and does not transfer. The offer is limited to one account per customer, cannot be combined with other offers and has no cash value.
         </p>
         <p>
           <span className="text-foreground font-medium">4.2 Beta Conduct.</span> Founding Members and beta users acknowledge that the Platform is in active development. You may encounter bugs, incomplete features, or unexpected behavior. By participating in the beta, You agree to: (1) provide honest feedback when requested; (2) not publicly share screenshots, outputs, or details of unreleased features without MOXIEMO's prior written consent; and (3) understand that features available during beta may be modified, moved to paid tiers, or discontinued at general availability.

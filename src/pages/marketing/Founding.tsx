@@ -167,7 +167,7 @@ export default function Founding() {
             }}
           >
             <span style={{ width: 6, height: 6, background: "#ef6f53", borderRadius: "50%", display: "inline-block" }} />
-            MOXIEMO 2.0 BETA &nbsp;·&nbsp; FIRST 100 CUSTOMERS
+            MOXIEMO 2.0 BETA &nbsp;·&nbsp; 100 FOUNDING SEATS
           </div>
 
           {/* Headline */}
@@ -185,7 +185,7 @@ export default function Founding() {
           >
             Be one of
             <br />
-            <span style={{ fontWeight: 300, fontStyle: "italic", color: "#ef6f53" }}>our first 100.</span>
+            <span style={{ fontWeight: 300, fontStyle: "italic", color: "#ef6f53" }}>our 100 founding members.</span>
           </h1>
 
           {/* Subhead */}
@@ -200,7 +200,7 @@ export default function Founding() {
               textWrap: "pretty" as any,
             }}
           >
-            Get 50% off any MOXIEMO plan, monthly or annual, for as long as the 2.0 beta runs. Once 100 spots are filled, new customers pay standard pricing.
+            Get 50% off any MOXIEMO plan, monthly or annual, for life, as long as you keep your founding membership. Once the 100 seats are filled, new customers pay standard pricing.
           </p>
 
           {/* CARD */}
@@ -227,11 +227,11 @@ export default function Founding() {
                   marginBottom: 10,
                 }}
               >
-                First 100
+                FOUNDING SEAT
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ fontFamily: "'Newsreader', serif", fontSize: 30, fontWeight: 600, color: "#fff", lineHeight: 1.15 }}>
-                  50% off any plan.
+                  50% off any plan, for life.
                 </div>
                 <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#fff", letterSpacing: "0.04em", lineHeight: 1.6 }}>
                   Clarity $49.50/month · Momentum $74.50/month · Multiply $124.50/month
@@ -246,7 +246,7 @@ export default function Founding() {
             <div style={{ padding: "22px 32px 20px", borderBottom: "1px solid rgba(19,19,15,0.07)" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {[
-                  "50% off Clarity, Momentum or Multiply, monthly or annual",
+                  "50% off Clarity, Momentum or Multiply, monthly or annual, for life",
                   "Discovery and brand diagnosis on every plan",
                   "MOXIE, your growth companion, with texting when it opens",
                   "First access to new features as they ship",
@@ -483,7 +483,7 @@ export default function Founding() {
                   You're on the list{firstName ? `, ${firstName.split(" ")[0]}` : ""}.
                 </h2>
                 <p style={{ fontSize: 16, lineHeight: 1.65, color: "#56544c", maxWidth: 380, margin: "0 auto" }}>
-                  You're on the list for one of our first 100 spots. We'll be in touch soon to confirm your plan.
+                  You are on the list for one of our 100 founding seats. We will be in touch soon to confirm your plan.
                 </p>
               </div>
             )}
@@ -502,7 +502,7 @@ export default function Founding() {
               lineHeight: 1.6,
             }}
           >
-            Limited to our first 100 customers. The 50% discount applies for as long as the MOXIEMO 2.0 beta runs. Plans renew automatically until cancelled. See our{" "}
+            Limited to 100 founding members. The 50% founding rate lasts for life, as long as you keep your founding membership. Plans renew automatically until cancelled. See our{" "}
             <Link to="/terms" style={{ color: "#ef6f53" }}>Terms of Service</Link>.
           </p>
         </main>

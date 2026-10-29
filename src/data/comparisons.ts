@@ -29,7 +29,7 @@ export const MOXIEMO: Record<string, CellValue> = {
   planner: "yes", campaigns: "yes",
   publishing: "LinkedIn now; Facebook and Instagram coming", platformRules: "yes",
   performance: "yes (basic)", autonomous: "Beta 2.0",
-  builtForFounders: "yes", pricing: "$99/mo; founding members free during the round",
+  builtForFounders: "yes", pricing: "From $99/mo; founding members get 50% off for life",
 };
 
 export interface ComparisonSections {

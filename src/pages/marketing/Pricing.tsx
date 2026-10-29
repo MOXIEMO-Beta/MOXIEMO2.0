@@ -96,7 +96,7 @@ export default function Pricing() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 60 }}>
             <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/founding" className="mo-coral-btn" style={{ display: "inline-flex", alignItems: "center", gap: 10, background: CORAL, color: "#fff", fontWeight: 700, fontSize: 16, padding: "16px 32px", borderRadius: 999, textDecoration: "none" }}>Claim a first-100 spot <Arrow /></a></Button>
             <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/brand-audit" className="mo-outline-btn" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: INK, fontWeight: 500, fontSize: 15, padding: "15px 24px", border: "1.5px solid rgba(19,19,15,0.22)", borderRadius: 999, textDecoration: "none" }}>
-              Run my free Brand Audit <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 9l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              Get my free growth assessment <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 9l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </a></Button>
           </div>
 
@@ -108,7 +108,7 @@ export default function Pricing() {
         <div style={{ display: "inline-flex", whiteSpace: "nowrap", animation: "mo-scroll 32s linear infinite", ...mono, fontSize: 12.5, letterSpacing: "0.18em", textTransform: "uppercase", color: CREAM }}>
           {[0, 1].map((k) => (
             <span key={k} style={{ display: "inline-flex", alignItems: "center" }}>
-              {["MOXIEMO 2.0 BETA", "50% OFF FOR THE FIRST 100", "MONTHLY OR ANNUAL", "SAVE 17% ANNUALLY", "STRATEGY ON EVERY PLAN", "MOXIE INCLUDED"].map((s, i) => (
+              {["MOXIEMO 2.0 BETA", "50% OFF FOR LIFE", "MONTHLY OR ANNUAL", "SAVE 17% ANNUALLY", "STRATEGY ON EVERY PLAN", "MOXIE INCLUDED"].map((s, i) => (
                 <span key={i} style={{ display: "inline-flex", alignItems: "center" }}>
                   <span style={{ padding: "0 28px" }}>{s}</span>
                   <span style={{ width: 6, height: 6, background: CORAL, display: "inline-block", flex: "none" }} />
@@ -123,11 +123,11 @@ export default function Pricing() {
       <section id="beta" style={{ background: INK, padding: "100px 40px" }}>
         <div style={{ maxWidth: 740, margin: "0 auto", textAlign: "center" }}>
           <div style={{ ...mono, display: "inline-flex", alignItems: "center", gap: 8, fontSize: 11, letterSpacing: "0.22em", textTransform: "uppercase", color: CORAL, marginBottom: 32, background: "rgba(239,111,83,0.12)", border: "1px solid rgba(239,111,83,0.25)", padding: "8px 18px", borderRadius: 999 }}>
-            <span style={{ width: 5, height: 5, background: CORAL, borderRadius: "50%", display: "inline-block", animation: "mo-blink 2s ease infinite" }} />MOXIEMO 2.0 BETA · FIRST 100 CUSTOMERS
+            <span style={{ width: 5, height: 5, background: CORAL, borderRadius: "50%", display: "inline-block", animation: "mo-blink 2s ease infinite" }} />MOXIEMO 2.0 BETA · 100 FOUNDING SEATS
           </div>
-          <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px,5.5vw,72px)", lineHeight: 1.04, letterSpacing: "-0.025em", margin: "0 0 30px", color: CREAM }}>50% off for our first {pricingOffer.firstCustomerLimit} customers.</h2>
-          <p style={{ fontSize: 17, lineHeight: 1.75, color: "#8a877a", margin: "0 0 44px" }}>The MOXIEMO 2.0 beta is open now. Our first 100 customers get 50% off any plan, monthly or annual, during the beta. Once 100 spots are filled, new customers pay standard pricing.</p>
-          <p style={{ fontSize: 17, lineHeight: 1.75, color: "#8a877a", margin: "0 0 44px" }}>Your 50% rate stays with you for as long as you keep your plan.</p>
+          <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px,5.5vw,72px)", lineHeight: 1.04, letterSpacing: "-0.025em", margin: "0 0 30px", color: CREAM }}>50% off for life for our founding members.</h2>
+          <p style={{ fontSize: 17, lineHeight: 1.75, color: "#8a877a", margin: "0 0 44px" }}>The MOXIEMO 2.0 beta is open now. Our first {pricingOffer.firstCustomerLimit} customers become founding members and get 50% off any plan, monthly or annual, for life, as long as they keep their founding membership. Once the {pricingOffer.firstCustomerLimit} seats are filled, new customers pay standard pricing.</p>
+          <p style={{ fontSize: 17, lineHeight: 1.75, color: "#8a877a", margin: "0 0 44px" }}>If you cancel, the founding rate ends with your membership.</p>
           <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/founding" className="mo-coral-btn" style={{ display: "inline-flex", alignItems: "center", gap: 12, background: CORAL, color: "#fff", fontWeight: 700, fontSize: 17, padding: "18px 40px", borderRadius: 999, textDecoration: "none" }}>Claim a first-100 spot <Arrow size={18} /></a></Button>
         </div>
       </section>
@@ -370,7 +370,7 @@ function Tier({
           <s>{price}{billingLabel}</s>
           <div><strong>{founding}</strong><span>{billingLabel}</span></div>
         </div>
-        <div style={{ ...mono, fontSize: 10.5, color: CORAL, letterSpacing: "0.1em", marginBottom: 22 }}>FIRST 100 PRICE</div>
+        <div style={{ ...mono, fontSize: 10.5, color: CORAL, letterSpacing: "0.1em", marginBottom: 22 }}>FOUNDING PRICE</div>
         {ctaVariant === "outline" && (
           <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href={ctaHref || "/founding"} className="mo-foundation-cta" style={{ display: "block", textAlign: "center", background: CREAM, color: INK, fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none", border: `1.5px solid ${INK}` }}>{ctaLabel}</a></Button>
         )}

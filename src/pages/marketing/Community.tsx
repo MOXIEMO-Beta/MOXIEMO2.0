@@ -116,7 +116,7 @@ const team = [
 const beta2 = [
   { label: "Deeper distribution", body: "More channels, more reach, more automation built in from the start." },
   { label: "Deeper insight", body: "Performance intelligence that tells you exactly what to do next." },
-  { label: "Founding pricing — 50% off for life", body: "Capped seats. Founding members get in before the public waitlist opens, at half price, locked forever." },
+  { label: "FOUNDING PRICING: 50% OFF FOR LIFE", body: "100 seats. Founding members get in before the public waitlist opens, at half price for life, as long as they keep their founding membership." },
   { label: "Built on private beta", body: "Every fix, every feature shaped by your feedback. Your fingerprints are on this." },
 ];
 
