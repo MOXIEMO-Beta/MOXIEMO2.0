@@ -462,6 +462,11 @@ export default function WhyMoxiemo() {
               );
             })}
           </div>
+          <div className="rv" style={{ marginTop: 40 }}>
+            <Link to="/compare" style={{ color: CORAL, textDecoration: "underline", textUnderlineOffset: 3, fontSize: 15 }}>
+              See how MOXIEMO compares with ChatGPT, Claude, Jasper and five other tools →
+            </Link>
+          </div>
         </div>
       </section>
 

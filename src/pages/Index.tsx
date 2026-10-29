@@ -629,6 +629,11 @@ function Why() {
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, marginTop: 28 }}>
             Most marketing tools take the message you already have and help you make more of it. MOXIEMO starts earlier, with what you are trying to achieve, what is true about your brand today and what needs to change. Then it helps you do the work and keeps it moving.
           </p>
+          <p style={{ marginTop: 18 }}>
+            <Link to="/brand-architecture-method" style={{ ...sans, fontSize: 15, color: CORAL, textDecoration: "underline", textUnderlineOffset: 3 }}>
+              Read the method behind it: The Brand Architecture Method →
+            </Link>
+          </p>
         </div>
         <div style={{ background: CREAM, borderRadius: 16, padding: "32px 30px", border: "1px solid rgba(19,19,15,0.08)" }}>
           {bullets.map((b) => (

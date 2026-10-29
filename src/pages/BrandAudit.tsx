@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -246,6 +246,13 @@ export default function BrandAudit() {
             </form>
             <p className="text-sm text-[#7a7e8c] mt-4">
               Free. No credit card. No login.
+            </p>
+            <p className="text-sm text-[#7a7e8c] mt-2">
+              Your report scores your brand across the eight dimensions of{" "}
+              <Link to="/brand-architecture-method" className="text-[#FF6B5C] underline underline-offset-2">
+                the Brand Architecture Method
+              </Link>
+              .
             </p>
           </div>
           <div className="ba-moxie-figure">

@@ -173,7 +173,7 @@ const faqGroups: { label: string; items: { q: string; a: ReactNode; withMoxie?: 
       },
       {
         "q": "What AI does MOXIEMO use?",
-        "a": "MOXIEMO uses Anthropic's Claude models to generate strategy and content. We do not use your Discovery answers to train third-party AI models."
+        "a": <>MOXIEMO uses Anthropic's Claude models to generate strategy and content. We do not use your Discovery answers to train third-party AI models. <Link to="/compare/claude" style={{ color: CORAL, textDecoration: "underline", textUnderlineOffset: 3 }}>Compare MOXIEMO with using Claude on its own.</Link></>
       }
     ]
   },
