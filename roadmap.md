@@ -56,3 +56,8 @@
 - [x] Update section 03 copy, release pill and phone character/header/preview label; preserve pace cards and sample messages.
 - [x] Replace the single First 100 benefit on Home and /founding.
 - [x] Verify exact copy, desktop/mobile placement, reduced motion and unchanged surrounding sections.
+
+# MOXIE texting copy on Platform, Solutions, Why MOXIEMO
+- [x] Replace 14 approved lines so MOXIE is introduced as the growth companion and texting is marked as a future release.
+- [x] Float the decorative MOXIE icon at the start of the Solutions "What is MOXIE?" answer.
+- [x] Gate tests: no "MOXIE texts you" or "by text from MOXIE" on the three pages, exact copy, icon wrapping at 390px, no other text changed.

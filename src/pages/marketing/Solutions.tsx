@@ -2,6 +2,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { MoxieAvatar } from "@/components/MoxieAvatar";
 import expertiseImg from "@/assets/redesign/expertise-founders.jpg.asset.json";
 import serviceImg from "@/assets/redesign/service-businesses.jpg.asset.json";
 import growingImg from "@/assets/redesign/growing-businesses.jpg.asset.json";
@@ -38,6 +39,7 @@ const PAGE_CSS = `
 .prob-row{cursor:pointer;border-top:1px solid rgba(19,19,15,0.09);padding:30px 0;}
 .prob-row:hover .prob-hd{color:${CORAL} !important;}
 .faq-item{cursor:pointer;transition:background .18s;padding:22px 0;border-bottom:1px solid rgba(19,19,15,0.09);}
+.faq-moxie{float:left;margin:0 12px 4px 0;}
 .persona-chip{padding:11px 24px;background:transparent;border:1.5px solid rgba(19,19,15,0.18);border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:${MUTED};cursor:pointer;transition:all .22s ease;white-space:nowrap;}
 .persona-chip:hover{border-color:${INK};color:${INK};}
 .persona-chip.active{background:${INK};border-color:${INK};color:#f7f3ea;}
@@ -116,7 +118,7 @@ const problems = [
   },
   {
     "t": "The follow-through problem",
-    "p": "Things stall between logins. MOXIE texts you when a decision is waiting or a priority slips, so the plan keeps moving."
+    "p": "Things stall between logins. MOXIE flags what is waiting and what slipped, so the plan keeps moving."
   },
   {
     "t": "The more-brands problem",
@@ -130,7 +132,7 @@ const personas = [
 { chip: "PORTFOLIO OPERATORS", img: growingImg.url, h: "PORTFOLIO OPERATORS", p: "You run several brands, each with its own customers and voice. You need one place to run them without mixing them up.", bullets: ["A separate strategy and workspace for each brand", "Cross-brand planning and reporting", "MOXIE messages that name the brand and the action"], link: "See the Multiply plan" }
 ];
 
-const faqGroups = [
+const faqGroups: { label: string; items: { q: string; a: string; withMoxie?: boolean }[] }[] = [
   {
     "label": "HOW IT WORKS",
     "items": [
@@ -161,11 +163,12 @@ const faqGroups = [
       },
       {
         "q": "What is MOXIE?",
-        "a": "MOXIE is your text companion. It reminds you of what you planned, asks for approvals, flags stalled priorities and shares weekly wins. You choose how often it checks in."
+        "a": "MOXIE is your growth companion, the marketing partner inside MOXIEMO. He knows your plan and tells you what needs you next: a post to approve, a decision waiting, a priority that stalled, a weekly win. Two-way texting with MOXIE is coming in a future release, and you will choose how often he checks in.",
+        "withMoxie": true
       },
       {
         "q": "Can MOXIE publish without me?",
-        "a": "Only what you approve. A YES approves one specific action. Bigger decisions, like ad spend, billing or account changes, always need more than a one-word reply."
+        "a": "No. Only what you approve goes out, one action at a time. Bigger decisions, like ad spend, billing or account changes, always ask for more than a single approval."
       },
       {
         "q": "What AI does MOXIEMO use?",
@@ -324,8 +327,8 @@ export default function Solutions() {
       label: "Execute",
       h: "Put it in market,",
       hI: "deliberately.",
-      paras: ["Every draft starts from your strategy, in your voice. You edit and approve, and MOXIEMO publishes to the channels you connect. MOXIE texts you when something needs a decision, so nothing waits in a tab."],
-      bullets: ["Content from your strategy", "Social and email content in your voice", "Marketing planner and calendar", "Publishing to connected channels", "MOXIE approvals and reminders by text"],
+      paras: ["Every draft starts from your strategy, in your voice. You edit and approve, and MOXIEMO publishes to the channels you connect. MOXIE flags anything that needs a decision, so nothing waits in a tab."],
+      bullets: ["Content from your strategy", "Social and email content in your voice", "Marketing planner and calendar", "Publishing to connected channels", "MOXIE approvals and reminders"],
       mock: (
         <MockupShell title="Marketing Planner">
           <div style={{ padding: "14px 16px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -436,11 +439,11 @@ export default function Solutions() {
     "muted": []
   },
   {
-    "phase": "MEASURE AND MOXIE",
+    "phase": "MEASURE AND FOLLOW THROUGH",
     "items": [
       "Results tied to your goals",
       "Weekly progress summaries",
-      "MOXIE text check-ins",
+      "MOXIE check-ins (texting coming soon)",
       "Recommendations for the next round"
     ],
     "muted": []
@@ -466,7 +469,7 @@ export default function Solutions() {
               <span style={{ display: "block", fontWeight: 340, fontStyle: "italic", fontSize: "clamp(42px, 5.4vw, 76px)", color: "#6d7a5e" }}>Then make it happen.</span>
             </h1>
             <p className="reveal d2" style={{ fontSize: 18, color: SAGE_BODY, maxWidth: 520, marginTop: 28, marginBottom: 40, lineHeight: 1.55 }}>
-              MOXIEMO diagnoses where your brand stands, builds the plan and creates the work. MOXIE keeps it moving between logins.
+              MOXIEMO diagnoses where your brand stands, builds the plan and creates the work. MOXIE, your growth companion, keeps it moving between logins.
             </p>
             <div className="reveal d3" style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
               <Link to="/brand-audit" className="sol-cta-primary">Run my free Brand Audit →</Link>
@@ -735,7 +738,7 @@ export default function Solutions() {
                       <span className={"prob-icon" + (isOpen ? " open" : "")}>+</span>
                     </div>
                     {isOpen && (
-                      <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.7, margin: 0, marginTop: 18, paddingRight: 40 }}>{it.a}</p>
+                      <p style={{ fontSize: 16, color: MUTED, lineHeight: 1.7, margin: 0, marginTop: 18, paddingRight: 40 }}>{it.withMoxie && <MoxieAvatar pose="icon" size={40} decorative className="faq-moxie" />}{it.a}</p>
                     )}
                   </div>
                 );
