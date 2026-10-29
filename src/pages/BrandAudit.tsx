@@ -206,10 +206,10 @@ export default function BrandAudit() {
           <div className="ba-moxie-layout">
           <div className="ba-moxie-content max-w-3xl text-center">
             <div className="text-xs font-semibold uppercase tracking-[0.22em] text-[#FF6B5C] mb-5">
-              Your free brand audit
+              Your free growth assessment
             </div>
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-[#15171C] leading-[1.05] mb-5">
-              The brand audit a CMO would charge for. Yours free.
+              Find out where your next growth opportunity might be hiding.
             </h1>
             <p className="text-lg md:text-xl text-[#4a4d57] leading-relaxed max-w-2xl mx-auto mb-10">
               Enter your website for a quick, honest read on your positioning, your message and your visibility. See what is working, what is holding you back and what to fix first.
@@ -241,7 +241,7 @@ export default function BrandAudit() {
                 disabled={scrapingInitial || !url.trim()}
                 className="bg-[#FF6B5C] hover:bg-[#FF6B5C]/90 text-white rounded-full px-6 h-11 font-semibold"
               >
-                {scrapingInitial ? "Reading your site..." : "Run my audit"}
+                {scrapingInitial ? "Reading your site..." : "Find my growth opportunities"}
               </Button>
             </form>
             <p className="text-sm text-[#7a7e8c] mt-4">
@@ -271,7 +271,7 @@ export default function BrandAudit() {
         <section className="flex-1 px-4 py-12 md:py-16">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-[#15171C] mb-2">
-              Your free brand audit
+              Your free growth assessment
             </h1>
             <p className="text-[#7a7e8c] mb-8">
               Six quick steps. We read your site first, so you are mostly confirming.
@@ -449,7 +449,7 @@ export default function BrandAudit() {
                   onClick={() => setStep(7)}
                   className="bg-[#FF6B5C] hover:bg-[#FF6B5C]/90 text-white rounded-full px-6 h-11 font-semibold"
                 >
-                  Generate my Brand Audit Report
+                  Generate my free growth assessment report
                 </Button>
               </div>
             </div>
@@ -490,7 +490,7 @@ export default function BrandAudit() {
           {step === 8 && (
             <div className="text-center py-10 space-y-3">
               <div className="inline-block w-10 h-10 border-4 border-[#FF6B5C] border-t-transparent rounded-full animate-spin mb-2" />
-              <h2 className="text-xl font-bold text-[#15171C]">Building your brand audit</h2>
+              <h2 className="text-xl font-bold text-[#15171C]">Building your free growth assessment</h2>
               <p className="text-[#7a7e8c] text-sm">
                 Vera is reading your signals and writing the report. This usually takes 30 to 60 seconds.
               </p>

@@ -198,7 +198,7 @@ const faqGroups: { label: string; items: { q: string; a: string; withMoxie?: boo
     "items": [
       {
         "q": "How much does it cost?",
-        "a": "Plans are $99, $149 and $249 a month, or save 17% when you pay annually. Our first 100 customers get 50% off during the MOXIEMO 2.0 beta."
+        "a": "Plans are $99, $149 and $249 a month, or save 17% when you pay annually. Founding members get 50% off any plan, monthly or annual, for life, as long as they keep their founding membership. Limited to 100 founding seats."
       },
       {
         "q": "Can I cancel anytime?",
@@ -472,7 +472,7 @@ export default function Solutions() {
               MOXIEMO diagnoses where your brand stands, builds the plan and creates the work. MOXIE, your growth companion, keeps it moving between logins.
             </p>
             <div className="reveal d3" style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
-              <Link to="/brand-audit" className="sol-cta-primary">Run my free Brand Audit →</Link>
+              <Link to="/brand-audit" className="sol-cta-primary">Get my free growth assessment →</Link>
               <Link to="/founding" className="sol-cta-secondary">Claim a first-100 spot</Link>
             </div>
           </div>
@@ -767,10 +767,10 @@ export default function Solutions() {
             Find out <span style={{ fontWeight: 340, fontStyle: "italic", color: "#6d7a5e" }}>what comes first.</span>
           </h2>
           <p className="reveal" style={{ fontSize: 18, color: SAGE_BODY, maxWidth: 520, margin: "28px auto 40px", lineHeight: 1.6 }}>
-            Start with the free Brand Audit. Then let MOXIEMO build the plan.
+            Start with the free growth assessment. Then let MOXIEMO build the plan.
           </p>
           <div className="reveal" style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center" }}>
-            <Link to="/brand-audit" style={{ background: CORAL, color: "#fff", fontWeight: 700, fontSize: 16, padding: "17px 30px", borderRadius: 999, textDecoration: "none" }}>Run my free Brand Audit →</Link>
+            <Link to="/brand-audit" style={{ background: CORAL, color: "#fff", fontWeight: 700, fontSize: 16, padding: "17px 30px", borderRadius: 999, textDecoration: "none" }}>Get my free growth assessment →</Link>
             <Link to="/founding" style={{ background: INK, color: "#f7f3ea", fontWeight: 600, fontSize: 16, padding: "17px 30px", borderRadius: 999, textDecoration: "none" }}>Claim a first-100 spot</Link>
           </div>
         </div>

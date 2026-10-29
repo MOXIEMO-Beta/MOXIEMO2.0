@@ -108,7 +108,7 @@ function Hero() {
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, maxWidth: 480, marginTop: 20 }}>Start with a guided discovery built on the This Is Branding brand architecture. MOXIEMO finds the gap between where your brand is and where you want it to go, sets your priorities and creates the work to close it. You approve. It gets done.</p>
           <div className="flex flex-wrap items-center" style={{ gap: 24, marginTop: 36 }}>
             <div className="flex flex-col gap-3">
-              <PillButton to="/brand-audit">Run my free Brand Audit <ArrowRight size={16} /></PillButton>
+              <PillButton to="/brand-audit">Get my free growth assessment <ArrowRight size={16} /></PillButton>
               <PillButton to="/founding" dark={false}>Claim a first-100 spot</PillButton>
             </div>
             <a
@@ -124,7 +124,7 @@ function Hero() {
               <img src={watchBadge.url} alt="Watch how it works, two minutes" width={120} height={120} style={{ width: 120, height: 120, display: "block" }} />
             </a>
           </div>
-          <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_SAGE, marginTop: 24 }}>50% off any plan while the 2.0 beta runs. Limited to our first 100 customers.</div>
+          <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_SAGE, marginTop: 24 }}>50% off any plan, for life. Limited to 100 founding members.</div>
         </div>
         <div style={{ position: "relative" }}>
           <div style={{ aspectRatio: "1 / 1.12", borderRadius: 6, overflow: "hidden", boxShadow: "0 30px 80px rgba(19,19,15,0.18)" }}>
@@ -175,7 +175,7 @@ function Hero() {
 
 /* ───────────── marquee ───────────── */
 function Marquee() {
-  const items = ["STRATEGY FIRST", "DISCOVER", "DIAGNOSE", "DEFINE", "PRIORITIZE", "EXECUTE", "MEASURE", "MOXIE, YOUR GROWTH COMPANION, KEEPS IT MOVING", "50% OFF FOR THE FIRST 100"];
+  const items = ["STRATEGY FIRST", "DISCOVER", "DIAGNOSE", "DEFINE", "PRIORITIZE", "EXECUTE", "MEASURE", "MOXIE, YOUR GROWTH COMPANION, KEEPS IT MOVING", "50% OFF FOR LIFE · 100 FOUNDING SEATS"];
   const Row = () => (
     <div className="flex items-center shrink-0" style={{ gap: 36, paddingRight: 36 }}>
       {items.map((t, i) => (
@@ -697,7 +697,7 @@ function FoundingSection() {
   }
 
   const bullets = [
-    "50% off Clarity, Momentum or Multiply",
+    "50% off Clarity, Momentum or Multiply, for life",
     "Discovery and brand diagnosis on every plan",
     "MOXIE, your growth companion, with texting when it opens",
     "First access to new features as they ship",
@@ -711,13 +711,13 @@ function FoundingSection() {
     <section id="join" style={{ background: INK, color: CREAM }}>
       <div className="mx-auto grid lg:grid-cols-[1fr_1.05fr] gap-[64px] items-start" style={{ maxWidth: 1200, padding: "118px 40px" }}>
         <div>
-          <Eyebrow dark>§ 07 · THE FIRST 100</Eyebrow>
+          <Eyebrow dark>§ 07 · FOUNDING MEMBERS</Eyebrow>
           <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px, 4.6vw, 60px)", lineHeight: 1.02, color: CREAM, marginTop: 22, letterSpacing: "-0.015em" }}>
-            Be one of our first{" "}
-            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#86847a" }}>100 customers.</span>
+            Be one of our{" "}
+            <span style={{ fontStyle: "italic", fontWeight: 340, color: "#86847a" }}>100 founding members.</span>
           </h2>
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_DARK, marginTop: 24, maxWidth: 460 }}>
-            The MOXIEMO 2.0 beta is open to 100 customers. Join now and get 50% off any plan, monthly or annual, for as long as the beta runs.
+            The MOXIEMO 2.0 beta is open to 100 founding members. Join now and get 50% off any plan, monthly or annual, for life, as long as you keep your founding membership.
           </p>
           <div style={{ marginTop: 28 }}>
             {bullets.map((b) => (
@@ -803,13 +803,13 @@ function FinalCta() {
           Find out{" "}
           <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>what comes first.</span>
         </h2>
-        <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, marginTop: 28 }}>Run the free Brand Audit for a quick read on your brand. Then let MOXIEMO build the plan and MOXIE keep it moving.</p>
+        <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, marginTop: 28 }}>Start with the free growth assessment for a quick read on your brand. Then let MOXIEMO build the plan and MOXIE keep it moving.</p>
         <div className="flex flex-wrap items-center justify-center" style={{ gap: 20, marginTop: 36 }}>
-          <PillButton to="/brand-audit">Run my free Brand Audit <ArrowRight size={16} /></PillButton>
+          <PillButton to="/brand-audit">Get my free growth assessment <ArrowRight size={16} /></PillButton>
           <PillButton to="/pricing" dark={false}>See pricing</PillButton>
           <div className="flex items-center" style={{ gap: 10, ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED_SAGE }}>
             <span style={{ width: 7, height: 7, background: CORAL, display: "inline-block" }} />
-            50% OFF FOR OUR FIRST 100 CUSTOMERS DURING THE MOXIEMO 2.0 BETA
+            50% OFF FOR LIFE FOR OUR 100 FOUNDING MEMBERS
           </div>
         </div>
       </div>
@@ -843,7 +843,7 @@ function Footer() {
           <div>
             <img src={logoLight.url} alt="MOXIEMO" style={{ height: 42, marginBottom: 18 }} />
             <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_DARK, lineHeight: 1.7 }}>
-              MOXIEMO 2.0 BETA<br />50% OFF FOR OUR FIRST 100 CUSTOMERS
+              MOXIEMO 2.0 BETA<br />50% OFF FOR LIFE · 100 FOUNDING SEATS
             </div>
             <div className="flex" style={{ gap: 10, marginTop: 18 }}>
               {[Instagram, Facebook, Linkedin].map((Icon, i) => (
@@ -853,7 +853,7 @@ function Footer() {
           </div>
           {[
             ["Product", [["Platform", "/platform"], ["Solutions", "/solutions"], ["Why MOXIEMO", "/why-moxiemo"], ["Pricing", "/pricing"], ["About", "/about"]]],
-            ["Resources", [["Building with MOXIEMO", "/blog"], ["Changelog", "/changelog"], ["Free Brand Audit", "/brand-audit"], ["Free Brand Kit", "/brand-kit", true], ["Contact", "mailto:hello@buildwithmoxiemo.com"]]],
+            ["Resources", [["Building with MOXIEMO", "/blog"], ["Changelog", "/changelog"], ["Free growth assessment", "/brand-audit"], ["Free Brand Kit", "/brand-kit", true], ["Contact", "mailto:hello@buildwithmoxiemo.com"]]],
             ["Legal", [["Privacy", "/privacy"], ["Terms", "/terms"], ["Data Deletion", "/data-deletion"]]],
           ].map(([title, items]) => (
             <div key={title as string}>

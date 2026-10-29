@@ -193,7 +193,7 @@ const notForYou = [
   },
   {
     "t": "You are not ready to invest in your marketing yet",
-    "b": "Plans start at $99 a month, with 50% off for our first 100 customers during the MOXIEMO 2.0 beta."
+    "b": "Plans start at $99 a month. Founding members get 50% off for life, as long as they keep their founding membership."
   }
 ];
 
@@ -299,10 +299,10 @@ export default function WhyMoxiemo() {
             <div style={{ padding: "28px 0 40px 40px" }}>
               <div style={{ ...mono, fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(244,239,229,0.26)", marginBottom: 12 }}>Start here</div>
               <p style={{ fontSize: 15, lineHeight: 1.62, color: "rgba(244,239,229,0.5)", margin: "0 0 18px" }}>
-                Run the free Brand Audit for a quick read. Then claim one of our first 100 spots at 50% off.
+                Start with the free growth assessment for a quick read. Then claim one of 100 founding seats at 50% off for life.
               </p>
               <Link to="/brand-audit" style={{ background: CORAL, color: "#fff", fontWeight: 700, fontSize: 14, padding: "14px 24px", borderRadius: 999, textDecoration: "none", display: "inline-block" }}>
-                Run my free Brand Audit →
+                Get my free growth assessment →
               </Link>
             </div>
           </div>
@@ -530,12 +530,12 @@ export default function WhyMoxiemo() {
               Ready when<br />you are.
             </h2>
             <div style={{ ...display, fontWeight: 300, fontStyle: "italic", fontSize: "clamp(22px,3vw,40px)", lineHeight: 1.2, color: "#6d7a5e" }}>
-              Start with the free Brand Audit. Then claim one of our first 100 spots at 50% off.
+              Start with the free growth assessment. Then claim one of 100 founding seats at 50% off for life.
             </div>
           </div>
           <div className="rv d1" style={{ display: "flex", flexWrap: "wrap", gap: 18, marginBottom: 28 }}>
             <Link to="/brand-audit" style={{ background: INK, color: "#f7f3ea", fontWeight: 700, fontSize: 15.5, padding: "18px 32px", borderRadius: 999, textDecoration: "none", display: "inline-block" }}>
-              Run my free Brand Audit →
+              Get my free growth assessment →
             </Link>
             <Link to="/founding" style={{ background: "transparent", color: INK, border: "1.5px solid rgba(19,19,15,0.25)", fontWeight: 600, fontSize: 15.5, padding: "17px 32px", borderRadius: 999, textDecoration: "none", display: "inline-block" }}>
               Claim a first-100 spot
@@ -543,7 +543,7 @@ export default function WhyMoxiemo() {
           </div>
           <div className="rv d2" style={{ display: "flex", gap: 10, alignItems: "center", ...mono, fontSize: 11.5, letterSpacing: "0.16em", textTransform: "uppercase", color: SAGE_MUTED }}>
             <span style={{ width: 7, height: 7, background: CORAL, display: "inline-block" }} />
-            PLANS FROM $99 A MONTH · 50% OFF FOR OUR FIRST 100 CUSTOMERS
+            PLANS FROM $99 A MONTH · 50% OFF FOR LIFE FOR 100 FOUNDING MEMBERS
           </div>
         </div>
       </section>

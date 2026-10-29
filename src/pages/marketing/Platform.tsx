@@ -393,7 +393,7 @@ export default function Platform() {
           </p>
           <div style={{ display: "flex", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
             <Link to="/brand-audit" style={{ ...fontBody, background: C.ink, color: "#f7f3ea", fontWeight: 600, padding: "16px 28px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
-              Run my free Brand Audit <span style={{ color: C.coral }}>→</span>
+              Get my free growth assessment <span style={{ color: C.coral }}>→</span>
             </Link>
             <Link to="/pricing" style={{ ...fontBody, background: "transparent", color: C.ink, fontWeight: 600, padding: "14.5px 28px", borderRadius: 999, border: `1.5px solid ${C.ink}`, textDecoration: "none" }}>
               See pricing
@@ -563,15 +563,15 @@ export default function Platform() {
           <h2 style={{ ...fontDisplay, fontSize: "clamp(40px,6vw,84px)", lineHeight: 1.02, letterSpacing: "-0.02em", margin: "0 auto 36px", maxWidth: 800 }}>
             <span style={{ fontWeight: 600, color: C.ink, display: "block" }}>Ready when you are.</span>
           </h2>
-          <p style={{ ...fontBody, fontSize: 18, color: C.muted, lineHeight: 1.6, marginBottom: 32 }}>Start with the free Brand Audit. Then claim one of our first 100 spots at 50% off.</p>
+          <p style={{ ...fontBody, fontSize: 18, color: C.muted, lineHeight: 1.6, marginBottom: 32 }}>Start with the free growth assessment. Then claim one of 100 founding seats at 50% off for life.</p>
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 24, flexWrap: "wrap" }}>
             <Link to="/brand-audit" style={{ ...fontBody, background: C.ink, color: "#fff", fontWeight: 600, fontSize: 15.5, padding: "16px 28px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
-              Run my free Brand Audit <span style={{ color: C.coral }}>→</span>
+              Get my free growth assessment <span style={{ color: C.coral }}>→</span>
             </Link>
             <Link to="/founding" style={{ ...fontBody, color: C.ink, fontWeight: 600, padding: "14.5px 28px", borderRadius: 999, border: `1.5px solid ${C.ink}`, textDecoration: "none" }}>Claim a first-100 spot</Link>
             <span style={{ ...fontMono, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.16em", color: "#5f6a52", display: "inline-flex", alignItems: "center", gap: 10 }}>
               <span style={{ width: 8, height: 8, background: C.coral, display: "inline-block" }} />
-              50% OFF FOR OUR FIRST 100 CUSTOMERS DURING THE MOXIEMO 2.0 BETA
+              50% OFF FOR LIFE FOR OUR 100 FOUNDING MEMBERS
             </span>
           </div>
         </div>

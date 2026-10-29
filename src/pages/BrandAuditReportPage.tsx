@@ -84,7 +84,7 @@ export default function BrandAuditReportPage() {
     return (
       <>
         <SiteHeader />
-        <BrandAuditReport data={data} />
+        <BrandAuditReport data={data} publicAssessment />
         <SiteFooter />
       </>
     );

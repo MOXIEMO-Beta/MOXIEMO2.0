@@ -438,14 +438,14 @@ export default function About() {
               Ready when you are.
             </h2>
             <p className="mo-reveal" style={{ fontSize: 18, lineHeight: 1.7, color: COLORS.muted, maxWidth: 580, margin: "0 auto 48px", transitionDelay: "100ms" }}>
-              Start with the free Brand Audit, then claim one of our first 100 spots at 50% off any plan during the MOXIEMO 2.0 beta.
+              Start with the free growth assessment, then claim one of 100 founding seats at 50% off any plan, for life.
             </p>
             <div className="mo-reveal" style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 26, transitionDelay: "200ms" }}>
-              <Link to="/brand-audit" className="mo-btn-primary">Run my free Brand Audit →</Link>
+              <Link to="/brand-audit" className="mo-btn-primary">Get my free growth assessment →</Link>
               <Link to="/founding" className="mo-btn-outline">Claim a first-100 spot →</Link>
             </div>
             <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: COLORS.warmMuted, transitionDelay: "300ms" }}>
-              Plans from $99 a month · 50% off for our first 100 customers
+              PLANS FROM $99 A MONTH · 50% OFF FOR LIFE FOR 100 FOUNDING MEMBERS
             </div>
           </div>
         </section>

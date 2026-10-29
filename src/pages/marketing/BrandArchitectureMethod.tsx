@@ -12,7 +12,7 @@ export default function BrandArchitectureMethod() {
       canonicalPath="/brand-architecture-method"
       cta={{
         text: "See where your brand stands across all eight dimensions.",
-        buttonLabel: "Run your free Brand Audit",
+        buttonLabel: "Get your free growth assessment",
         href: "/brand-audit",
       }}
       sections={[
@@ -78,7 +78,7 @@ export default function BrandArchitectureMethod() {
                 <li><strong>Findability and search.</strong> Being discoverable where people look.</li>
               </ArticleList>
               <ArticleP>
-                Each dimension is useful on its own. Together they are a complete picture of a brand. This is the same structure behind the <Link to="/brand-audit" className="text-accent underline underline-offset-4">MOXIEMO Brand Audit</Link>, which scores a brand across all eight.
+                Each dimension is useful on its own. Together they are a complete picture of a brand. This is the same structure behind the <Link to="/brand-audit" className="text-accent underline underline-offset-4">MOXIEMO free growth assessment</Link>, which scores a brand across all eight.
               </ArticleP>
             </>
           ),
@@ -109,7 +109,7 @@ export default function BrandArchitectureMethod() {
           heading: "How to apply the method",
           body: (
             <ArticleP>
-              You can apply the method in two ways. You can do the thinking yourself, using the framework to define each dimension in order, foundation first. The This Is Branding worksheet walks through it. Or you can let MOXIEMO run it with you. The <Link to="/brand-audit" className="text-accent underline underline-offset-4">free Brand Audit</Link> shows you where your brand stands across all eight dimensions today, and what to fix first. Inside the platform, Discover builds your full foundation, and from then on the method gates everything MOXIEMO helps you make. Either way the sequence is the same. Get clear first. Then create.
+              You can apply the method in two ways. You can do the thinking yourself, using the framework to define each dimension in order, foundation first. The This Is Branding worksheet walks through it. Or you can let MOXIEMO run it with you. The <Link to="/brand-audit" className="text-accent underline underline-offset-4">free growth assessment</Link> shows you where your brand stands across all eight dimensions today, and what to fix first. Inside the platform, Discover builds your full foundation, and from then on the method gates everything MOXIEMO helps you make. Either way the sequence is the same. Get clear first. Then create.
             </ArticleP>
           ),
         },

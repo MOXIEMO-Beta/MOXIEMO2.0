@@ -26,7 +26,7 @@ export const comparison = [
 ];
 export const pricingFaqs = [
   { q: "What do I get on every plan?", a: "Brand discovery and diagnosis, positioning and content pillars, a strategy-linked action plan, content in your voice, publishing, reporting and MOXIE check-ins (texting coming soon). Plans differ by how many brands they include and how much execution and reporting you need." },
-  { q: "How does the first-100 discount work?", a: `Our first ${pricingOffer.firstCustomerLimit} customers get 50% off any plan, monthly or annual, during the MOXIEMO 2.0 beta. Once 100 spots are filled, new customers pay standard pricing. Your 50% rate stays with you for as long as you keep your plan.` },
+  { q: "How does the founding member discount work?", a: `Our first ${pricingOffer.firstCustomerLimit} customers become founding members. Founding members get 50% off any plan, monthly or annual, for life, as long as they keep their founding membership. If you cancel, the founding rate ends with it. Once the ${pricingOffer.firstCustomerLimit} seats are filled, new customers pay standard pricing.` },
   { q: "What counts as a brand?", a: "A brand has its own offer, market and strategy. Several locations under one name usually count as one brand. Each brand gets its own discovery, positioning, content pillars, goals, workflows and reports." },
   { q: "Can I add a fourth brand?", a: "Yes. Email hello@buildwithmoxiemo.com and we will set it up with you." },
   { q: "Does MOXIE text my customers?", a: "No. When texting opens, MOXIE will text only you and the teammates you approve. He is there to keep your plan moving." },
