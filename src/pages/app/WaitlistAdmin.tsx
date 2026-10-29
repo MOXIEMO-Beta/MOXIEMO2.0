@@ -401,7 +401,7 @@ export default function WaitlistAdmin() {
               <div className="font-semibold mt-0.5">{v.label}</div>
               <div className="flex items-baseline gap-2 mt-2">
                 <span className="text-2xl font-bold">{v.signups}</span>
-                <span className="text-sm text-muted-foreground">sign-ups</span>
+                <span className="text-sm text-muted-foreground">{v.signups === 1 ? "sign-up" : "sign-ups"}</span>
                 <span className="ml-auto text-sm font-medium">{formatShare(v.share)}</span>
               </div>
             </Card>
