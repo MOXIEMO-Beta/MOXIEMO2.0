@@ -1,3 +1,4 @@
+import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,6 +55,7 @@ function PillButton({ children, href, to, dark = true, onClick, full = false }: 
     cursor: "pointer",
     transition: "all .2s ease",
     width: full ? "100%" : undefined,
+    whiteSpace: "nowrap",
   };
   if (to) return <Link to={to} style={style} onClick={onClick}>{children}</Link>;
   if (href) return <a href={href} style={style} onClick={onClick}>{children}</a>;
@@ -85,7 +87,7 @@ function Nav() {
         </div>
         <div className="flex items-center" style={{ gap: 16, flexWrap: "nowrap", flexShrink: 0 }}>
           <Link to="/auth?mode=signin" className="hidden sm:inline hover:text-[#ef6f53] uppercase" style={linkStyle}>Sign in</Link>
-          <span style={{ whiteSpace: "nowrap" }}><PillButton to="/founding">Claim a spot</PillButton></span>
+          <span style={{ whiteSpace: "nowrap" }}><PillButton to="/founding" onClick={trackCtaClick}>{getCtaLabel()}</PillButton></span>
         </div>
       </div>
     </nav>
@@ -109,7 +111,7 @@ function Hero() {
           <div className="flex flex-wrap items-center" style={{ gap: 24, marginTop: 36 }}>
             <div className="flex flex-col gap-3">
               <PillButton to="/brand-audit">Get my free growth assessment <ArrowRight size={16} /></PillButton>
-              <PillButton to="/founding" dark={false}>Claim a first-100 spot</PillButton>
+              <PillButton to="/founding" onClick={trackCtaClick} dark={false}>{getCtaLabel()}</PillButton>
             </div>
             <a
               href="#platform"
@@ -676,6 +678,7 @@ function FoundingSection() {
           referral_source: referralSource || null,
           brand_count: brandCount,
           source: "home_first100",
+          cta_variant: getCtaVariant(),
         },
       });
       let bodyError: string | undefined = (data as any)?.error;
@@ -779,8 +782,8 @@ function FoundingSection() {
                   <input id="home-website" style={inputStyle} value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} maxLength={250} placeholder="https://" />
                 </div>
               </div>
-              <Button type="submit" className="h-auto whitespace-normal" disabled={submitting} style={{ ...sans, width: "100%", background: CORAL, color: CREAM, border: 0, borderRadius: 999, padding: "14px 22px", fontSize: 14, fontWeight: 600, cursor: submitting ? "default" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
-                {submitting ? <><Loader2 size={16} className="animate-spin" /> Joining...</> : <>Claim my spot <ArrowRight size={16} /></>}
+              <Button type="submit" onClick={trackCtaClick} className="h-auto whitespace-nowrap" disabled={submitting} style={{ ...sans, width: "100%", background: CORAL, color: CREAM, border: 0, borderRadius: 999, padding: "14px 22px", fontSize: 14, fontWeight: 600, cursor: submitting ? "default" : "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
+                {submitting ? <><Loader2 size={16} className="animate-spin" /> Joining...</> : <>{getCtaLabel()} <ArrowRight size={16} /></>}
               </Button>
               {error && <p style={{ ...sans, fontSize: 13, color: "#f6b9af", textAlign: "center", marginTop: 6 }}>{error}</p>}
               <p style={{ ...sans, fontSize: 13, color: MUTED_DARK, textAlign: "center", marginTop: 6 }}>
@@ -836,7 +839,7 @@ function Footer() {
             </p>
           </div>
           <div className="lg:text-right">
-            <PillButton to="/founding">Claim a first-100 spot</PillButton>
+            <PillButton to="/founding" onClick={trackCtaClick}>{getCtaLabel()}</PillButton>
           </div>
         </div>
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4" style={{ paddingTop: 56 }}>

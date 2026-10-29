@@ -1,3 +1,4 @@
+import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
 import { Link } from "react-router-dom";
 import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
 import { Button } from "@/components/ui/button";
@@ -125,7 +126,7 @@ export function SiteFooter() {
             </div>
           </div>
           <Link
-            to="/founding"
+            to="/founding" onClick={trackCtaClick}
             className="sf-coral"
             style={{
               ...fontBody, background: C.coral, color: "#fff", fontWeight: 600, fontSize: 15,
@@ -134,7 +135,7 @@ export function SiteFooter() {
               transition: "background 0.2s ease",
             }}
           >
-            Claim a first-100 spot
+            {getCtaLabel()}
           </Link>
         </div>
       </div>

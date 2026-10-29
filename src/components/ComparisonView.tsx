@@ -1,3 +1,4 @@
+import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Check, ArrowRight } from "lucide-react";
@@ -120,8 +121,8 @@ export function ComparisonView({ comparison }: { comparison: Comparison }) {
             size="lg"
             className="h-12 rounded-full bg-[#FF6B5C] px-7 font-semibold text-white hover:bg-[#FF6B5C]/90"
           >
-            <Link to="/founding">
-              Join as a Founding Member <ArrowRight className="ml-2 h-4 w-4" />
+            <Link to="/founding" onClick={trackCtaClick} style={{ whiteSpace: "nowrap" }}>
+              {getCtaLabel()} <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>
@@ -179,8 +180,8 @@ export function ComparisonView({ comparison }: { comparison: Comparison }) {
               See pricing
             </Link>
             <span className="text-[#15171C]/30">·</span>
-            <Link to="/founding" className="font-semibold text-[#FF6B5C] underline-offset-4 hover:underline">
-              Join the Founding Round
+            <Link to="/founding" onClick={trackCtaClick} style={{ whiteSpace: "nowrap" }} className="font-semibold text-[#FF6B5C] underline-offset-4 hover:underline">
+              {getCtaLabel()}
             </Link>
           </div>
         </div>
@@ -237,8 +238,8 @@ export function ComparisonView({ comparison }: { comparison: Comparison }) {
             size="lg"
             className="h-12 rounded-full bg-foreground px-7 font-semibold text-background hover:bg-foreground/90"
           >
-            <Link to="/founding">
-              Join as a Founding Member <ArrowRight className="ml-2 h-4 w-4" />
+            <Link to="/founding" onClick={trackCtaClick} style={{ whiteSpace: "nowrap" }}>
+              {getCtaLabel()} <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </div>

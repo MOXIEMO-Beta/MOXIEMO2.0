@@ -1,3 +1,4 @@
+import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -442,7 +443,7 @@ export default function About() {
             </p>
             <div className="mo-reveal" style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 26, transitionDelay: "200ms" }}>
               <Link to="/brand-audit" className="mo-btn-primary">Get my free growth assessment →</Link>
-              <Link to="/founding" className="mo-btn-outline">Claim a first-100 spot →</Link>
+              <Link to="/founding" onClick={trackCtaClick} className="mo-btn-outline whitespace-nowrap">{getCtaLabel()} →</Link>
             </div>
             <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: COLORS.warmMuted, transitionDelay: "300ms" }}>
               PLANS FROM $99 A MONTH · 50% OFF FOR LIFE FOR 100 FOUNDING MEMBERS

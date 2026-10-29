@@ -1,3 +1,4 @@
+import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
 import { useEffect, useState, type CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -473,7 +474,7 @@ export default function Solutions() {
             </p>
             <div className="reveal d3" style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
               <Link to="/brand-audit" className="sol-cta-primary">Get my free growth assessment →</Link>
-              <Link to="/founding" className="sol-cta-secondary">Claim a first-100 spot</Link>
+              <Link to="/founding" onClick={trackCtaClick} className="sol-cta-secondary whitespace-nowrap">{getCtaLabel()}</Link>
             </div>
           </div>
 
@@ -660,7 +661,7 @@ export default function Solutions() {
                   ))}
                 </ul>
               </div>
-              <Link to="/pricing" className="sol-cta-secondary" style={{ marginTop: 26 }}>{p.link}</Link>
+              <Link to="/pricing" className="sol-cta-secondary whitespace-nowrap" style={{ marginTop: 26 }}>{p.link}</Link>
             </div>
             <div className="reveal-r">
               <img src={p.img} alt={p.chip} style={{ width: "100%", height: 400, objectFit: "cover", objectPosition: "center 20%", display: "block", borderRadius: 20, boxShadow: "0 24px 60px -28px rgba(19,19,15,0.32)" }} />
@@ -771,7 +772,7 @@ export default function Solutions() {
           </p>
           <div className="reveal" style={{ display: "flex", flexWrap: "wrap", gap: 14, justifyContent: "center" }}>
             <Link to="/brand-audit" style={{ background: CORAL, color: "#fff", fontWeight: 700, fontSize: 16, padding: "17px 30px", borderRadius: 999, textDecoration: "none" }}>Get my free growth assessment →</Link>
-            <Link to="/founding" style={{ background: INK, color: "#f7f3ea", fontWeight: 600, fontSize: 16, padding: "17px 30px", borderRadius: 999, textDecoration: "none" }}>Claim a first-100 spot</Link>
+            <Link to="/founding" onClick={trackCtaClick} style={{ whiteSpace: "nowrap", background: INK, color: "#f7f3ea", fontWeight: 600, fontSize: 16, padding: "17px 30px", borderRadius: 999, textDecoration: "none" }}>{getCtaLabel()}</Link>
           </div>
         </div>
       </section>
