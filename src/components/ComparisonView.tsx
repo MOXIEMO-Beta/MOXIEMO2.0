@@ -80,11 +80,11 @@ export function ComparisonView({ comparison }: { comparison: Comparison }) {
     const title = "MOXIEMO | Built on strategy. Powered to execute.";
     document.title = title;
     const url = `https://buildwithmoxiemo.com${canonicalPath}`;
-    setMeta("name", "description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
+    setMeta("name", "description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
     setMeta("property", "og:title", title);
-    setMeta("property", "og:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
+    setMeta("property", "og:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
     setMeta("name", "twitter:title", title);
-    setMeta("name", "twitter:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
+    setMeta("name", "twitter:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
     setMeta("property", "og:url", url);
     setMeta("property", "og:type", "article");
     setLink("canonical", url);

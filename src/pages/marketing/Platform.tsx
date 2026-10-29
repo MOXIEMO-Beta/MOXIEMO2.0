@@ -358,7 +358,7 @@ function StepCard({ step }: { step: Step }) {
    Page
    ============================================================ */
 export default function Platform() {
-  const marqueeItems = ["STRATEGY FIRST", "EXECUTION THAT MOVES", "YOU APPROVE WHAT GOES OUT", "MOXIE KEEPS IT MOVING", "YOUR VOICE, EVERY TIME"];
+  const marqueeItems = ["STRATEGY FIRST", "EXECUTION THAT MOVES", "YOU APPROVE WHAT GOES OUT", "MOXIE, YOUR GROWTH COMPANION, KEEPS IT MOVING", "YOUR VOICE, EVERY TIME"];
   return (
     <div style={{ ...fontBody, background: C.cream, color: C.ink, minHeight: "100vh" }}>
       <SiteHeader />

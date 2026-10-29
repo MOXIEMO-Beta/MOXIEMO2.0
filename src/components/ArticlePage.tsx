@@ -74,13 +74,13 @@ export function ArticlePage({
     document.title = "MOXIEMO | Built on strategy. Powered to execute.";
 
     const canonicalUrl = `https://buildwithmoxiemo.com${canonicalPath}`;
-    setMeta("name", "description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
+    setMeta("name", "description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
     setMeta("property", "og:title", "MOXIEMO | Built on strategy. Powered to execute.");
-    setMeta("property", "og:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
+    setMeta("property", "og:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
     setMeta("property", "og:url", canonicalUrl);
     setMeta("property", "og:type", "article");
     setMeta("name", "twitter:title", "MOXIEMO | Built on strategy. Powered to execute.");
-    setMeta("name", "twitter:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward, creates the work with your approval, and MOXIE makes sure it happens.");
+    setMeta("name", "twitter:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
     setLink("canonical", canonicalUrl);
 
     const ld = document.createElement("script");
