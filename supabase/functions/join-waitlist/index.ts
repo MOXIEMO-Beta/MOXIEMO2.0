@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendResendEmail } from "../_shared/resend.ts";
 import { validBrandCount, validPlanInterest } from "./brand-count.ts";
+import { validCtaVariant } from "./cta-variant.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,7 +18,14 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { name, email, role, website_url, company_name, referral_source, brand_count, plan_interest, source } = await req.json();
+    const { name, email, role, website_url, company_name, referral_source, brand_count, plan_interest, source, cta_variant } = await req.json();
+
+    if (!validCtaVariant(cta_variant)) {
+      return new Response(JSON.stringify({ error: "Invalid sign-up button version." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!validBrandCount(brand_count, source)) {
       return new Response(JSON.stringify({ error: "Please select how many brands you run." }), {
@@ -60,7 +68,7 @@ serve(async (req) => {
 
     const { error: dbError } = await supabase
       .from("waitlist")
-      .insert({ name, email, role, website_url, company_name, referral_source, brand_count: brand_count ?? null, plan_interest: plan_interest ?? null, user_id });
+      .insert({ name, email, role, website_url, company_name, referral_source, brand_count: brand_count ?? null, plan_interest: plan_interest ?? null, cta_variant: cta_variant ?? null, user_id });
 
     if (dbError) {
       if ((dbError as any).code === "23505") {

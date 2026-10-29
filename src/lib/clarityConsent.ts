@@ -1,4 +1,5 @@
 import { ConsentChoice, getConsent } from "@/lib/cookieConsent";
+import { tagCtaVariant } from "@/lib/ctaVariant";
 
 let clarityRequested = false;
 let previouslyAllowed = false;
@@ -53,4 +54,5 @@ export function applyClarityConsent(choice: ConsentChoice | null) {
     };
     document.head.appendChild(script);
   } else sendClarityConsent(analytics, marketing);
+  tagCtaVariant();
 }
