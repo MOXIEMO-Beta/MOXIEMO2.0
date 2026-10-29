@@ -295,7 +295,7 @@ export default function About() {
                 <p className="mo-reveal" style={{ borderLeft: `3px solid ${COLORS.coral}`, paddingLeft: 22, transitionDelay: "400ms" }}>
                   <strong style={{ color: COLORS.near }}>The real problem was the order.</strong> Every tool jumped straight to execution without asking the strategic questions first. Who are you? Who do you serve? What makes you different? What should you do first? And even with a plan, things stalled between logins because nobody was there to nudge.
                 </p>
-                <p className="mo-reveal" style={{ transitionDelay: "480ms" }}>So I built MOXIEMO. It asks the strategic questions, diagnoses where your brand stands, builds the plan and helps you do the work. Then I built MOXIE to make sure it happens, with a text when something needs you. You became a founder to build something that lasts. MOXIEMO is here to help you do that.</p>
+                <p className="mo-reveal" style={{ transitionDelay: "480ms" }}>So I built MOXIEMO. It asks the strategic questions, diagnoses where your brand stands, builds the plan and helps you do the work. Then I built MOXIE, a growth companion who knows your plan and makes sure it happens. You became a founder to build something that lasts. MOXIEMO is here to help you do that.</p>
               </div>
             </div>
           </div>

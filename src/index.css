@@ -577,6 +577,13 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 .pricing-section-inner { max-width: 1200px; margin: 0 auto; }
 .pricing-section-heading { font-family: 'Newsreader', Georgia, serif; font-size: 52px; font-weight: 600; line-height: 1.1; letter-spacing: 0; margin: 0 0 32px; }
 .pricing-section-body { max-width: 840px; font-size: 17px; line-height: 1.75; color: var(--pricing-copy); margin: 0; }
+.pricing-moxie-row { display: flex; align-items: center; gap: 40px; }
+.pricing-moxie-avatar { flex: none; }
+@media (max-width: 767px) {
+  .pricing-moxie-row { flex-direction: column; align-items: center; text-align: left; gap: 24px; }
+  .pricing-moxie-avatar { width: 140px !important; height: auto !important; }
+  .pricing-moxie-row > div { width: 100%; }
+}
 .pricing-table-scroll { max-width: 100%; overflow-x: auto; }
 .pricing-table-scroll:focus-visible { outline: 2px solid var(--pricing-ink); outline-offset: 4px; }
 .pricing-table { width: 100%; min-width: 680px; border-collapse: collapse; font-size: 15px; }
