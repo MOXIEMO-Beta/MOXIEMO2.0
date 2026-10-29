@@ -63,6 +63,29 @@ serve(async (req) => {
       });
     }
 
+    // Tagged sign-ups only: the button-test columns, never names or emails.
+    if (action === "cta_tagged") {
+      const columns = "created_at,cta_variant,source,role,brand_count,referral_source";
+      const rows: Record<string, unknown>[] = [];
+      const pageSize = 1000;
+      for (let from = 0; ; from += pageSize) {
+        const { data, error } = await supabase
+          .from("waitlist")
+          .select(columns)
+          .in("cta_variant", ["seat", "early"])
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const page = data || [];
+        rows.push(...page);
+        if (page.length < pageSize) break;
+      }
+      return new Response(JSON.stringify({ rows }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
     if (action === "update_status") {
       const { id, status } = body;
       if (!id || !status) {

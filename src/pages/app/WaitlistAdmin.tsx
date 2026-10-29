@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  ctaTaggedCsv, ctaTaggedCsvFilename, formatShare, summarizeCtaVariants,
+  type CtaTaggedRow,
+} from "@/lib/ctaResults";
 import { useAuth } from "@/hooks/useAuth";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +21,7 @@ import {
 import { toast } from "sonner";
 import {
   Download, Search, Inbox, ChevronDown, ChevronRight, Mail, CalendarDays,
-  Check, X, StickyNote, RotateCcw, Send, Loader2, ExternalLink, UserPlus,
+  Check, X, StickyNote, RotateCcw, Send, Loader2, ExternalLink, UserPlus, FlaskConical,
 } from "lucide-react";
 
 type WaitlistEntry = {
@@ -74,6 +78,7 @@ export default function WaitlistAdmin() {
 
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<WaitlistEntry[]>([]);
+  const [ctaRows, setCtaRows] = useState<CtaTaggedRow[]>([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<string>("all");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -136,6 +141,15 @@ export default function WaitlistAdmin() {
       toast.error("Failed to load waitlist");
       setEntries([]);
     }
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-waitlist", {
+        body: { action: "cta_tagged" },
+      });
+      if (error) throw error;
+      setCtaRows((data?.rows || []) as CtaTaggedRow[]);
+    } catch {
+      setCtaRows([]);
+    }
     setLoading(false);
   }
 
@@ -151,6 +165,8 @@ export default function WaitlistAdmin() {
     }
     return c;
   }, [entries]);
+
+  const ctaSummary = useMemo(() => summarizeCtaVariants(ctaRows), [ctaRows]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -264,6 +280,17 @@ export default function WaitlistAdmin() {
     URL.revokeObjectURL(url);
   }
 
+  function exportCtaCsv() {
+    const csv = ctaTaggedCsv(ctaRows);
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = ctaTaggedCsvFilename();
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (authChecking) {
     return (
       <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
@@ -272,6 +299,7 @@ export default function WaitlistAdmin() {
       </div>
     );
   }
+
   if (!isAdmin) return <Navigate to="/app" replace />;
 
   return (
@@ -346,6 +374,43 @@ export default function WaitlistAdmin() {
           </Card>
         ))}
       </div>
+
+      {/* Sign-up button test */}
+      <Card className="p-5 border-border mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4 text-accent" />
+            <h2 className="font-semibold">Sign-up button test</h2>
+          </div>
+          <Button
+            onClick={exportCtaCsv}
+            variant="outline"
+            size="sm"
+            className="rounded-full"
+            disabled={ctaSummary.tagged === 0}
+          >
+            <Download className="mr-2 h-4 w-4" /> Export CSV
+          </Button>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3 mt-4">
+          {ctaSummary.variants.map((v) => (
+            <Card key={v.key} className="p-4 border-border bg-muted/20">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                Version {v.letter} · cta_variant = {v.key}
+              </div>
+              <div className="font-semibold mt-0.5">{v.label}</div>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-2xl font-bold">{v.signups}</span>
+                <span className="text-sm text-muted-foreground">sign-ups</span>
+                <span className="ml-auto text-sm font-medium">{formatShare(v.share)}</span>
+              </div>
+            </Card>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-3">
+          Visitors are split 50/50, so the label with more sign-ups is winning. Clicks per label are in Clarity, under the cta_variant tag.
+        </p>
+      </Card>
 
       {/* Filters */}
       <Card className="p-4 border-border mb-4">

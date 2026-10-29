@@ -29,6 +29,13 @@
       "when": 1793244693946,
       "tag": "0003_waitlist_cta_variant",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793245143772,
+      "tag": "0004_add_waitlist_source",
+      "breakpoints": true
     }
   ]
 }
