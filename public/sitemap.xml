@@ -41,6 +41,11 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://buildwithmoxiemo.com/blog/my-website-could-not-explain-moxie</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://buildwithmoxiemo.com/blog/why-marketing-isnt-working</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
