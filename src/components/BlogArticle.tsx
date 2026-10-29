@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft } from "lucide-react";
 
 export interface BlogArticleProps {
-  heroImage: string;
+  heroImage?: string;
+  heroContent?: ReactNode;
   heroAlt?: string;
+  byline?: string;
+  closingCta?: ReactNode;
   category: string;
   readTime: string;
   date: string;
@@ -15,18 +18,18 @@ export interface BlogArticleProps {
   children: ReactNode;
 }
 
-export function BlogArticle({ heroImage, heroAlt, category, readTime, date, headline, children }: BlogArticleProps) {
+export function BlogArticle({ heroImage, heroContent, heroAlt, byline = "By Karee Laing", closingCta, category, readTime, date, headline, children }: BlogArticleProps) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SiteHeader />
 
       <div className="w-full pt-20">
-        <img
+        {heroContent ?? <img
           src={heroImage}
           alt={heroAlt ?? headline}
           className="w-full object-cover rounded-b-2xl"
           style={{ maxHeight: 480, aspectRatio: "16 / 9" }}
-        />
+        />}
       </div>
 
       <main className="max-w-[740px] mx-auto px-6 py-12 w-full">
@@ -47,7 +50,7 @@ export function BlogArticle({ heroImage, heroAlt, category, readTime, date, head
           <div className="h-10 w-10 rounded-full bg-accent text-white flex items-center justify-center font-bold">
             K
           </div>
-          <span className="text-muted-foreground text-[15px]">By Karee Laing</span>
+          <span className="text-muted-foreground text-[15px]">{byline}</span>
         </div>
 
         <article
@@ -56,6 +59,8 @@ export function BlogArticle({ heroImage, heroAlt, category, readTime, date, head
         >
           {children}
         </article>
+
+        {closingCta}
 
         {/* Author bio card */}
         <div className="mt-16 rounded-xl border border-border bg-card p-6 flex gap-4 items-start" style={{ borderLeft: "4px solid hsl(var(--accent))" }}>
@@ -71,11 +76,11 @@ export function BlogArticle({ heroImage, heroAlt, category, readTime, date, head
           </div>
         </div>
 
-        <div className="text-center mt-12">
+        {!closingCta && <div className="text-center mt-12">
           <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-white h-12 px-7 rounded-full font-semibold">
             <Link to="/auth?mode=signup">Try MOXIEMO free <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
-        </div>
+        </div>}
 
         <div className="text-center mt-8">
           <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">

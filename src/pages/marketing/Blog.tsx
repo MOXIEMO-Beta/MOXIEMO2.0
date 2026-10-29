@@ -18,8 +18,15 @@ import article8 from "@/assets/blog/article-8-ai-everywhere.jpg";
 import article9 from "@/assets/blog/article-9-real-founder.jpg";
 import article10 from "@/assets/blog/article-10-second-job.jpg";
 import article11Asset from "@/assets/blog/ai-marketing-stack.png.asset.json";
+import { MoxieBlogImage } from "@/components/MoxieBlogImage";
+import { MOXIE_POST_TITLE, MOXIE_POST_DESCRIPTION } from "@/pages/blog/MyWebsiteCouldNotExplainMoxie";
 
 const REAL_ARTICLES: Record<string, { image: string; href: string; date: string }> = {
+  [MOXIE_POST_TITLE]: {
+    image: "",
+    href: "/blog/my-website-could-not-explain-moxie",
+    date: "October 29, 2026",
+  },
   "The AI Marketing Stack Advice Nobody Gives Solo Founders": {
     image: article11Asset.url,
     href: "/blog/ai-marketing-stack-advice-solo-founders",
@@ -89,6 +96,7 @@ const CATEGORIES = [
 ];
 
 const ARTICLES = [
+  { category: "Founder Stories", title: MOXIE_POST_TITLE, excerpt: MOXIE_POST_DESCRIPTION, read: "4 min read" },
   { category: "Strategy", title: "The AI Marketing Stack Advice Nobody Gives Solo Founders", excerpt: "Every AI marketing guide says the same thing: build a lean stack of six to eight tools. Good advice, written for a team you do not have. Here is what the stack conversation misses for expertise-based founders.", read: "5 min read" },
   { category: "Strategy", title: "Why Your Marketing Feels Like a Second Job (And What to Do About It)", excerpt: "You built a real business. So why does your marketing still feel like survival? The problem is not discipline. It is structure.", read: "6 min read" },
   { category: "Founder Mindset", title: "What Happens When a Real Founder Sits Down with Your Product", excerpt: "She would still pay for it. The features worked. And she still said it felt like work. That sentence is the most valuable thing anyone has said to me about this product.", read: "6 min read" },
@@ -204,22 +212,22 @@ export default function Blog() {
 
       <main className="max-w-6xl mx-auto px-6 py-12 w-full">
         {/* Featured */}
-        <Link to="/blog/building-a-tech-platform-at-peak-of-ai" className="block rounded-2xl overflow-hidden bg-[#101116] text-white grid md:grid-cols-[55%_45%] hover:opacity-95 transition">
+        <Link to="/blog/my-website-could-not-explain-moxie" className="block rounded-2xl overflow-hidden bg-[#101116] text-white grid md:grid-cols-[55%_45%] hover:opacity-95 transition">
           <div className="p-8 md:p-12 flex flex-col justify-between gap-6">
             <div>
               <span className="text-accent text-xs font-bold uppercase tracking-[0.2em]">Featured</span>
               <h2 className="text-3xl md:text-4xl font-bold tracking-tight mt-3 mb-4 leading-tight">
-                Building a Tech Platform at the Peak of AI: What Nobody Prepared Me For
+                {MOXIE_POST_TITLE}
               </h2>
               <p className="text-white/70 text-base md:text-lg leading-relaxed">
-                The honest version of what it's like to build a software platform as a brand strategist with no engineering background — in the middle of the most significant technology shift in a generation.
+                {MOXIE_POST_DESCRIPTION}
               </p>
-              <p className="text-white/50 text-sm mt-5">Founder Stories · 8 min read</p>
+              <p className="text-white/50 text-sm mt-5">Founder Stories · October 29, 2026 · 4 min read</p>
             </div>
             <span className="text-accent text-sm font-medium">Read the story →</span>
           </div>
           <div className="relative min-h-[260px]">
-            <img src={article3} alt="Building a Tech Platform" className="absolute inset-0 w-full h-full object-cover" />
+            <MoxieBlogImage className="absolute inset-0 w-full h-full" />
           </div>
         </Link>
 
@@ -229,7 +237,9 @@ export default function Blog() {
             const real = REAL_ARTICLES[a.title];
             const inner = (
               <div className="rounded-xl border border-border overflow-hidden bg-card flex flex-col h-full hover:shadow-md transition">
-                {real ? (
+                {a.title === MOXIE_POST_TITLE ? (
+                  <MoxieBlogImage className="aspect-[16/10] w-full" />
+                ) : real ? (
                   <img src={real.image} alt={a.title} className="aspect-[16/10] w-full object-cover" />
                 ) : (
                   <PlaceholderImage className="aspect-[16/10] rounded-t-xl" />
