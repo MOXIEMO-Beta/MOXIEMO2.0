@@ -109,7 +109,7 @@ const convergences = [
   {
     "n": "03",
     "label": "Founders are stretched thin",
-    "b": "Most founders know more than they have time to act on. Follow-through is where plans stall, which is why MOXIE exists."
+    "b": "Most founders know more than they have time to act on. Follow-through is where plans stall, which is why MOXIE, your growth companion, exists."
   }
 ];
 
@@ -138,9 +138,9 @@ const differences = [
   {
     "n": "04",
     "side": "R",
-    "t": "Follow-through by text.",
+    "t": "Follow-through, built in.",
     "them": "wait for you to log in.",
-    "us": "MOXIE texts you when something needs you, at the pace you set."
+    "us": "MOXIE tells you what needs you, at the pace you set. Texting with him is coming in a future release."
   },
   {
     "n": "05",
@@ -373,7 +373,7 @@ export default function WhyMoxiemo() {
             {[
               { t: "You know what comes first", b: "A roadmap with your next best actions, in order." },
               { t: "Your work ties to a goal", b: "Every post, email and test connects to a milestone." },
-              { t: "Things stop stalling", b: "MOXIE texts you when a decision is waiting or a priority slips." },
+              { t: "Things stop stalling", b: "MOXIE flags it when a decision is waiting or a priority slips." },
               { t: "You see what moved", b: "Results from your connected data, read against your goals." },
             ].map((item, i) => (
               <div key={item.t} className={`rv d${i + 1}`} style={{ borderTop: `1.5px solid ${INK}`, paddingTop: 24 }}>
