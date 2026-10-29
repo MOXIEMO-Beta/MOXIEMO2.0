@@ -1,4 +1,4 @@
-import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
+import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { useEffect, type CSSProperties } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";

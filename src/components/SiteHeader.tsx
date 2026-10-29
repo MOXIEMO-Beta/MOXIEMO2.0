@@ -1,4 +1,4 @@
-import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
+import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";

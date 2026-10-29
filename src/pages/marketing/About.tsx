@@ -1,4 +1,4 @@
-import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
+import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";

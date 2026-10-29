@@ -1,4 +1,4 @@
-import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
+import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
