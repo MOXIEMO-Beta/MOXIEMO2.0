@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
+import { MoxieAvatar } from "@/components/MoxieAvatar";
 import { comparison, DEFAULT_BILLING, formatPrice, getPlanPrice, plans, pricingFaqs, pricingOffer, type Billing } from "./pricingData";
 
 const CREAM = "#f4efe5";
@@ -188,7 +189,7 @@ export default function Pricing() {
                 </div>
               );
             })}
-          </div>          <p style={{ fontSize: 14, lineHeight: 1.65, color: "#6c6a60", margin: "32px 0 0" }}>Paid media spend and third-party channel fees are billed separately by those providers. MOXIE texts are included on every plan. Message and data rates from your carrier may apply.</p>
+          </div>          <p style={{ fontSize: 14, lineHeight: 1.65, color: "#6c6a60", margin: "32px 0 0" }}>Paid media spend and third-party channel fees are billed separately by those providers. Texting with MOXIE will be included on every plan when it opens. Message and data rates from your carrier may apply.</p>
         </div>
       </section>
 
@@ -206,9 +207,14 @@ export default function Pricing() {
       </section>
       <section className="pricing-moxie">
         <div className="pricing-section-inner">
-          <Eyebrow>MOXIE</Eyebrow>
-          <h2 className="pricing-section-heading">MOXIE comes with every plan.</h2>
-          <p className="pricing-section-body">MOXIE is your text companion. It reminds you of what you planned, asks for approvals, flags stalled priorities and shares weekly wins. You choose how often it checks in, and you can pause or reply STOP anytime. MOXIE never texts your customers.</p>
+          <div className="pricing-moxie-row">
+            <MoxieAvatar pose="wave" size={180} decorative className="pricing-moxie-avatar" />
+            <div>
+              <Eyebrow>MOXIE</Eyebrow>
+              <h2 className="pricing-section-heading">MOXIE comes with every plan.</h2>
+              <p className="pricing-section-body">MOXIE is your growth companion. He reminds you of what you planned, asks for approvals, flags stalled priorities and shares weekly wins. Two-way texting with MOXIE is coming in a future release. When it opens, you choose how often he checks in, you can pause or reply STOP at any time, and he never texts your customers.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -229,7 +235,7 @@ export default function Pricing() {
                   "Positioning, messaging and content pillars",
                   "A roadmap with your next best actions",
                   "Content in your voice",
-                  "MOXIE text check-ins",
+                  "MOXIE check-ins (texting coming soon)",
                   "Unlimited strategy updates",
                   "Data export anytime",
                   "Direct support from the team",
