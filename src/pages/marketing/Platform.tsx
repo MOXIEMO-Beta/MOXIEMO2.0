@@ -323,12 +323,12 @@ const STEPS: Step[] = [
     checks: ["Measurable roadmap", "Milestones", "Next best actions", "Growth tests with clear success criteria"],
     active: "Marketing Planner", mock: <MockPlanner /> },
   { n: "04", label: "EXECUTE", time: "You approve", title: "Ready-to-approve work, in your voice.",
-    body: "Pick a pillar or a priority and MOXIEMO drafts the post, newsletter, article or script. You edit and approve. With your accounts connected, it publishes on the schedule you set, and MOXIE can text you when something is ready.",
+    body: "Pick a pillar or a priority and MOXIEMO drafts the post, newsletter, article or script. You edit and approve. With your accounts connected, it publishes on the schedule you set, and MOXIE lets you know when something is ready.",
     checks: ["LinkedIn posts", "Email newsletters", "Blog articles", "Video scripts"],
     active: "Content", mock: <MockContent /> },
   { n: "05", label: "MEASURE AND ADAPT", time: "Weekly review", title: "See what moved. Decide what is next.",
     body: "Results come from your connected data and are read against the goal you set. You see what worked, what to drop and what to try next.",
-    checks: ["Your success measure", "Results by channel and pillar", "Weekly summary, by text from MOXIE if you want it", "Recommendations for the next round"],
+    checks: ["Your success measure", "Results by channel and pillar", "Weekly summary from MOXIE", "Recommendations for the next round"],
     active: "Analytics", mock: <MockAnalytics /> },
 ];
 
@@ -530,7 +530,7 @@ export default function Platform() {
               {[
                 ["01", "Run discovery"],
                 ["02", "Review your diagnosis and strategy"],
-                ["03", "Connect your channels and set up MOXIE"],
+                ["03", "Connect your channels and choose how MOXIE checks in"],
                 ["04", "Approve your first actions"],
               ].map(([w, t]) => (
                 <div key={w} style={{ display: "flex", alignItems: "center", gap: 14, ...fontBody, fontSize: 16, color: C.ink }}>
