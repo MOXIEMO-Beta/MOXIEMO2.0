@@ -1,5 +1,5 @@
 import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
-import { useEffect } from "react";
+import { RouteMetadata } from "@/components/RouteMetadata";
 import { Link } from "react-router-dom";
 import { Check, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,26 +10,6 @@ import {
   Comparison,
   CellValue,
 } from "@/data/comparisons";
-
-function setMeta(attr: "name" | "property", key: string, content: string) {
-  let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
-  if (!el) {
-    el = document.createElement("meta");
-    el.setAttribute(attr, key);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("content", content);
-}
-
-function setLink(rel: string, href: string) {
-  let el = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
-  if (!el) {
-    el = document.createElement("link");
-    el.setAttribute("rel", rel);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("href", href);
-}
 
 function Cell({ value }: { value: CellValue }) {
   if (value === "yes") {
@@ -76,24 +56,6 @@ function SectionBlock({ heading, body }: { heading: string; body: string }) {
 export function ComparisonView({ comparison }: { comparison: Comparison }) {
   const canonicalPath = `/compare/${comparison.slug}`;
 
-  useEffect(() => {
-    const prev = document.title;
-    const title = "MOXIEMO | Built on strategy. Powered to execute.";
-    document.title = title;
-    const url = `https://buildwithmoxiemo.com${canonicalPath}`;
-    setMeta("name", "description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
-    setMeta("property", "og:title", title);
-    setMeta("property", "og:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
-    setMeta("name", "twitter:title", title);
-    setMeta("name", "twitter:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
-    setMeta("property", "og:url", url);
-    setMeta("property", "og:type", "article");
-    setLink("canonical", url);
-    return () => {
-      document.title = prev;
-    };
-  }, [comparison, canonicalPath]);
-
   // Group rows by group preserving order
   const groups: { group: string; rows: typeof ROWS }[] = [];
   for (const row of ROWS) {
@@ -104,6 +66,7 @@ export function ComparisonView({ comparison }: { comparison: Comparison }) {
 
   return (
     <article className="bg-background">
+      <RouteMetadata title={`${comparison.heroHeadline} | MOXIEMO`} description={comparison.heroSubhead} canonicalPath={canonicalPath} articleHeadline={comparison.heroHeadline} />
       {/* Hero */}
       <section className="border-b border-border">
         <div className="mx-auto max-w-5xl px-6 pb-20 pt-10 text-center md:pb-28 md:pt-14">

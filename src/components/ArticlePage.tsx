@@ -1,4 +1,5 @@
-import { useEffect, useState, useRef, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
+import { RouteMetadata } from "@/components/RouteMetadata";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -34,26 +35,6 @@ function pad(n: number) {
   return String(n + 1).padStart(2, "0");
 }
 
-function setMeta(attr: "name" | "property", key: string, content: string) {
-  let el = document.head.querySelector<HTMLMetaElement>(`meta[${attr}="${key}"]`);
-  if (!el) {
-    el = document.createElement("meta");
-    el.setAttribute(attr, key);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("content", content);
-}
-
-function setLink(rel: string, href: string) {
-  let el = document.head.querySelector<HTMLLinkElement>(`link[rel="${rel}"]`);
-  if (!el) {
-    el = document.createElement("link");
-    el.setAttribute("rel", rel);
-    document.head.appendChild(el);
-  }
-  el.setAttribute("href", href);
-}
-
 export function ArticlePage({
   eyebrow,
   title,
@@ -67,41 +48,6 @@ export function ArticlePage({
 }: ArticlePageProps) {
   const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? "");
   const [mobileOpen, setMobileOpen] = useState(false);
-  const previousTitle = useRef<string>("");
-
-  useEffect(() => {
-    previousTitle.current = document.title;
-    document.title = "MOXIEMO | Built on strategy. Powered to execute.";
-
-    const canonicalUrl = `https://buildwithmoxiemo.com${canonicalPath}`;
-    setMeta("name", "description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
-    setMeta("property", "og:title", "MOXIEMO | Built on strategy. Powered to execute.");
-    setMeta("property", "og:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
-    setMeta("property", "og:url", canonicalUrl);
-    setMeta("property", "og:type", "article");
-    setMeta("name", "twitter:title", "MOXIEMO | Built on strategy. Powered to execute.");
-    setMeta("name", "twitter:description", "MOXIEMO is a strategy-led AI marketing system. It finds what moves your brand forward and creates the work with your approval. MOXIE, your growth companion, makes sure it happens.");
-    setLink("canonical", canonicalUrl);
-
-    const ld = document.createElement("script");
-    ld.type = "application/ld+json";
-    ld.text = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Article",
-      headline: title,
-      description: metaDescription,
-      mainEntityOfPage: canonicalUrl,
-      author: { "@type": "Organization", name: "MOXIEMO" },
-      publisher: { "@type": "Organization", name: "MOXIEMO" },
-    });
-    ld.setAttribute("data-article-jsonld", canonicalPath);
-    document.head.appendChild(ld);
-
-    return () => {
-      document.title = previousTitle.current;
-      ld.remove();
-    };
-  }, [metaTitle, metaDescription, canonicalPath, title]);
 
   useEffect(() => {
     const headings = sections
@@ -139,6 +85,7 @@ export function ArticlePage({
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <RouteMetadata title={metaTitle} description={metaDescription} canonicalPath={canonicalPath} articleHeadline={title} />
       <SiteHeader />
 
       <main className="flex-1 w-full pt-28 pb-20">
