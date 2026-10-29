@@ -609,13 +609,24 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 .home-moxie h2 { font-family: 'Newsreader', Georgia, serif; font-size: 60px; font-weight: 600; line-height: 1.02; letter-spacing: 0; margin-top: 24px; }
 .home-moxie h2 em { color: var(--home-emphasis); font-weight: 340; }
 .home-moxie-body { font-size: 17px; line-height: 1.65; color: var(--home-copy); margin-top: 28px; }
+.home-moxie-release { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--home-border); border-radius: 999px; padding: 8px 14px; margin-top: 20px; font-size: 13px; line-height: 1.5; color: var(--home-copy); }
+.home-moxie-release > span { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--home-coral); }
+.home-moxie-preview { position: relative; max-width: 380px; margin: 0 auto; }
+.home-moxie-preview-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0; color: var(--home-copy); text-align: center; margin-bottom: 16px; }
+.home-moxie-character { position: absolute; bottom: 0; left: -180px; width: 220px; z-index: 1; pointer-events: none; animation: home-moxie-float 4.5s ease-in-out infinite; }
+@keyframes home-moxie-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) { .home-moxie-character { animation: none; } }
+@media (max-width: 767px) {
+  .home-moxie-character { position: static; width: 160px; margin: 0 auto 20px; }
+  .home-moxie-character > img { width: 160px !important; }
+}
 .home-moxie h3 { font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 600; letter-spacing: 0; margin: 32px 0 18px; }
 .home-moxie-paces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .home-moxie-paces > div { border: 1px solid var(--home-border); border-radius: 6px; padding: 16px 12px; }
 .home-moxie-paces h4 { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--home-coral); letter-spacing: 0; font-weight: 500; }
 .home-moxie-paces p { font-size: 14px; line-height: 1.5; margin-top: 8px; }
 .home-moxie-phone { max-width: 380px; margin: 0 auto; border: 6px solid var(--home-ink); border-radius: 28px; padding: 24px 18px; background: var(--home-soft); box-shadow: var(--home-phone-shadow); }
-.home-moxie-phone-header { text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px; border-bottom: 1px solid var(--home-border); padding: 4px 0 18px; margin-bottom: 20px; }
+.home-moxie-phone-header { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px; border-bottom: 1px solid var(--home-border); padding: 4px 0 18px; margin-bottom: 20px; }
 .home-moxie-message { max-width: 90%; background: var(--home-surface); border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 14px; line-height: 1.6; }
 .home-moxie-message span { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; margin-bottom: 6px; }
 .home-moxie-reply { width: fit-content; margin-left: auto; background: var(--home-ink); color: var(--home-surface); min-width: 90px; }
