@@ -33,7 +33,7 @@ export default function CaseForOptimism() {
       <P>What used to take a six-week brand strategy engagement to produce, a clear positioning, a defined ideal client, a content strategy tied to actual business goals, a functional website, an MVP that is shippable and investor-ready, can now be scaffolded in a fraction of the time. The idea that used to require a $20,000 minimum investment just to get off the ground can now be tested, built, and launched with a laptop, an internet connection, and 8 hours of real sweat equity.</P>
       <P>AI didn't make strategy or business less valuable. It made the access to building the foundation different. It lowered the floor on what it costs to find out if something works.</P>
       <P>And for the first time, that means a founder in her third year of business, the one who has been cobbling together a content strategy from podcasts and late-night rabbit holes and what worked for someone else, can actually start from a real strategic foundation. Not a template. Not a generic framework. A foundation tied to who she is, who she serves, and what she is building toward.</P>
-      <P>I'm building MOXIE because I watched this gap destroy potential for years. Founders with better ideas than their larger competitors, working twice as hard, getting half the results, not because they lacked the vision but because they lacked the infrastructure and the resources to execute it properly.</P>
+      <P>I'm building MOXIEMO because I watched this gap destroy potential for years. Founders with better ideas than their larger competitors, working twice as hard, getting half the results, not because they lacked the vision but because they lacked the infrastructure and the resources to execute it properly.</P>
       <P>That gap is closeable now. And that is genuinely new.</P>
 
       <H2>But optimism without honesty is just delusion</H2>
@@ -46,9 +46,9 @@ export default function CaseForOptimism() {
       <P>Strategy first. Then execution. Then scale.</P>
       <P>It sounds obvious. Almost every founder I know will nod when they hear it. And almost every founder I know has it backwards.</P>
 
-      <H2>Why I'm building MOXIE</H2>
+      <H2>Why I'm building MOXIEMO</H2>
       <P>I spent over a decade being the person founders hired to fix what broke when they skipped the foundation. The $15K brand audits that revealed three years of content built around the wrong message. The repositioning projects that were really just correction projects dressed up in strategy language.</P>
-      <P>I'm not building MOXIE to do that work at scale. I'm building it so founders don't need that kind of correction in the first place.</P>
+      <P>I'm not building MOXIEMO to do that work at scale. I'm building it so founders don't need that kind of correction in the first place.</P>
       <P>That's an optimistic bet. It assumes that if you give a capable founder the right starting point and the right infrastructure, she will build something extraordinary with it.</P>
       <P>I believe that. I'm staking this company on it.</P>
 
@@ -61,7 +61,7 @@ export default function CaseForOptimism() {
 
       <div className="border-t border-border mt-10 pt-6">
         <p className="italic text-muted-foreground" style={{ fontSize: 16, lineHeight: 1.8 }}>
-          Karee T. Laing is the founder of MOXIE, an AI-powered marketing platform built for expertise-based founders at $600K to $2M.
+          Karee T. Laing is the founder of MOXIEMO, the strategy-led marketing system for founders and growing businesses.
         </p>
       </div>
 

@@ -52,7 +52,7 @@ export default function Founding() {
 
   useEffect(() => {
     if (user) {
-      toast.message("You already have a MOXIE account.");
+      toast.message("You already have a MOXIEMO account.");
       navigate("/app");
     }
   }, [user, navigate]);
