@@ -8,3 +8,4 @@
 - Pass publicAssessment only from the public report route into the shared report renderer so public naming changes do not alter signed-in app screens.
 - Keep CTA assignment, labels and consent-gated experiment tracking in ctaVariant; validate nullable submitted versions server-side so legacy sign-up paths remain compatible.
 - Persist home first-100 brand counts through the existing waitlist handler with server validation; keep the column nullable for legacy and other forms so existing signup paths continue working.
+- Keep the admin sign-up button test's counts, shares and export column list in src/lib/ctaResults.ts, and read tagged rows only through the admin function so names and emails can never reach the export.

@@ -65,3 +65,8 @@
 - [x] Replace 14 approved lines so MOXIE is introduced as the growth companion and texting is marked as a future release.
 - [x] Float the decorative MOXIE icon at the start of the Solutions "What is MOXIE?" answer.
 - [x] Gate tests: no "MOXIE texts you" or "by text from MOXIE" on the three pages, exact copy, icon wrapping at 390px, no other text changed.
+
+# Admin sign-up button test
+- [x] Add admin-only card with per-version sign-up counts, shares and the Clarity note.
+- [x] Add tagged-row export limited to created_at, cta_variant, source, role, brand_count, referral_source.
+- [x] Verify counts against SQL, non-admin blocking of card and query, and CSV column list.
