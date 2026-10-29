@@ -248,7 +248,7 @@ export default function Founding() {
                 {[
                   "50% off Clarity, Momentum or Multiply, monthly or annual",
                   "Discovery and brand diagnosis on every plan",
-                  "MOXIE text check-ins included",
+                  "MOXIE, your growth companion, with texting when it opens",
                   "First access to new features as they ship",
                   "A direct line to the team during the beta",
                 ].map((perk) => (
