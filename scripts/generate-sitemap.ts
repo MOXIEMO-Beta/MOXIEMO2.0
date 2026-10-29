@@ -30,6 +30,7 @@ const entries: SitemapEntry[] = [
   { path: "/community", changefreq: "monthly", priority: "0.6" },
   { path: "/about", changefreq: "monthly", priority: "0.6" },
   { path: "/blog", changefreq: "weekly", priority: "0.7" },
+  { path: "/blog/my-website-could-not-explain-moxie", changefreq: "monthly", priority: "0.6" },
   { path: "/blog/why-marketing-isnt-working", changefreq: "monthly", priority: "0.6" },
   { path: "/blog/how-to-know-what-to-post", changefreq: "monthly", priority: "0.6" },
   { path: "/blog/building-a-tech-platform-at-peak-of-ai", changefreq: "monthly", priority: "0.6" },
