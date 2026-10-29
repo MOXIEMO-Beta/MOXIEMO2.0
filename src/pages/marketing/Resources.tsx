@@ -101,7 +101,7 @@ function Hero() {
             margin: "32px auto 14px",
           }}
         >
-          The exact prompts, frameworks, and toolkits to turn ideas into execution — with clarity, speed, and strategy.
+          The exact prompts, frameworks, and toolkits to turn ideas into execution, with clarity, speed, and strategy.
         </p>
         <div style={{ marginTop: 8, display: "flex", justifyContent: "center" }}>
           <Eyebrow color={SAGE_MUTED} squareSize={7} size={11.5} spacing="0.16em">
@@ -172,7 +172,7 @@ function EarlyAccess() {
           >
             <div>
               <Eyebrow color={CORAL} squareSize={7} size={11.5} spacing="0.2em" style={{ marginBottom: 22 }}>
-                Founding Members
+                New packs
               </Eyebrow>
               <h2
                 style={{
@@ -185,10 +185,10 @@ function EarlyAccess() {
                   margin: 0,
                 }}
               >
-                Get early access to
+                Get every new pack
                 <br />
                 <span style={{ fontWeight: 340, fontStyle: "italic", color: "#c8c6bc" }}>
-                  every new resource.
+                  when it drops.
                 </span>
               </h2>
               <p
@@ -201,12 +201,12 @@ function EarlyAccess() {
                   marginTop: 22,
                 }}
               >
-                We'll send you each prompt, framework, and toolkit the moment it drops — free for founding members.
+                We will email you each new prompt, framework and toolkit as soon as it is ready. Free, like everything here.
               </p>
             </div>
             <div>
               {submitted ? (
-                <p style={{ ...sans, color: CREAM, fontSize: 17, fontWeight: 500 }}>You're on the list.</p>
+                <p style={{ ...sans, color: CREAM, fontSize: 17, fontWeight: 500 }}>You are on the list.</p>
               ) : (
                 <form
                   onSubmit={onSubmit}
@@ -253,13 +253,13 @@ function EarlyAccess() {
                       transition: "background .2s",
                     }}
                   >
-                    Get early access →
+                    Send me new packs →
                   </button>
                 </form>
               )}
               <div style={{ marginTop: 16 }}>
                 <Eyebrow color="rgba(244,239,229,0.4)" squareSize={6} size={11} spacing="0.14em">
-                  Free for founding members · No spam
+                  Free · No spam
                 </Eyebrow>
               </div>
             </div>
@@ -423,7 +423,7 @@ const DROPS: DropCard[] = [
   {
     category: "GUIDE",
     title: "The Founder's LinkedIn Playbook",
-    body: "Data-backed posting strategy for expertise-based founders: hooks, cadence, and content that converts.",
+    body: "Data-backed posting strategy for founders and growing businesses: hooks, cadence, and content that converts.",
     image: collage2.url,
     objectPosition: "center 12%",
     viz: <Viz2 />,
@@ -491,7 +491,7 @@ function DroppingSoon() {
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 14, maxWidth: 360 }}>
             <p style={{ ...sans, fontSize: 16, color: MUTED, textAlign: "right", margin: 0, lineHeight: 1.55 }}>
-              Bigger, deeper builds we're finishing now. Founding members get them first.
+              Bigger, deeper builds we are finishing now. Sign up above to hear when each one is ready.
             </p>
             <div style={{ display: "flex", gap: 10 }}>
               <button
@@ -652,20 +652,20 @@ type LibCard = { category: LibCat; title: string; description: string; cta: stri
 
 const LIB: LibCard[] = [
   { category: "Framework", title: "Website Copy Framework", description: "The structure behind high-converting websites. The exact prompts and frameworks used to build CRO-optimized headlines, CTA formulas, and audience-specific copy templates.", cta: "Download the framework", link: "https://docs.google.com/document/d/1YYpJRhy2Hou4BSmwA1HzzA7OcnTaFJuo/" },
-  { category: "Framework", title: "Pitch Deck Framework", description: "Build decks investors can't ignore. Deep research prompts, structure templates, and storytelling cues designed to win attention and funding.", cta: "Access the framework", link: "https://docs.google.com/document/d/1sTyGI--JHZFEQEMVj63FrrMRjjC0a4Dr/" },
+  { category: "Framework", title: "Pitch Deck Framework", description: "Build decks investors cannot ignore. Deep research prompts, structure templates, and storytelling cues designed to win attention and funding.", cta: "Access the framework", link: "https://docs.google.com/document/d/1sTyGI--JHZFEQEMVj63FrrMRjjC0a4Dr/" },
   { category: "Prompt", title: "ChatGPT Founder Brain Prompt", description: "Train ChatGPT to think like you. Turn your AI into a second brain that remembers context, challenges your thinking, and co-creates with your style.", cta: "Activate the prompt", link: "https://docs.google.com/document/d/1sM_9i0uVd6HTKmbp8XmkM2sFO6odnt8M/" },
-  { category: "Prompt", title: "Market Size Prompt", description: "Validate your market with precision. A guided prompt for calculating TAM, SAM, and SOM — ideal for investor decks, pitch prep, or sizing your growth ceiling.", cta: "Run the prompt", link: "https://docs.google.com/document/d/1v26SLGIl7wpyWCHTEMOiJrdxcrhtheXq/" },
+  { category: "Prompt", title: "Market Size Prompt", description: "Validate your market with precision. A guided prompt for calculating TAM, SAM, and SOM. Ideal for investor decks, pitch prep, or sizing your growth ceiling.", cta: "Run the prompt", link: "https://docs.google.com/document/d/1v26SLGIl7wpyWCHTEMOiJrdxcrhtheXq/" },
   { category: "Prompt", title: "Competitor Prompt", description: "Know your landscape before you build. A single, powerful prompt that reveals competitor insights, positioning angles, and market opportunities.", cta: "Download the prompt", link: "https://docs.google.com/document/d/1pysYBdURqICRE-GaxZH-59UkHxlB2S8h/" },
-  { category: "Guide", title: "How to Create a Brand with AI", description: "From concept to creation — all inside AI. A full step-by-step system for building brands, including prompts, tools, and real examples.", cta: "Unlock the guide", link: "https://docs.google.com/document/d/1RIMDlqXAFp28ZrWj_riUNlEJsgMeaETr/" },
-  { category: "Toolkit", title: "Marketing Checklist", description: "Your AI-assisted marketing playbook. A complete list of how to market your brand — with prompts, strategies, and AI shortcuts for faster execution.", cta: "Get the checklist", link: "https://docs.google.com/document/d/1sG_Nc9yKpZ76BYmh_cuzQMBUzO8F-Xwq/" },
-  { category: "Toolkit", title: "Content Custom GPTs", description: "Generate ideas that go viral — on purpose. Two custom GPTs: one for crafting viral hooks, another for refining storytelling scripts built to convert.", cta: "Try the GPTs", link: "https://docs.google.com/document/d/1MTkygCM2DE7knXu2BsVRUHb_Nax69TQN/" },
-  { category: "Checklist", title: "Business Stage Checklist with AI Tools", description: "Every stage. Every advantage. This checklist maps each phase of building a business — and the AI tools that give you leverage at each step.", cta: "Access the checklist", link: "https://docs.google.com/document/d/1R41X9bXTcCVUg4y94iLpOTbadRzoC1fq/" },
-  { category: "Guide", title: "AI Tools Guide", description: "The exact AI stack behind modern creative teams. Explore the tools actually used — from research and branding to mockups and MVPs.", cta: "Explore the guide", link: "https://docs.google.com/document/d/1LFoxWFYIBPrgMlVZQaXgcNKqWAkPGzbA/" },
-  { category: "Framework", title: "Deep Research Framework", description: "Research like a strategist, not a student. Prompt AI for true insight — validating demand, analyzing competitors, and surfacing pricing models.", cta: "Get the framework", link: "https://docs.google.com/document/d/121TF2julvfRkKT8HX8xbLEDSDPbz0NbF/" },
-  { category: "Framework", title: "How to Find a Business Idea with AI", description: "AI won't hand you a million-dollar idea — but it can help you discover one. Identify market gaps, validate ideas, and uncover opportunities worth building.", cta: "Get the framework", link: "https://docs.google.com/document/d/1Q-lB4UvQsX0Y_6lEftZ8GNOjCa7EXmeD/" },
-  { category: "Toolkit", title: "Branding Prompts", description: "Turn AI into your brand architect. The exact prompts used to build brand identity — from tone and color to logos, visual direction, and messaging.", cta: "Access the toolkit", link: "https://docs.google.com/document/d/1uQRGPQ0UAGdBb6dAG4JvCiKEXoFpfYlw/" },
+  { category: "Guide", title: "How to Create a Brand with AI", description: "From concept to creation, all inside AI. A full step-by-step system for building brands, including prompts, tools, and real examples.", cta: "Unlock the guide", link: "https://docs.google.com/document/d/1RIMDlqXAFp28ZrWj_riUNlEJsgMeaETr/" },
+  { category: "Toolkit", title: "Marketing Checklist", description: "Your AI-assisted marketing playbook. A complete list of how to market your brand, with prompts, strategies, and AI shortcuts for faster execution.", cta: "Get the checklist", link: "https://docs.google.com/document/d/1sG_Nc9yKpZ76BYmh_cuzQMBUzO8F-Xwq/" },
+  { category: "Toolkit", title: "Content Custom GPTs", description: "Generate ideas that go viral, on purpose. Two custom GPTs: one for crafting viral hooks, another for refining storytelling scripts built to convert.", cta: "Try the GPTs", link: "https://docs.google.com/document/d/1MTkygCM2DE7knXu2BsVRUHb_Nax69TQN/" },
+  { category: "Checklist", title: "Business Stage Checklist with AI Tools", description: "Every stage. Every advantage. This checklist maps each phase of building a business, and the AI tools that give you leverage at each step.", cta: "Access the checklist", link: "https://docs.google.com/document/d/1R41X9bXTcCVUg4y94iLpOTbadRzoC1fq/" },
+  { category: "Guide", title: "AI Tools Guide", description: "The exact AI stack behind modern creative teams. Explore the tools actually used, from research and branding to mockups and MVPs.", cta: "Explore the guide", link: "https://docs.google.com/document/d/1LFoxWFYIBPrgMlVZQaXgcNKqWAkPGzbA/" },
+  { category: "Framework", title: "Deep Research Framework", description: "Research like a strategist, not a student. Prompt AI for true insight: validating demand, analyzing competitors, and surfacing pricing models.", cta: "Get the framework", link: "https://docs.google.com/document/d/121TF2julvfRkKT8HX8xbLEDSDPbz0NbF/" },
+  { category: "Framework", title: "How to Find a Business Idea with AI", description: "AI will not hand you a million-dollar idea, but it can help you discover one. Identify market gaps, validate ideas, and uncover opportunities worth building.", cta: "Get the framework", link: "https://docs.google.com/document/d/1Q-lB4UvQsX0Y_6lEftZ8GNOjCa7EXmeD/" },
+  { category: "Toolkit", title: "Branding Prompts", description: "Turn AI into your brand architect. The exact prompts used to build brand identity, from tone and color to logos, visual direction, and messaging.", cta: "Access the toolkit", link: "https://docs.google.com/document/d/1uQRGPQ0UAGdBb6dAG4JvCiKEXoFpfYlw/" },
   { category: "Guide", title: "High-Performance ChatGPT Setup", description: "Build your AI to think like a founder. A step-by-step guide to configure ChatGPT as your strategist, co-founder, and creative coach.", cta: "Download the guide", link: "https://docs.google.com/document/d/1WBtfWMB5eAeA83URVdmJ9AoY0ELuL5SW/" },
-  { category: "Prompt", title: "AI Thought Partner Prompts", description: "Stop outsourcing your ideas — sharpen them. These prompts transform AI from a yes-machine into your boldest creative challenger.", cta: "Unlock the prompts", link: "https://docs.google.com/document/d/1NYu8nCgjf0lB9XbOUBK9jn51OvpiwRz6/" },
+  { category: "Prompt", title: "AI Thought Partner Prompts", description: "Stop outsourcing your ideas. Sharpen them. These prompts transform AI from a yes-machine into your boldest creative challenger.", cta: "Unlock the prompts", link: "https://docs.google.com/document/d/1NYu8nCgjf0lB9XbOUBK9jn51OvpiwRz6/" },
 ];
 
 const FILTERS: Array<"All" | LibCat> = ["All", "Prompt", "Framework", "Guide", "Toolkit", "Checklist"];
