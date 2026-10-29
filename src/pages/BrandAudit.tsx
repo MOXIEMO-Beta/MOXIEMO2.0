@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { MoxieAvatar } from "@/components/MoxieAvatar";
 
 const GOALS = [
   { value: "more_leads", label: "More qualified leads" },
@@ -183,7 +184,27 @@ export default function BrandAudit() {
 
       {step === 1 ? (
         <section className="flex-1 px-4 py-16 md:py-24">
-          <div className="max-w-3xl mx-auto text-center">
+          <style>{`
+            .ba-moxie-layout { display: flex; align-items: center; gap: 48px; max-width: 1120px; margin: 0 auto; }
+            .ba-moxie-content { flex: 1; min-width: 0; }
+            .ba-moxie-figure { flex: none; opacity: 0; transform: translateY(12px); animation: ba-moxie-in 600ms ease-out forwards; }
+            @keyframes ba-moxie-in { to { opacity: 1; transform: translateY(0); } }
+            .ba-moxie-float { position: relative; display: flex; flex-direction: column; align-items: center; animation: ba-moxie-float 4.5s ease-in-out 700ms infinite; }
+            @keyframes ba-moxie-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+            .ba-moxie-bubble { position: absolute; right: 58%; bottom: 64%; }
+            @media (prefers-reduced-motion: reduce) {
+              .ba-moxie-figure { animation: none; opacity: 1; transform: none; }
+              .ba-moxie-float { animation: none; }
+            }
+            @media (max-width: 767px) {
+              .ba-moxie-layout { flex-direction: column; gap: 36px; }
+              .ba-moxie-figure { order: -1; align-self: center; }
+              .ba-moxie-float img { width: 180px !important; }
+              .ba-moxie-bubble { position: static; margin-top: 16px; }
+            }
+          `}</style>
+          <div className="ba-moxie-layout">
+          <div className="ba-moxie-content max-w-3xl text-center">
             <div className="text-xs font-semibold uppercase tracking-[0.22em] text-[#FF6B5C] mb-5">
               Your free brand audit
             </div>
@@ -226,6 +247,24 @@ export default function BrandAudit() {
             <p className="text-sm text-[#7a7e8c] mt-4">
               Free. No credit card. No login.
             </p>
+          </div>
+          <div className="ba-moxie-figure">
+            <div className="ba-moxie-float">
+              <MoxieAvatar pose="magnify" size={260} />
+              <div
+                className="ba-moxie-bubble"
+                style={{
+                  background: "#F4EFE5", color: "#13130F", fontSize: 15, lineHeight: 1.45,
+                  padding: "12px 16px", maxWidth: 260, textAlign: "left",
+                  borderRadius: 16, borderBottomRightRadius: 4,
+                  boxShadow: "0 12px 30px -12px rgba(19,19,15,0.35)",
+                }}
+              >
+                <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "#8a877a", marginBottom: 6 }}>MOXIE</div>
+                Share your website and I will show you where your next growth opportunity might be hiding. It is free.
+              </div>
+            </div>
+          </div>
           </div>
         </section>
       ) : (
