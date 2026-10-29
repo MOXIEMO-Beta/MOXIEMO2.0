@@ -290,6 +290,8 @@ export default function WaitlistAdmin() {
     a.click();
     URL.revokeObjectURL(url);
   }
+
+  if (authChecking) {
     return (
       <div className="px-6 lg:px-10 py-8 max-w-6xl mx-auto">
         <div className="animate-pulse h-8 w-48 bg-muted rounded mb-6" />
@@ -297,6 +299,7 @@ export default function WaitlistAdmin() {
       </div>
     );
   }
+
   if (!isAdmin) return <Navigate to="/app" replace />;
 
   return (
