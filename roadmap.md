@@ -1,5 +1,5 @@
 # Site-wide copy fixes
-- [ ] Add the exact MOXIE founder story, featured blog entry, route metadata and sitemap URL; verify all seven gates without unrelated changes.
+- [x] Add the exact MOXIE founder story, featured blog entry, route metadata and sitemap URL; verify all seven gates without unrelated changes.
 - [x] Set scoped metadata for Compare, Brand Architecture Method and Resources; verify restoration after navigation.
 - [x] Repair sitemap blog entries and redirect exclusion; verify all five requested gates.
 - [x] Add persistent two-label sign-up experiment and consent-gated Clarity tags/clicks.
