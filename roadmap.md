@@ -53,6 +53,6 @@
 - [x] Gate tests: hero line exact, caption gone, icon/bubble placement at 1440 and 390, reduced motion, buttons/watch badge/50% line unmoved.
 
 # Meet MOXIE future texting preview
-- [ ] Update section 03 copy, release pill and phone character/header/preview label; preserve pace cards and sample messages.
-- [ ] Replace the single First 100 benefit on Home and /founding.
-- [ ] Verify exact copy, desktop/mobile placement, reduced motion and unchanged surrounding sections.
+- [x] Update section 03 copy, release pill and phone character/header/preview label; preserve pace cards and sample messages.
+- [x] Replace the single First 100 benefit on Home and /founding.
+- [x] Verify exact copy, desktop/mobile placement, reduced motion and unchanged surrounding sections.
