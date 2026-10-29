@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
 import { Button } from "@/components/ui/button";
+import { MoxieAvatar } from "@/components/MoxieAvatar";
 import { openCookieSettings } from "@/lib/cookieConsent";
 
 const C = {
@@ -114,8 +115,13 @@ export function SiteFooter() {
             <div style={{ ...fontItalic, fontStyle: "italic", fontSize: "clamp(22px, 2.8vw, 36px)", color: C.tagline, maxWidth: 560, lineHeight: 1.15 }}>
               Built on strategy. Powered to execute.
             </div>
-            <div style={{ ...fontBody, fontSize: 16, color: C.muted, maxWidth: 460, marginTop: 14, lineHeight: 1.55 }}>
-              The strategy-led marketing system for founders and growing businesses. MOXIEMO finds what moves your brand forward. MOXIE makes sure it happens.
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, maxWidth: 460, marginTop: 14 }}>
+              <span style={{ flex: "none", marginTop: 1 }}>
+                <MoxieAvatar pose="icon" size={28} decorative />
+              </span>
+              <div style={{ ...fontBody, fontSize: 16, color: C.muted, lineHeight: 1.55 }}>
+                The strategy-led marketing system for founders and growing businesses. MOXIEMO finds what moves your brand forward. MOXIE, your growth companion, makes sure it happens.
+              </div>
             </div>
           </div>
           <Link

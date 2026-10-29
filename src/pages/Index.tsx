@@ -140,7 +140,7 @@ function Hero() {
 
 /* ───────────── marquee ───────────── */
 function Marquee() {
-  const items = ["STRATEGY FIRST", "DISCOVER", "DIAGNOSE", "DEFINE", "PRIORITIZE", "EXECUTE", "MEASURE", "MOXIE KEEPS IT MOVING", "50% OFF FOR THE FIRST 100"];
+  const items = ["STRATEGY FIRST", "DISCOVER", "DIAGNOSE", "DEFINE", "PRIORITIZE", "EXECUTE", "MEASURE", "MOXIE, YOUR GROWTH COMPANION, KEEPS IT MOVING", "50% OFF FOR THE FIRST 100"];
   const Row = () => (
     <div className="flex items-center shrink-0" style={{ gap: 36, paddingRight: 36 }}>
       {items.map((t, i) => (
