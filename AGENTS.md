@@ -6,4 +6,5 @@
 - Reload after analytics withdrawal to stop already-loaded Clarity code, because removing its script element alone cannot unload running third-party code.
 - Keep public pricing data and offer rules in the pricing data module, shared by the pricing cards and comparison table and covered by concrete rate tests, to prevent inconsistent plan displays.
 - Pass publicAssessment only from the public report route into the shared report renderer so public naming changes do not alter signed-in app screens.
+- Keep CTA assignment, labels and consent-gated experiment tracking in ctaVariant; validate nullable submitted versions server-side so legacy sign-up paths remain compatible.
 - Persist home first-100 brand counts through the existing waitlist handler with server validation; keep the column nullable for legacy and other forms so existing signup paths continue working.

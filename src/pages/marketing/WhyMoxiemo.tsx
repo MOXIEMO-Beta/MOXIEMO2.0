@@ -1,3 +1,4 @@
+import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { useEffect, type CSSProperties } from "react";
 import { Helmet } from "react-helmet-async";
 import { Link } from "react-router-dom";
@@ -537,8 +538,8 @@ export default function WhyMoxiemo() {
             <Link to="/brand-audit" style={{ background: INK, color: "#f7f3ea", fontWeight: 700, fontSize: 15.5, padding: "18px 32px", borderRadius: 999, textDecoration: "none", display: "inline-block" }}>
               Get my free growth assessment →
             </Link>
-            <Link to="/founding" style={{ background: "transparent", color: INK, border: "1.5px solid rgba(19,19,15,0.25)", fontWeight: 600, fontSize: 15.5, padding: "17px 32px", borderRadius: 999, textDecoration: "none", display: "inline-block" }}>
-              Claim a first-100 spot
+            <Link to="/founding" onClick={trackCtaClick} style={{ whiteSpace: "nowrap", background: "transparent", color: INK, border: "1.5px solid rgba(19,19,15,0.25)", fontWeight: 600, fontSize: 15.5, padding: "17px 32px", borderRadius: 999, textDecoration: "none", display: "inline-block" }}>
+              {getCtaLabel()}
             </Link>
           </div>
           <div className="rv d2" style={{ display: "flex", gap: 10, alignItems: "center", ...mono, fontSize: 11.5, letterSpacing: "0.16em", textTransform: "uppercase", color: SAGE_MUTED }}>

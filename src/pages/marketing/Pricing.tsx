@@ -1,3 +1,4 @@
+import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -94,7 +95,7 @@ export default function Pricing() {
           </h1>
           <p style={{ fontSize: 19, lineHeight: 1.65, color: "#56544c", maxWidth: 600, margin: "0 auto 48px" }}>Every plan starts with discovery and a diagnosis of where your brand stands today. Choose by how many brands you run and how much execution you need.</p>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 60 }}>
-            <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/founding" className="mo-coral-btn" style={{ display: "inline-flex", alignItems: "center", gap: 10, background: CORAL, color: "#fff", fontWeight: 700, fontSize: 16, padding: "16px 32px", borderRadius: 999, textDecoration: "none" }}>Claim a first-100 spot <Arrow /></a></Button>
+            <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/founding" onClick={trackCtaClick} className="mo-coral-btn whitespace-nowrap" style={{ display: "inline-flex", alignItems: "center", gap: 10, background: CORAL, color: "#fff", fontWeight: 700, fontSize: 16, padding: "16px 32px", borderRadius: 999, textDecoration: "none" }}>{getCtaLabel()} <Arrow /></a></Button>
             <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/brand-audit" className="mo-outline-btn" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "transparent", color: INK, fontWeight: 500, fontSize: 15, padding: "15px 24px", border: "1.5px solid rgba(19,19,15,0.22)", borderRadius: 999, textDecoration: "none" }}>
               Get my free growth assessment <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 9l5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </a></Button>
@@ -128,7 +129,7 @@ export default function Pricing() {
           <h2 style={{ ...serif, fontWeight: 600, fontSize: "clamp(40px,5.5vw,72px)", lineHeight: 1.04, letterSpacing: "-0.025em", margin: "0 0 30px", color: CREAM }}>50% off for life for our founding members.</h2>
           <p style={{ fontSize: 17, lineHeight: 1.75, color: "#8a877a", margin: "0 0 44px" }}>The MOXIEMO 2.0 beta is open now. Our first {pricingOffer.firstCustomerLimit} customers become founding members and get 50% off any plan, monthly or annual, for life, as long as they keep their founding membership. Once the {pricingOffer.firstCustomerLimit} seats are filled, new customers pay standard pricing.</p>
           <p style={{ fontSize: 17, lineHeight: 1.75, color: "#8a877a", margin: "0 0 44px" }}>If you cancel, the founding rate ends with your membership.</p>
-          <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/founding" className="mo-coral-btn" style={{ display: "inline-flex", alignItems: "center", gap: 12, background: CORAL, color: "#fff", fontWeight: 700, fontSize: 17, padding: "18px 40px", borderRadius: 999, textDecoration: "none" }}>Claim a first-100 spot <Arrow size={18} /></a></Button>
+          <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/founding" onClick={trackCtaClick} className="mo-coral-btn whitespace-nowrap" style={{ display: "inline-flex", alignItems: "center", gap: 12, background: CORAL, color: "#fff", fontWeight: 700, fontSize: 17, padding: "18px 40px", borderRadius: 999, textDecoration: "none" }}>{getCtaLabel()} <Arrow size={18} /></a></Button>
         </div>
       </section>
 
@@ -319,7 +320,7 @@ export default function Pricing() {
       <section style={{ background: CREAM, borderTop: "1px solid rgba(19,19,15,0.08)", padding: "80px 40px", textAlign: "center" }}>
         <h2 style={{ ...serif, fontWeight: 400, fontSize: "clamp(28px,3.5vw,46px)", lineHeight: 1.2, letterSpacing: "-0.015em", margin: "0 0 14px", color: INK, fontStyle: "italic" }}>Still have questions?<br />We answer personally.</h2>
         <p style={{ fontSize: 16, color: "#6c6a60", margin: "0 0 36px" }}>Email us at <a href="mailto:hello@buildwithmoxiemo.com" style={{ color: CORAL, textDecoration: "none", fontWeight: 600 }}>hello@buildwithmoxiemo.com</a></p>
-        <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/founding" className="mo-dark-btn" style={{ display: "inline-flex", alignItems: "center", gap: 10, background: INK, color: CREAM, fontWeight: 600, fontSize: 15, padding: "15px 30px", borderRadius: 999, textDecoration: "none" }}>Claim a first-100 spot <Arrow size={15} color={CREAM} /></a></Button>
+        <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href="/founding" onClick={trackCtaClick} className="mo-dark-btn whitespace-nowrap" style={{ display: "inline-flex", alignItems: "center", gap: 10, background: INK, color: CREAM, fontWeight: 600, fontSize: 15, padding: "15px 30px", borderRadius: 999, textDecoration: "none" }}>{getCtaLabel()} <Arrow size={15} color={CREAM} /></a></Button>
       </section>
 
       <SiteFooter />
@@ -375,7 +376,7 @@ function Tier({
           <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href={ctaHref || "/founding"} className="mo-foundation-cta" style={{ display: "block", textAlign: "center", background: CREAM, color: INK, fontWeight: 600, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none", border: `1.5px solid ${INK}` }}>{ctaLabel}</a></Button>
         )}
         {ctaVariant === "coral" && (
-          <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href={ctaHref || "/founding"} className="mo-coral-btn" style={{ display: "block", textAlign: "center", background: CORAL, color: "#fff", fontWeight: 700, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none" }}>{ctaLabel}</a></Button>
+          <Button asChild variant="ghost" className="h-auto whitespace-normal"><a href={ctaHref || "/founding"} className="mo-coral-btn whitespace-nowrap" style={{ display: "block", textAlign: "center", background: CORAL, color: "#fff", fontWeight: 700, fontSize: 14, padding: "13px 18px", borderRadius: 8, textDecoration: "none" }}>{ctaLabel}</a></Button>
         )}
 
       </div>

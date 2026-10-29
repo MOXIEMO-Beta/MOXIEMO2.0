@@ -1729,6 +1729,7 @@ export type Database = {
           brand_count: string | null
           company_name: string | null
           created_at: string | null
+          cta_variant: string | null
           email: string
           id: string
           name: string
@@ -1749,6 +1750,7 @@ export type Database = {
           brand_count?: string | null
           company_name?: string | null
           created_at?: string | null
+          cta_variant?: string | null
           email: string
           id?: string
           name: string
@@ -1769,6 +1771,7 @@ export type Database = {
           brand_count?: string | null
           company_name?: string | null
           created_at?: string | null
+          cta_variant?: string | null
           email?: string
           id?: string
           name?: string

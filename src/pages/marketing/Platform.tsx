@@ -1,3 +1,4 @@
+import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -568,7 +569,7 @@ export default function Platform() {
             <Link to="/brand-audit" style={{ ...fontBody, background: C.ink, color: "#fff", fontWeight: 600, fontSize: 15.5, padding: "16px 28px", borderRadius: 999, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10 }}>
               Get my free growth assessment <span style={{ color: C.coral }}>→</span>
             </Link>
-            <Link to="/founding" style={{ ...fontBody, color: C.ink, fontWeight: 600, padding: "14.5px 28px", borderRadius: 999, border: `1.5px solid ${C.ink}`, textDecoration: "none" }}>Claim a first-100 spot</Link>
+            <Link to="/founding" onClick={trackCtaClick} style={{ whiteSpace: "nowrap", ...fontBody, color: C.ink, fontWeight: 600, padding: "14.5px 28px", borderRadius: 999, border: `1.5px solid ${C.ink}`, textDecoration: "none" }}>{getCtaLabel()}</Link>
             <span style={{ ...fontMono, fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.16em", color: "#5f6a52", display: "inline-flex", alignItems: "center", gap: 10 }}>
               <span style={{ width: 8, height: 8, background: C.coral, display: "inline-block" }} />
               50% OFF FOR LIFE FOR OUR 100 FOUNDING MEMBERS

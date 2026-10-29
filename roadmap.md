@@ -1,4 +1,6 @@
 # Site-wide copy fixes
+- [x] Add persistent two-label sign-up experiment and consent-gated Clarity tags/clicks.
+- [x] Save validated nullable CTA variant from both forms; verify persistence, overrides, consent and header fit.
 - [x] Update public free-tool and lifetime founding offer naming only; preserve sign-up labels and signed-in app.
 - [x] Verify exact copy, unchanged prices/seat limit, assessment completion and existing report access.
 - [x] Remove specified security claims and results statistics.

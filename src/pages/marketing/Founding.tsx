@@ -1,3 +1,4 @@
+import { getCtaLabel, getCtaVariant, trackCtaClick } from "@/lib/ctaVariant";
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -5,6 +6,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 
 const fontsHref =
@@ -77,6 +79,7 @@ export default function Founding() {
           brand_count: brandCount,
           plan_interest: planInterest,
           source: "founding_first100",
+          cta_variant: getCtaVariant(),
         },
       });
       let bodyError: string | undefined = (data as any)?.error;
@@ -384,10 +387,12 @@ export default function Founding() {
                     </select>
                   </div>
 
-                  <button
+                  <Button
+                    variant="ghost"
                     type="submit"
                     disabled={submitting}
-                    className="fm-cta"
+                    className="fm-cta whitespace-nowrap"
+                    onClick={trackCtaClick}
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -408,13 +413,13 @@ export default function Founding() {
                       transition: "background .15s",
                     }}
                   >
-                    {submitting ? "Claiming..." : "Claim my spot"}
+                    {submitting ? "Claiming..." : getCtaLabel()}
                     {!submitting && (
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                         <path d="M3 8h10M8 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
-                  </button>
+                  </Button>
 
                   <div
                     style={{

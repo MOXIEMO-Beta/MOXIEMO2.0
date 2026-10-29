@@ -1,3 +1,4 @@
+import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
 import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
@@ -35,7 +36,7 @@ export function SiteHeader(_props: SiteHeaderProps = {}) {
     fontSize: 12,
     letterSpacing: "0.14em",
     textTransform: "uppercase",
-    padding: "10px 22px",
+    padding: "10px 6px",
     borderRadius: 999,
     background: INK,
     color: CREAM,
@@ -95,7 +96,7 @@ export function SiteHeader(_props: SiteHeaderProps = {}) {
           >
             Sign in
           </Link>
-          <Link to="/founding" style={pill}>Claim a spot</Link>
+          <Link to="/founding" onClick={trackCtaClick} style={pill}>{getCtaLabel()}</Link>
         </div>
       </div>
     </nav>
