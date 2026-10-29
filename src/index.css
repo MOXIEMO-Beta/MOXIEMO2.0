@@ -581,7 +581,7 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 .pricing-moxie-avatar { flex: none; }
 @media (max-width: 767px) {
   .pricing-moxie-row { flex-direction: column; align-items: center; text-align: left; gap: 24px; }
-  .pricing-moxie-avatar { width: 140px; height: auto; }
+  .pricing-moxie-avatar { width: 140px !important; height: auto !important; }
   .pricing-moxie-row > div { width: 100%; }
 }
 .pricing-table-scroll { max-width: 100%; overflow-x: auto; }
