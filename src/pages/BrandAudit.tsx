@@ -248,6 +248,24 @@ export default function BrandAudit() {
               Free. No credit card. No login.
             </p>
           </div>
+          <div className="ba-moxie-figure">
+            <div className="ba-moxie-float">
+              <MoxieAvatar pose="magnify" size={260} />
+              <div
+                className="ba-moxie-bubble"
+                style={{
+                  background: "#F4EFE5", color: "#13130F", fontSize: 15, lineHeight: 1.45,
+                  padding: "12px 16px", maxWidth: 260, textAlign: "left",
+                  borderRadius: 16, borderBottomRightRadius: 4,
+                  boxShadow: "0 12px 30px -12px rgba(19,19,15,0.35)",
+                }}
+              >
+                <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: "#8a877a", marginBottom: 6 }}>MOXIE</div>
+                Share your website and I will show you where your next growth opportunity might be hiding. It is free.
+              </div>
+            </div>
+          </div>
+          </div>
         </section>
       ) : (
         <section className="flex-1 px-4 py-12 md:py-16">
