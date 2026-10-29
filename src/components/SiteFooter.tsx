@@ -40,9 +40,12 @@ const productLinks: Array<[string, string]> = [
 ];
 const resourceLinks: Array<[string, string, boolean?]> = [
   ["Building with MOXIEMO", "/blog"],
+  ["The Brand Architecture Method", "/brand-architecture-method"],
+  ["Compare MOXIEMO", "/compare"],
   ["Changelog", "/changelog"],
   ["Free growth assessment", "/brand-audit"],
   ["Free Brand Kit", "/brand-kit", true],
+  ["Free prompt packs", "/resources"],
   ["Contact", "mailto:hello@buildwithmoxiemo.com"],
 ];
 const legalLinks: Array<[string, string]> = [
