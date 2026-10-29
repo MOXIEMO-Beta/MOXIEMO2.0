@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { HomeMoxie } from "@/components/HomeMoxie";
+import { MoxieAvatar } from "@/components/MoxieAvatar";
 import { Button } from "@/components/ui/button";
 import { BRAND_COUNTS, HOME_ROLES, isBrandCount } from "@/lib/homeForm";
 import heroCollage from "@/assets/redesign/hero-collage.jpg.asset.json";
@@ -102,7 +103,7 @@ function Hero() {
             <span style={{ fontStyle: "italic", fontWeight: 340, color: "#6d7a5e" }}>Powered to execute.</span>
           </h1>
           <p style={{ ...sans, fontSize: 19, lineHeight: 1.55, color: MUTED_SAGE, maxWidth: 480, marginTop: 28 }}>
-            MOXIEMO figures out what moves your brand forward. MOXIE makes sure it happens.
+            MOXIEMO figures out what moves your brand forward. MOXIE, your growth companion, makes sure it happens.
           </p>
           <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, maxWidth: 480, marginTop: 20 }}>Start with a guided discovery built on the This Is Branding brand architecture. MOXIEMO finds the gap between where your brand is and where you want it to go, sets your priorities and creates the work to close it. You approve. It gets done.</p>
           <div className="flex flex-wrap items-center" style={{ gap: 24, marginTop: 36 }}>
@@ -129,8 +130,42 @@ function Hero() {
           <div style={{ aspectRatio: "1 / 1.12", borderRadius: 6, overflow: "hidden", boxShadow: "0 30px 80px rgba(19,19,15,0.18)" }}>
             <img src={heroCollage.url} alt="MOXIEMO marketing collage" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
           </div>
-          <div style={{ position: "absolute", left: 18, bottom: 18, ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: CREAM, background: "rgba(19,19,15,0.55)", padding: "8px 12px", borderRadius: 4, backdropFilter: "blur(4px)" }}>
-            your brand, on autopilot
+          <style>{`
+            .mx-hero-moxie {
+              position: absolute; left: 18px; bottom: 18px;
+              display: flex; align-items: flex-end; gap: 12px;
+              opacity: 0; transform: translateY(12px);
+              animation: mx-hero-moxie-in 600ms ease-out 500ms forwards;
+            }
+            @keyframes mx-hero-moxie-in {
+              to { opacity: 1; transform: translateY(0); }
+            }
+            .mx-hero-moxie-icon img { width: 56px !important; }
+            @media (prefers-reduced-motion: reduce) {
+              .mx-hero-moxie { animation: none; opacity: 1; transform: none; }
+            }
+            @media (max-width: 767px) {
+              .mx-hero-moxie { left: 12px; bottom: 12px; }
+              .mx-hero-moxie-icon img { width: 44px !important; }
+              .mx-hero-moxie-bubble { max-width: 230px !important; font-size: 14px !important; }
+            }
+          `}</style>
+          <div className="mx-hero-moxie">
+            <span className="mx-hero-moxie-icon" style={{ flex: "none", lineHeight: 0 }}>
+              <MoxieAvatar pose="icon" size={56} decorative />
+            </span>
+            <div
+              className="mx-hero-moxie-bubble"
+              style={{
+                background: CREAM, color: INK, ...sans, fontSize: 15, lineHeight: 1.45,
+                padding: "12px 16px", maxWidth: 300,
+                borderRadius: 16, borderBottomLeftRadius: 4,
+                boxShadow: "0 12px 30px -12px rgba(19,19,15,0.35)",
+              }}
+            >
+              <div style={{ ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED_CREAM, marginBottom: 6 }}>MOXIE</div>
+              Hi, I am MOXIE. I know your plan, I tell you what needs you next, and I follow up until it is done.
+            </div>
           </div>
         </div>
       </div>

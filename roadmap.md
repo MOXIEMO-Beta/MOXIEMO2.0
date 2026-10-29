@@ -46,3 +46,8 @@
 - [x] Meta description, og:description, twitter:description updated in index.html and the three other files that set them.
 - [x] Home and Platform ticker item changed to MOXIE, YOUR GROWTH COMPANION, KEEPS IT MOVING.
 - [x] Gate tests: footer on /, /pricing, /brand-audit; view-source meta; tickers; 390px wrap; no other text changed.
+
+# Home hero MOXIE intro
+- [x] Hero subheadline updated to growth companion wording.
+- [x] Replaced "your brand, on autopilot" caption with MOXIE icon + speech bubble (delayed rise/fade, reduced-motion safe, mobile sizes).
+- [x] Gate tests: hero line exact, caption gone, icon/bubble placement at 1440 and 390, reduced motion, buttons/watch badge/50% line unmoved.
