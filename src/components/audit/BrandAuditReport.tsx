@@ -461,7 +461,7 @@ function FixFirstList({ items }: { items: { rank: number; move: string; section:
   );
 }
 
-function CtaClose({ handoff }: { handoff?: string }) {
+function CtaClose({ handoff, publicAssessment = false }: { handoff?: string; publicAssessment?: boolean }) {
   return (
     <section
       style={{
@@ -498,22 +498,22 @@ function CtaClose({ handoff }: { handoff?: string }) {
         Claim a first-100 spot
       </a>
       <p style={{ fontFamily: BODY, fontSize: 13, color: "rgba(255,255,255,0.65)", margin: "14px 0 0" }}>
-        50% off any plan for our first 100 customers.
+        {publicAssessment ? "50% off any plan, monthly or annual, for life, as long as you keep your founding membership. Limited to 100 founding seats." : "50% off any plan for our first 100 customers."}
       </p>
     </section>
   );
 }
 
-function AuditFooter() {
+function AuditFooter({ publicAssessment = false }: { publicAssessment?: boolean }) {
   return (
     <div style={{ textAlign: "center", marginTop: 32, marginBottom: 8, fontFamily: BODY, fontSize: 10, letterSpacing: "0.16em", color: MUTED, textTransform: "uppercase" }}>
-      Brand Audit · Powered by MOXIEMO · buildwithmoxiemo.com
+      {publicAssessment ? "Free growth assessment" : "Brand Audit"} · Powered by MOXIEMO · buildwithmoxiemo.com
     </div>
   );
 }
 
 // ─── Main ────────────────────────────────────────────────────────────
-export function BrandAuditReport({ data }: { data: AuditResponse }) {
+export function BrandAuditReport({ data, publicAssessment = false }: { data: AuditResponse; publicAssessment?: boolean }) {
   const [downloading, setDownloading] = useState(false);
 
   const report = data?.report;
@@ -561,7 +561,7 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 22, flexWrap: "wrap", gap: 12 }}>
           <div>
             <div style={{ fontFamily: BODY, fontSize: 11, fontWeight: 700, letterSpacing: "0.24em", color: CORAL, textTransform: "uppercase" }}>
-              Brand Audit
+              {publicAssessment ? "Free growth assessment" : "Brand Audit"}
             </div>
             <h1 style={{ fontFamily: HEADING, fontSize: 30, fontWeight: 700, color: INK, margin: "4px 0 0", letterSpacing: "-0.01em" }}>
               Where your brand stands. What to fix first.
@@ -613,9 +613,9 @@ export function BrandAuditReport({ data }: { data: AuditResponse }) {
 
         {derivedPriorities.length > 0 && <FixFirstList items={derivedPriorities} />}
 
-        <CtaClose handoff={report.handoff_cta} />
+        <CtaClose handoff={report.handoff_cta} publicAssessment={publicAssessment} />
 
-        <AuditFooter />
+        <AuditFooter publicAssessment={publicAssessment} />
       </div>
     </div>
   );

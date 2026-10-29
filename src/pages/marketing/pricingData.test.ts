@@ -12,7 +12,8 @@ describe("approved pricing", () => {
   });
   it.each([[0, 1], [1, 2], [2, 3]] as const)("plan %i includes %i brands", (index, brands) => expect(plans[index].brands).toBe(brands));
   it("limits the offer to 100 customers", () => expect(pricingOffer.firstCustomerLimit).toBe(100));
-  it("retains the discount while the plan is kept", () => expect(pricingOffer.retainWhileSubscribed).toBe(true));
+  it("retains the discount while founding membership is active", () => expect(pricingOffer.retainWhileSubscribed).toBe(true));
+  it("keeps the founding discount at 50 percent", () => expect(pricingOffer.discount).toBe(0.5));
   it("keeps a 30 day refund window", () => expect(pricingOffer.refundDays).toBe(30));
   it("cancels at the end of the billing period", () => expect(pricingOffer.cancellation).toBe("billing_period_end"));
 });
