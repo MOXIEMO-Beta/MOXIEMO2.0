@@ -27,7 +27,6 @@ const resourceColumns: { heading: string; items: ResourceItem[] }[] = [
     items: [
       { label: "Building with MOXIEMO", description: "Strategy and growth playbooks for founders.", href: "/blog", status: "live" },
       { label: "Field notes", description: "Follow the build in the open, wins and misses.", href: "/changelog", status: "live" },
-      { label: "This Is Branding", description: "The method, as a free worksheet or the book.", status: "soon" },
       { label: "Compare", description: "See how MOXIEMO stacks up, head to head.", href: "/compare", status: "live" },
     ],
   },
