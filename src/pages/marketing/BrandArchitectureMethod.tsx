@@ -6,7 +6,7 @@ export default function BrandArchitectureMethod() {
     <ArticlePage
       eyebrow="The Method"
       title="The Brand Architecture Method: the strategy-first system that gates every output"
-      dek="Most marketing fails because it starts with production. The Brand Architecture Method starts with clarity. It is the system expertise-based founders use to get their brand right once, so everything they make after that is consistent, differentiated, and theirs."
+      dek="Most marketing fails because it starts with production. The Brand Architecture Method starts with clarity. It is the system founders and growing businesses use to get their brand right once, so everything they make after that is consistent, differentiated, and theirs."
       metaTitle="The Brand Architecture Method | MOXIEMO"
       metaDescription="The strategy-first system that gates every output. Get your brand right once, so everything after is consistent, differentiated, and yours."
       canonicalPath="/brand-architecture-method"
@@ -99,7 +99,7 @@ export default function BrandArchitectureMethod() {
           heading: "Why this matters for founders",
           body: (
             <ArticleP>
-              You did not build an expertise business to spend twenty hours a week making marketing that sounds like everyone else. The Brand Architecture Method gives a founder three things that matter. First, differentiation. A clear position means your marketing sounds like you and no one else, which is the only durable advantage in a crowded category. Second, leverage. Decide the foundation once and every later piece gets faster and more consistent, because the hard thinking is already done. Third, compounding. Consistent, on-strategy output builds recognition over time instead of resetting every week. The method is not about making more. It is about making things that are worth making.
+              You did not build a business to spend twenty hours a week making marketing that sounds like everyone else. The Brand Architecture Method gives a founder three things that matter. First, differentiation. A clear position means your marketing sounds like you and no one else, which is the only durable advantage in a crowded category. Second, leverage. Decide the foundation once and every later piece gets faster and more consistent, because the hard thinking is already done. Third, compounding. Consistent, on-strategy output builds recognition over time instead of resetting every week. The method is not about making more. It is about making things that are worth making.
             </ArticleP>
           ),
         },
@@ -109,7 +109,7 @@ export default function BrandArchitectureMethod() {
           heading: "How to apply the method",
           body: (
             <ArticleP>
-              You can apply the method in two ways. You can do the thinking yourself, using the framework to define each dimension in order, foundation first. The This Is Branding worksheet walks through it. Or you can let MOXIEMO run it with you. The <Link to="/brand-audit" className="text-accent underline underline-offset-4">free growth assessment</Link> shows you where your brand stands across all eight dimensions today, and what to fix first. Inside the platform, Discover builds your full foundation, and from then on the method gates everything MOXIEMO helps you make. Either way the sequence is the same. Get clear first. Then create.
+              You can apply the method in two ways. You can do the thinking yourself, using the framework to define each dimension in order, foundation first. Or you can let MOXIEMO run it with you. The <Link to="/brand-audit" className="text-accent underline underline-offset-4">free growth assessment</Link> shows you where your brand stands across all eight dimensions today, and what to fix first. Inside the platform, Discover builds your full foundation, and from then on the method gates everything MOXIEMO helps you make. Either way the sequence is the same. Get clear first. Then create.
             </ArticleP>
           ),
         },
@@ -119,7 +119,7 @@ export default function BrandArchitectureMethod() {
           heading: "Where the method came from",
           body: (
             <ArticleP>
-              The Brand Architecture Method did not come from a software roadmap. It came from years of brand strategy work with founders, and it is the method behind the book This Is Branding. It was built in the room with real businesses that had real traction and marketing that did not match. MOXIEMO is what happens when that method is productized, so the clarity that used to require a strategist is available to any founder who is ready to get clear before they create. Read more about that in <Link to="/why-moxiemo" className="text-accent underline underline-offset-4">Why MOXIEMO</Link>.
+              The Brand Architecture Method did not come from a software roadmap. It came from years of brand strategy work with founders. It was built in the room with real businesses that had real traction and marketing that did not match. MOXIEMO is what happens when that method is productized, so the clarity that used to require a strategist is available to any founder who is ready to get clear before they create. Read more about that in <Link to="/why-moxiemo" className="text-accent underline underline-offset-4">Why MOXIEMO</Link>.
             </ArticleP>
           ),
         },

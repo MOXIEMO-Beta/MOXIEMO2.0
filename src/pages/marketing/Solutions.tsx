@@ -1,5 +1,5 @@
 import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -133,7 +133,7 @@ const personas = [
 { chip: "PORTFOLIO OPERATORS", img: growingImg.url, h: "PORTFOLIO OPERATORS", p: "You run several brands, each with its own customers and voice. You need one place to run them without mixing them up.", bullets: ["A separate strategy and workspace for each brand", "Cross-brand planning and reporting", "MOXIE messages that name the brand and the action"], link: "See the Multiply plan" }
 ];
 
-const faqGroups: { label: string; items: { q: string; a: string; withMoxie?: boolean }[] }[] = [
+const faqGroups: { label: string; items: { q: string; a: ReactNode; withMoxie?: boolean }[] }[] = [
   {
     "label": "HOW IT WORKS",
     "items": [
@@ -143,7 +143,7 @@ const faqGroups: { label: string; items: { q: string; a: string; withMoxie?: boo
       },
       {
         "q": "How does discovery work?",
-        "a": "You answer guided questions about your goals, audience, offer, proof, current activity and constraints. The questions are built on the This Is Branding brand architecture. MOXIEMO then reviews your brand and channels and shows you the gap."
+        "a": <>You answer guided questions about your goals, audience, offer, proof, current activity and constraints. The questions are built on <Link to="/brand-architecture-method" style={{ color: CORAL, textDecoration: "underline", textUnderlineOffset: 3 }}>the Brand Architecture Method</Link>. MOXIEMO then reviews your brand and channels and shows you the gap.</>
       },
       {
         "q": "Why diagnose before creating content?",
@@ -232,13 +232,13 @@ export default function Solutions() {
 
   const p = personas[persona];
 
-  const moves = [
+  const moves: { num: string; label: string; h: string; hI: string; paras: ReactNode[]; bullets: string[]; mock: ReactNode }[] = [
     {
       num: "01",
       label: "Discover and diagnose",
       h: "Find what is true about",
       hI: "your brand today.",
-      paras: ["Discovery is a guided conversation built on the This Is Branding brand architecture. You answer in your own words. MOXIEMO then reviews your brand and channels and shows the gap between where you are and where you want to go."],
+      paras: [<>Discovery is a guided conversation built on <Link to="/brand-architecture-method" style={{ color: CORAL, textDecoration: "underline", textUnderlineOffset: 3 }}>the Brand Architecture Method</Link>. You answer in your own words. MOXIEMO then reviews your brand and channels and shows the gap between where you are and where you want to go.</>],
       bullets: ["Guided discovery", "A diagnosis of your current brand and channels", "Your goals and success measure", "A downloadable strategy foundation"],
       mock: (
         <MockupShell title="Discovery Session">

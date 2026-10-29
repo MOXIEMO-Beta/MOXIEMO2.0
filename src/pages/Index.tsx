@@ -107,7 +107,7 @@ function Hero() {
           <p style={{ ...sans, fontSize: 19, lineHeight: 1.55, color: MUTED_SAGE, maxWidth: 480, marginTop: 28 }}>
             MOXIEMO figures out what moves your brand forward. MOXIE, your growth companion, makes sure it happens.
           </p>
-          <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, maxWidth: 480, marginTop: 20 }}>Start with a guided discovery built on the This Is Branding brand architecture. MOXIEMO finds the gap between where your brand is and where you want it to go, sets your priorities and creates the work to close it. You approve. It gets done.</p>
+          <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, maxWidth: 480, marginTop: 20 }}>Start with a guided discovery built on the Brand Architecture Method. MOXIEMO finds the gap between where your brand is and where you want it to go, sets your priorities and creates the work to close it. You approve. It gets done.</p>
           <div className="flex flex-wrap items-center" style={{ gap: 24, marginTop: 36 }}>
             <div className="flex flex-col gap-3">
               <PillButton to="/brand-audit">Get my free growth assessment <ArrowRight size={16} /></PillButton>
@@ -502,7 +502,7 @@ function PlatformSection() {
 /* ───────────── §04 How it works ───────────── */
 function HowItWorks() {
   const steps = [
-    ["01", "DISCOVER", "Answer guided questions built on This Is Branding: your goals, audience, offer, proof and constraints."],
+    ["01", "DISCOVER", "Answer guided questions built on the Brand Architecture Method: your goals, audience, offer, proof and constraints."],
     ["02", "DIAGNOSE", "See the gap between where you want to go and where your brand stands today."],
     ["03", "DEFINE", "Get clear positioning, messaging, audience priorities and content pillars."],
     ["04", "PRIORITIZE", "Turn the strategy into a roadmap with milestones and your next best actions."],

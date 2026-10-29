@@ -76,7 +76,7 @@ function FeatureIcon({ kind }: { kind: string }) {
   return <span style={wrap}>{inner()}</span>;
 }
 
-function Feature({ icon, title, body }: { icon: string; title: string; body: string }) {
+function Feature({ icon, title, body }: { icon: string; title: string; body: React.ReactNode }) {
   return (
     <div style={{ display: "flex", gap: 14 }}>
       <FeatureIcon kind={icon} />
@@ -307,12 +307,12 @@ function MockAnalytics() {
    Step card
    ============================================================ */
 interface Step {
-  n: string; label: string; time: string; title: string; body: string; checks: string[];
+  n: string; label: string; time: string; title: string; body: React.ReactNode; checks: string[];
   active: string; mock: React.ReactNode;
 }
 const STEPS: Step[] = [
   { n: "01", label: "DISCOVER AND DIAGNOSE", time: "One guided session", title: "Start with the truth about your brand.",
-    body: "MOXIEMO asks founder-built questions drawn from This Is Branding: your goals, audience, offer, proof, current activity and constraints. Then it compares your answers with what your brand and channels show today and names the gap.",
+    body: <>MOXIEMO asks founder-built questions drawn from <Link to="/brand-architecture-method" style={{ color: C.coral, textDecoration: "underline", textUnderlineOffset: 3 }}>the Brand Architecture Method</Link>: your goals, audience, offer, proof, current activity and constraints. Then it compares your answers with what your brand and channels show today and names the gap.</>,
     checks: ["Business goals and success measure", "Audience and offer", "Proof and current activity", "Brand and channel review", "The gap between your goal and today"],
     active: "Social", mock: <MockSocialCalendar /> },
   { n: "02", label: "DEFINE", time: "Always on", title: "A strategy you can use every day.",
@@ -424,7 +424,7 @@ export default function Platform() {
             </div>
             <div className="pf-copilot-grid" style={{ display: "grid", gridTemplateColumns: "1fr 300px 1fr", gap: 32, padding: "0 52px 44px", alignItems: "center" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 30 }}>
-                <Feature icon="sparkle" title="Discovery and diagnosis" body="Guided questions built on the This Is Branding brand architecture, plus a read on your brand and channels today." />
+                <Feature icon="sparkle" title="Discovery and diagnosis" body={<>Guided questions built on <Link to="/brand-architecture-method" style={{ color: C.coral, textDecoration: "underline", textUnderlineOffset: 3 }}>the Brand Architecture Method</Link>, plus a read on your brand and channels today.</>} />
                 <Feature icon="mail" title="Positioning and content pillars" body="Clear positioning, messaging, audience priorities and the pillars your content stands on." />
                 <Feature icon="pencil" title="Roadmap and next best actions" body="Milestones and priorities in order, so you always know what comes first." />
               </div>
