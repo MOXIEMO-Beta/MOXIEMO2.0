@@ -1738,6 +1738,7 @@ export type Database = {
           referral_source: string | null
           role: string | null
           scheduled_call_at: string | null
+          source: string | null
           status: string | null
           updated_at: string | null
           user_id: string | null
@@ -1759,6 +1760,7 @@ export type Database = {
           referral_source?: string | null
           role?: string | null
           scheduled_call_at?: string | null
+          source?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -1780,6 +1782,7 @@ export type Database = {
           referral_source?: string | null
           role?: string | null
           scheduled_call_at?: string | null
+          source?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
