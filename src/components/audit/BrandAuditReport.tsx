@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { downloadAuditPdf } from "@/lib/brandAuditPdf";
 import { useMemo, useState } from "react";
 import {
@@ -483,8 +484,10 @@ function CtaClose({ handoff, publicAssessment = false }: { handoff?: string; pub
       </p>
       <a
         href="/founding"
+        onClick={publicAssessment ? trackCtaClick : undefined}
         style={{
           display: "inline-block",
+          whiteSpace: "nowrap",
           background: CORAL,
           color: "#FFFFFF",
           fontFamily: HEADING,
@@ -495,7 +498,7 @@ function CtaClose({ handoff, publicAssessment = false }: { handoff?: string; pub
           textDecoration: "none",
         }}
       >
-        Claim a first-100 spot
+        {publicAssessment ? getCtaLabel() : "Claim a first-100 spot"}
       </a>
       <p style={{ fontFamily: BODY, fontSize: 13, color: "rgba(255,255,255,0.65)", margin: "14px 0 0" }}>
         {publicAssessment ? "50% off any plan, monthly or annual, for life, as long as you keep your founding membership. Limited to 100 founding seats." : "50% off any plan for our first 100 customers."}

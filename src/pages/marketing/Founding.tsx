@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 
 const fontsHref =
@@ -386,7 +387,8 @@ export default function Founding() {
                     </select>
                   </div>
 
-                  <button
+                  <Button
+                    variant="ghost"
                     type="submit"
                     disabled={submitting}
                     className="fm-cta whitespace-nowrap"
@@ -417,7 +419,7 @@ export default function Founding() {
                         <path d="M3 8h10M8 3l5 5-5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
-                  </button>
+                  </Button>
 
                   <div
                     style={{

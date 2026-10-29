@@ -36,7 +36,7 @@ export function SiteHeader(_props: SiteHeaderProps = {}) {
     fontSize: 12,
     letterSpacing: "0.14em",
     textTransform: "uppercase",
-    padding: "10px 12px",
+    padding: "10px 6px",
     borderRadius: 999,
     background: INK,
     color: CREAM,
