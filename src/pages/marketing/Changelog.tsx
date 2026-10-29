@@ -6,7 +6,7 @@ type TagKind = "New Feature" | "Improvement" | "Bug Fix" | "Coming Soon" | "Bran
 
 type Block =
   | { type: "heading"; text: string }
-  | { type: "paragraph"; text: string }
+  | { type: "paragraph"; text: string; link?: { label: string; href: string } }
   | { type: "quote"; text: string }
   | { type: "ticket"; code: string; title: string; body: string }
   | { type: "divider" };
@@ -25,6 +25,26 @@ interface Entry {
 const DISCORD_URL = "https://discord.gg/wa9JFx7nha";
 
 const entries: Entry[] = [
+  {
+    date: "OCTOBER 29, 2026",
+    tag: "Improvement",
+    headline: "MOXIE has a face now, and a job description.",
+    blocks: [
+      { type: "paragraph", text: "This week I read our home page the way a new visitor would and got stuck on one word. Who's MOXIE? I couldn't point to a single page on this site that answered it. So this update is mostly about him. The story of how that happened is on the blog: My own website couldn't tell you who MOXIE is.", link: { label: "My own website couldn't tell you who MOXIE is", href: "/blog/my-website-could-not-explain-moxie" } },
+      { type: "heading", text: "Meet MOXIE, your growth companion" },
+      { type: "paragraph", text: "MOXIEMO builds your strategy and the work. MOXIE is the one who tells you what needs you next: a post to approve, a decision that's waiting, a priority that stalled. He has a face now. You'll see him on the home page, in Meet MOXIE, on Pricing and next to the free growth assessment." },
+      { type: "paragraph", text: "Two-way texting with MOXIE is coming in a future release. A few pages used to say he texts you today. He doesn't yet, so they don't say it anymore." },
+      { type: "heading", text: "The free Brand Audit is now the free growth assessment" },
+      { type: "paragraph", text: "Same tool, same report. The new name says what you get from it: where your next growth opportunity might be hiding." },
+      { type: "heading", text: "Founding membership is 50% off for life" },
+      { type: "paragraph", text: "There are 100 founding seats. Founding members get 50% off any plan, monthly or annual, for life, as long as they keep their founding membership. If you cancel, the founding rate ends with it. A few pages still said \"for as long as the beta runs.\" Every page says the same thing now." },
+      { type: "heading", text: "Our best reading is back where you can find it" },
+      { type: "paragraph", text: "When we redesigned the site, the Resources menu came out of the top nav, and three of our most useful pages lost every link pointing to them. They're back in the footer, and we refreshed all three before linking them again. Compare MOXIEMO puts us side by side with ChatGPT, Claude, Jasper, Averi, Blaze, Rella, Gemini and Canva. The Brand Architecture Method is the long version of how we think about building a brand. And the 15 prompt packs are still free, with no signup." },
+      { type: "heading", text: "Smaller fixes" },
+      { type: "paragraph", text: "The Compare pages now use the same stages as the home page. The last few places that still called the company MOXIE say MOXIEMO. The Compare pages, the method article and the prompt packs page each have their own title in search now, and the sitemap lists every blog post." },
+    ],
+    closing: "Karee",
+  },
   {
     date: "JUNE 23, 2026",
     tag: "Improvement",
@@ -242,9 +262,10 @@ export default function Changelog() {
                 ))}
                 {e.blocks && e.blocks.map((b, idx) => {
                   if (b.type === "paragraph") {
+                    const linkStart = b.link ? b.text.indexOf(b.link.label) : -1;
                     return (
                       <p key={idx} className="text-[16px] text-muted-foreground leading-[1.8] mb-4">
-                        {b.text}
+                        {b.link && linkStart >= 0 ? <>{b.text.slice(0, linkStart)}<Link to={b.link.href} className="text-accent underline hover:text-foreground">{b.link.label}</Link>{b.text.slice(linkStart + b.link.label.length)}</> : b.text}
                       </p>
                     );
                   }
