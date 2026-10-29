@@ -40,3 +40,9 @@
 - [x] Replace hero, story paragraphs, mission, vision, five rules, goal descriptions, North Star and final CTA copy while preserving layout, styling, photo, badges and credentials ticker.
 - [x] Remove em dashes from the photo caption, signature and The Table label; delete the obsolete closing line.
 - [x] Verify copy, ticker items, CTA destinations, mobile headline wrapping and no horizontal overflow.
+# MOXIE character + site-wide lines
+- [x] Save six MOXIE PNGs in src/assets/moxie/ at original sizes; create MoxieAvatar component with six poses and approved alt texts.
+- [x] Footer: new description line with decorative 28px MOXIE icon, top-aligned, 10px gap.
+- [x] Meta description, og:description, twitter:description updated in index.html and the three other files that set them.
+- [x] Home and Platform ticker item changed to MOXIE, YOUR GROWTH COMPANION, KEEPS IT MOVING.
+- [ ] Gate tests: footer on /, /pricing, /brand-audit; view-source meta; tickers; 390px wrap; no other text changed.
