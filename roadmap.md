@@ -1,4 +1,6 @@
 # Site-wide copy fixes
+- [ ] Update public free-tool and lifetime founding offer naming only; preserve sign-up labels and signed-in app.
+- [ ] Verify exact copy, unchanged prices/seat limit, assessment completion and existing report access.
 - [x] Remove specified security claims and results statistics.
 - [x] Remove Discovery duration promises.
 - [x] Update navigation, redirect, footer, and metadata.
