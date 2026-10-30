@@ -1,4 +1,5 @@
 # Site-wide copy fixes
+- [ ] Add the six-stage hero ring and final deliverables card; verify all five walkthrough gates.
 - [x] Build /start Hero typing, MOXIE states, assessment and founding forms, questions and consent-gated events.
 - [x] Add campaign-preserving assessment auto-start; verify seven hero gates and delete test signup.
 - [x] Create the standalone empty /start shell, scoped metadata and campaign-preserving /founding redirect.
