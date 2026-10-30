@@ -4,6 +4,7 @@ import { sendResendEmail } from "../_shared/resend.ts";
 import { validBrandCount, validPlanInterest } from "./brand-count.ts";
 import { validCtaVariant } from "./cta-variant.ts";
 import { normalizeSource } from "./source.ts";
+import { normalizeCampaign } from "./campaign.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,7 +20,9 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { name, email, role, website_url, company_name, referral_source, brand_count, plan_interest, source, cta_variant } = await req.json();
+    const payload = await req.json();
+    const { name, email, role, website_url, company_name, referral_source, brand_count, plan_interest, source, cta_variant } = payload;
+    const campaign = normalizeCampaign(payload);
 
     if (!validCtaVariant(cta_variant)) {
       return new Response(JSON.stringify({ error: "Invalid sign-up button version." }), {
@@ -69,7 +72,7 @@ serve(async (req) => {
 
     const { error: dbError } = await supabase
       .from("waitlist")
-      .insert({ name, email, role, website_url, company_name, referral_source, brand_count: brand_count ?? null, plan_interest: plan_interest ?? null, cta_variant: cta_variant ?? null, source: normalizeSource(source), user_id });
+      .insert({ name, email, role, website_url, company_name, referral_source, brand_count: brand_count ?? null, plan_interest: plan_interest ?? null, cta_variant: cta_variant ?? null, source: normalizeSource(source), ...campaign, user_id });
 
     if (dbError) {
       if ((dbError as any).code === "23505") {
