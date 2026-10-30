@@ -45,9 +45,9 @@
 .start-page { background: var(--start-paper); color: var(--start-ink); min-height: 100dvh; display: flex; flex-direction: column; font-family: 'DM Sans', sans-serif; letter-spacing: 0; }
 .start-page h1, .start-page h2, .start-page h3 { font-family: 'Fraunces', serif; font-optical-sizing: auto; letter-spacing: 0; }
 .start-page a:focus-visible, .start-page button:focus-visible, .start-page input:focus-visible, .start-page select:focus-visible, .start-page textarea:focus-visible { outline: 2px solid var(--start-navy); outline-offset: 3px; box-shadow: none; }
-.start-header { width: 100%; max-width: 1180px; margin: 0 auto; padding: 22px 24px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.start-header { width: 100%; max-width: 1180px; margin: 0 auto; padding: 22px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
 .start-logo { display: flex; align-items: center; min-height: 44px; flex: none; }
-.start-logo img { height: 30px; width: auto; display: block; }
+.start-logo img { height: 60px; width: auto; display: block; }
 .start-header nav { display: flex; align-items: center; gap: 20px; }
 .start-nav-link { display: inline-flex; align-items: center; min-height: 44px; font-size: 15px; font-weight: 500; color: var(--start-muted); white-space: nowrap; }
 .start-nav-link:hover { color: var(--start-ink); }
@@ -66,7 +66,7 @@
   .start-header nav { gap: 0; }
   .start-footer { align-items: flex-start; flex-direction: column; }
 }
-@media (max-width: 599px) { .start-logo img { height: 26px; } }
+@media (max-width: 599px) { .start-logo img { height: 52px; } }
 @media (max-width: 419px) { .start-page .start-cta { padding-left: 9px; padding-right: 9px; } }
 
 .start-hero { padding: 44px 24px 80px; }
@@ -230,6 +230,7 @@
 .start-seat-diagonal-16 { animation-delay: 1.28s; }
 .start-seat-diagonal-17 { animation-delay: 1.36s; }
 .start-seat-diagonal-18 { animation-delay: 1.44s; }
+.start-guess-chip-8 { right: 0; top: 82%; rotate: 4deg; animation-delay: -1s; }
 .start-page .start-lift-card { transition: transform 220ms; }
 .start-page .start-lift-card mark { transition: none; }
 .start-reveal:focus-within { opacity: 1; transform: none; }
