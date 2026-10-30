@@ -36,6 +36,13 @@
       "when": 1793245143772,
       "tag": "0004_add_waitlist_source",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793326922965,
+      "tag": "0005_waitlist_campaign_attribution",
+      "breakpoints": true
     }
   ]
 }
