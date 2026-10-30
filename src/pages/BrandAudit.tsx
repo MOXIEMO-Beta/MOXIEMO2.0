@@ -109,6 +109,13 @@ export default function BrandAudit() {
     }
   }
 
+  useEffect(() => {
+    if (!campaignSite || autoStarted.current) return;
+    autoStarted.current = true;
+    setUrl(campaignSite);
+    void submitStep1(campaignSite);
+  }, [campaignSite]);
+
   async function submitStep2() {
     setError("");
     setStep(3);
