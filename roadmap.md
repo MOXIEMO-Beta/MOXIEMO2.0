@@ -1,4 +1,6 @@
 # Site-wide copy fixes
+- [ ] Build /start Hero typing, MOXIE states, assessment and founding forms, questions and consent-gated events.
+- [ ] Add campaign-preserving assessment auto-start; verify seven hero gates and delete test signup.
 - [x] Create the standalone empty /start shell, scoped metadata and campaign-preserving /founding redirect.
 - [x] Save campaign signup attribution through join-waitlist; verify all seven gates and delete verification rows. Original logo verified directly because local asset serving is unavailable; both mobile variants checked using that original image.
 - [x] Build the six-page shared markdown legal layout while retaining current legal content.
