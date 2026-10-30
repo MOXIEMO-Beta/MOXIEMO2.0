@@ -184,6 +184,18 @@
     <priority>0.3</priority>
   </url>
   <url>
+    <loc>https://buildwithmoxiemo.com/cookies</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://buildwithmoxiemo.com/refunds</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://buildwithmoxiemo.com/affiliates</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
     <loc>https://buildwithmoxiemo.com/data-deletion</loc>
     <priority>0.3</priority>
   </url>
