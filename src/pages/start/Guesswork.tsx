@@ -1,7 +1,7 @@
 import { Grid2X2, Filter, Target } from "lucide-react";
 import { MoxieAvatar } from "@/components/MoxieAvatar";
 import { Reveal, Kicker } from "./SectionParts";
-const chips = ["Post more?", "Run an ad?", "Try reels?", "New offer?", "Email blast?", "Rebrand?", "Go viral?"];
+const chips = ["Post more?", "Run an ad?", "Try reels?", "New offer?", "Email blast?", "Rebrand?", "Go viral?", "Run experiments"];
 const cards = ["Maybe you are posting consistently but not seeing customers come through.", "Maybe you are attracting attention but not converting enough of it into sales.", "Or maybe you know exactly what you want to achieve but have no clear idea which marketing activities will get you there."];
 const icons = [Grid2X2, Filter, Target];
 export function Guesswork() {
