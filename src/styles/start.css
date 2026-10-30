@@ -74,7 +74,7 @@
 .start-message { font-size: 18px; line-height: 1.5; }
 .start-choices { max-width: 940px; margin: 44px auto 0; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; animation: start-fade-up 600ms ease-out 900ms both; }
 .start-page .start-choice { background: var(--start-card); color: var(--start-ink); border: 1px solid var(--start-chip-border); border-radius: 999px; height: 44px; padding: 0 18px; font-size: 15px; font-weight: 500; }
-.start-page .start-choice:hover { border-color: var(--start-navy); background: var(--start-card); }
+.start-page .start-choice:hover { border-color: var(--start-navy); background: var(--start-card); color: var(--start-ink); }
 .start-page .start-choice[aria-pressed="true"] { background: var(--start-navy); color: var(--start-paper); border-color: var(--start-navy); }
 .start-page .start-reset { background: transparent; color: var(--start-muted-secondary); border: 1px dashed var(--start-reset-border); }
 .start-hero-tagline { margin: 32px auto 0; text-align: center; font-family: 'Fraunces', serif; font-style: italic; font-weight: 300; font-size: 20px; color: var(--start-sage-text); }
@@ -96,7 +96,7 @@
 .start-join-result { margin-top: 20px; padding: 16px; border-radius: 8px; background: var(--start-success-fill); color: var(--start-sage-text); display: flex; align-items: flex-start; gap: 10px; font-size: 14px; line-height: 1.5; }.start-join-result svg { color: var(--start-success); flex: none; }
 .start-questions { margin-top: 16px; }.start-question-row { border-top: 1px solid var(--start-card-border); }
 .start-page .start-question { width: 100%; justify-content: space-between; height: auto; min-height: 44px; padding: 12px 0; white-space: normal; text-align: left; font-size: 15px; line-height: 1.4; font-weight: 500; color: var(--start-ink); background: transparent; border-radius: 0; }
-.start-page .start-question:hover { background: transparent; }.start-question[aria-expanded="true"] { font-weight: 600; }.start-question svg { color: var(--start-red); flex: none; transition: transform 200ms; }.start-plus-open { transform: rotate(45deg); }
+.start-page .start-question:hover { background: transparent; color: var(--start-ink); }.start-page .start-question[aria-expanded="true"] { font-weight: 600; }.start-question svg { color: var(--start-red); flex: none; transition: transform 200ms; }.start-plus-open { transform: rotate(45deg); }
 .start-answer { font-size: 14px; line-height: 1.6; color: var(--start-muted); padding-bottom: 16px; }
 @keyframes start-blink { 50% { opacity: 0; } }
 @keyframes start-fade-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }

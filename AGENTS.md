@@ -15,3 +15,4 @@
 - Keep the admin sign-up button test's counts, shares and export column list in src/lib/ctaResults.ts, and read tagged rows only through the admin function so names and emails can never reach the export.
 - Keep /start parts isolated under pages/start with scoped styling and metadata; redirect /founding with replace navigation and preserve its query so campaign pages do not alter the main site.
 - Use the shared joinFoundingList helper and visit-memory campaign module for /start forms; persist nullable UTM fields through join-waitlist so all campaign placements share attribution and response handling.
+- Keep hero copy, typing transitions and consent-gated events in the start modules, with separate form/question panels and an openSeat event; auto-start assessment query visits through the existing step-one handler so normal assessments remain unchanged.
