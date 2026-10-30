@@ -136,7 +136,7 @@
 .start-page .start-ring-done, .start-page .start-ring-done:hover { background: var(--start-navy); color: var(--start-paper); border-color: var(--start-navy); }
 .start-ring-label { position: absolute; top: 54px; font-size: 13.5px; line-height: 1.35; white-space: nowrap; border-radius: 999px; padding: 3px 9px; background: var(--start-paper); color: var(--start-muted); }
 .start-ring-label-current { background: var(--start-navy); color: var(--start-paper); font-weight: 600; }
-.start-how .start-how-card { max-width: 430px; width: 430px; animation-delay: 0ms; }
+.start-how .start-how-card { max-width: 100%; width: min(430px, 100%); min-width: 0; animation-delay: 0ms; }
 .start-how-content { border-top: 1px solid var(--start-card-border); padding-top: 16px; margin-top: 18px; }
 .start-how-eyebrow { font-family: 'JetBrains Mono', monospace; text-transform: uppercase; font-size: 11px; color: var(--start-deep-coral); margin-bottom: 10px; }
 .start-page .start-how-title { font-size: 30px; font-weight: 700; line-height: 1.2; margin-bottom: 12px; }
