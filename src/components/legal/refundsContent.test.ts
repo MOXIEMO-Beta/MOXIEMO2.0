@@ -7,8 +7,9 @@ it("keeps the refund policy date line exactly as approved", () => {
 
 it("ties every guarantee mention to thirty days", () => {
   const mentions = refunds.match(/30-day guarantee|within 30 days|guarantee covers it for 30 days/g) ?? [];
-  expect(mentions).toHaveLength(5);
-  expect(refunds).not.toMatch(/(\d+)[- ]day guarantee/);
+  expect(mentions).toHaveLength(6);
+  const dayCounts = [...refunds.matchAll(/(\d+)[- ]day guarantee/g)].map(match => match[1]);
+  expect(dayCounts).toEqual(["30", "30", "30"]);
 });
 
 it("never offers a free trial", () => {
