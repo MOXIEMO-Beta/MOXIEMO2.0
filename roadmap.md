@@ -1,4 +1,6 @@
 # Site-wide copy fixes
+- [x] Build the six-page shared markdown legal layout while retaining current legal content.
+- [x] Update legal footer/banner links and sitemap; verify all five legal-page gates.
 - [x] Add the exact MOXIE founder story, featured blog entry, route metadata and sitemap URL; verify all seven gates without unrelated changes.
 - [x] Set scoped metadata for Compare, Brand Architecture Method and Resources; verify restoration after navigation.
 - [x] Repair sitemap blog entries and redirect exclusion; verify all five requested gates.

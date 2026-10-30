@@ -51,6 +51,9 @@ const resourceLinks: Array<[string, string, boolean?]> = [
 const legalLinks: Array<[string, string]> = [
   ["Privacy", "/privacy"],
   ["Terms", "/terms"],
+  ["Cookies", "/cookies"],
+  ["Refunds", "/refunds"],
+  ["Affiliates", "/affiliates"],
   ["Data Deletion", "/data-deletion"],
 ];
 

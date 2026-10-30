@@ -65,6 +65,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute.tsx";
 import Terms from "./pages/Terms.tsx";
 import Privacy from "./pages/Privacy.tsx";
 import DataDeletion from "./pages/DataDeletion.tsx";
+import LegalDocument from "./pages/LegalDocument";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
 import ScrollToTop from "./components/ScrollToTop.tsx";
 import { CookieConsent } from "./components/CookieConsent";
@@ -123,6 +124,9 @@ const App = () => (
             <Route path="/brand-audit/r/:id" element={<BrandAuditReportPage />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/cookies" element={<LegalDocument />} />
+            <Route path="/refunds" element={<LegalDocument />} />
+            <Route path="/affiliates" element={<LegalDocument />} />
             <Route path="/data-deletion" element={<DataDeletion />} />
             <Route path="/shared/:token" element={<Shared />} />
             <Route path="/onboarding" element={<ProtectedRoute requireOnboarding={false}><Onboarding /></ProtectedRoute>} />
