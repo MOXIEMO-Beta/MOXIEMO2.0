@@ -1742,6 +1742,11 @@ export type Database = {
           status: string | null
           updated_at: string | null
           user_id: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
           website_url: string | null
         }
         Insert: {
@@ -1764,6 +1769,11 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           website_url?: string | null
         }
         Update: {
@@ -1786,6 +1796,11 @@ export type Database = {
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
           website_url?: string | null
         }
         Relationships: []

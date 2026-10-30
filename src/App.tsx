@@ -30,7 +30,8 @@ import AiMarketingStackAdvice from "./pages/blog/AiMarketingStackAdvice.tsx";
 import MyWebsiteCouldNotExplainMoxie from "./pages/blog/MyWebsiteCouldNotExplainMoxie.tsx";
 import Resources from "./pages/marketing/Resources.tsx";
 import Changelog from "./pages/marketing/Changelog.tsx";
-import Founding from "./pages/marketing/Founding.tsx";
+import Start from "./pages/start/Start";
+import { FoundingRedirect } from "./pages/start/FoundingRedirect";
 import Beta20Founding from "./pages/marketing/Beta20Founding.tsx";
 import BrandKit from "./pages/marketing/BrandKit.tsx";
 import BrandArchitectureMethod from "./pages/marketing/BrandArchitectureMethod.tsx";
@@ -111,7 +112,8 @@ const App = () => (
             <Route path="/blog/my-website-could-not-explain-moxie" element={<MyWebsiteCouldNotExplainMoxie />} />
             <Route path="/resources" element={<Resources />} />
             <Route path="/changelog" element={<Changelog />} />
-            <Route path="/founding" element={<Founding />} />
+            <Route path="/start" element={<Start />} />
+            <Route path="/founding" element={<FoundingRedirect />} />
             <Route path="/beta20-founding" element={<Beta20Founding />} />
             <Route path="/brand-kit" element={<BrandKit />} />
             <Route path="/brand-architecture-method" element={<BrandArchitectureMethod />} />
