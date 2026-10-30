@@ -44,6 +44,8 @@
 .legal-prose .overflow-x-auto, .legal-table-scroll { overflow-x: auto; width: 100%; border: 1px solid var(--legal-border); border-radius: 8px; margin-bottom: 24px; }
 .legal-prose table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 15px; line-height: 1.7; }
 .legal-prose th, .legal-prose td { padding: 12px; border-bottom: 1px solid var(--legal-border); text-align: left; vertical-align: top; }
+.legal-prose td, .legal-prose th { overflow-wrap: break-word; word-break: normal; }
+
 .legal-prose th { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; text-transform: uppercase; color: var(--legal-ink); letter-spacing: 0; }
 .legal-prose [class*="text-[15px]"] { font-size: 17px; }
 .legal-mobile-contents nav, .legal-sidebar nav { font-size: 13px; line-height: 1.5; }
