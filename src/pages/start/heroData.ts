@@ -24,3 +24,7 @@ export function startEvent(event: string) {
   if (typeof window !== "undefined" && window.moxiemoConsent?.get()?.analytics === true) window.clarity?.("event", event);
 }
 export function openSeat() { window.dispatchEvent(new Event("moxiemo:start-seat")); }
+export function openAssessment() {
+  window.dispatchEvent(new Event("moxiemo:start-assessment"));
+  window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+}

@@ -17,11 +17,16 @@ export function Hero() {
   const phrase = useTypedHeadline();
   useEffect(() => {
     const showSeat = () => setChoice("seat");
+    const showAssessment = () => setChoice("assessment");
     window.addEventListener("moxiemo:start-seat", showSeat);
-    return () => window.removeEventListener("moxiemo:start-seat", showSeat);
+    window.addEventListener("moxiemo:start-assessment", showAssessment);
+    return () => {
+      window.removeEventListener("moxiemo:start-seat", showSeat);
+      window.removeEventListener("moxiemo:start-assessment", showAssessment);
+    };
   }, []);
   const choices: [HeroChoice, string][] = [["assessment", "Find my next growth move"], ["seat", getCtaLabel()], ["questions", "I have a few questions"], ["how", "Show me how MOXIEMO works"]];
-  return <section id="start" className="start-hero">
+  return <section id="top" className="start-hero">
     <div className="start-hero-top">
       <p className="start-eyebrow"><span aria-hidden="true" />Strategy-led marketing for founders and growing businesses</p>
       <h1 className="start-headline"><span className="sr-only">{fixedHeadline}</span><span aria-hidden="true"><span className="start-built-line">You built <span className="start-typed">{phrase}<span className="start-caret" /></span></span><span className="start-headline-second">Now stop guessing how to grow it.</span></span></h1>
