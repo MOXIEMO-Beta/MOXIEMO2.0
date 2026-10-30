@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +20,13 @@ type Step = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
 
 export default function BrandAudit() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const campaignSite = searchParams.get("site")?.trim() ?? "";
+  const autoStarted = useRef(false);
   const [step, setStep] = useState<Step>(1);
 
   // step 1
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(campaignSite);
   const [scrapingInitial, setScrapingInitial] = useState(false);
   const [error, setError] = useState("");
 
@@ -88,12 +91,12 @@ export default function BrandAudit() {
     })();
   }
 
-  async function submitStep1() {
+  async function submitStep1(website = url) {
     setError("");
-    if (!url.trim()) { setError("Add your website URL to continue."); return; }
+    if (!website.trim()) { setError("Add your website URL to continue."); return; }
     setScrapingInitial(true);
     try {
-      const { data, error } = await supabase.functions.invoke("scrape-initial", { body: { url } });
+      const { data, error } = await supabase.functions.invoke("scrape-initial", { body: { url: website } });
       if (error) { setError(error.message); return; }
       setBrandName(data?.brand_name ?? "");
       setWhatYouDo(data?.what_you_do ?? "");
