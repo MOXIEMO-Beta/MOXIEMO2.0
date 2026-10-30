@@ -78,7 +78,7 @@ export function BlogArticle({ heroImage, heroContent, heroAlt, byline = "By Kare
 
         {!closingCta && <div className="text-center mt-12">
           <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-white h-12 px-7 rounded-full font-semibold">
-            <Link to="/auth?mode=signup">Try MOXIEMO free <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            <Link to="/brand-audit">Get my free growth assessment <ArrowRight className="ml-2 h-4 w-4" /></Link>
           </Button>
         </div>}
 
