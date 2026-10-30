@@ -1,4 +1,5 @@
 # Site-wide copy fixes
+- [ ] Finish /start phone sizing, reduced motion, accessibility and image/font loading; run keyboard and mobile Lighthouse checks.
 - [x] Build six lower /start sections, scrolling actions and section signup; verify six gates and delete test row.
 - [x] Add the six-stage hero ring and final deliverables card; verify all five walkthrough gates.
 - [x] Build /start Hero typing, MOXIE states, assessment and founding forms, questions and consent-gated events.

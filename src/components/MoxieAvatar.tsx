@@ -23,9 +23,10 @@ interface MoxieAvatarProps {
   size: number;
   decorative?: boolean;
   className?: string;
+  loading?: "lazy" | "eager";
 }
 
-export function MoxieAvatar({ pose, size, decorative = false, className }: MoxieAvatarProps) {
+export function MoxieAvatar({ pose, size, decorative = false, className, loading }: MoxieAvatarProps) {
   const { src, alt, ratio } = POSES[pose];
   return (
     <img
@@ -35,6 +36,8 @@ export function MoxieAvatar({ pose, size, decorative = false, className }: Moxie
       alt={decorative ? "" : alt}
       aria-hidden={decorative || undefined}
       className={className}
+      loading={loading}
+      decoding="async"
       style={{ width: size, height: "auto", display: "block" }}
     />
   );

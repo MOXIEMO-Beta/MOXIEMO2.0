@@ -13,6 +13,7 @@ import { Founding } from "./Founding";
 import { StartFooter } from "./StartFooter";
 import { captureCampaign } from "./campaign";
 import "@/styles/start.css";
+import heroMoxie from "@/assets/moxie/moxie-wave.png";
 
 export default function Start() {
   const { search, hash } = useLocation();
@@ -26,6 +27,10 @@ export default function Start() {
     <RouteMetadata title="MOXIEMO | Find your next growth move" description="Run a free growth assessment, meet MOXIE, and claim one of 100 founding seats at 50% off for life." />
     <Helmet>
       <meta name="robots" content="noindex, follow" />
+      <link rel="preload" as="image" href={heroMoxie} />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" />
     </Helmet>
     <StartHeader />

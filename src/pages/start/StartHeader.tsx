@@ -4,7 +4,7 @@ import logo from "@/assets/redesign/moxiemo-logo.png.asset.json";
 
 export function StartHeader() {
   return <header className="start-header">
-    <a href="#top" className="start-logo" aria-label="MOXIEMO, back to top"><img src={logo.url} alt="MOXIEMO" /></a>
+    <a href="#top" className="start-logo" aria-label="MOXIEMO, back to top"><img src={logo.url} alt="MOXIEMO" width={158} height={30} /></a>
     <nav aria-label="Campaign navigation">
       <a className="start-nav-link" href="#assessment">Free assessment</a>
       <a className="start-nav-link" href="#moxie">Meet MOXIE</a>
