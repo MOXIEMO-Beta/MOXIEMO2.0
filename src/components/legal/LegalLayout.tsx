@@ -44,7 +44,7 @@ function Markdown({ text, callout = false }: { text: string; callout?: boolean }
     p: ({ children }) => {
       const value = nodeText(children);
       const capitalized = /[A-Z]/.test(value) && value === value.toUpperCase();
-      return <p className={callout && capitalized ? "legal-callout" : undefined}>{children}</p>;
+      return <p className={callout && (capitalized || /^PLEASE READ SECTION\b/.test(value)) ? "legal-callout" : undefined}>{children}</p>;
     },
     table: ({ children }) => <div className="legal-table-scroll" tabIndex={0} role="region" aria-label="Scrollable table"><table>{children}</table></div>,
     a: ({ href, children }) => href?.startsWith("/") ? <Link to={href}>{children}</Link> : <a href={href}>{children}</a>,
