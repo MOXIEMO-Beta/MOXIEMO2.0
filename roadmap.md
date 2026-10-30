@@ -1,4 +1,6 @@
 # Site-wide copy fixes
+- [ ] Create the standalone empty /start shell, scoped metadata and campaign-preserving /founding redirect.
+- [ ] Save campaign signup attribution through join-waitlist; verify all seven gates and delete verification rows.
 - [x] Build the six-page shared markdown legal layout while retaining current legal content.
 - [x] Update legal footer/banner links and sitemap; verify all five legal-page gates.
 - [x] Add the exact MOXIE founder story, featured blog entry, route metadata and sitemap URL; verify all seven gates without unrelated changes.
