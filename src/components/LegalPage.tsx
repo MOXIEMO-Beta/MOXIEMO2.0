@@ -1,6 +1,4 @@
 import { ReactNode } from "react";
-import { SiteHeader } from "@/components/SiteHeader";
-import { SiteFooter } from "@/components/SiteFooter";
 import { useLocation } from "react-router-dom";
 import { LegalHeadingLink, LegalLayout, useLegalLayout } from "@/components/legal/LegalLayout";
 import terms from "@/content/legal/terms.md?raw";
@@ -17,24 +15,6 @@ export function LegalPage({ title, lastUpdated, children }: LegalPageProps) {
   const { pathname } = useLocation();
   const markdown = pathname === "/terms" ? terms : pathname === "/privacy" ? privacy : deletion;
   return <LegalLayout markdown={markdown} fallbackTitle={title} fallbackDate={lastUpdated}>{children}</LegalLayout>;
-}
-
-export function LegacyLegalPage({ title, lastUpdated, children }: LegalPageProps) {
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <SiteHeader />
-      <main className="flex-1 w-full px-6 py-20">
-        <div className="max-w-[760px] mx-auto">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-[-0.04em] leading-[1.05] text-foreground mb-3">
-            {title}
-          </h1>
-          <p className="text-sm text-muted-foreground mb-12">{lastUpdated}</p>
-          <div className="legal-content">{children}</div>
-        </div>
-      </main>
-      <SiteFooter />
-    </div>
-  );
 }
 
 export function LegalSection({ heading, children }: { heading: string; children: ReactNode }) {
