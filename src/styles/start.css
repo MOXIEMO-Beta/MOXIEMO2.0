@@ -240,3 +240,7 @@
 @media (prefers-reduced-motion: reduce) {
   .start-page *, .start-page *::before, .start-page *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
+/* Scope consent font stability to this campaign without changing other pages. */
+body:has(.start-page) .cookie-surface,
+body:has(.start-page) .cookie-surface .cookie-button { font-family: Arial, sans-serif; }
+body:has(.start-page) .cookie-surface .cookie-title { font-family: Georgia, serif; }
