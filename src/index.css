@@ -43,6 +43,7 @@
 .legal-heading:hover .legal-anchor, .legal-page-shell .legal-anchor:focus-visible { opacity: 1; }
 .legal-prose .overflow-x-auto, .legal-table-scroll { overflow-x: auto; width: 100%; border: 1px solid var(--legal-border); border-radius: 8px; margin-bottom: 24px; }
 .legal-prose table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 15px; line-height: 1.7; }
+.legal-summary table { min-width: 0; }
 .legal-prose th, .legal-prose td { padding: 12px; border-bottom: 1px solid var(--legal-border); text-align: left; vertical-align: top; }
 .legal-prose td, .legal-prose th { overflow-wrap: break-word; word-break: normal; }
 
