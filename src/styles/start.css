@@ -45,3 +45,4 @@
   .start-footer { align-items: flex-start; flex-direction: column; }
 }
 @media (max-width: 599px) { .start-logo img { height: 26px; } }
+@media (max-width: 419px) { .start-page .start-cta { padding-left: 9px; padding-right: 9px; } }
