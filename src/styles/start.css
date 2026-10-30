@@ -230,7 +230,7 @@
 .start-seat-diagonal-16 { animation-delay: 1.28s; }
 .start-seat-diagonal-17 { animation-delay: 1.36s; }
 .start-seat-diagonal-18 { animation-delay: 1.44s; }
-.start-guess-chip-8 { right: 0; top: 100%; rotate: 4deg; animation-delay: -1s; }
+.start-guess-chip-8 { right: 0; top: 82%; rotate: 4deg; animation-delay: -1s; }
 .start-page .start-lift-card { transition: transform 220ms; }
 .start-page .start-lift-card mark { transition: none; }
 .start-reveal:focus-within { opacity: 1; transform: none; }
