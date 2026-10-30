@@ -13,6 +13,7 @@ import { Founding } from "./Founding";
 import { StartFooter } from "./StartFooter";
 import { captureCampaign } from "./campaign";
 import "@/styles/start.css";
+import heroMoxie from "@/assets/moxie/moxie-wave.png";
 
 export default function Start() {
   const { search, hash } = useLocation();
@@ -26,6 +27,12 @@ export default function Start() {
     <RouteMetadata title="MOXIEMO | Find your next growth move" description="Run a free growth assessment, meet MOXIE, and claim one of 100 founding seats at 50% off for life." />
     <Helmet>
       <meta name="robots" content="noindex, follow" />
+      <link rel="preload" as="image" href={heroMoxie} />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link rel="preload" as="font" type="font/woff2" crossOrigin="anonymous" href="https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2" />
+      <link rel="preload" as="font" type="font/woff2" crossOrigin="anonymous" href="https://fonts.gstatic.com/s/fraunces/v38/6NU78FyLNQOQZAnv9bYEvDiIdE9Ea92uemAk_WBq8U_9v0c2Wa0KxC9TeA.woff2" />
+      <link rel="preload" as="font" type="font/woff2" crossOrigin="anonymous" href="https://fonts.gstatic.com/s/fraunces/v38/6NU58FyLNQOQZAnv9ZwNjucMHVn85Ni7emAe9lKqZTnbB-gzTK0K1ChjeveQ.woff2" />
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=JetBrains+Mono:wght@400;500&display=swap" />
     </Helmet>
     <StartHeader />

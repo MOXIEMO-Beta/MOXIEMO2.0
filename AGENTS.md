@@ -18,3 +18,4 @@
 - Keep hero copy, typing transitions and consent-gated events in the start modules, with separate form/question panels and an openSeat event; auto-start assessment query visits through the existing step-one handler so normal assessments remain unchanged.
 - Keep the how walkthrough and SVG ring isolated from the hero, with shared stage data and progress rules; route its final claim through openSeat so the existing founding form remains the only hero signup owner.
 - Share the founding form between hero and section via its entry prop and unique field IDs; keep lower-section reveals in a reusable IntersectionObserver wrapper so signup attribution and reduced-motion handling remain consistent.
+- Keep optional avatar loading scoped to callers, and campaign preload tags inside its Helmet lifecycle, so campaign speed improvements do not alter other pages.

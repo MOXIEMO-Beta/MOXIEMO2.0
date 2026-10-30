@@ -1,4 +1,5 @@
 # Site-wide copy fixes
+- [x] Finish /start phone sizing, reduced motion, accessibility and image/font loading; keyboard checks pass and mobile Lighthouse Accessibility is 100. CLS is 0.006 with minor font/headline shift warnings still reported; zero-warning gate is not met.
 - [x] Build six lower /start sections, scrolling actions and section signup; verify six gates and delete test row.
 - [x] Add the six-stage hero ring and final deliverables card; verify all five walkthrough gates.
 - [x] Build /start Hero typing, MOXIE states, assessment and founding forms, questions and consent-gated events.

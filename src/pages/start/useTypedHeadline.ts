@@ -17,11 +17,16 @@ export function nextTyping(state: TypingState): TypingState {
 }
 export function useTypedHeadline() {
   const [state, setState] = useState(initialTyping);
+  const [reduced, setReduced] = useState(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches);
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (motion.matches) return;
-    const timer = window.setTimeout(() => setState(nextTyping(state)), typingDelay(state));
+    const change = () => { setReduced(motion.matches); setState(previous => ({ index: previous.index, text: phrases[previous.index], phase: "hold" })); };
+    motion.addEventListener("change", change);
+    return () => motion.removeEventListener("change", change);
+  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setState(reduced ? { index: (state.index + 1) % phrases.length, text: phrases[(state.index + 1) % phrases.length], phase: "hold" } : nextTyping(state)), reduced ? 2600 : typingDelay(state));
     return () => clearTimeout(timer);
-  }, [state]);
+  }, [state, reduced]);
   return state.text;
 }

@@ -24,8 +24,8 @@ export function HeroFounding({ entry = "hero" }: { entry?: FoundingEntry }) {
       if (next.status === "success") startEvent(`start_join_${entry}`);
     }}>
       <div className="start-name-email">
-        <div><Label htmlFor={`start-${entry}-first-name`}>First name</Label><Input className="start-field" id={`start-${entry}-first-name`} autoComplete="given-name" value={firstName} onChange={e => setFirstName(e.target.value)} /></div>
-        <div><Label htmlFor={`start-${entry}-email`}>Email</Label><Input className="start-field" id={`start-${entry}-email`} type="email" autoComplete="email" placeholder="you@yourbusiness.com" value={email} onChange={e => setEmail(e.target.value)} aria-describedby={error ? `start-${entry}-join-error` : undefined} /></div>
+        <div><Label htmlFor={`start-${entry}-first-name`}>First name</Label><Input className="start-field" id={`start-${entry}-first-name`} autoComplete="given-name" value={firstName} onChange={e => setFirstName(e.target.value)} aria-invalid={error === "Add your first name."} aria-describedby={error === "Add your first name." ? `start-${entry}-join-error` : undefined} /></div>
+        <div><Label htmlFor={`start-${entry}-email`}>Email</Label><Input className="start-field" id={`start-${entry}-email`} type="email" autoComplete="email" placeholder="you@yourbusiness.com" value={email} onChange={e => setEmail(e.target.value)} aria-invalid={error === "Add your email so I can reach you."} aria-describedby={error === "Add your email so I can reach you." ? `start-${entry}-join-error` : undefined} /></div>
       </div>
       {error && <p className="start-form-error" id={`start-${entry}-join-error`} role="alert">{error}</p>}
       <Button type="submit" className="start-form-submit" disabled={pending}>{pending ? "Joining..." : "Join the founding list"}</Button>
