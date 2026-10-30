@@ -1,3 +1,10 @@
+import { MoxieAvatar } from "@/components/MoxieAvatar";
+import { Reveal, Kicker } from "./SectionParts";
 export function WhyDifferent() {
-  return <section id="different" className="start-placeholder" />;
+  return <section id="different" className="start-section"><div className="start-section-inner">
+    <Reveal><Kicker number="03">Why MOXIEMO is different</Kicker><h2 className="start-different-heading">Most marketing tools start with what you want to make. <em>We start with what you want to achieve.</em></h2></Reveal>
+    <div className="start-three-cards start-different-cards">{[<>A content calendar does not fix <mark>unclear positioning.</mark></>, <>More traffic does not solve a <mark>conversion problem.</mark></>, <>And automating your marketing will not help if you are <mark>automating the wrong things.</mark></>].map((text,index) => <Reveal key={index}><article className="start-lift-card">{text}</article></Reveal>)}</div>
+    <div className="start-section-row start-different-row"><Reveal className="start-different-moxie"><div className="start-section-float"><MoxieAvatar pose="point" size={220} decorative /></div></Reveal><Reveal className="start-column"><p className="start-section-body">MOXIEMO is built around a strategy-first approach to business growth. We begin with your goals, uncover the gaps between where you are and where you want to be, and build the strategy around what will move your business forward.</p><p className="start-small-label">We start here</p><div className="start-growth-pills">{["1. Your goals", "2. The gaps", "3. Your strategy"].map(text => <span className="start-growth-pill" key={text}>{text}</span>)}</div><p className="start-section-body">Then, as you grow with MOXIEMO, you turn those insights into plans, campaigns, execution and continuous improvement.</p><p className="start-small-label start-muted-label">As you grow</p><div className="start-growth-pills">{["Plans", "Campaigns", "Execution", "Continuous improvement"].map(text => <span className="start-growth-pill start-growth-future" key={text}>{text}</span>)}</div></Reveal></div>
+    <Reveal><p className="start-different-closing">Less guessing. More direction.<br /><em>Marketing with a purpose.</em></p></Reveal>
+  </div></section>;
 }
