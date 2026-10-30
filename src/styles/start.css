@@ -209,3 +209,23 @@
 @media (prefers-reduced-motion: reduce) {
   .start-reveal { opacity: 1; transform: none; transition: none; }.start-section-float, .start-decor-bubble, .start-process-pill, .start-guess-chip, .start-assessment-check, .start-assessment-check > span, .start-next-move, .start-reveal.is-visible .start-meet-chat, .start-typing-bubble span, .start-seat-square { animation: none; }.start-lift-card { transition: none; }.start-lift-card:hover { transform: none; }
 }
+
+.start-seat-diagonal-0 { animation-delay: 0.00s; }
+.start-seat-diagonal-1 { animation-delay: 0.08s; }
+.start-seat-diagonal-2 { animation-delay: 0.16s; }
+.start-seat-diagonal-3 { animation-delay: 0.24s; }
+.start-seat-diagonal-4 { animation-delay: 0.32s; }
+.start-seat-diagonal-5 { animation-delay: 0.40s; }
+.start-seat-diagonal-6 { animation-delay: 0.48s; }
+.start-seat-diagonal-7 { animation-delay: 0.56s; }
+.start-seat-diagonal-8 { animation-delay: 0.64s; }
+.start-seat-diagonal-9 { animation-delay: 0.72s; }
+.start-seat-diagonal-10 { animation-delay: 0.80s; }
+.start-seat-diagonal-11 { animation-delay: 0.88s; }
+.start-seat-diagonal-12 { animation-delay: 0.96s; }
+.start-seat-diagonal-13 { animation-delay: 1.04s; }
+.start-seat-diagonal-14 { animation-delay: 1.12s; }
+.start-seat-diagonal-15 { animation-delay: 1.20s; }
+.start-seat-diagonal-16 { animation-delay: 1.28s; }
+.start-seat-diagonal-17 { animation-delay: 1.36s; }
+.start-seat-diagonal-18 { animation-delay: 1.44s; }
