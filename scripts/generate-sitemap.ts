@@ -56,6 +56,9 @@ const entries: SitemapEntry[] = [
   })),
   { path: "/terms", priority: "0.3" },
   { path: "/privacy", priority: "0.3" },
+  { path: "/cookies", priority: "0.3" },
+  { path: "/refunds", priority: "0.3" },
+  { path: "/affiliates", priority: "0.3" },
   { path: "/data-deletion", priority: "0.3" },
 ];
 

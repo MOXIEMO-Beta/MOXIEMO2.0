@@ -58,7 +58,7 @@ export function CookieConsent() {
   return <>
     {ready && !choice && !open && <section role="region" aria-label="Cookie consent" className="cookie-surface cookie-banner">
       <h2 className="cookie-title">Your privacy, your call</h2>
-      <p className="cookie-copy">We use cookies to keep this site working. With your OK, we also use them to see how the site is used and to measure our marketing. You can accept all, reject all or choose. Learn more in our <Link className="cookie-link" to="/privacy">Privacy Policy</Link> and <Link className="cookie-link" to="/terms">Terms of Service</Link>.</p>
+      <p className="cookie-copy">We use cookies to keep this site working. With your OK, we also use them to see how the site is used and to measure our marketing. You can accept all, reject all or choose. Learn more in our <Link className="cookie-link" to="/cookies">Cookie Policy</Link> and <Link className="cookie-link" to="/privacy">Privacy Policy</Link>.</p>
       <div className="grid grid-cols-2 gap-3 mt-5">
         <Button variant="consent" onClick={() => save(allOn, "banner_accept_all")}>Accept all</Button>
         <Button variant="consent" onClick={() => save(OPTIONAL_OFF, "banner_reject_all")}>Reject all</Button>

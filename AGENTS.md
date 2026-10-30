@@ -1,4 +1,5 @@
 # Project rules
+- Render all six legal routes through LegalLayout using raw markdown and GFM; empty files retain existing legal content until replacement copy arrives.
 - Preserve `/why-moxie` as a replace-navigation redirect to `/why-moxiemo` so legacy links reach the canonical page without retaining an obsolete page in browser history.
 - Mount one HelmetProvider at the app entry and use Helmet for new route-specific metadata, so route titles and self-referencing canonical URLs have a single lifecycle owner.
 - Use RouteMetadata for Compare, the method article and Resources to scope Helmet tags and restore static fallback tags on unmount, so routes without head overrides keep their existing metadata.
