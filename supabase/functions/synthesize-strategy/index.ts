@@ -3,6 +3,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
+import { requireAuth, unauthorizedResponse } from "../_shared/auth-guard.ts";
 import { sanitizeDashesDeep } from "../_shared/sanitize-dashes.ts";
 
 const SYSTEM = `You are MOXIEMO's strategy synthesizer. Read a discovery conversation transcript and extract a complete marketing strategy.
@@ -263,6 +264,9 @@ function computeStrength(transcript: string, parsed: any) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
     const { transcript: incomingTranscript, sessionId, revenueRange, biggestChallenge, brandContext, lane, responseMode } = await req.json();
     let effectiveLane = lane;
     const wantsJsonResponse = responseMode === "json" || (req.headers.get("accept") || "").includes("application/json");

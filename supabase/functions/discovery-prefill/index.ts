@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireAuth, unauthorizedResponse } from "../_shared/auth-guard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -143,6 +144,9 @@ async function extractBrandData(sourceText: string): Promise<any | null> {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
   try {
     const body = await req.json();
     const text: string = (body.text || "").toString();

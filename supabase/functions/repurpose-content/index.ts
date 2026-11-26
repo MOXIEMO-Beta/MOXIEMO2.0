@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
+import { requireAuth } from "../_shared/auth-guard.ts";
 import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const SYSTEM = `You are a content strategist for an expertise-based founder. Given a podcast / webinar / long-form transcript, you extract the best moments and turn them into platform-ready content pieces.
@@ -112,6 +113,9 @@ function tryParseJsonArray(text: string): { type: string; body: string }[] | nul
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
     const { transcript, sourceName, pieces, strategy, pillar } = await req.json();
     if (!transcript || typeof transcript !== "string" || transcript.trim().length < 100) {
       return new Response(JSON.stringify({ error: "Transcript text is required (min 100 chars)." }), {

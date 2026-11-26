@@ -4,6 +4,7 @@ const corsHeaders = {
 };
 
 import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
+import { requireAuth } from "../_shared/auth-guard.ts";
 import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const SYSTEM = `You are MOXIE, an AI CMO generating content for a specific marketing campaign.
@@ -430,6 +431,9 @@ Return only the content itself — no preamble, no explanation, no "here's your 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
     const { topic, platform, contentType, strategy, campaign, slot, calendarContext, crossPost, mode, text, existing, instruction } = await req.json();
     const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
     if (!apiKey) throw new Error("ANTHROPIC_API_KEY missing");

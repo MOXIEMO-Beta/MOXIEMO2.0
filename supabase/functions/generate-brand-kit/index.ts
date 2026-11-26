@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireAuth, unauthorizedResponse } from "../_shared/auth-guard.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { sanitizeDashesDeep } from "../_shared/sanitize-dashes.ts";
 
@@ -161,6 +162,9 @@ function validateKit(kit: any): string | null {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
   const authHeader = req.headers.get("Authorization") ?? req.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {

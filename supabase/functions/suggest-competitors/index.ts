@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireAuth, unauthorizedResponse } from "../_shared/auth-guard.ts";
 import { normalizeDomain } from "../_shared/audit-scrape.ts";
 
 const corsHeaders = {
@@ -192,6 +193,9 @@ Return strictly JSON: {"domains": ["a.com", "b.com"]} ranked best first, maximum
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
     const body = await req.json();
     const what_you_do: string = body?.what_you_do ?? "";
     const who_you_serve: string = body?.who_you_serve ?? "";

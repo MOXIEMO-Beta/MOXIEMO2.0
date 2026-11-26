@@ -20,6 +20,7 @@
  */
 
 import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
+import { requireAuth, unauthorizedResponse } from "../_shared/auth-guard.ts";
 import { sanitizeDashesDeep } from "../_shared/sanitize-dashes.ts";
 
 const corsHeaders = {
@@ -48,6 +49,9 @@ interface JobPayload {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
   const wallStart = Date.now();
   const WALL_BUDGET_MS = 130_000;
   const remainingMs = () => Math.max(5_000, WALL_BUDGET_MS - (Date.now() - wallStart));

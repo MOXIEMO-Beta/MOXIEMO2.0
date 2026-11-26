@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireAuth } from "../_shared/auth-guard.ts";
 import { precheckGeneration, commitGeneration, limitErrorResponse, unauthorizedResponse } from "../_shared/usage.ts";
 import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
@@ -20,6 +21,9 @@ CRITICAL OUTPUT FORMAT: Return ONLY valid JSON with no markdown formatting, no c
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {

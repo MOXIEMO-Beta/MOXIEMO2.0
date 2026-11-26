@@ -4,6 +4,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
+import { requireAuth, unauthorizedResponse } from "../_shared/auth-guard.ts";
 
 type Action = "improve" | "shorter" | "longer" | "punchier" | "rewrite" | "instruction";
 
@@ -22,6 +23,9 @@ const actionInstructions: Record<Exclude<Action, "instruction">, string> = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
   }
 
   try {

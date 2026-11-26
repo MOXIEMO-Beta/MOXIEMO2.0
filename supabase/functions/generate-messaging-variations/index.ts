@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { requireAuth, unauthorizedResponse } from "../_shared/auth-guard.ts";
 import { notifyAdminCritical } from "../_shared/anthropic-alert.ts";
 
 const corsHeaders = {
@@ -9,6 +10,9 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+
+  const authUser = await requireAuth(req);
+  if (!authUser) return unauthorizedResponse();
   }
 
   try {
