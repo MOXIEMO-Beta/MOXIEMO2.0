@@ -4,22 +4,22 @@ const VALID_PLANS = ["founding_member", "pro", "enterprise"];
 
 Deno.serve(async (req) => {
   try {
-    // Verify the hook authorization token sent by Supabase
-    const authHeader = req.headers.get("authorization") ?? "";
     const hookSecret = Deno.env.get("HOOK_JWT_CLAIMS_SECRET") ?? "";
-    if (hookSecret && authHeader !== `Bearer ${hookSecret}`) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (hookSecret) {
+      const authHeader = req.headers.get("authorization") ?? "";
+      // Supabase sends the full secret as Bearer token
+      if (authHeader !== `Bearer ${hookSecret}`) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
     }
 
     const payload = await req.json();
     const userId = payload?.user_id;
 
-    const claims: Record<string, unknown> = {
-      app_role: "member",
-    };
+    const claims: Record<string, unknown> = { app_role: "member" };
 
     if (userId) {
       const supabase = createClient(
@@ -45,7 +45,6 @@ Deno.serve(async (req) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch {
-    // Always return valid claims shape — never block login
     return new Response(JSON.stringify({ claims: { app_role: "member" } }), {
       headers: { "Content-Type": "application/json" },
     });
