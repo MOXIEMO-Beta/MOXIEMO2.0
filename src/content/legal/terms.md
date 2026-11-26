@@ -248,3 +248,19 @@ KLMG US Ltd, LLC, doing business as MOXIE, Build With MOXIE and MOXIEMO
 2727 San Felipe Rd., Suite 217, Houston, TX 77063  
 hello@buildwithmoxiemo.com  
 buildwithmoxiemo.com
+
+## 33. Text messaging terms
+
+**33.1 Opt-in.** If you choose to receive MOXIE texts, you agree to receive automated text messages from MOXIEMO at the mobile number you provide. You can opt in through your account settings or at buildwithmoxiemo.com/text. The opt-in checkbox is never pre-ticked.
+
+**33.2 Message frequency.** Message frequency varies based on your settings and activity — typically one to five messages per week.
+
+**33.3 Costs.** Standard message and data rates from your carrier may apply. MOXIEMO does not charge you to receive texts.
+
+**33.4 Opting out.** Reply STOP to any message to opt out immediately. Reply HELP for information and support. You can also turn off texts in your account settings at any time.
+
+**33.5 Not required.** Opting in to MOXIE texts is not a condition of purchasing or using MOXIEMO. You can use all features without texting.
+
+**33.6 Privacy.** Your mobile number is never shared with third parties for marketing. See Privacy Policy Section 18.7.
+
+**33.7 Supported carriers.** MOXIE texts are sent via US SMS carriers. Carrier delivery is not guaranteed. Contact us at hello@buildwithmoxiemo.com with any delivery issues.

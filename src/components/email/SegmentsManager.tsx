@@ -15,7 +15,7 @@ export type Segment = {
 };
 
 export const PRESET_COLORS = [
-  "#ff6b6b", // coral
+  "#FF6B5C", // coral
   "#262833", // ink
   "#2dd4a8", // mint
   "#0c2340", // navy

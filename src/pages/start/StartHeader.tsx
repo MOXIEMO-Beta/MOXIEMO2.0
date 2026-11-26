@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
-import logo from "@/assets/redesign/moxiemo-logo.png.asset.json";
+const logo = { url: "/moxiemo-logo-header.png" };
 
 export function StartHeader() {
   return <header className="start-header">

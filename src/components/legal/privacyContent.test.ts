@@ -21,7 +21,7 @@ it("keeps the section 7.2 texting disclosures word for word", () => {
   expect(section72).toContain("Reply STOP to any message to opt out. Reply HELP for help, or email hello@buildwithmoxiemo.com.");
 });
 
-it("numbers every section from 1 to 17", () => {
+it("numbers every section from 1 to 18", () => {
   const numbered = [...privacy.matchAll(/^## (\d+)\./gm)].map(match => Number(match[1]));
-  expect(numbered).toEqual(Array.from({ length: 17 }, (_, index) => index + 1));
+  expect(numbered).toEqual(Array.from({ length: 18 }, (_, index) => index + 1));
 });

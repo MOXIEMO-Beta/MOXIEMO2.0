@@ -58,7 +58,7 @@ export function UsageIndicator({ compact = false }: { compact?: boolean }) {
       ) : (
         <>
           <div className="mt-1.5 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">{remaining}</span> generation{remaining === 1 ? "" : "s"} remaining this month
+            <span className="font-medium text-foreground">{remaining}</span> AI generation{remaining === 1 ? "" : "s"} left this month
           </div>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-foreground/10">
             <div className={cn("h-full transition-all", barColor)} style={{ width: `${pct}%` }} />

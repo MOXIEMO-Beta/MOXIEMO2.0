@@ -42,8 +42,8 @@ export function PlanProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-    const [{ data: prof }, { data: usageRow }] = await Promise.all([
-      supabase.from("profiles").select("plan").eq("id", user.id).maybeSingle(),
+    const [acctRes, usageRes] = await Promise.all([
+      supabase.from("accounts").select("plan").eq("owner_id", user.id).maybeSingle(),
       supabase
         .from("usage_tracking")
         .select("generations_used, month, last_reset, reset_date")
@@ -52,17 +52,21 @@ export function PlanProvider({ children }: { children: ReactNode }) {
         .limit(1)
         .maybeSingle(),
     ]);
-    const p = ((prof as { plan?: string } | null)?.plan as PlanId) || "founding_member";
+    const acct = acctRes.error ? null : acctRes.data;
+    const usageRow = usageRes.error ? null : usageRes.data;
+    type UsageRow = { reset_date?: string | null };
+    const usage = usageRow as (typeof usageRow & UsageRow) | null;
+    const p = ((acct as { plan?: string } | null)?.plan as PlanId) || "founding_member";
     setPlan(p);
-    if (usageRow) {
+    if (usage) {
       // If the stored period has already elapsed, the next server-side
       // generation will reset to 0. Reflect that optimistically in the UI.
-      const resetAt = (usageRow as any).reset_date ? new Date((usageRow as any).reset_date) : null;
+      const resetAt = usage.reset_date ? new Date(usage.reset_date) : null;
       const elapsed = resetAt && !isNaN(resetAt.getTime()) && resetAt.getTime() <= Date.now();
       setUsage({
-        generations_used: elapsed ? 0 : (usageRow.generations_used ?? 0),
-        month: usageRow.month,
-        reset_date: (usageRow as any).reset_date ?? null,
+        generations_used: elapsed ? 0 : (usage.generations_used ?? 0),
+        month: usage.month,
+        reset_date: usage.reset_date ?? null,
       });
     } else {
       setUsage({ generations_used: 0, month: currentMonthKey(), reset_date: null });

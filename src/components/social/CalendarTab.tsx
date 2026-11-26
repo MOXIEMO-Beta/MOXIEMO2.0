@@ -72,7 +72,7 @@ const STATUSES: { key: Status; label: string }[] = [
   { key: "queued", label: "Queued" },
 ];
 
-const PILLAR_COLORS = ["#ff6b6b", "#4f9df7", "#7c5cff", "#22c55e", "#f59e0b", "#ec4899"];
+const PILLAR_COLORS = ["#FF6B5C", "#4f9df7", "#7c5cff", "#22c55e", "#f59e0b", "#ec4899"];
 
 function asArray(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
@@ -1192,7 +1192,7 @@ function MiniMonth({
               )}
             >
               {d.getDate()}
-              {isToday && <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#ff6b6b]" />}
+              {isToday && <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#FF6B5C]" />}
             </button>
           );
         })}
@@ -1263,7 +1263,7 @@ function MonthGrid({
               className={cn(
                 "group relative min-h-[110px] cursor-pointer border-b border-r border-border p-1.5 text-xs hover:bg-muted/30",
                 !inMonth && "bg-muted/20 text-muted-foreground/50",
-                isDragOver && "ring-2 ring-inset ring-[#ff6b6b]",
+                isDragOver && "ring-2 ring-inset ring-[#FF6B5C]",
               )}
             >
               <div className="mb-1 flex items-start justify-between">
@@ -1344,7 +1344,7 @@ function MonthGrid({
                     e.stopPropagation();
                     onAddAtDate(d);
                   }}
-                  className="absolute bottom-1 right-1 hidden items-center gap-0.5 rounded border border-dashed border-border px-1.5 py-0.5 text-[9px] text-muted-foreground hover:border-[#ff6b6b] hover:text-[#ff6b6b] group-hover:flex"
+                  className="absolute bottom-1 right-1 hidden items-center gap-0.5 rounded border border-dashed border-border px-1.5 py-0.5 text-[9px] text-muted-foreground hover:border-[#FF6B5C] hover:text-[#FF6B5C] group-hover:flex"
                 >
                   <Plus className="h-2.5 w-2.5" /> Add
                 </button>
@@ -1433,7 +1433,7 @@ function WeekView({
                 key={p.id}
                 type="button"
                 onClick={() => onSelectPost(p)}
-                className="rounded-full border border-dashed border-border bg-white px-2 py-0.5 text-[10px] hover:border-[#ff6b6b]"
+                className="rounded-full border border-dashed border-border bg-white px-2 py-0.5 text-[10px] hover:border-[#FF6B5C]"
               >
                 {firstCopy(p, 30)}
               </button>
@@ -1488,7 +1488,7 @@ function WeekView({
                     <button
                       type="button"
                       onClick={() => onAddAtDate(slotDate)}
-                      className="hidden h-full w-full items-center justify-center rounded border border-dashed border-border text-[10px] text-muted-foreground hover:border-[#ff6b6b] hover:text-[#ff6b6b] group-hover:flex"
+                      className="hidden h-full w-full items-center justify-center rounded border border-dashed border-border text-[10px] text-muted-foreground hover:border-[#FF6B5C] hover:text-[#FF6B5C] group-hover:flex"
                     >
                       <Plus className="h-3 w-3" />
                     </button>
@@ -1576,7 +1576,7 @@ function ListView({ posts, onSelectPost }: { posts: SocialPost[]; onSelectPost: 
 function EmptyCalendar({ onCreate, onImport }: { onCreate: () => void; onImport: () => void }) {
   return (
     <Card className="flex flex-col items-center gap-3 p-12 text-center">
-      <CalendarIcon className="h-10 w-10 text-[#ff6b6b]" />
+      <CalendarIcon className="h-10 w-10 text-[#FF6B5C]" />
       <h3 className="text-lg font-semibold text-foreground">Your content calendar is empty</h3>
       <p className="max-w-md text-sm text-muted-foreground">
         Schedule your first post to start building a consistent presence.

@@ -44,7 +44,7 @@ interface RichTextEditorProps {
 
 const PRESET_COLORS = [
   { name: "Black", value: "#000000" },
-  { name: "Coral", value: "#ff6b6b" },
+  { name: "Coral", value: "#FF6B5C" },
   { name: "Navy", value: "#262833" },
   { name: "Gray", value: "#6b7280" },
   { name: "White", value: "#ffffff" },
@@ -163,7 +163,7 @@ function CtaPopover({ editor }: { editor: Editor }) {
 
   function insert() {
     if (!url.trim() || !text.trim()) return;
-    const html = `<p><a href="${url}" style="display:inline-block;background:#ff6b6b;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">${text}</a></p>`;
+    const html = `<p><a href="${url}" style="display:inline-block;background:#FF6B5C;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:700;">${text}</a></p>`;
     editor.chain().focus().insertContent(html).run();
     setOpen(false);
     setUrl("");
@@ -362,7 +362,7 @@ export default function RichTextEditor({
     if (content !== editor.getHTML()) {
       editor.commands.setContent(content || "", { emitUpdate: false });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [content, editor]);
 
   if (!editor) {

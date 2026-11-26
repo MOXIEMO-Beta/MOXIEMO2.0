@@ -5,13 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Check, Instagram, Facebook, Linkedin, Loader2 } from "lucide-react";
 import { SiteFooter } from "@/components/SiteFooter";
 import { HomeMoxie } from "@/components/HomeMoxie";
-import { MoxieAvatar } from "@/components/MoxieAvatar";
+import { MoxieChatCard } from "@/components/MoxieChatCard";
 import { Button } from "@/components/ui/button";
 import { BRAND_COUNTS, HOME_ROLES, isBrandCount } from "@/lib/homeForm";
-import heroCollage from "@/assets/redesign/hero-collage.jpg.asset.json";
-import watchBadge from "@/assets/redesign/watch-badge-3.svg.asset.json";
-import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
-import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
+const heroCollage = { url: "/13-phone-full.png" };
+const watchBadge = { url: "/05-how-it-works.png" };
+const logoDark = { url: "/moxiemo-logo-header.png" };
+const logoLight = { url: "/moxiemo-logo-header.png" };
 
 /* ───────────── design tokens ───────────── */
 const CREAM = "#f4efe5";
@@ -22,9 +22,9 @@ const MUTED_CREAM = "#56544c";
 const MUTED_SAGE = "#48533c";
 const MUTED_DARK = "#b3b1a6";
 
-const serif = { fontFamily: "'Newsreader', Georgia, serif" } as const;
-const sans = { fontFamily: "'Hanken Grotesk', system-ui, sans-serif" } as const;
-const mono = { fontFamily: "'IBM Plex Mono', ui-monospace, monospace" } as const;
+const serif = { fontFamily: "'Fraunces Variable', Georgia, serif" } as const;
+const sans = { fontFamily: "'DM Sans Variable', system-ui, sans-serif" } as const;
+const mono = { fontFamily: "'JetBrains Mono Variable', ui-monospace, monospace" } as const;
 
 /* ───────────── tiny atoms ───────────── */
 function Eyebrow({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
@@ -98,7 +98,21 @@ function Nav() {
 function Hero() {
   return (
     <section style={{ background: SAGE }}>
+      <style>{`
+        .mx-hero-card {
+          opacity: 0;
+          transform: translateY(14px);
+          animation: mx-hero-card-in 500ms ease-out 300ms forwards;
+        }
+        @keyframes mx-hero-card-in {
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .mx-hero-card { animation: none; opacity: 1; transform: none; }
+        }
+      `}</style>
       <div className="mx-auto grid gap-[52px] lg:grid-cols-[0.92fr_1.18fr] items-center" style={{ maxWidth: 1200, padding: "96px 40px 110px" }}>
+        {/* left col — copy */}
         <div>
           <h1 style={{ ...serif, fontWeight: 600, fontSize: "clamp(54px, 7.4vw, 92px)", lineHeight: 0.95, color: INK, marginTop: 0, letterSpacing: "-0.02em" }}>
             Built on strategy.<br />
@@ -107,7 +121,9 @@ function Hero() {
           <p style={{ ...sans, fontSize: 19, lineHeight: 1.55, color: MUTED_SAGE, maxWidth: 480, marginTop: 28 }}>
             MOXIEMO figures out what moves your brand forward. MOXIE, your growth companion, makes sure it happens.
           </p>
-          <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, maxWidth: 480, marginTop: 20 }}>Start with a guided discovery built on the Brand Architecture Method. MOXIEMO finds the gap between where your brand is and where you want it to go, sets your priorities and creates the work to close it. You approve. It gets done.</p>
+          <p style={{ ...sans, fontSize: 17, lineHeight: 1.65, color: MUTED_SAGE, maxWidth: 480, marginTop: 20 }}>
+            Start with a guided discovery built on the Brand Architecture Method. MOXIEMO finds the gap between where your brand is and where you want it to go, sets your priorities and creates the work to close it. You approve. It gets done.
+          </p>
           <div className="flex flex-wrap items-center" style={{ gap: 24, marginTop: 36 }}>
             <div className="flex flex-col gap-3">
               <PillButton to="/brand-audit">Get my free growth assessment <ArrowRight size={16} /></PillButton>
@@ -128,46 +144,23 @@ function Hero() {
           </div>
           <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_SAGE, marginTop: 24 }}>50% off any plan, for life. Limited to 100 founding members.</div>
         </div>
-        <div style={{ position: "relative" }}>
-          <div style={{ aspectRatio: "1 / 1.12", borderRadius: 6, overflow: "hidden", boxShadow: "0 30px 80px rgba(19,19,15,0.18)" }}>
-            <img src={heroCollage.url} alt="MOXIEMO marketing collage" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+
+        {/* right col — collage (desktop) + MOXIE chat card */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+          {/* collage — hidden on small mobile only */}
+          <div className="hidden sm:block" style={{ position: "relative", width: "100%", borderRadius: 12, overflow: "hidden", boxShadow: "0 30px 80px rgba(19,19,15,0.18)", lineHeight: 0 }}>
+            <img
+              src={heroCollage.url}
+              alt="MOXIEMO marketing collage"
+              style={{ width: "100%", height: "auto", display: "block" }}
+              loading="eager"
+              decoding="async"
+            />
           </div>
-          <style>{`
-            .mx-hero-moxie {
-              position: absolute; left: 18px; bottom: 18px;
-              display: flex; align-items: flex-end; gap: 12px;
-              opacity: 0; transform: translateY(12px);
-              animation: mx-hero-moxie-in 600ms ease-out 500ms forwards;
-            }
-            @keyframes mx-hero-moxie-in {
-              to { opacity: 1; transform: translateY(0); }
-            }
-            .mx-hero-moxie-icon img { width: 56px !important; }
-            @media (prefers-reduced-motion: reduce) {
-              .mx-hero-moxie { animation: none; opacity: 1; transform: none; }
-            }
-            @media (max-width: 767px) {
-              .mx-hero-moxie { left: 12px; bottom: 12px; }
-              .mx-hero-moxie-icon img { width: 44px !important; }
-              .mx-hero-moxie-bubble { max-width: 230px !important; font-size: 14px !important; }
-            }
-          `}</style>
-          <div className="mx-hero-moxie">
-            <span className="mx-hero-moxie-icon" style={{ flex: "none", lineHeight: 0 }}>
-              <MoxieAvatar pose="icon" size={56} decorative />
-            </span>
-            <div
-              className="mx-hero-moxie-bubble"
-              style={{
-                background: CREAM, color: INK, ...sans, fontSize: 15, lineHeight: 1.45,
-                padding: "12px 16px", maxWidth: 300,
-                borderRadius: 16, borderBottomLeftRadius: 4,
-                boxShadow: "0 12px 30px -12px rgba(19,19,15,0.35)",
-              }}
-            >
-              <div style={{ ...mono, fontSize: 11, letterSpacing: "0.16em", textTransform: "uppercase", color: MUTED_CREAM, marginBottom: 6 }}>MOXIE</div>
-              Hi, I am MOXIE. I know your plan, I tell you what needs you next, and I follow up until it is done.
-            </div>
+
+          {/* MOXIE chat card — the actual interactive element */}
+          <div className="mx-hero-card">
+            <MoxieChatCard />
           </div>
         </div>
       </div>
@@ -686,12 +679,17 @@ function FoundingSection() {
           cta_variant: getCtaVariant(),
         },
       });
-      let bodyError: string | undefined = (data as any)?.error;
+      let bodyError: string | undefined = (data as Record<string, string> | null)?.error;
       if (invokeError) {
         try {
-          const ctx: any = (invokeError as any).context;
-          if (ctx && typeof ctx.json === "function") bodyError = (await ctx.json())?.error ?? bodyError;
-        } catch {}
+          const ctx = (invokeError as Record<string, unknown>).context;
+          if (ctx && typeof (ctx as Record<string, unknown>).json === "function") {
+            const parsed = await (ctx as { json: () => Promise<Record<string, string>> }).json();
+            bodyError = parsed?.error ?? bodyError;
+          }
+        } catch (_) {
+          // context is not parseable — keep existing bodyError
+        }
       }
       if (typeof bodyError === "string" && bodyError.includes("already_registered")) {
         setError("Looks like you are already on the list. Check your email for next steps.");
@@ -861,12 +859,12 @@ function Footer() {
           </div>
           {[
             ["Product", [["Platform", "/platform"], ["Solutions", "/solutions"], ["Why MOXIEMO", "/why-moxiemo"], ["Pricing", "/pricing"], ["About", "/about"]]],
-            ["Resources", [["Building with MOXIEMO", "/blog"], ["Changelog", "/changelog"], ["Free growth assessment", "/brand-audit"], ["Free Brand Kit", "/brand-kit", true], ["Contact", "mailto:hello@buildwithmoxiemo.com"]]],
+            ["Resources", [["Building with MOXIEMO", "/blog"], ["Changelog", "/changelog"], ["Free growth assessment", "/brand-audit"], ["Free Brand Kit", "/brand-kit"], ["Contact", "mailto:hello@buildwithmoxiemo.com"]]],
             ["Legal", [["Privacy", "/privacy"], ["Terms", "/terms"], ["Data Deletion", "/data-deletion"]]],
           ].map(([title, items]) => (
             <div key={title as string}>
               <div style={{ ...mono, fontSize: 11, letterSpacing: "0.14em", textTransform: "uppercase", color: MUTED_DARK, marginBottom: 16 }}>{title}</div>
-              {(items as any[]).map(([l, h, hl]) => (
+              {(items as [string, string, boolean?][]).map(([l, h, hl]) => (
                 <Link key={l} to={h} style={{ ...sans, fontSize: 14, color: hl ? CORAL : CREAM, display: "block", padding: "6px 0", textDecoration: "none" }} className="hover:opacity-70">{l}</Link>
               ))}
             </div>
@@ -888,7 +886,7 @@ function Styles() {
     <style>{`
       html, body, #root { margin: 0; padding: 0; }
       html { scroll-behavior: smooth; }
-      body { font-family: 'Hanken Grotesk', system-ui, sans-serif; color: ${INK}; }
+      body { font-family: 'DM Sans Variable', system-ui, sans-serif; color: ${INK}; }
       @keyframes mx-marquee { from { transform: translateX(0) } to { transform: translateX(-50%) } }
       @keyframes mx-spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
       @keyframes mx-fadeUp { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }

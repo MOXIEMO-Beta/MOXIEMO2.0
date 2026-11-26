@@ -1,46 +1,55 @@
 import { cn } from "@/lib/utils";
-import logo from "@/assets/moxiemo-logo.png";
-import mark from "@/assets/moxie-mark.png";
-import markOnly from "@/assets/moxiemo-mark-only.png";
-import wordmark from "@/assets/moxiemo-wordmark.png";
+
+const LOGO_HEADER = "/moxiemo-logo-header.png";   // 894×132 — header / sidebar
+const LOGO_FULL   = "/moxiemo-logo-full.png";      // 3159×602 — full lockup if needed
 
 export function MoxieLogo({
   className,
-  showWord = true,
+  variant = "default",
+  size = "md",
+}: {
+  className?: string;
+  variant?: "default" | "light";
+  size?: "sm" | "md" | "lg";
+}) {
+  const heights: Record<string, string> = { sm: "h-7", md: "h-8", lg: "h-10" };
+  const h = heights[size];
+  const filter = variant === "light" ? "brightness(0) invert(1)" : undefined;
+  return (
+    <div className={cn("flex items-center", className)}>
+      <img
+        src={LOGO_HEADER}
+        alt="MOXIEMO"
+        className={cn(h, "w-auto")}
+        style={filter ? { filter } : undefined}
+        draggable={false}
+      />
+    </div>
+  );
+}
+
+export function MoxieMark({
+  className,
+  size = 32,
   variant = "default",
 }: {
   className?: string;
-  showWord?: boolean;
-  variant?: "default" | "light";
+  size?: number;
+  variant?: "default" | "light" | "white";
 }) {
-  const fullAlt = "MOXIEMO. One platform. Confident marketing.";
-  if (!showWord) {
-    return (
-      <div className={cn("flex items-center", className)}>
-        <img src={mark} alt={fullAlt} className="h-11 w-auto" />
-      </div>
-    );
-  }
-  if (variant === "light") {
-    return (
-      <div className={cn("flex items-center", className)} aria-label={fullAlt}>
-        <img src={markOnly} alt="" className="h-11 w-auto" />
-        <img
-          src={wordmark}
-          alt=""
-          className="h-11 w-auto"
-          style={{ filter: "brightness(0) invert(1)", opacity: 0.95 }}
-        />
-      </div>
-    );
-  }
+  const filter =
+    variant === "light" || variant === "white"
+      ? "brightness(0) invert(1)"
+      : undefined;
   return (
-    <div className={cn("flex items-center", className)} aria-label={fullAlt}>
-      {/* Mobile: mark + wordmark only — tagline baked into full lockup is too small to read at header scale */}
-      <img src={markOnly} alt="" className="h-9 w-auto sm:hidden" />
-      <img src={wordmark} alt="" className="h-9 w-auto sm:hidden" />
-      {/* Desktop: full lockup with tagline, scaled up for legibility */}
-      <img src={logo} alt={fullAlt} className="hidden sm:block h-14 md:h-16 w-auto" />
-    </div>
+    <img
+      src="/favicon.svg"
+      alt="MOXIEMO"
+      width={size}
+      height={size}
+      className={cn("shrink-0", className)}
+      style={filter ? { filter } : undefined}
+      draggable={false}
+    />
   );
 }

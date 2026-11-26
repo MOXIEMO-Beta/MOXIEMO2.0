@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { friendlyAuthError } from "@/lib/authErrors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -38,21 +39,21 @@ export default function ResetPassword() {
     e.preventDefault();
     setError(null);
     if (password.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError("Password must be at least 8 characters with an uppercase letter and a number.");
       return;
     }
     if (password !== confirm) {
-      setError("Passwords don't match");
+      setError("Those passwords don't match. Try typing them again.");
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast.success("Password updated successfully");
+      toast.success("Password updated. Taking you in now.");
       setTimeout(() => navigate("/app"), 1500);
-    } catch (err: any) {
-      setError(err.message ?? "Something went wrong — please try again.");
+    } catch (err: unknown) {
+      setError(friendlyAuthError("reset_password", err));
     } finally {
       setLoading(false);
     }

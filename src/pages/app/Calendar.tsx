@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import CampaignCalendarTab from "@/components/calendar/CampaignCalendarTab";
@@ -17,6 +18,7 @@ const LABELS: Record<TabKey, string> = {
 
 export default function CalendarPage() {
   const { user } = useAuth();
+  const { brandId } = useBrand();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("start");
   const [loading, setLoading] = useState(true);
@@ -50,16 +52,24 @@ export default function CalendarPage() {
   const refresh = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    const stratQ = supabase.from("strategies").select("*");
+    const postsQ = supabase.from("social_posts").select("*");
+    const contentQ = supabase.from("content_items").select("*");
+    const emailQ = supabase.from("email_sends").select("*");
+    const campQ = supabase.from("campaigns").select("*");
+    const connQ = supabase.from("social_connections").select("*");
+    const subQ = supabase.from("subscribers").select("id");
+    const ideasQ = supabase.from("calendar_ideas").select("*");
     const r = await Promise.allSettled([
-      supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
-      supabase.from("social_posts").select("*").eq("user_id", user.id),
-      supabase.from("content_items").select("*").eq("user_id", user.id),
-      supabase.from("email_sends").select("*").eq("user_id", user.id),
-      supabase.from("campaigns").select("*").eq("user_id", user.id).order("start_date", { ascending: false }),
-      supabase.from("social_connections").select("*").eq("user_id", user.id),
-      supabase.from("subscribers").select("id").eq("user_id", user.id).limit(1),
-      supabase.from("calendar_ideas").select("*").eq("user_id", user.id).eq("dismissed", false).order("generated_at", { ascending: false }),
-      supabase.from("campaign_execution_items").select("*").eq("user_id", user.id).order("date", { ascending: true }),
+      (brandId ? stratQ.eq("brand_id", brandId) : stratQ.eq("user_id", user.id)).maybeSingle(),
+      (brandId ? postsQ.eq("brand_id", brandId) : postsQ.eq("user_id", user.id)).limit(200),
+      (brandId ? contentQ.eq("brand_id", brandId) : contentQ.eq("user_id", user.id)).limit(200),
+      (brandId ? emailQ.eq("brand_id", brandId) : emailQ.eq("user_id", user.id)).limit(200),
+      (brandId ? campQ.eq("brand_id", brandId) : campQ.eq("user_id", user.id)).order("start_date", { ascending: false }).limit(50),
+      (brandId ? connQ.eq("brand_id", brandId) : connQ.eq("user_id", user.id)).limit(20),
+      (brandId ? subQ.eq("brand_id", brandId) : subQ.eq("user_id", user.id)).limit(1),
+      (brandId ? ideasQ.eq("brand_id", brandId) : ideasQ.eq("user_id", user.id)).eq("dismissed", false).order("generated_at", { ascending: false }).limit(50),
+      supabase.from("campaign_execution_items").select("*").eq("user_id", user.id).order("date", { ascending: true }).limit(200),
     ]);
     const get = (i: number) => r[i].status === "fulfilled" ? (r[i] as any).value?.data : null;
     setStrategy(get(0));
@@ -72,7 +82,7 @@ export default function CalendarPage() {
     setIdeas(get(7) ?? []);
     setExecutionItems(get(8) ?? []);
     setLoading(false);
-  }, [user]);
+  }, [user, brandId]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 

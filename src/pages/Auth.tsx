@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
+import { friendlyAuthError } from "@/lib/authErrors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MoxieLogo } from "@/components/MoxieLogo";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { ArrowRight, Mail } from "lucide-react";
+import { ArrowRight, Mail, Eye, EyeOff } from "lucide-react";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -19,6 +19,8 @@ export default function Auth() {
   useEffect(() => {
     const m = searchParams.get("mode");
     setMode(m === "signin" ? "signin" : "signup");
+    setShowPassword(false);
+    setPassword("");
   }, [searchParams]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,24 +30,28 @@ export default function Auth() {
   const [signupEmail, setSignupEmail] = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
   const [appleLoading, setAppleLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const passwordChecks = {
+    length:  password.length >= 8,
+    upper:   /[A-Z]/.test(password),
+    number:  /[0-9]/.test(password),
+  };
+  const passwordStrong = Object.values(passwordChecks).every(Boolean);
+  const showStrength = mode === "signup" && password.length > 0;
 
   useEffect(() => { if (user) navigate("/app"); }, [user, navigate]);
 
   async function signInWithGoogle() {
     setGoogleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: `${window.location.origin}/app`,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
-      if (result.error) {
-        toast.error(result.error.message ?? "Google sign-in failed");
-        setGoogleLoading(false);
-        return;
-      }
-      if (result.redirected) return;
-      navigate("/app");
-    } catch (err: any) {
-      toast.error(err.message ?? "Google sign-in failed");
+      if (error) throw error;
+    } catch (err: unknown) {
+      toast.error(friendlyAuthError("google", err));
       setGoogleLoading(false);
     }
   }
@@ -53,42 +59,41 @@ export default function Auth() {
   async function signInWithApple() {
     setAppleLoading(true);
     try {
-      const result = await lovable.auth.signInWithOAuth("apple", {
-        redirect_uri: `${window.location.origin}/app`,
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
       });
-      if (result.error) {
-        toast.error(result.error.message ?? "Apple sign-in failed");
-        setAppleLoading(false);
-        return;
-      }
-      if (result.redirected) return;
-      navigate("/app");
-    } catch (err: any) {
-      toast.error(err.message ?? "Apple sign-in failed");
+      if (error) throw error;
+    } catch (err: unknown) {
+      toast.error(friendlyAuthError("apple", err));
       setAppleLoading(false);
     }
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (mode === "signup" && !passwordStrong) {
+      toast.error("Your password needs at least 8 characters, one uppercase letter, and one number.");
+      return;
+    }
     setLoading(true);
     try {
       if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email, password,
-          options: { data: { full_name: name }, emailRedirectTo: `${window.location.origin}/app` },
+          options: { data: { full_name: name }, emailRedirectTo: `${window.location.origin}/auth/callback` },
         });
         if (error) throw error;
         setSignupEmail(email);
         setSignupSuccess(true);
-        toast.success("Account created. Check your email to confirm.");
+        toast.success("Account created! Check your email and click the confirmation link to get started.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success("Welcome back.");
+        toast.success("Welcome back! Taking you to your dashboard.");
       }
-    } catch (err: any) {
-      toast.error(err.message ?? "Something went wrong");
+    } catch (err: unknown) {
+      toast.error(friendlyAuthError(mode === "signup" ? "sign_up" : "sign_in", err));
     } finally {
       setLoading(false);
     }
@@ -96,45 +101,45 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
-      <div className="hidden lg:flex flex-col justify-between p-12 bg-foreground text-background relative overflow-hidden">
+      <div className="hidden lg:flex flex-col p-12 bg-foreground text-background relative overflow-hidden">
         <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />
-        <Link to="/" className="relative z-10">
+
+        {/* Logo — top */}
+        <Link to="/" className="relative z-10 shrink-0">
           <MoxieLogo variant="light" />
         </Link>
-        <div className="relative z-10 max-w-md">
+
+        {/* Content — vertically centered in remaining space */}
+        <div className="relative z-10 max-w-md flex-1 flex flex-col justify-center">
           {mode === "signup" ? (
             <>
-              <span
-                className="inline-block mb-6 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider"
-                style={{ background: "#ff6b6b", color: "#fff", letterSpacing: "1.5px" }}
-              >
+              <span className="inline-block mb-6 px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-widest bg-accent text-white w-fit">
                 Founding Member Access
               </span>
               <h2 className="font-display text-5xl leading-tight mb-6">
                 Your AI Chief<br />Marketing Officer.
               </h2>
-              <p
-                className="italic"
-                style={{ color: "rgba(255,255,255,0.7)", fontSize: 16, lineHeight: 1.7 }}
-              >
+              <p className="italic text-base leading-relaxed text-white/70">
                 "You don't need more content ideas.<br />
                 You need a system that makes<br />
                 marketing inevitable."
                 <br />
                 <span className="not-italic">— MOXIEMO</span>
               </p>
+              <ul className="mt-10 space-y-2 text-[13px] text-white/70">
+                <li><span className="text-accent">✓</span> Free for founding members — forever</li>
+                <li><span className="text-accent">✓</span> Personal 1:1 onboarding call</li>
+                <li><span className="text-accent">✓</span> Locked-in rate before prices increase</li>
+              </ul>
             </>
           ) : (
             <>
               <h2 className="font-display text-5xl leading-tight mb-6">Welcome back.</h2>
-              <p style={{ color: "rgba(255,255,255,0.85)", fontSize: 18, lineHeight: 1.6 }}>
+              <p className="text-lg leading-relaxed text-white/80">
                 Sign in to continue building<br />your marketing engine.
               </p>
-              <p
-                className="italic mt-6"
-                style={{ color: "rgba(255,255,255,0.65)", fontSize: 15, lineHeight: 1.7 }}
-              >
+              <p className="italic mt-6 text-[15px] leading-relaxed text-white/60">
                 "Consistency compounds.<br />
                 Every time you log in,<br />
                 you're building something real."
@@ -142,13 +147,6 @@ export default function Auth() {
                 <span className="not-italic">— MOXIEMO</span>
               </p>
             </>
-          )}
-          {mode === "signup" && (
-            <ul className="mt-10 space-y-2" style={{ color: "rgba(255,255,255,0.75)", fontSize: 13 }}>
-              <li><span style={{ color: "#ff6b6b" }}>✓</span> Free for founding members — forever</li>
-              <li><span style={{ color: "#ff6b6b" }}>✓</span> Personal 1:1 onboarding call</li>
-              <li><span style={{ color: "#ff6b6b" }}>✓</span> Locked-in rate before prices increase</li>
-            </ul>
           )}
         </div>
       </div>
@@ -158,8 +156,8 @@ export default function Auth() {
           <div className="lg:hidden mb-8"><MoxieLogo /></div>
           {signupSuccess ? (
             <div>
-              <div className="h-12 w-12 rounded-full bg-accent/20 flex items-center justify-center mb-6">
-                <Mail className="h-6 w-6 text-accent-foreground" />
+              <div className="h-12 w-12 rounded-full bg-accent/15 flex items-center justify-center mb-6">
+                <Mail className="h-6 w-6 text-accent" />
               </div>
               <h1 className="font-display text-4xl mb-3">Check your email</h1>
               <p className="text-muted-foreground mb-6">
@@ -194,7 +192,40 @@ export default function Auth() {
             </div>
             <div>
               <Label htmlFor="password">Password</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="mt-1.5 h-11" />
+              <div className="relative mt-1.5">
+                <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} className="h-11 pr-10" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {showStrength && (
+                <div className="mt-2 space-y-1">
+                  <div className="flex gap-1">
+                    {[passwordChecks.length, passwordChecks.upper, passwordChecks.number].map((ok, i) => (
+                      <div
+                        key={i}
+                        className={`h-1 flex-1 rounded-full transition-colors ${ok ? "bg-accent" : "bg-border"}`}
+                      />
+                    ))}
+                  </div>
+                  <ul className="text-xs space-y-0.5 text-muted-foreground">
+                    <li className={passwordChecks.length ? "text-accent" : ""}>
+                      {passwordChecks.length ? "✓" : "·"} At least 8 characters
+                    </li>
+                    <li className={passwordChecks.upper ? "text-accent" : ""}>
+                      {passwordChecks.upper ? "✓" : "·"} One uppercase letter
+                    </li>
+                    <li className={passwordChecks.number ? "text-accent" : ""}>
+                      {passwordChecks.number ? "✓" : "·"} One number
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
             {mode === "signin" && (
               <div className="flex justify-end">
@@ -208,10 +239,9 @@ export default function Auth() {
               disabled={loading}
               className={
                 mode === "signup"
-                  ? "w-full h-11 text-white hover:opacity-90 rounded-lg"
+                  ? "w-full h-11 bg-accent text-white hover:bg-accent/90 rounded-lg"
                   : "w-full h-11 bg-foreground text-background hover:bg-foreground/90 rounded-lg"
               }
-              style={mode === "signup" ? { background: "#ff6b6b" } : undefined}
             >
               {loading ? "Working…" : mode === "signup" ? "Create my account" : "Sign in"} <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -250,7 +280,7 @@ export default function Auth() {
             {mode === "signup" ? (
               <>
                 Already have an account?{" "}
-                <button onClick={() => setMode("signin")} className="text-foreground font-bold hover:text-accent">
+                <button onClick={() => { setMode("signin"); setShowPassword(false); setPassword(""); }} className="text-foreground font-bold hover:text-accent">
                   Sign in
                 </button>
               </>
@@ -258,9 +288,8 @@ export default function Auth() {
               <>
                 New to MOXIEMO?{" "}
                 <button
-                  onClick={() => setMode("signup")}
-                  className="font-bold hover:opacity-80"
-                  style={{ color: "#ff6b6b" }}
+                  onClick={() => { setMode("signup"); setShowPassword(false); setPassword(""); }}
+                  className="font-bold text-accent hover:text-accent/80"
                 >
                   Get started free →
                 </button>

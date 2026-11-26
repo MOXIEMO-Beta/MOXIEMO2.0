@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DropZone } from "@/hooks/useFileDrop";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
 import { aiErrorMessage } from "@/lib/aiErrors";
 import { usePlan } from "@/hooks/usePlan";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -74,7 +75,7 @@ import GeneratePanel, { type GenerateParams } from "@/components/email/GenerateP
 import SegmentsManager, { type Segment, PRESET_COLORS } from "@/components/email/SegmentsManager";
 
 const CTA_COLOR_PRESETS: Array<{ name: string; hex: string }> = [
-  { name: "Coral", hex: "#ff6b6b" },
+  { name: "Coral", hex: "#FF6B5C" },
   { name: "Dark", hex: "#101116" },
   { name: "White", hex: "#ffffff" },
   { name: "Navy", hex: "#1a3a5c" },
@@ -176,6 +177,7 @@ type SendMode = "now" | "schedule" | "queue";
 
 export default function Email() {
   const { user } = useAuth();
+  const { brandId } = useBrand();
   const { checkGenerationLimit, handleGenerationResponse } = usePlan();
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -186,7 +188,7 @@ export default function Email() {
   const [ctaEnabled, setCtaEnabled] = useState(false);
   const [ctaLabel, setCtaLabel] = useState("");
   const [ctaUrl, setCtaUrl] = useState("");
-  const [ctaBgColor, setCtaBgColor] = useState<string>("#ff6b6b");
+  const [ctaBgColor, setCtaBgColor] = useState<string>("#FF6B5C");
   const [ctaTextColor, setCtaTextColor] = useState<string>("#ffffff");
   const [sending, setSending] = useState(false);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
@@ -290,34 +292,22 @@ export default function Email() {
 
   async function loadAll() {
     if (!user) return;
+    const subsQ = supabase.from("subscribers").select("*");
+    const sendsQ = supabase.from("email_sends").select("*");
+    const stratQ = supabase.from("strategies").select(
+      "positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning, content_pillars, content_themes, primary_channel, success_definition",
+    );
+    const segQ = supabase.from("subscriber_segments").select("*");
     const [subsRes, sendsRes, profileRes, strategyRes, segRes] = await Promise.all([
-      supabase
-        .from("subscribers")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("subscribed_at", { ascending: false }),
-      supabase
-        .from("email_sends")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("sent_at", { ascending: false }),
+      (brandId ? subsQ.eq("brand_id", brandId) : subsQ.eq("user_id", user.id)).order("subscribed_at", { ascending: false }),
+      (brandId ? sendsQ.eq("brand_id", brandId) : sendsQ.eq("user_id", user.id)).order("sent_at", { ascending: false }),
       supabase
         .from("profiles")
         .select("email_settings, full_name")
         .eq("id", user.id)
         .maybeSingle(),
-      supabase
-        .from("strategies")
-        .select(
-          "positioning_statement, ideal_client, pain_point, voice_attributes, anti_positioning, content_pillars, content_themes, primary_channel, success_definition",
-        )
-        .eq("user_id", user.id)
-        .maybeSingle(),
-      supabase
-        .from("subscriber_segments")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: true }),
+      (brandId ? stratQ.eq("brand_id", brandId) : stratQ.eq("user_id", user.id)).maybeSingle(),
+      (brandId ? segQ.eq("brand_id", brandId) : segQ.eq("user_id", user.id)).order("created_at", { ascending: true }),
     ]);
 
     const subs = ((subsRes.data || []) as Array<Record<string, unknown>>).map((s) => ({
@@ -338,7 +328,7 @@ export default function Email() {
   useEffect(() => {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, brandId]);
 
   useEffect(() => {
     if (sends.length > 0) setHowItWorksOpen(false);
@@ -462,7 +452,7 @@ export default function Email() {
     setCtaEnabled(false);
     setCtaLabel("");
     setCtaUrl("");
-    setCtaBgColor("#ff6b6b");
+    setCtaBgColor("#FF6B5C");
     setCtaTextColor("#ffffff");
   }
 

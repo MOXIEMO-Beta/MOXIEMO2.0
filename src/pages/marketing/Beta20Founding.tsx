@@ -4,8 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
-const FONTS_HREF =
-  "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,wght@0,300;0,500;0,600;0,700;1,300;1,500&display=swap";
 
 type Tier = "foundation" | "growth" | "scale" | "unsure";
 const ALLOWED: Tier[] = ["foundation", "growth", "scale", "unsure"];
@@ -16,7 +14,7 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 9,
   border: "1px solid rgba(26,48,40,0.18)",
   background: "rgba(255,255,255,0.6)",
-  fontFamily: "'Hanken Grotesk', sans-serif",
+  fontFamily: "'DM Sans Variable', sans-serif",
   fontSize: 15,
   color: "#1a3028",
   outline: "none",
@@ -24,7 +22,7 @@ const inputStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   display: "block",
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: "'JetBrains Mono Variable', monospace",
   fontSize: 10.5,
   letterSpacing: "0.16em",
   textTransform: "uppercase",
@@ -108,9 +106,6 @@ export default function Beta20Founding() {
 
   return (
     <>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link rel="stylesheet" href={FONTS_HREF} />
       <SiteHeader />
       <style>{`
         @keyframes mo-scroll { from { transform: translateX(0);} to { transform: translateX(-50%);} }
@@ -128,7 +123,7 @@ export default function Beta20Founding() {
         style={{
           minHeight: "100vh",
           background: "#7bbfaa",
-          fontFamily: "'Hanken Grotesk', sans-serif",
+          fontFamily: "'DM Sans Variable', sans-serif",
           WebkitFontSmoothing: "antialiased",
           position: "relative",
         }}
@@ -167,7 +162,7 @@ export default function Beta20Founding() {
               display: "inline-flex",
               whiteSpace: "nowrap",
               animation: "mo-scroll 28s linear infinite",
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'JetBrains Mono Variable', monospace",
               fontSize: 11.5,
               letterSpacing: "0.2em",
               textTransform: "uppercase",
@@ -213,7 +208,7 @@ export default function Beta20Founding() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 9,
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "'JetBrains Mono Variable', monospace",
                 fontSize: 11,
                 letterSpacing: "0.22em",
                 textTransform: "uppercase",
@@ -232,7 +227,7 @@ export default function Beta20Founding() {
 
             <h1
               style={{
-                fontFamily: "'Newsreader', serif",
+                fontFamily: "'Fraunces Variable', serif",
                 fontWeight: 600,
                 fontSize: "clamp(38px,4.2vw,60px)",
                 lineHeight: 1.02,
@@ -265,7 +260,7 @@ export default function Beta20Founding() {
             <div style={{ marginBottom: 20 }}>
               <div
                 style={{
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontFamily: "'JetBrains Mono Variable', monospace",
                   fontSize: 10,
                   letterSpacing: "0.2em",
                   textTransform: "uppercase",
@@ -333,7 +328,7 @@ export default function Beta20Founding() {
                 <div style={{ marginBottom: 32 }}>
                   <div
                     style={{
-                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontFamily: "'JetBrains Mono Variable', monospace",
                       fontSize: 10,
                       letterSpacing: "0.22em",
                       textTransform: "uppercase",
@@ -345,7 +340,7 @@ export default function Beta20Founding() {
                   </div>
                   <h2
                     style={{
-                      fontFamily: "'Newsreader', serif",
+                      fontFamily: "'Fraunces Variable', serif",
                       fontWeight: 500,
                       fontSize: 28,
                       lineHeight: 1.2,
@@ -453,7 +448,7 @@ export default function Beta20Founding() {
                       width: "100%",
                       background: "#d4622a",
                       color: "#fff",
-                      fontFamily: "'Hanken Grotesk', sans-serif",
+                      fontFamily: "'DM Sans Variable', sans-serif",
                       fontWeight: 700,
                       fontSize: 16,
                       padding: "17px 24px",
@@ -474,7 +469,7 @@ export default function Beta20Founding() {
                   <div
                     style={{
                       textAlign: "center",
-                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontFamily: "'JetBrains Mono Variable', monospace",
                       fontSize: 11,
                       letterSpacing: "0.08em",
                       color: "rgba(26,48,40,0.38)",
@@ -506,7 +501,7 @@ export default function Beta20Founding() {
                 </div>
                 <div
                   style={{
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "'JetBrains Mono Variable', monospace",
                     fontSize: 10.5,
                     letterSpacing: "0.2em",
                     textTransform: "uppercase",
@@ -518,7 +513,7 @@ export default function Beta20Founding() {
                 </div>
                 <h2
                   style={{
-                    fontFamily: "'Newsreader', serif",
+                    fontFamily: "'Fraunces Variable', serif",
                     fontWeight: 600,
                     fontSize: 36,
                     lineHeight: 1.1,
@@ -534,7 +529,7 @@ export default function Beta20Founding() {
                 </p>
                 <div
                   style={{
-                    fontFamily: "'IBM Plex Mono', monospace",
+                    fontFamily: "'JetBrains Mono Variable', monospace",
                     fontSize: 11,
                     letterSpacing: "0.1em",
                     color: "rgba(26,48,40,0.3)",
@@ -569,7 +564,7 @@ function TierRow({ name, founding, standard, highlight }: { name: string; foundi
       <div>
         <div
           style={{
-            fontFamily: "'IBM Plex Mono', monospace",
+            fontFamily: "'JetBrains Mono Variable', monospace",
             fontSize: 10,
             letterSpacing: "0.16em",
             textTransform: "uppercase",
@@ -579,16 +574,16 @@ function TierRow({ name, founding, standard, highlight }: { name: string; foundi
         >
           {name}
         </div>
-        <div style={{ fontFamily: "'Newsreader', serif", fontSize: 22, fontWeight: 700, color: "#1a3028", lineHeight: 1 }}>
+        <div style={{ fontFamily: "'Fraunces Variable', serif", fontSize: 22, fontWeight: 700, color: "#1a3028", lineHeight: 1 }}>
           {founding}
-          <span style={{ fontSize: 13, fontWeight: 400, color: "rgba(26,48,40,0.45)", fontFamily: "'Hanken Grotesk', sans-serif" }}>/mo</span>
+          <span style={{ fontSize: 13, fontWeight: 400, color: "rgba(26,48,40,0.45)", fontFamily: "'DM Sans Variable', sans-serif" }}>/mo</span>
         </div>
       </div>
       <div style={{ textAlign: "right" }}>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "rgba(26,48,40,0.3)", textDecoration: "line-through", letterSpacing: "0.04em" }}>
+        <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 11, color: "rgba(26,48,40,0.3)", textDecoration: "line-through", letterSpacing: "0.04em" }}>
           {standard}
         </div>
-        <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, letterSpacing: "0.1em", color: "#b8893a", marginTop: 3 }}>
+        <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 10, letterSpacing: "0.1em", color: "#b8893a", marginTop: 3 }}>
           50% OFF
         </div>
       </div>

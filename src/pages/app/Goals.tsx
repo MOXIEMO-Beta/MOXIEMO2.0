@@ -7,6 +7,7 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
 import { useGoalDefinitions, type GoalCard, type NorthStar } from "@/hooks/useGoalDefinitions";
 
 type GoalEntry = {
@@ -36,13 +37,6 @@ type Strategy = {
   created_at: string | null;
 };
 
-const CORAL = "#E85A46";
-const CORAL_LIGHT = "#FF8A6B";
-const NAVY = "hsl(var(--brand-navy))";
-const CORAL_TINT = "#F4C9BC";
-const CORAL_TINT_SOFT = "#F4D9CF";
-const LABEL_MUTED = "#AEB9C9";
-const INK = "#15171C";
 const CONFETTI_COLORS = ["#E85A46", "#FF8A6B", "#14243D", "#F4C9BC", "#AEB9C9", "#FFFFFF"];
 
 function brandFire() {
@@ -165,6 +159,7 @@ function targetAffix(target?: string | null): { prefix?: string; suffix?: string
 
 export default function Goals() {
   const { user } = useAuth();
+  const { brandId } = useBrand();
   const [loading, setLoading] = useState(true);
   const [strategy, setStrategy] = useState<Strategy | null>(null);
   const [entries, setEntries] = useState<GoalEntry[]>([]);
@@ -188,8 +183,9 @@ export default function Goals() {
     (async () => {
       setLoading(true);
       const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
+      const stratQ = supabase.from("strategies").select("success_definition, business_goal, strength_score, content_pillars, created_at");
       const [stratRes, entriesRes, postsRes] = await Promise.all([
-        supabase.from("strategies").select("success_definition, business_goal, strength_score, content_pillars, created_at").eq("user_id", user.id).maybeSingle(),
+        (brandId ? stratQ.eq("brand_id", brandId) : stratQ.eq("user_id", user.id)).maybeSingle(),
         supabase.from("goal_entries").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(200),
         supabase.from("social_posts").select("id, status, pillar, created_at").eq("user_id", user.id).gte("created_at", weekStart.toISOString()),
       ]);
@@ -206,11 +202,14 @@ export default function Goals() {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, brandId]);
 
   const hasStrategyReady = !!strategy?.success_definition;
-  const { goals, loading: goalsLoading, generating, generate, hasGoals } =
-    useGoalDefinitions({ autoGenerate: true, hasStrategy: hasStrategyReady, debugSource: "Goals North Star" });
+  const goalDefOpts = useMemo(
+    () => ({ autoGenerate: true, hasStrategy: hasStrategyReady, debugSource: "Goals North Star" }),
+    [hasStrategyReady],
+  );
+  const { goals, loading: goalsLoading, generating, generate, hasGoals, error: goalsError } = useGoalDefinitions(goalDefOpts);
 
   const weekNum = useMemo(() => weeksSince(strategy?.created_at ?? null), [strategy]);
   const yearPct = Math.min(100, Math.round((weekNum / 52) * 100));
@@ -360,14 +359,6 @@ export default function Goals() {
         .upsert(rows, { onConflict: "user_id,goal_definition_id,metric_key,period" })
         .select();
       if (error) {
-        console.error("goal_entries upsert failed", {
-          status: (error as any).status ?? null,
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          payload: rows,
-        });
         throw error;
       }
       const savedRows = (data ?? []) as GoalEntry[];
@@ -380,7 +371,6 @@ export default function Goals() {
       brandFire();
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Try again.";
-      console.error("saveNumbers error", e);
       toast.error("Could not save", { description: msg });
     } finally {
       setSaving(false);
@@ -405,9 +395,9 @@ export default function Goals() {
   if (!hasStrategy) {
     return (
       <div className="p-6 md:p-10 max-w-3xl">
-        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-2" style={{ color: CORAL }}>Your goals</div>
+        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-2 text-accent">Your goals</div>
         <h1 className="font-display text-3xl md:text-4xl text-foreground mb-4">Complete your strategy to set goals</h1>
-        <Link to="/app/discovery" className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white" style={{ background: CORAL }}>
+        <Link to="/app/discovery" className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent/90">
           <Sparkles className="h-4 w-4" /> Start MOXIEMO Discovery
         </Link>
       </div>
@@ -418,7 +408,7 @@ export default function Goals() {
   if (goalsLoading || (!hasGoals && generating)) {
     return (
       <div className="p-6 md:p-10 max-w-3xl space-y-4">
-        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold" style={{ color: CORAL }}>Your goals</div>
+        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold text-accent">Your goals</div>
         <h1 className="font-display text-3xl md:text-4xl text-foreground">Building your goal set from your strategy</h1>
         <p className="text-muted-foreground">This takes about ten seconds. Nothing is generic — every target is drawn from your own foundation.</p>
         <div className="inline-flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Generating your SMART goals…</div>
@@ -428,13 +418,15 @@ export default function Goals() {
   if (!hasGoals) {
     return (
       <div className="p-6 md:p-10 max-w-3xl space-y-4">
-        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold" style={{ color: CORAL }}>Your goals</div>
+        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold text-accent">Your goals</div>
         <h1 className="font-display text-3xl md:text-4xl text-foreground">Generate your personalized SMART goals</h1>
         <p className="text-muted-foreground">We turn your strategy into a North Star and four scoped SMART goals in a few seconds.</p>
+        {goalsError && (
+          <p className="text-sm text-red-500">Could not generate goals — {goalsError}. Check that your strategy is complete, then try again.</p>
+        )}
         <button
           onClick={() => generate(false)}
-          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white"
-          style={{ background: CORAL }}
+          className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent/90"
         >
           <Sparkles className="h-4 w-4" /> Generate my goals
         </button>
@@ -461,63 +453,58 @@ export default function Goals() {
     <div className="w-full p-6 md:p-10 space-y-8">
       {/* HEADER */}
       <header>
-        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-2" style={{ color: CORAL }}>Your goals</div>
+        <div className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-2 text-accent">Your goals</div>
         <h1 className="font-display text-3xl md:text-[42px] leading-tight text-foreground">Where you are headed.</h1>
         <p className="text-sm md:text-base text-muted-foreground mt-3">
           Week {weekNum} of 52 · Strategy locked at {strength}/100 · The engine is already producing.
         </p>
         <div className="mt-4 h-[5px] w-full rounded-full bg-muted overflow-hidden">
-          <div className="h-full rounded-full transition-all" style={{ width: `${yearPct}%`, background: CORAL }} />
+          <div className="h-full rounded-full transition-all bg-accent" style={{ width: `${yearPct}%` }} />
         </div>
       </header>
 
       {/* NORTH STAR HERO — NAVY */}
       <section
-        className="relative overflow-hidden rounded-2xl p-8 md:p-10 shadow-[0_18px_40px_-18px_rgba(20,36,61,0.55)]"
-        style={{ background: NAVY }}
+        className="relative overflow-hidden rounded-2xl p-8 md:p-10 shadow-[0_18px_40px_-18px_rgba(20,36,61,0.55)] bg-brand-navy"
       >
         <div className="absolute top-4 right-6 text-white/15 text-4xl select-none pointer-events-none">✦</div>
         <div className="absolute bottom-8 right-16 text-white/10 text-2xl select-none pointer-events-none">✦</div>
         <div className="absolute top-16 right-24 text-white/10 text-xl select-none pointer-events-none">✦</div>
 
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <span className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: CORAL_LIGHT }}>★ North star</span>
-          <span
-            className="text-[11px] uppercase tracking-wider font-semibold rounded-full px-2.5 py-1"
-            style={{ background: "rgba(255,255,255,0.12)", color: CORAL_TINT_SOFT }}
-          >
+          <span className="text-[11px] uppercase tracking-[0.25em] font-bold text-brand-coral-light">★ North star</span>
+          <span className="text-[11px] uppercase tracking-wider font-semibold rounded-full px-2.5 py-1 bg-white/[0.12] text-white/70">
             Umbrella outcome
           </span>
         </div>
-        <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight" style={{ color: "#FFFFFF" }}>
+        <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight text-white">
           {ns.title || "Your North Star"}
         </h2>
-        <p className="mt-2 text-sm md:text-base font-medium" style={{ color: CORAL_TINT }}>
+        <p className="mt-2 text-sm md:text-base font-medium text-brand-coral-tint">
           {[ns.target_value, formatDateUS(ns.deadline, "long")].filter(Boolean).join(" · ")}
         </p>
 
         {/* Milestone bar */}
         <div className="mt-6">
-          <div className="relative h-3 rounded-full overflow-hidden" style={{ background: "rgba(255,255,255,0.14)" }}>
-            <div className="h-full rounded-full transition-all" style={{ width: `${payingPct}%`, background: CORAL }} />
+          <div className="relative h-3 rounded-full overflow-hidden bg-white/[0.14]">
+            <div className="h-full rounded-full transition-all bg-accent" style={{ width: `${payingPct}%` }} />
             {[25, 50, 75].map((t) => (
-              <div key={t} className="absolute top-0 bottom-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.4)" }} />
+              <div key={t} className="absolute top-0 bottom-0 w-px bg-white/40" style={{ left: `${t}%` }} />
             ))}
           </div>
-          <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: LABEL_MUTED }}>
+          <div className="mt-2 flex justify-between text-[11px] font-semibold text-brand-navy-muted">
             <span>0</span><span>25%</span><span>50%</span><span>75%</span><span>{ns.target_value || "Target"} 🎉</span>
           </div>
         </div>
 
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-xs md:text-sm max-w-md flex items-center gap-2" style={{ color: LABEL_MUTED }}>
-            <span style={{ color: CORAL_LIGHT }}>→</span>
+          <p className="text-xs md:text-sm max-w-md flex items-center gap-2 text-brand-navy-muted">
+            <span className="text-brand-coral-light">→</span>
             {ns.lever || "Log the numbers each week to keep this honest."}
           </p>
           <button
             onClick={logWin}
-            className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition"
-            style={{ background: CORAL }}
+            className="rounded-lg px-4 py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent/90 transition"
           >
             🎉 Log a win
           </button>
@@ -525,16 +512,17 @@ export default function Goals() {
       </section>
 
       {/* SMART CARDS */}
-      <section className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))" }}>
+      <section className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(230px,1fr))]">
         {smartCards.map((c) => (
           <article key={c.title} className="rounded-xl bg-card border border-border p-5 transition hover:-translate-y-0.5 hover:shadow-lg">
             <div className="flex items-center justify-between mb-3">
               <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">{c.category}</span>
               <span
-                className="text-[10px] font-semibold rounded-full px-2 py-0.5"
-                style={c.pill === "moxie"
-                  ? { background: "#EAF7EF", color: "#16A34A" }
-                  : { background: "#FEF3E2", color: "#D97706" }}
+                className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${
+                  c.pill === "moxie"
+                    ? "bg-[#EAF7EF] text-[#16A34A]"
+                    : "bg-[#FEF3E2] text-[#D97706]"
+                }`}
               >
                 {c.pill === "moxie" ? "✓ MOXIEMO tracks" : "◔ You report"}
               </span>
@@ -562,7 +550,7 @@ export default function Goals() {
       {/* SECONDARY GOALS STRIP */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {(goals!.secondary_goals ?? []).map((t) => (
-          <div key={t.title} className="rounded-[10px] p-4" style={{ background: "#F7F6F3" }}>
+          <div key={t.title} className="rounded-[10px] p-4 bg-[#F7F6F3]">
             <div className="text-[11px] uppercase tracking-wider text-muted-foreground mb-1">{t.title}</div>
             <div className="text-sm font-semibold text-foreground">{t.value}</div>
           </div>
@@ -572,7 +560,7 @@ export default function Goals() {
       {/* ENGINE HEALTH */}
       <section className="rounded-xl bg-card border border-border p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: "#16A34A" }}>⚡ Engine health, this week</div>
+          <div className="text-[11px] uppercase tracking-[0.25em] font-bold text-green-600">⚡ Engine health, this week</div>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Logged for you</span>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -582,9 +570,9 @@ export default function Goals() {
             { label: "Strategy strength", value: String(strength), coral: true },
             { label: "Drafts ready", value: String(engine.drafts) },
           ].map((t) => (
-            <div key={t.label} className="rounded-lg border border-border/60 p-4" style={{ background: "#FAFAF7" }}>
+            <div key={t.label} className="rounded-lg border border-border/60 p-4 bg-[#FAFAF7]">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{t.label}</div>
-              <div className="font-display text-2xl font-semibold" style={{ color: t.coral ? CORAL : INK }}>{t.value}</div>
+              <div className={`font-display text-2xl font-semibold ${t.coral ? "text-accent" : "text-foreground"}`}>{t.value}</div>
             </div>
           ))}
         </div>
@@ -593,10 +581,11 @@ export default function Goals() {
       {/* UPDATE YOUR NUMBERS */}
       <section
         ref={numbersSectionRef}
-        className="rounded-xl p-6 md:p-8 border transition-colors"
-        style={saved
-          ? { background: "linear-gradient(135deg, #FFF3F0 0%, #FEEDE8 100%)", borderColor: "#F8CFC5" }
-          : { background: "hsl(var(--card))", borderColor: "hsl(var(--border))" }}
+        className={`rounded-xl p-6 md:p-8 border transition-colors ${
+          saved
+            ? "bg-gradient-to-br from-[#FFF3F0] to-[#FEEDE8] border-[#F8CFC5]"
+            : "bg-card border-border"
+        }`}
       >
         {saved ? (
           <div>
@@ -607,15 +596,14 @@ export default function Goals() {
             </p>
             <button
               onClick={() => setSaved(false)}
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-white hover:opacity-90 transition"
-              style={{ background: CORAL }}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-white bg-accent hover:bg-accent/90 transition"
             >
               Update numbers again
             </button>
           </div>
         ) : (
           <div>
-            <div className="text-[11px] uppercase tracking-[0.25em] font-bold mb-2" style={{ color: CORAL }}>Update your numbers</div>
+            <div className="text-[11px] uppercase tracking-[0.25em] font-bold mb-2 text-accent">Update your numbers</div>
             <h3 className="font-display text-xl font-semibold text-foreground mb-1">One field per goal you report.</h3>
             <p className="text-sm text-muted-foreground mb-5">
               Each field is pre-filled with your last reported value. Update what changed, leave the rest. Every field is optional.
@@ -637,7 +625,7 @@ export default function Goals() {
                           {f.label}
                         </label>
                       </div>
-                      <span className="shrink-0 text-[10px] font-semibold rounded-full px-2 py-0.5" style={{ background: "#FEF3E2", color: "#D97706" }}>
+                      <span className="shrink-0 text-[10px] font-semibold rounded-full px-2 py-0.5 bg-[#FEF3E2] text-[#D97706]">
                         ◔ You report
                       </span>
                     </div>
@@ -657,8 +645,7 @@ export default function Goals() {
                             min={0}
                             value={inputs[f.key] ?? ""}
                             onChange={(e) => setInputs((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                            className="block w-full rounded-lg border border-border bg-background py-2 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-[--ring]"
-                            style={{ paddingLeft: f.prefix ? 24 : 12, paddingRight: f.suffix ? 28 : 12 }}
+                            className={`block w-full rounded-lg border border-border bg-background py-2 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-[--ring] ${f.prefix ? "pl-6" : "pl-3"} ${f.suffix ? "pr-7" : "pr-3"}`}
                           />
                           {f.suffix && (
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">{f.suffix}</span>
@@ -681,8 +668,7 @@ export default function Goals() {
             <button
               onClick={saveNumbers}
               disabled={saving || reportFields.length === 0}
-              className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90 transition disabled:opacity-60"
-              style={{ background: CORAL }}
+              className="rounded-lg px-5 py-2.5 text-sm font-semibold text-white bg-accent hover:bg-accent/90 transition disabled:opacity-60"
             >
               {saving ? "Saving..." : "Save numbers"}
             </button>

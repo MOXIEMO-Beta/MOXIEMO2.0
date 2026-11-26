@@ -1,1498 +1,566 @@
-import { useEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
+import { usePlan } from "@/hooks/usePlan";
 import { supabase } from "@/integrations/supabase/client";
-import { aiErrorMessage } from "@/lib/aiErrors";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { Sparkles, Compass, Download, Share2, Pencil, Check, X, Quote, Save, Loader2, CheckCircle2, AlertCircle, Zap } from "lucide-react";
 import { toast } from "sonner";
-import { StrategyEditorProvider, useStrategyEditor } from "@/hooks/useStrategyEditor";
-import { useReportData } from "@/hooks/useReportData";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EditableField } from "@/components/strategy/EditableField";
-import { EditableList } from "@/components/strategy/EditableList";
-import { StrategyStrengthCard } from "@/components/strategy/StrategyStrengthCard";
-import { RefineProvider, SectionPencil, setInPath, useRefine } from "@/components/strategy/RefineContext";
-import { downloadStrategyPdf } from "@/lib/strategyPdf";
-import { StrategyEngineInterstitial } from "@/components/StrategyEngineInterstitial";
+import { Pencil, Download, Check, X, Lock, Loader2 } from "lucide-react";
 
-import { ContentTab } from "@/components/strategy/tabs/ContentTab";
-import { ChannelsTab } from "@/components/strategy/tabs/ChannelsTab";
-import { MetricsTab } from "@/components/strategy/tabs/MetricsTab";
-import { ActionPlanTab } from "@/components/strategy/tabs/ActionPlanTab";
-import { CompetitiveAndMessagingSections } from "@/components/strategy/CompetitiveAndMessagingSections";
-import { OfferSections } from "@/components/strategy/OfferSections";
+const C = {
+  coral: "#FF6B5C", navy: "#14243D", paper: "#F7F5F1",
+  warmPaper: "#F4F2ED", white: "#FFFFFF", ink: "#15171C",
+  muted: "#6B6B6B", sage: "#B8C5A6", taupe: "#D8CEBD", border: "#E8E4DD",
+};
+const card: React.CSSProperties = { background: C.white, border: `1.5px solid ${C.border}`, borderRadius: 16, padding: 24, marginBottom: 16 };
+const sectionLabel: React.CSSProperties = { fontFamily: "'DM Sans Variable',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" as const, color: C.muted, marginBottom: 14 };
+const h1Style: React.CSSProperties = { fontFamily: "'DM Sans Variable',sans-serif", fontSize: 28, fontWeight: 700, color: C.ink, marginBottom: 4 };
+const btnPrimary: React.CSSProperties = { background: C.coral, color: "#fff", border: "none", borderRadius: 10, padding: "12px 24px", fontFamily: "'DM Sans Variable',sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" };
+const btnSecondary: React.CSSProperties = { background: "transparent", color: C.navy, border: `1.5px solid ${C.taupe}`, borderRadius: 10, padding: "11px 24px", fontFamily: "'DM Sans Variable',sans-serif", fontWeight: 600, fontSize: 14, cursor: "pointer" };
+const btnSm: React.CSSProperties = { height: 32, padding: "0 14px", borderRadius: 8, border: `1.5px solid ${C.border}`, background: C.white, fontFamily: "'DM Sans Variable',sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 4 };
 
-// Defensive parse: a synthesis bug sometimes persists enhanced_foundation /
-// raw_foundation as a JSON-encoded string instead of an object. Parse so the
-// UI's nested lookups (e.g. enhanced_foundation.voiceGuidelines.toneByPlatform)
-// resolve to populated values on initial mount.
-function parseIfJsonString(v: unknown) {
-  if (typeof v !== "string") return v;
-  const trimmed = v.trim();
-  if (!trimmed || (trimmed[0] !== "{" && trimmed[0] !== "[")) return v;
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    return v;
-  }
+type Strategy = Record<string, any>;
+
+function normaliseToString(v: unknown): string {
+  if (!v) return "";
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) return v.join(", ");
+  return String(v);
 }
-function normalizeStrategy(s: any) {
-  if (!s) return s;
-  return {
-    ...s,
-    enhanced_foundation: parseIfJsonString(s.enhanced_foundation),
-    raw_foundation: parseIfJsonString(s.raw_foundation),
+
+type Pillar = { name: string; description: string };
+function normalisePillars(v: unknown): Pillar[] {
+  if (!Array.isArray(v)) return [];
+  return v.map((el) => {
+    if (typeof el === "string") return { name: el, description: "" };
+    if (el && typeof el === "object" && "name" in el) return { name: (el as any).name ?? "", description: (el as any).description ?? "" };
+    return { name: String(el), description: "" };
+  });
+}
+
+function SkeletonCard() {
+  return (
+    <div style={{ ...card, height: 80, background: C.border, borderRadius: 8, opacity: 0.5, animation: "pulse 1.5s ease-in-out infinite" }} />
+  );
+}
+
+function EditableCard({
+  label,
+  value,
+  fieldName,
+  strategyId,
+  onSaved,
+  style,
+}: {
+  label: string;
+  value: string;
+  fieldName: string;
+  strategyId: string;
+  onSaved: (field: string, val: string) => void;
+  style?: React.CSSProperties;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [hovered, setHovered] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    const { error } = await supabase.from("strategies").update({ [fieldName]: draft } as any).eq("id", strategyId);
+    setSaving(false);
+    if (error) { toast.error("Save failed"); return; }
+    onSaved(fieldName, draft);
+    setEditing(false);
+    toast.success("Saved");
   };
+
+  return (
+    <div
+      style={{ ...card, ...style, position: "relative" }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={sectionLabel}>{label}</div>
+      {editing ? (
+        <>
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={4}
+            style={{ width: "100%", fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: C.ink, border: `1.5px solid ${C.coral}`, borderRadius: 8, padding: "10px 12px", resize: "vertical", outline: "none", boxSizing: "border-box" }}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            <button onClick={save} disabled={saving} style={{ ...btnSm, background: C.coral, color: "#fff", border: "none" }}>
+              <Check size={12} /> {saving ? "Saving…" : "Save"}
+            </button>
+            <button onClick={() => { setEditing(false); setDraft(value); }} style={btnSm}>
+              <X size={12} /> Cancel
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+            {value || <span style={{ color: C.muted, fontStyle: "italic" }}>Not set</span>}
+          </p>
+          {hovered && (
+            <button
+              onClick={() => { setDraft(value); setEditing(true); }}
+              style={{ position: "absolute", top: 16, right: 16, background: "transparent", border: "none", cursor: "pointer", color: C.muted }}
+            >
+              <Pencil size={14} />
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
-const TAB_PLACEHOLDER = (label: string) => (
-  <Card className="p-10 border-dashed border-border bg-background text-center">
-    <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Coming next sprint</div>
-    <h3 className="font-display text-2xl mb-2">{label}</h3>
-    <p className="text-sm text-muted-foreground max-w-md mx-auto">
-      This workspace section is part of the next strategy build-out. Your foundation data is already captured, we're laying out the views.
-    </p>
-  </Card>
-);
+type RailSection = "positioning" | "voice" | "pillars" | "channel" | "plan";
+const RAIL_ITEMS: { key: RailSection; label: string }[] = [
+  { key: "positioning", label: "Positioning" },
+  { key: "voice", label: "Voice and tone" },
+  { key: "pillars", label: "Content pillars" },
+  { key: "channel", label: "Channel strategy" },
+  { key: "plan", label: "90-day plan" },
+];
 
-function SaveStatusIndicator() {
-  const { status, lastSavedAt } = useStrategyEditor();
-  const time = lastSavedAt ? lastSavedAt.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : null;
-  if (status === "saving") return <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Saving…</span>;
-  if (status === "dirty") return <span className="inline-flex items-center gap-1.5 text-xs text-accent"><AlertCircle className="h-3 w-3" /> Unsaved changes</span>;
-  if (status === "saved" || (status === "idle" && time)) return <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"><CheckCircle2 className="h-3 w-3 text-accent" /> Saved {time && `· ${time}`}</span>;
-  return null;
+function PaywallOverlay({ onUpgrade, upgrading }: { onUpgrade: () => void; upgrading: boolean }) {
+  return (
+    <div style={{
+      position: "absolute", inset: 0, zIndex: 10,
+      backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+      background: "rgba(247,245,241,0.75)",
+      borderRadius: 16,
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      gap: 16,
+    }}>
+      <div style={{ width: 48, height: 48, borderRadius: "50%", background: C.navy, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <Lock size={20} color="#fff" />
+      </div>
+      <div style={{ textAlign: "center" as const, maxWidth: 280 }}>
+        <p style={{ fontFamily: "'DM Sans Variable',sans-serif", fontWeight: 700, fontSize: 16, color: C.ink, margin: "0 0 6px" }}>
+          Unlock your full strategy
+        </p>
+        <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: C.muted, margin: 0 }}>
+          Upgrade to Foundation to see your complete brand strategy, voice, pillars, and 90-day plan.
+        </p>
+      </div>
+      <button
+        onClick={onUpgrade}
+        disabled={upgrading}
+        style={{ background: C.coral, color: "#fff", border: "none", borderRadius: 10, padding: "12px 28px", fontFamily: "'DM Sans Variable',sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
+      >
+        {upgrading && <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} />}
+        Upgrade to Foundation — $79/mo
+      </button>
+    </div>
+  );
 }
 
-function StrategyHeader() {
-  const { editing, setEditing, status, saveNow, strategy, setEnhanced, setField } = useStrategyEditor();
+// section_key → parsed content from strategy_sections (RLS-gated)
+type SectionMap = Record<string, Record<string, unknown>>;
+
+export default function Strategy() {
   const { user } = useAuth();
-  const { reportData } = useReportData();
+  const { brandId } = useBrand();
+  const { plan } = usePlan();
+  const navigate = useNavigate();
+  const [strategy, setStrategy] = useState<Strategy | null>(null);
+  // sections fetched separately — RLS returns only what the user is allowed to see
+  const [sections, setSections] = useState<SectionMap>({});
+  const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState<RailSection>("positioning");
   const [exporting, setExporting] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const generationInFlightRef = useRef(false);
+  const [upgrading, setUpgrading] = useState(false);
+  // synthesis polling — when user arrives from Discovery before the edge function finishes
+  const [synthesizing, setSynthesizing] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const ef = (strategy?.enhanced_foundation || {}) as any;
-  const hasExecutionPlan = !!(ef.quarterlyThemes?.length || ef.channelStrategy?.primary || ef.successMetrics?.primary || ef.actionPlan?.week1);
+  // isLocked = true means the user has NOT paid — paid sections won't come back from DB
+  // but we still show the paywall overlay so they know the content exists
+  const isLocked = plan === "founding_member";
+  const LOCKED_SECTIONS: RailSection[] = ["voice", "pillars", "channel", "plan"];
+  const isSectionLocked = (section: RailSection) => isLocked && LOCKED_SECTIONS.includes(section);
 
-  const handleGenerate = async () => {
-    if (generationInFlightRef.current) {
-      console.info("[execution-plan] duplicate click ignored; generation already in flight");
-      return;
-    }
-    generationInFlightRef.current = true;
-    const requestId =
-      typeof crypto !== "undefined" && "randomUUID" in crypto
-        ? crypto.randomUUID()
-        : `execution-plan-${Date.now()}`;
-    const startedAt = performance.now();
-    flushSync(() => setGenerating(true));
-    console.info("[execution-plan] click accepted", {
-      requestId,
-      strategyId: strategy?.id,
-      hasExecutionPlan,
-      editing,
-      saveStatus: status,
-    });
+  const handleUpgrade = async () => {
+    setUpgrading(true);
     try {
-      if (editing) await saveNow();
-      const { data, error } = await supabase.functions.invoke("generate-execution-plan", { body: { strategy, requestId } });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      // ============================================================
-      // GENERATE-THEN-SWAP: build the NEW bundle into a staged object,
-      // validate it, and only atomically swap if complete. On failure
-      // or partial, KEEP the existing bundle intact and ask for retry.
-      // ============================================================
-      const nonEmpty = (v: any) => {
-        if (v == null) return false;
-        if (typeof v === "string") return v.trim().length > 0;
-        if (Array.isArray(v)) return v.length > 0;
-        if (typeof v === "object") return Object.keys(v).length > 0;
-        return true;
-      };
-      const pickBetter = (a: any, b: any) => (nonEmpty(b) ? b : a);
-
-      // Preserve any prior populated subsection when the new one is empty.
-      const prevSm = ef.successMetrics || {};
-      const nextSm = data.successMetrics || {};
-      const mergedSm = {
-        primary: {
-          ...(prevSm.primary || {}),
-          ...(nextSm.primary || {}),
-          name: pickBetter(prevSm.primary?.name, nextSm.primary?.name),
-          target: pickBetter(prevSm.primary?.target, nextSm.primary?.target),
-          leadSources: pickBetter(prevSm.primary?.leadSources, nextSm.primary?.leadSources),
-          qualification: pickBetter(prevSm.primary?.qualification, nextSm.primary?.qualification),
-        },
-        contentPerformance: pickBetter(prevSm.contentPerformance, nextSm.contentPerformance),
-        businessGoals: pickBetter(prevSm.businessGoals, nextSm.businessGoals),
-        brandHealth: pickBetter(prevSm.brandHealth, nextSm.brandHealth),
-      };
-
-      const stagedActionPlan = pickBetter(ef.actionPlan, data.actionPlan);
-      const stagedThemes = pickBetter(ef.quarterlyThemes, data.quarterlyThemes);
-      const stagedCalendar = pickBetter(ef.contentCalendar, data.contentCalendar);
-      const stagedChannels = pickBetter(ef.channelStrategy, data.channelStrategy);
-
-      // Validate the STAGED bundle end-to-end. If any required section is
-      // still empty after merge, we hold and ask for retry — no partial swap.
-      const apOk = stagedActionPlan && [1,2,3,4].every((n) => {
-        const w = stagedActionPlan[`week${n}`];
-        return w && Array.isArray(w.tasks) && w.tasks.some((t: any) => t?.task && String(t.task).trim());
+      const { data, error } = await supabase.functions.invoke("stripe-checkout", {
+        body: { plan: "foundation" },
       });
-      const smOk = nonEmpty(mergedSm.primary?.name)
-        && nonEmpty(mergedSm.primary?.leadSources)
-        && nonEmpty(mergedSm.primary?.qualification)
-        && nonEmpty(mergedSm.contentPerformance)
-        && nonEmpty(mergedSm.businessGoals)
-        && nonEmpty(mergedSm.brandHealth);
-
-      if (!apOk || !smOk) {
-        console.error("execution-plan incomplete after merge", {
-          apOk, smOk, completeness: (data as any)?._completeness,
-        });
-        toast.error("Plan came back incomplete", { description: "Your existing plan is preserved. Please Regenerate again." });
-        return; // keep prior bundle intact
-      }
-
-      // Atomic swap. Only now do we purge calendar overrides + task completion.
-      if (user?.id) {
-        try {
-          const { clearOverridesForUser } = await import("@/lib/contentCalendar");
-          await clearOverridesForUser(user.id);
-        } catch (e) { console.warn("clearOverridesForUser failed", e); }
-      }
-      const merged = {
-        ...ef,
-        quarterlyThemes: stagedThemes,
-        contentCalendar: stagedCalendar,
-        channelStrategy: stagedChannels,
-        successMetrics: mergedSm,
-        actionPlan: stagedActionPlan,
-      };
-      setEnhanced([], merged);
-      setField("task_completion", {});
-      await saveNow();
-      console.info("[execution-plan] completed", { requestId, durationMs: Math.round(performance.now() - startedAt) });
-      toast.success("Execution plan generated", { description: "Content, Channels, Metrics and Action Plan are ready." });
-    } catch (e: any) {
-      console.error("[execution-plan] failed", { requestId, durationMs: Math.round(performance.now() - startedAt), error: e });
-      toast.error("Couldn't generate plan", { description: e?.message || "Try again in a moment." });
+      if (error || data?.error) { toast.error(data?.error ?? "Could not start checkout"); return; }
+      if (data?.url) window.location.href = data.url;
     } finally {
-      generationInFlightRef.current = false;
-      setGenerating(false);
+      setUpgrading(false);
     }
   };
 
-  const buildFileName = (ext: string) => {
-    const full = String(reportData?.meta?.preparedFor || "Founder").trim();
-    const first = (full.split(/\s+/)[0] || "Founder").replace(/[^A-Za-z0-9_-]/g, "");
-    const d = new Date();
-    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    return `${first}-MOXIEMO-Strategy-${date}.${ext}`;
+  const fetchStrategy = useCallback(async () => {
+    if (!user) return;
+    // Select only the metadata columns needed for rendering — intentionally excludes
+    // enhanced_foundation and other paid-content JSONB blobs. Paid content is served
+    // exclusively via strategy_sections which is RLS-gated at the DB row level.
+    const q = supabase.from("strategies").select(
+      "id,user_id,updated_at,positioning_statement,target_audience,brand_voice,tone_guidelines,avoid_phrases,primary_channel,strategy_lane"
+    );
+    const { data, error } = await (brandId ? q.eq("brand_id", brandId) : q.eq("user_id", user.id)).maybeSingle();
+    if (!error) setStrategy(data as Strategy | null);
+
+    // Fetch sections separately — RLS suppresses paid sections for non-paying users.
+    // This is the DB-level paid content gate: paid section content never reaches the
+    // browser network response for founding_member plan users.
+    if (!error && data?.id) {
+      const { data: secRows } = await supabase
+        .from("strategy_sections")
+        .select("section_key,is_paid,content,sort_order")
+        .eq("strategy_id", data.id)
+        .order("sort_order", { ascending: true });
+      if (secRows) {
+        const map: SectionMap = {};
+        for (const row of secRows) {
+          map[row.section_key] = row.content as Record<string, unknown>;
+        }
+        setSections(map);
+      }
+    }
+  }, [user, brandId]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+
+    const stopPoll = () => {
+      if (pollRef.current) { clearTimeout(pollRef.current); pollRef.current = null; }
+    };
+
+    (async () => {
+      setLoading(true);
+      await fetchStrategy();
+      if (cancelled) return;
+      setLoading(false);
+
+      // Check if synthesis is still in-flight on the latest discovery session.
+      // This happens when the user arrives from Discovery before the edge function finishes.
+      const { data: sess } = await supabase
+        .from("discovery_sessions")
+        .select("synthesis_status")
+        .eq("user_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const status = sess?.synthesis_status;
+
+      if (status === "pending" || status === "in_progress") {
+        if (!cancelled) setSynthesizing(true);
+
+        // Exponential backoff: 3s → 6s → 12s → 24s → 24s … stop after 90s total
+        const DELAYS = [3_000, 6_000, 12_000, 24_000];
+        const MAX_ELAPSED = 90_000;
+        const startedAt = Date.now();
+        let attempt = 0;
+
+        const schedulePoll = () => {
+          const delay = DELAYS[Math.min(attempt, DELAYS.length - 1)];
+          pollRef.current = setTimeout(async () => {
+            if (cancelled) return;
+            const { data: s2 } = await supabase
+              .from("discovery_sessions")
+              .select("synthesis_status")
+              .eq("user_id", user.id)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            const s2status = s2?.synthesis_status;
+            if (s2status === "completed" || s2status === "failed" || !s2status) {
+              if (!cancelled) {
+                setSynthesizing(false);
+                await fetchStrategy();
+              }
+            } else if (Date.now() - startedAt < MAX_ELAPSED) {
+              attempt++;
+              schedulePoll();
+            } else {
+              // 90s elapsed — stop polling, let member refresh manually
+              if (!cancelled) setSynthesizing(false);
+            }
+          }, delay);
+        };
+
+        schedulePoll();
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      stopPoll();
+    };
+  }, [user, brandId, fetchStrategy]);
+
+  const handleSaved = (field: string, val: string) => {
+    setStrategy((s) => s ? { ...s, [field]: val } : s);
   };
 
-  const handleExportPdf = async () => {
-    if (!reportData) { toast.error("Report data not ready yet."); return; }
-    if (editing) await saveNow();
+  const handleDownload = async () => {
+    if (!strategy) return;
     setExporting(true);
     try {
-      await downloadStrategyPdf(reportData, buildFileName("pdf"));
+      // Build a merged object for PDF — include sections content so PDF has full data
+      const pdfPayload = { ...strategy, _sections: sections };
+      const { downloadStrategyPdf } = await import("@/lib/strategyPdf");
+      await downloadStrategyPdf(pdfPayload as any, "MOXIEMO-Strategy.pdf");
     } catch (e: any) {
-      console.error(e);
-      toast.error("PDF export failed", { description: e?.message || "Try again." });
+      toast.error("PDF export failed");
     } finally {
       setExporting(false);
     }
   };
 
-
-  return (
-    <div className="mb-7 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-      {generating && (
-        <div
-          aria-live="polite"
-          className="fixed inset-x-0 top-0 z-40 pointer-events-none"
-        >
-          <div
-            className="pointer-events-auto mx-auto mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-background/95 px-4 py-2 shadow-soft backdrop-blur"
-            style={{ display: "flex", width: "fit-content" }}
-          >
-            <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-            <span className="text-xs font-medium text-foreground/80">{hasExecutionPlan ? "Rebuilding your plan…" : "Generating your plan…"}</span>
-          </div>
-          <div
-            className="absolute inset-0 -z-10"
-            style={{ background: "rgba(14,15,16,0.04)" }}
-          />
-        </div>
-      )}
-      <div className="flex-1 min-w-0">
-        <div className="inline-block text-[11px] font-bold uppercase tracking-[0.1em] text-accent mb-2">Your strategy</div>
-        <h1 className="text-[20px] font-bold tracking-[-0.3px] text-foreground mb-1.5" style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif' }}>Marketing foundation</h1>
-        <p className="text-[13px] text-foreground/80 max-w-2xl leading-[1.6]">This strategy powers every piece of content, email, and post MOXIEMO generates.</p>
-        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="uppercase tracking-[0.2em] text-[10px]">Prepared for</span>
-            {reportData?.meta?.preparedFor ? (
-              <span className="text-foreground/80">{reportData.meta.preparedFor}</span>
-            ) : (
-              <Skeleton className="h-3 w-24 inline-block align-middle" />
-            )}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="uppercase tracking-[0.2em] text-[10px]">Date</span>
-            {reportData?.meta?.date ? (
-              <span className="text-foreground/80">{reportData.meta.date}</span>
-            ) : (
-              <Skeleton className="h-3 w-28 inline-block align-middle" />
-            )}
-          </span>
-        </div>
-        <div className="mt-3"><SaveStatusIndicator /></div>
+  if (loading) {
+    return (
+      <div style={{ background: C.paper, minHeight: "100vh", padding: "40px 48px" }}>
+        <SkeletonCard />
+        <SkeletonCard />
+        <SkeletonCard />
       </div>
-      <div className="flex flex-row flex-nowrap items-center gap-2 shrink-0 whitespace-nowrap">
-        <Button onClick={handleGenerate} size="sm" disabled={generating || !strategy} aria-busy={generating} className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg">
-          {generating ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-2 h-3.5 w-3.5" />}
-          {generating
-            ? (hasExecutionPlan ? "Rebuilding your plan…" : "Generating…")
-            : (hasExecutionPlan ? "Regenerate plan" : "Generate execution plan")}
-        </Button>
-        {editing ? (
-          <>
-            <Button onClick={() => saveNow()} size="sm" disabled={status === "saving"} className="bg-foreground text-background hover:bg-foreground/90 rounded-lg">
-              <Save className="mr-2 h-3.5 w-3.5" /> Save changes
-            </Button>
-            <Button variant="outline" size="sm" className="rounded-lg" onClick={() => setEditing(false)}>Done</Button>
-          </>
-        ) : (
-          <Button variant="outline" size="sm" className="rounded-lg" onClick={() => setEditing(true)}>
-            <Pencil className="mr-2 h-3.5 w-3.5" /> Edit
-          </Button>
-        )}
-        <Button variant="outline" size="sm" className="rounded-lg" onClick={handleExportPdf} disabled={exporting || !reportData}>
-          {exporting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : <Download className="mr-2 h-3.5 w-3.5" />}
-          Download PDF
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function OverviewTab() {
-  const { strategy, setField, setEnhanced, editing } = useStrategyEditor();
-  const ef = (strategy.enhanced_foundation || {}) as any;
-  const breakdown = ef.positioningBreakdown || {};
-  const variations = ef.positioningVariations || {};
-  const archetype = ef.brandArchetype;
-  const competitive = ef.competitivePositioning;
-  const coreValues: any[] = ef.coreValues || [];
-  const distribution = ef.distribution;
-  const isService = strategy?.strategy_lane === "service";
-  const isOfferGtm = strategy?.strategy_lane === "offer_gtm";
-
-  const colPencil = (col: string, label: string, description: string) => (
-    <SectionPencil
-      target={() => ({
-        refineKey: col,
-        label,
-        description,
-        currentValue: Array.isArray(strategy?.[col]) ? (strategy[col] as any[]).join(", ") : (strategy?.[col] || ""),
-        buildPatch: (v) => {
-          const isArr = Array.isArray(strategy?.[col]);
-          return { [col]: isArr ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v };
-        },
-      })}
-    />
-  );
-  const efPencil = (path: (string | number)[], label: string, description: string, opts?: { darkBg?: boolean; arrayJoin?: boolean }) => (
-    <SectionPencil
-      className={opts?.darkBg ? "text-background/40 hover:text-background/80 hover:bg-background/10" : undefined}
-      target={() => {
-        const cur = path.reduce<any>((acc, k) => (acc == null ? acc : acc[k]), strategy?.enhanced_foundation || {});
-        const isArr = Array.isArray(cur);
-        return {
-          refineKey: `enhanced:${path.join(".")}`,
-          label,
-          description,
-          currentValue: isArr ? cur.join(", ") : (cur || ""),
-          buildPatch: (v) => {
-            const value = isArr || opts?.arrayJoin ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v;
-            return { enhanced_foundation: setInPath(strategy?.enhanced_foundation || {}, path, value) };
-          },
-        };
-      }}
-    />
-  );
-
-  const breakdownFields: [string, string, string][] = [
-    ["Who", "idealClient", "Who you serve"],
-    ["Problem", "painPoint", "The pain you solve"],
-    ["Solution", "uniqueApproach", "Your unique approach"],
-    ["Result", "outcome", "The end result"],
-    ["Method", "method", "How you do it"],
-    ["Transformation", "transformation", "The shift you create"],
-  ];
-
-  return (
-    <div className="space-y-6 mt-0 report-page mx-auto" style={{ pageBreakAfter: "always" }}>
-      {isOfferGtm && <OfferSections strategy={strategy} />}
-      {/* Top band: Brand Archetype + Brand Positioning quadrant */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        {/* Brand archetype card (left) */}
-        {(archetype || editing) ? (
-        <Card className="group relative report-card border-0 shadow-none" style={{ background: "#FFFFFF", border: "1px solid #ECEAE5", borderRadius: 14, padding: 24 }}>
-          {efPencil(["brandArchetype", "description"], "brand archetype", "Your dominant archetype and how it shows up in your brand.")}
-          <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-4" style={{ color: "#9A9896" }}>Brand archetype</div>
-          <div className="flex items-start gap-4 mb-5">
-            <div className="text-5xl leading-none">
-              <EditableField
-                value={archetype?.icon || ""}
-                onChange={(v) => setEnhanced(["brandArchetype", "icon"], v)}
-                placeholder="🧙"
-                className="!text-5xl !w-16 !text-center"
-              />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-display text-3xl tracking-[-0.02em]">
-                <EditableField
-                  value={archetype?.name}
-                  onChange={(v) => setEnhanced(["brandArchetype", "name"], v)}
-                  placeholder="The Sage"
-                />
-              </h3>
-              <div className="text-xs uppercase tracking-wider text-muted-foreground mt-1">
-                Secondary:{" "}
-                <EditableField
-                  value={archetype?.secondary}
-                  onChange={(v) => setEnhanced(["brandArchetype", "secondary"], v)}
-                  placeholder="—"
-                />
-              </div>
-            </div>
-          </div>
-          <p className="text-base leading-relaxed mb-5">
-            <EditableField
-              value={archetype?.description}
-              onChange={(v) => setEnhanced(["brandArchetype", "description"], v)}
-              multiline
-              placeholder="Archetype description"
-            />
-          </p>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 0, marginTop: 20 }}>
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 16, padding: "14px 0" }}>
-              <div className="text-accent" style={{ minWidth: 140, flexShrink: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Brands</div>
-              <div className="text-sm" style={{ flex: 1 }}>
-                <EditableList
-                  items={archetype?.exampleBrands || []}
-                  onChange={(next) => setEnhanced(["brandArchetype", "exampleBrands"], next)}
-                  renderItem={(it, i) => (
-                    <p key={i} className="mb-1 last:mb-0">{it}</p>
-                  )}
-                />
-              </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 16, padding: "14px 0", borderTop: "1px solid rgba(0,0,0,0.08)" }}>
-              <div className="text-accent" style={{ minWidth: 140, flexShrink: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Values</div>
-              <div className="text-sm" style={{ flex: 1 }}>
-                <EditableList
-                  items={archetype?.coreValues || []}
-                  onChange={(next) => setEnhanced(["brandArchetype", "coreValues"], next)}
-                  renderItem={(it, i) => (
-                    <p key={i} className="mb-1 last:mb-0">{it}</p>
-                  )}
-                />
-              </div>
-            </div>
-            <div style={{ display: "flex", flexDirection: "row", alignItems: "flex-start", gap: 16, padding: "14px 0", borderTop: "1px solid rgba(0,0,0,0.08)" }}>
-              <div className="text-accent" style={{ minWidth: 140, flexShrink: 0, fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase" }}>Content approach</div>
-              <p className="text-sm" style={{ flex: 1, margin: 0 }}>
-                <EditableField
-                  value={archetype?.contentApproach}
-                  onChange={(v) => setEnhanced(["brandArchetype", "contentApproach"], v)}
-                  multiline
-                  placeholder="How you approach content"
-                />
-              </p>
-            </div>
-          </div>
-        </Card>
-        ) : <div />}
-
-        {/* Brand positioning, dark card (right) */}
-        <div className="p-6" style={{ background: "#0E0F10", color: "#FFFFFF", borderRadius: 14 }}>
-          <div className="text-[11px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#E85A46" }}>
-            Brand positioning
-          </div>
-          {strategy?.positioning_statement && (
-            <p className="text-[14px] leading-[1.55] mb-5" style={{ color: "#FFFFFF" }}>
-              {strategy.positioning_statement}
-            </p>
-          )}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-            {([
-              { label: "Who", val: breakdown.idealClient || strategy?.ideal_client },
-              { label: "Problem", val: breakdown.painPoint || strategy?.pain_point },
-              { label: "Solution", val: breakdown.uniqueApproach || breakdown.method },
-              { label: "Result", val: breakdown.outcome },
-              { label: "Method", val: breakdown.method },
-              { label: "Transformation", val: breakdown.transformation || strategy?.transformation },
-            ] as any[]).map((q) => (
-              <div key={q.label}>
-                <div className="text-[10px] font-bold uppercase tracking-[0.1em] mb-1.5" style={{ color: "#E85A46" }}>
-                  {q.label}
-                </div>
-                <p className="text-[12.5px] leading-[1.55]" style={{ color: q.val ? "#FFFFFF" : "rgba(255,255,255,0.4)" }}>
-                  {q.val || "—"}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Core values */}
-      {(coreValues.length > 0 || editing) && (
-        <Card className="report-card p-7 border-border shadow-soft">
-          <div className="flex items-center justify-between mb-5">
-            <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Core values & decision filters</div>
-            {editing && (
-              <Button variant="ghost" size="sm" onClick={() => setEnhanced(["coreValues"], [...coreValues, { name: "New value", decisionFilter: "", description: "", yesExamples: [], noExamples: [] }])}>
-                + Add value
-              </Button>
-            )}
-          </div>
-          <div className="space-y-5">
-            {coreValues.map((v: any, i: number) => (
-              <div key={i} className={i > 0 ? "pt-5 border-t border-border" : ""}>
-                <div className="flex items-baseline gap-3 mb-2">
-                  <span className="font-display text-2xl text-accent">{String(i + 1).padStart(2, "0")}</span>
-                  <h4 className="font-display text-xl tracking-[-0.01em] uppercase flex-1">
-                    <EditableField
-                      value={v.name}
-                      onChange={(val) => setEnhanced(["coreValues", i, "name"], val)}
-                      placeholder="Value name"
-                    />
-                  </h4>
-                  {editing && (
-                    <button onClick={() => setEnhanced(["coreValues"], coreValues.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive" aria-label="Remove value">
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                <div className="rounded-lg bg-muted/60 px-4 py-3 mb-3 text-sm italic">
-                  <span className="text-muted-foreground not-italic text-xs uppercase tracking-[0.2em] mr-2">Decision filter:</span>
-                  <EditableField
-                    value={v.decisionFilter}
-                    onChange={(val) => setEnhanced(["coreValues", i, "decisionFilter"], val)}
-                    placeholder="e.g. Does this go deep or stay superficial?"
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground mb-3 leading-relaxed">
-                  <EditableField
-                    value={v.description}
-                    onChange={(val) => setEnhanced(["coreValues", i, "description"], val)}
-                    multiline
-                    placeholder="What this value means in practice"
-                  />
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <EditableBulletList
-                    label={<span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5" /> Yes</span>}
-                    items={v.yesExamples || []}
-                    onChange={(next) => setEnhanced(["coreValues", i, "yesExamples"], next)}
-                    accent
-                  />
-                  <EditableBulletList
-                    label={<span className="flex items-center gap-1.5 text-muted-foreground"><X className="h-3.5 w-3.5" /> No</span>}
-                    items={v.noExamples || []}
-                    onChange={(next) => setEnhanced(["coreValues", i, "noExamples"], next)}
-                    muted
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {/* Competitive positioning */}
-      {(competitive || editing) && (
-        <Card className="group relative report-card p-7 border-border shadow-soft">
-          {efPencil(["competitivePositioning", "yourPosition"], "competitive positioning", "Your unique market position and the gap you fill versus alternatives.")}
-          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">
-            {isService ? "Competitive positioning, your ownable gap" : "Competitive positioning"}
-          </div>
-          <p className="font-display text-xl tracking-[-0.01em] mb-3">
-            <EditableField
-              value={competitive?.yourPosition}
-              onChange={(v) => setEnhanced(["competitivePositioning", "yourPosition"], v)}
-              placeholder="Your unique position in the market"
-            />
-          </p>
-          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            <EditableField
-              value={competitive?.marketGap}
-              onChange={(v) => setEnhanced(["competitivePositioning", "marketGap"], v)}
-              multiline
-              placeholder="The gap in the market you fill"
-            />
-          </p>
-
-          <DifferentiatorTable
-            items={competitive?.differentiators || []}
-            onChange={(next) => setEnhanced(["competitivePositioning", "differentiators"], next)}
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
-            <div className="p-4 rounded-lg bg-accent-soft/40">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">Competitive advantages</div>
-              <EditableBulletList
-                items={competitive?.competitiveAdvantages || []}
-                onChange={(next) => setEnhanced(["competitivePositioning", "competitiveAdvantages"], next)}
-                accent
-              />
-            </div>
-            <div className="p-4 rounded-lg bg-muted/60">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2">What you don't compete on</div>
-              <EditableBulletList
-                items={competitive?.doNotCompeteOn || []}
-                onChange={(next) => setEnhanced(["competitivePositioning", "doNotCompeteOn"], next)}
-                muted
-              />
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Distribution (service strategies) */}
-      {isService && (distribution || editing) && (
-        <Card className="group relative report-card p-7 border-border shadow-soft">
-          {efPencil(["distribution", "doubleDownOn"], "distribution channels", "The channels already winning for you and where to double down.")}
-          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Distribution channels</div>
-          {(distribution?.doubleDownOn || editing) && (
-            <div className="rounded-xl bg-accent-soft/40 p-5 mb-5">
-              <div className="text-[10px] uppercase tracking-[0.25em] text-accent mb-2">Double down on what's working</div>
-              <p className="font-display text-xl tracking-[-0.01em] mb-1">
-                <EditableField
-                  value={distribution?.doubleDownOn}
-                  onChange={(v) => setEnhanced(["distribution", "doubleDownOn"], v)}
-                  placeholder="The channel already winning for you"
-                />
-              </p>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                <EditableField
-                  value={distribution?.doubleDownRationale}
-                  onChange={(v) => setEnhanced(["distribution", "doubleDownRationale"], v)}
-                  multiline
-                  placeholder="Why doubling down beats adding more channels"
-                />
-              </p>
-            </div>
-          )}
-          {(distribution?.recommendedChannels?.length || editing) && (
-            <>
-              <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-3">Recommended local channels</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {(distribution?.recommendedChannels || []).map((c: any, i: number) => (
-                  <div key={i} className="p-4 rounded-lg border border-border bg-background">
-                    <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <p className="font-medium text-sm">
-                        <EditableField
-                          value={c.name}
-                          onChange={(v) => setEnhanced(["distribution", "recommendedChannels", i, "name"], v)}
-                          placeholder="Channel"
-                        />
-                      </p>
-                      {c.priority && (
-                        <Badge variant="secondary" className="bg-accent-soft text-accent border-0 hover:bg-accent-soft text-[10px] uppercase tracking-wider">
-                          {c.priority}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      <EditableField
-                        value={c.why}
-                        onChange={(v) => setEnhanced(["distribution", "recommendedChannels", i, "why"], v)}
-                        multiline
-                        placeholder="Why this channel fits"
-                      />
-                    </p>
-                  </div>
-                ))}
-                {editing && (
-                  <button
-                    onClick={() => setEnhanced(["distribution", "recommendedChannels"], [...(distribution?.recommendedChannels || []), { name: "", why: "", priority: "medium" }])}
-                    className="p-4 rounded-lg border border-dashed border-accent/50 text-sm text-accent hover:bg-accent/5"
-                  >
-                    + Add channel
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </Card>
-      )}
-
-      {/* Success + goal */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="group relative report-card p-6 border-border shadow-soft">
-          {colPencil("success_definition", "success metric", "How you'll measure traction, a number you can track weekly or monthly.")}
-          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Success looks like</div>
-          <p>
-            <EditableField value={strategy.success_definition} onChange={(v) => setField("success_definition", v)} multiline placeholder="What success looks like" />
-          </p>
-        </Card>
-        <Card className="group relative report-card p-6 border-border shadow-soft">
-          {colPencil("business_goal", "business goal", "Your primary revenue or client target for the next 90–180 days.")}
-          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Business goal</div>
-          <p>
-            <EditableField value={strategy.business_goal} onChange={(v) => setField("business_goal", v)} multiline placeholder="Your primary business goal" />
-          </p>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function EditableBulletList({
-  label,
-  items,
-  onChange,
-  bullet = "•",
-  accent,
-  muted,
-}: {
-  label?: React.ReactNode;
-  items: string[];
-  onChange: (next: string[]) => void;
-  bullet?: React.ReactNode;
-  accent?: boolean;
-  muted?: boolean;
-}) {
-  const { editing } = useStrategyEditor();
-  const [draft, setDraft] = useState("");
-  const add = () => { const v = draft.trim(); if (!v) return; onChange([...items, v]); setDraft(""); };
-  return (
-    <div>
-      {label && <div className={`text-xs uppercase tracking-[0.25em] mb-3 ${accent ? "text-accent" : "text-muted-foreground"}`}>{label}</div>}
-      <ul className="space-y-2">
-        {items.map((r, i) => (
-          <li key={i} className={`flex gap-2 text-sm leading-relaxed ${muted ? "text-muted-foreground" : ""}`}>
-            {typeof bullet === "string" ? <span className={accent ? "text-accent mt-1" : "mt-1"}>{bullet}</span> : bullet}
-            <span className="flex-1">
-              <EditableField value={r} onChange={(v) => { if (!v.trim()) onChange(items.filter((_, j) => j !== i)); else onChange(items.map((x, j) => j === i ? v : x)); }} placeholder="Item (clear to remove)" />
-            </span>
-          </li>
-        ))}
-        {editing && (
-          <li className="flex gap-2 text-sm">
-            <span className={accent ? "text-accent mt-1" : "text-muted-foreground mt-1"}>+</span>
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); add(); } }}
-              onBlur={add}
-              placeholder="Add item…"
-              className="flex-1 bg-background/40 border border-dashed border-accent/50 rounded-md px-2 py-1 outline-none focus:border-accent focus:bg-background"
-            />
-          </li>
-        )}
-      </ul>
-    </div>
-  );
-}
-
-function DifferentiatorTable({ items, onChange }: { items: any[]; onChange: (next: any[]) => void }) {
-  const { editing } = useStrategyEditor();
-  if (!items.length && !editing) return null;
-  return (
-    <div className="overflow-hidden rounded-lg border border-border mb-2">
-      <div className="grid grid-cols-3 bg-muted/60 px-4 py-2 text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-        <div>Factor</div><div>You</div><div>Competitors</div>
-      </div>
-      {items.map((d, i) => (
-        <div key={i} className="grid grid-cols-3 px-4 py-3 text-sm border-t border-border gap-2 items-start">
-          <div className="font-medium pr-3">
-            <EditableField value={d.factor} onChange={(v) => onChange(items.map((x, j) => j === i ? { ...x, factor: v } : x))} placeholder="Factor" />
-          </div>
-          <div className="text-foreground pr-3">
-            <EditableField value={d.you} onChange={(v) => onChange(items.map((x, j) => j === i ? { ...x, you: v } : x))} multiline placeholder="Your approach" />
-          </div>
-          <div className="text-muted-foreground flex gap-2 items-start">
-            <span className="flex-1"><EditableField value={d.competitors} onChange={(v) => onChange(items.map((x, j) => j === i ? { ...x, competitors: v } : x))} multiline placeholder="Competitor approach" /></span>
-            {editing && <button onClick={() => onChange(items.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive shrink-0" aria-label="Remove row"><X className="h-3.5 w-3.5" /></button>}
-          </div>
-        </div>
-      ))}
-      {editing && (
-        <div className="px-4 py-2 border-t border-border">
-          <button onClick={() => onChange([...items, { factor: "", you: "", competitors: "" }])} className="text-xs text-accent hover:underline">+ Add differentiator</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function VoiceTab() {
-  const { strategy, setField, setEnhanced, editing } = useStrategyEditor();
-  const ef = (strategy.enhanced_foundation || {}) as any;
-  const vg = ef.voiceGuidelines || {};
-  const attributes: any[] = vg.attributes || [];
-  const sentence = vg.sentenceStructure || {};
-  const vocab = vg.vocabulary || {};
-  const tone = vg.toneByPlatform || {};
-  const examples = vg.voiceExamples || {};
-  const never: any[] = vg.neverSoundLike || [];
-
-  const colPencil = (col: string, label: string, description: string) => (
-    <SectionPencil
-      target={() => ({
-        refineKey: col,
-        label,
-        description,
-        currentValue: Array.isArray(strategy?.[col]) ? (strategy[col] as any[]).join(", ") : (strategy?.[col] || ""),
-        buildPatch: (v) => {
-          const isArr = Array.isArray(strategy?.[col]);
-          return { [col]: isArr ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v };
-        },
-      })}
-    />
-  );
-  const efPencil = (path: (string | number)[], label: string, description: string) => (
-    <SectionPencil
-      target={() => {
-        const cur = path.reduce<any>((acc, k) => (acc == null ? acc : acc[k]), strategy?.enhanced_foundation || {});
-        const isArr = Array.isArray(cur);
-        return {
-          refineKey: `enhanced:${path.join(".")}`,
-          label,
-          description,
-          currentValue: isArr ? cur.join(", ") : (cur || ""),
-          buildPatch: (v) => {
-            const value = isArr ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean) : v;
-            return { enhanced_foundation: setInPath(strategy?.enhanced_foundation || {}, path, value) };
-          },
-        };
-      }}
-    />
-  );
-
-  return (
-    <div className="space-y-6 mt-0 report-page" style={{ pageBreakAfter: "always" }}>
-      {/* Voice attributes */}
-      <Card className="group relative report-card p-7 border-border shadow-soft">
-        {colPencil("voice_attributes", "voice attributes", "The 2–3 traits that define how your brand sounds in writing.")}
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Voice attributes</div>
-          {editing && (
-            <Button variant="ghost" size="sm" onClick={() => setEnhanced(["voiceGuidelines", "attributes"], [...attributes, { trait: "New trait", meaning: "", inPractice: "", example: "" }])}>+ Add</Button>
-          )}
-        </div>
-        {attributes.length > 0 ? (
-          <div className="overflow-hidden rounded-lg border border-border">
-            {attributes.map((a, i) => (
-              <div key={i} className={`grid grid-cols-1 md:grid-cols-[180px_1fr_auto] gap-4 px-4 py-4 ${i > 0 ? "border-t border-border" : ""}`}>
-                <div>
-                  <Badge className="bg-accent-soft text-accent border-0 hover:bg-accent-soft font-medium">
-                    <EditableField value={a.trait} onChange={(v) => setEnhanced(["voiceGuidelines", "attributes", i, "trait"], v)} placeholder="Trait" />
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm font-medium mb-1">
-                    <EditableField value={a.meaning} onChange={(v) => setEnhanced(["voiceGuidelines", "attributes", i, "meaning"], v)} placeholder="What this trait means" />
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    <EditableField value={a.inPractice} onChange={(v) => setEnhanced(["voiceGuidelines", "attributes", i, "inPractice"], v)} multiline placeholder="In practice…" />
-                  </p>
-                  <p className="text-sm italic text-muted-foreground border-l-2 border-accent pl-3">
-                    <EditableField value={a.example} onChange={(v) => setEnhanced(["voiceGuidelines", "attributes", i, "example"], v)} multiline placeholder="Example phrase" />
-                  </p>
-                </div>
-                {editing && (
-                  <button onClick={() => setEnhanced(["voiceGuidelines", "attributes"], attributes.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive self-start" aria-label="Remove attribute"><X className="h-4 w-4" /></button>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            <EditableList
-              items={(strategy.voice_attributes as string[]) || []}
-              onChange={(next) => setField("voice_attributes", next)}
-              renderItem={(v, i) => <Badge key={i} variant="secondary" className="bg-accent-soft text-accent border-0 hover:bg-accent-soft">{v}</Badge>}
-            />
-          </div>
-        )}
-      </Card>
-
-      {/* Sentence structure */}
-      <Card className="group relative report-card p-7 border-border shadow-soft">
-        {efPencil(["voiceGuidelines", "sentenceStructure", "example"], "sentence structure", "How your sentences are shaped, rhythm, length, and a canonical example.")}
-        <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Sentence structure</div>
-        <div className="mb-5">
-          <EditableBulletList
-            items={sentence.rules || []}
-            onChange={(next) => setEnhanced(["voiceGuidelines", "sentenceStructure", "rules"], next)}
-            bullet={<Check className="h-4 w-4 text-accent shrink-0 mt-0.5" />}
-          />
-        </div>
-        <div className="rounded-lg bg-muted/60 p-5 border-l-4 border-accent">
-          <Quote className="h-4 w-4 text-accent mb-2" />
-          <p className="text-base leading-relaxed italic">
-            "<EditableField value={sentence.example} onChange={(v) => setEnhanced(["voiceGuidelines", "sentenceStructure", "example"], v)} multiline placeholder="Example sentence demonstrating your voice" />"
-          </p>
-        </div>
-      </Card>
-
-      {/* Vocabulary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="group relative report-card words-use p-6 border-border shadow-soft">
-          {efPencil(["voiceGuidelines", "vocabulary", "use"], "words to use", "The vocabulary that should consistently show up in your writing.")}
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-accent mb-3"><Check className="h-3.5 w-3.5" /> Words to use</div>
-          <EditableList
-            items={vocab.use || []}
-            onChange={(next) => setEnhanced(["voiceGuidelines", "vocabulary", "use"], next)}
-            chipClassName="bg-accent-soft text-accent"
-          />
-        </Card>
-        <Card className="group relative report-card words-avoid p-6 border-border shadow-soft">
-          {efPencil(["voiceGuidelines", "vocabulary", "avoid"], "words to avoid", "The vocabulary that should never appear, generic, jargon, or off-brand terms.")}
-          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3"><X className="h-3.5 w-3.5" /> Words to avoid</div>
-          <EditableList
-            items={vocab.avoid || []}
-            onChange={(next) => setEnhanced(["voiceGuidelines", "vocabulary", "avoid"], next)}
-            chipClassName="bg-muted text-muted-foreground line-through"
-          />
-        </Card>
-      </div>
-
-      {/* Tone by platform */}
-      <Card className="group relative report-card p-7 border-border shadow-soft">
-        {efPencil(["voiceGuidelines", "toneByPlatform", "linkedin", "tone"], "tone by platform", "How your voice shifts across LinkedIn, email, and podcast.")}
-        <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-4">Tone by platform</div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {(["linkedin", "email", "podcast"] as const).map((p) => {
-            const t = tone[p] || {};
-            return (
-              <div key={p} className="p-4 rounded-lg border border-border">
-                <div className="text-xs uppercase tracking-[0.25em] text-accent mb-2">{p}</div>
-                <p className="text-sm font-medium mb-1">
-                  <EditableField value={t.tone} onChange={(v) => setEnhanced(["voiceGuidelines", "toneByPlatform", p, "tone"], v)} placeholder="Tone" />
-                </p>
-                <p className="text-xs text-muted-foreground mb-3">
-                  <EditableField value={t.mode} onChange={(v) => setEnhanced(["voiceGuidelines", "toneByPlatform", p, "mode"], v)} placeholder="Mode" />
-                </p>
-                <p className="text-xs italic text-muted-foreground border-l-2 border-border pl-2">
-                  <EditableField value={t.example} onChange={(v) => setEnhanced(["voiceGuidelines", "toneByPlatform", p, "example"], v)} multiline placeholder="Example" />
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* Voice examples */}
-      <Card className="group relative report-card p-7 border-border shadow-soft">
-        {efPencil(["voiceGuidelines", "voiceExamples", "openingHook", "good"], "voice examples", "Concrete good/bad examples, hooks, teaching points, and CTAs in your voice.")}
-        <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-5">Voice examples</div>
-        <div className="space-y-5">
-          {([
-            ["Opening hook", "openingHook"],
-            ["Teaching point", "teachingPoint"],
-            ["Call to action", "callToAction"],
-          ] as const).map(([label, key]) => {
-            const ex = examples[key] || {};
-            return (
-              <div key={key}>
-                <div className="text-xs uppercase tracking-[0.2em] font-medium mb-3">{label}</div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2">
-                  <div className="p-4 rounded-lg bg-accent-soft/40 border-l-4 border-accent">
-                    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-accent mb-2"><Check className="h-3 w-3" /> Good</div>
-                    <p className="text-sm leading-relaxed">
-                      "<EditableField value={ex.good} onChange={(v) => setEnhanced(["voiceGuidelines", "voiceExamples", key, "good"], v)} multiline placeholder="A good example in your voice" />"
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-lg bg-muted/60 border-l-4 border-muted-foreground/30">
-                    <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-2"><X className="h-3 w-3" /> Bad</div>
-                    <p className="text-sm leading-relaxed text-muted-foreground">
-                      "<EditableField value={ex.bad} onChange={(v) => setEnhanced(["voiceGuidelines", "voiceExamples", key, "bad"], v)} multiline placeholder="What to avoid" />"
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground italic">
-                  <EditableField value={ex.why} onChange={(v) => setEnhanced(["voiceGuidelines", "voiceExamples", key, "why"], v)} placeholder="Why the good version works better" />
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      {/* Never sound like */}
-      <Card className="group relative report-card p-7 border-border shadow-soft">
-        {colPencil("anti_positioning", "what you'd never sound like", "Styles, phrases, or vibes your brand actively rejects.")}
-        <div className="flex items-center justify-between mb-4">
-          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground">Never sound like</div>
-          {editing && (
-            <Button variant="ghost" size="sm" onClick={() => setEnhanced(["voiceGuidelines", "neverSoundLike"], [...never, { style: "", example: "", why: "" }])}>+ Add</Button>
-          )}
-        </div>
-        {never.length > 0 ? (
-          <div className="space-y-3">
-            {never.map((n, i) => (
-              <div key={i} className="p-4 rounded-lg bg-muted/40 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <X className="h-4 w-4 text-muted-foreground" />
-                  <span className="font-medium text-sm flex-1">
-                    <EditableField value={n.style} onChange={(v) => setEnhanced(["voiceGuidelines", "neverSoundLike", i, "style"], v)} placeholder="Style label (e.g. Corporate jargon)" />
-                  </span>
-                  {editing && (
-                    <button onClick={() => setEnhanced(["voiceGuidelines", "neverSoundLike"], never.filter((_, j) => j !== i))} className="text-muted-foreground hover:text-destructive" aria-label="Remove"><X className="h-3.5 w-3.5" /></button>
-                  )}
-                </div>
-                <p className="text-sm italic text-muted-foreground mb-1">
-                  "<EditableField value={n.example} onChange={(v) => setEnhanced(["voiceGuidelines", "neverSoundLike", i, "example"], v)} multiline placeholder="Example phrase to avoid" />"
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  <EditableField value={n.why} onChange={(v) => setEnhanced(["voiceGuidelines", "neverSoundLike", i, "why"], v)} placeholder="Why this doesn't fit" />
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground italic">
-            <EditableField value={strategy.anti_positioning} onChange={(v) => setField("anti_positioning", v)} multiline placeholder="What you'd never sound like" />
-          </p>
-        )}
-      </Card>
-    </div>
-  );
-}
-
-function StrategyContent({ reportData }: { reportData?: any }) {
-  const { strategy, applyServerPatch } = useStrategyEditor();
-  const { user } = useAuth();
-  const [strengthDismissed, setStrengthDismissed] = useState(false);
-
-  const score = strategy?.strength_score as number | null | undefined;
-  const weak = (strategy?.weak_areas || []) as any[];
-  const strong = (strategy?.strong_areas || []) as any[];
-
-  // Shared apply: writes a patch + recomputes strength score, then syncs local state.
-  const applyRefine = async ({ refineKey, patch }: { refineKey: string; newValue: string; patch: Record<string, any> }) => {
-    if (!user) return;
-
-    // Recompute strength score: bump the refined area to full points if present in
-    // weak/strong arrays. Sections without a tracked area leave the score untouched.
-    const curWeak = (strategy?.weak_areas || []) as any[];
-    const curStrong = (strategy?.strong_areas || []) as any[];
-    const bump = (arr: any[]) => arr.map((a) => (a?.refineKey === refineKey ? { ...a, points: a.max } : a));
-    const bumpedWeak = bump(curWeak);
-    const bumpedStrong = bump(curStrong);
-    const movers = bumpedWeak.filter((a) => a?.refineKey === refineKey && a.points >= a.max);
-    const remainingWeak = bumpedWeak.filter((a) => !(a?.refineKey === refineKey && a.points >= a.max));
-    const mergedStrong = [...bumpedStrong, ...movers];
-    const all = [...mergedStrong, ...remainingWeak];
-    const totalMax = all.reduce((s, a) => s + (Number(a?.max) || 0), 0);
-    const totalPts = all.reduce((s, a) => s + (Number(a?.points) || 0), 0);
-    const trackedInAreas = [...curWeak, ...curStrong].some((a) => a?.refineKey === refineKey);
-    const newScore =
-      trackedInAreas && totalMax > 0
-        ? Math.round((totalPts / totalMax) * 100)
-        : (strategy?.strength_score ?? null);
-
-    const fullPatch: Record<string, any> = {
-      ...patch,
-      weak_areas: remainingWeak,
-      strong_areas: mergedStrong,
-      strength_score: newScore,
-    };
-
-    const { error } = await supabase
-      .from("strategies")
-      .update(fullPatch as never)
-      .eq("user_id", user.id);
-    if (error) throw error;
-
-    applyServerPatch(fullPatch);
-  };
-
-  const defaultContext = {
-    ideal_client: strategy?.ideal_client,
-    pain_point: strategy?.pain_point,
-    transformation: strategy?.transformation,
-    voice_attributes: strategy?.voice_attributes,
-    positioning_statement: strategy?.positioning_statement,
-  };
-
-  return (
-    <RefineProvider apply={applyRefine} defaultContext={defaultContext}>
-      <StrategyContentInner
-        reportData={reportData}
-        score={score ?? null}
-        weak={weak}
-        strong={strong}
-        strengthDismissed={strengthDismissed}
-        setStrengthDismissed={setStrengthDismissed}
-        strategy={strategy}
-      />
-    </RefineProvider>
-  );
-}
-
-function StrategyContentInner({
-  reportData,
-  score,
-  weak,
-  strong,
-  strengthDismissed,
-  setStrengthDismissed,
-  strategy,
-}: any) {
-  const { open: openRefineModal } = useRefine();
-
-  // Map a strength-card area onto the shared refine-open flow.
-  const handleStrengthRefine = (area: { refineKey: string; label: string }) => {
-    const colName = area.refineKey;
-    const cur = strategy?.[colName];
-    const currentValue = Array.isArray(cur) ? cur.join(", ") : (cur || "");
-    openRefineModal({
-      refineKey: colName,
-      label: area.label,
-      currentValue,
-      buildPatch: (v) => {
-        const next = Array.isArray(cur)
-          ? v.split(/,|\n/).map((s) => s.trim()).filter(Boolean)
-          : v;
-        return { [colName]: next };
-      },
-    });
-  };
-
-  return (
-    <div className="moxie-strategy-page px-6 lg:px-10 py-8 mx-auto" style={{ width: "100%", maxWidth: 948 }}>
-      <StrategyHeader />
-      <div id="moxie-strategy-report">
-      {!strengthDismissed && (
-        <StrategyStrengthCard
-          score={score ?? null}
-          weakAreas={weak}
-          strongAreas={strong}
-          onRefine={handleStrengthRefine}
-          onDismiss={() => setStrengthDismissed(true)}
-        />
-      )}
-      <Tabs
-        defaultValue="overview"
-        className="w-full"
-        onValueChange={() => {
-          const y = window.scrollY;
-          // Radix focuses the newly-activated trigger, which can scroll the
-          // page. Restore scroll position across multiple frames to cover
-          // focus scrolling that happens after the first paint.
-          const restore = () => window.scrollTo(0, y);
-          requestAnimationFrame(() => {
-            restore();
-            requestAnimationFrame(restore);
-          });
-          setTimeout(restore, 0);
-          setTimeout(restore, 50);
-        }}
-      >
-        <TabsList className="bg-transparent h-auto w-full mb-7 flex flex-wrap justify-start gap-6 rounded-none p-0 border-b border-[#ECEAE5]">
-          {[
-            { v: "overview", l: "Overview" },
-            { v: "voice", l: "Voice & Brand" },
-            { v: "content", l: "Content" },
-            { v: "channels", l: "Channels" },
-            { v: "metrics", l: "Metrics" },
-            { v: "action", l: "Action Plan" },
-          ].map((t) => (
-            <TabsTrigger
-              key={t.v}
-              value={t.v}
-              className="relative rounded-none px-0 pb-3 pt-1 text-[13px] font-medium text-[#6B6860] bg-transparent border-b-2 border-transparent transition-colors hover:text-foreground data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:border-[#E85A46] data-[state=active]:shadow-none data-[state=active]:bg-transparent"
-            >
-              {t.l}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-        <TabsContent value="overview" className="mt-0 data-[state=inactive]:hidden" forceMount>
-          <div id="strategy-export-overview"><OverviewTab /></div>
-        </TabsContent>
-        <TabsContent value="voice" className="mt-0 data-[state=inactive]:hidden" forceMount>
-          <div id="strategy-export-voice">
-            <VoiceTab />
-            <CompetitiveAndMessagingSections />
-          </div>
-        </TabsContent>
-        <TabsContent value="content" className="mt-0"><ContentTab /></TabsContent>
-        <TabsContent value="channels" className="mt-0"><ChannelsTab /></TabsContent>
-        <TabsContent value="metrics" className="mt-0"><MetricsTab /></TabsContent>
-        <TabsContent value="action" className="mt-0"><ActionPlanTab /></TabsContent>
-      </Tabs>
-      </div>
-    </div>
-  );
-}
-
-export default function Strategy() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [strategy, setStrategy] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const { reportData, isLoading, error } = useReportData();
-  const [session, setSession] = useState<{ id: string; messageCount: number; synthesis_status: string; synthesis_attempts: number; synthesis_last_error: string | null; lane: "lane1" | "lane2" | null } | null>(null);
-  const autoRetryDoneRef = useRef(false);
-  const triggeredRef = useRef(false);
-  // Tracks whether the dark interstitial has finished its fade-out after
-  // synthesis completes. Until then we keep rendering it on top so the
-  // user never sees a flash of the dashboard or any white state.
-  const [interstitialDismissed, setInterstitialDismissed] = useState(false);
-  // Whether we ever entered the building state, used to decide if we should
-  // run the fade-out on completion or render the dashboard immediately.
-  const sawBuildingRef = useRef(false);
-  // Captures the synthesis_status the *first* time we display the interstitial
-  // on this page mount. If we land directly on "in_progress" (user navigated
-  // away and came back), we render the reentry state instead of the live
-  // animation from 0%.
-  const [reentryMode, setReentryMode] = useState(false);
-  const reentryDecidedRef = useRef(false);
-  // Pending navigation captured by the in-app blocker modal.
-  const [pendingNav, setPendingNav] = useState<null | { type: "link"; href: string } | { type: "back" }>(null);
-
-  // Initial load
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      await refresh();
-      setLoading(false);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  async function refresh() {
-    if (!user) return;
-    const [{ data: strat }, { data: sess }] = await Promise.all([
-      supabase.from("strategies").select("*").eq("user_id", user.id).maybeSingle(),
-      supabase
-        .from("discovery_sessions")
-        .select("id, messages, updated_at, lane, synthesis_status, synthesis_attempts, synthesis_last_error")
-        .eq("user_id", user.id)
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle(),
-    ]);
-    setStrategy(normalizeStrategy(strat));
-    if (sess) {
-      const msgs = Array.isArray((sess as any).messages) ? (sess as any).messages : [];
-      setSession({
-        id: (sess as any).id,
-        messageCount: msgs.length,
-        synthesis_status: (sess as any).synthesis_status || "pending",
-        synthesis_attempts: (sess as any).synthesis_attempts ?? 0,
-        synthesis_last_error: (sess as any).synthesis_last_error ?? null,
-        lane: ((sess as any).lane as "lane1" | "lane2" | null) ?? null,
-      });
-    }
+    );
   }
 
-  async function triggerSynthesis() {
-    if (!user || !session) return;
-    triggeredRef.current = true;
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const { data: { session: authSess } } = await supabase.auth.getSession();
-      const authToken = authSess?.access_token ?? supabaseKey;
-      // Optimistically mark in_progress so polling reflects the new state.
-      await supabase
-        .from("discovery_sessions")
-        .update({ synthesis_status: "in_progress", synthesis_last_error: null } as any)
-        .eq("id", session.id);
-      setSession((s) => s ? { ...s, synthesis_status: "in_progress" } : s);
-      fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": `Bearer ${authToken}`,
-          "apikey": supabaseKey,
-        },
-        body: JSON.stringify({
-          sessionId: session.id,
-          lane: session.lane ?? "lane1",
-          responseMode: "json",
-        }),
-        keepalive: true,
-      }).catch((err) => console.warn("trigger dispatch failed:", err));
-    } catch (e) {
-      console.error("triggerSynthesis", e);
+  if (!strategy) {
+    if (synthesizing) {
+      return (
+        <div style={{ background: C.paper, minHeight: "100vh", padding: "40px 48px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+          <Loader2 size={32} style={{ color: C.coral, animation: "spin 1s linear infinite" }} />
+          <p style={{ fontFamily: "'DM Sans Variable',sans-serif", fontSize: 20, fontWeight: 700, color: C.ink, margin: 0 }}>
+            Building your strategy…
+          </p>
+          <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: C.muted, margin: 0 }}>
+            This takes about 30–60 seconds. The page will update automatically.
+          </p>
+        </div>
+      );
     }
+    return (
+      <div style={{ background: C.paper, minHeight: "100vh", padding: "40px 48px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ fontFamily: "'DM Sans Variable',sans-serif", fontSize: 18, color: C.ink, marginBottom: 24 }}>
+          No strategy yet. Complete Discovery to build yours.
+        </p>
+        <button onClick={() => navigate("/app/discovery")} style={btnPrimary}>
+          Begin Discovery
+        </button>
+      </div>
+    );
   }
 
-  // Auto-trigger when status is pending
-  useEffect(() => {
-    if (!session || strategy) return;
-    if (session.synthesis_status === "pending" && !triggeredRef.current) {
-      triggerSynthesis();
-    }
-  }, [session, strategy]);
+  // Paid sections: data comes from strategy_sections (RLS-gated).
+  // If the user hasn't paid, these will be empty objects — content never arrived in the network response.
+  const voiceSection = sections["voice"] ?? {};
+  const pillarsSection = sections["pillars"] ?? {};
+  const channelSection = sections["channel"] ?? {};
+  const planSection = sections["plan"] ?? {};
+  const positioningSection = sections["positioning"] ?? {};
 
-  // Poll every 5s while in_progress/pending
-  useEffect(() => {
-    if (!session || strategy) return;
-    if (session.synthesis_status !== "in_progress" && session.synthesis_status !== "pending") return;
-    const t = window.setInterval(() => { refresh(); }, 5000);
-    return () => window.clearInterval(t);
-  }, [session, strategy]);
+  // Pillars from sections first (paid gate), fallback to strategies row for legacy strategies
+  const pillars = normalisePillars(
+    (pillarsSection.pillars as unknown[]) ?? strategy.content_pillars
+  );
+  const updatedAt = strategy.updated_at
+    ? new Date(strategy.updated_at).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : null;
 
-  // Auto-retry once on failure, after 30 seconds.
-  useEffect(() => {
-    if (!session || strategy) return;
-    if (session.synthesis_status !== "failed") return;
-    if (autoRetryDoneRef.current) return;
-    if (session.synthesis_attempts >= 2) return; // already tried automatic + initial
-    autoRetryDoneRef.current = true;
-    const t = window.setTimeout(() => {
-      console.log("Auto-retrying synthesis after failure");
-      triggeredRef.current = false;
-      triggerSynthesis();
-    }, 30_000);
-    return () => window.clearTimeout(t);
-  }, [session, strategy]);
+  // Voice/tone from sections (paid gate)
+  const toneGuidelines = normaliseToString(
+    (voiceSection.guidelines as any)?.toneByPlatform ?? strategy.tone_guidelines
+  );
+  const avoidPhrases = normaliseToString(strategy.avoid_phrases);
 
-  // Detect reentry: if synthesis was already in_progress when we mounted
-  // (this session never triggered it), show the reentry interstitial state.
-  useEffect(() => {
-    if (reentryDecidedRef.current) return;
-    if (!session || strategy) return;
-    const s = session.synthesis_status;
-    if (s === "pending" || s === "in_progress") {
-      reentryDecidedRef.current = true;
-      if (s === "in_progress" && !triggeredRef.current) {
-        setReentryMode(true);
-      }
-    }
-  }, [session, strategy]);
-
-  // While the interstitial is visible, intercept internal link clicks and
-  // browser back so we can show the in-app "Stay here / Leave anyway" modal
-  // instead of an abrupt navigation. Synthesis keeps running server-side.
-  const _curStatus = session?.synthesis_status;
-  const interstitialVisible =
-    !strategy && !!session && session.messageCount > 0 && (_curStatus === "pending" || _curStatus === "in_progress");
-  useEffect(() => {
-    if (!interstitialVisible) return;
-    // Push a guard entry so the first Back press fires our popstate handler.
-    window.history.pushState({ moxieGuard: true }, "");
-    const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented) return;
-      if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const target = e.target as Element | null;
-      const anchor = target?.closest?.("a") as HTMLAnchorElement | null;
-      if (!anchor) return;
-      const href = anchor.getAttribute("href");
-      if (!href) return;
-      // Allow modal's own buttons (not anchors anyway), external links, and
-      // links targeting a new window.
-      if (anchor.target && anchor.target !== "" && anchor.target !== "_self") return;
-      if (/^(https?:)?\/\//i.test(href) && !href.startsWith(window.location.origin)) return;
-      if (href.startsWith("mailto:") || href.startsWith("tel:")) return;
-      // Same-page hash, let it through.
-      if (href.startsWith("#")) return;
-      // Already on this URL, ignore.
-      const normalized = href.startsWith("http") ? new URL(href).pathname + new URL(href).search : href;
-      if (normalized === window.location.pathname + window.location.search) return;
-      e.preventDefault();
-      e.stopPropagation();
-      setPendingNav({ type: "link", href: normalized });
-    };
-    const onPopState = () => {
-      // Re-push the guard so the URL stays put while the modal is open.
-      window.history.pushState({ moxieGuard: true }, "");
-      setPendingNav({ type: "back" });
-    };
-    document.addEventListener("click", onClick, true);
-    window.addEventListener("popstate", onPopState);
-    return () => {
-      document.removeEventListener("click", onClick, true);
-      window.removeEventListener("popstate", onPopState);
-    };
-  }, [interstitialVisible]);
-
-  const confirmLeave = () => {
-    const nav = pendingNav;
-    setPendingNav(null);
-    if (!nav) return;
-    if (nav.type === "link") {
-      navigate(nav.href);
-    } else {
-      // Pop our guard entry and then go back one more.
-      window.history.go(-1);
-    }
-  };
-
-  if (isLoading) return <p className="p-10 text-muted-foreground">Loading strategy...</p>;
-  if (error) return <p className="p-10 text-destructive">Error: {error.message}</p>;
-
-  if (loading) return <div className="p-10 text-muted-foreground">Loading…</div>;
-
-  const hasSession = session && session.messageCount > 0;
-  const status = session?.synthesis_status;
-  const isBuilding = !strategy && hasSession && (status === "pending" || status === "in_progress");
-  const isFailed = !strategy && hasSession && status === "failed";
-  if (isBuilding) sawBuildingRef.current = true;
-
-  // Render the dark interstitial whenever we're building, or while it's still
-  // fading out after strategy arrived. Sits above any underlying content.
-  const showInterstitial =
-    isBuilding || (sawBuildingRef.current && !!strategy && !interstitialDismissed);
-
-  const showManualRetry = isFailed && (autoRetryDoneRef.current || (session?.synthesis_attempts ?? 0) >= 2);
-
-  const emptyOrFailedState = !strategy ? (
-    <div className="px-6 lg:px-10 py-16 max-w-3xl mx-auto text-center">
-      <div className="h-16 w-16 rounded-2xl bg-foreground mx-auto mb-6 flex items-center justify-center"><Compass className="h-7 w-7 text-accent" /></div>
-      {isBuilding ? null : isFailed && !showManualRetry ? (
-          <>
-            <h1 className="font-display text-4xl mb-3">Strategy generation hit a snag</h1>
-            <p className="text-muted-foreground mb-8">
-              We're automatically retrying in a moment, your Discovery answers are safe.
-            </p>
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin text-accent" />
-              <span>Retrying soon…</span>
-            </div>
-          </>
-        ) : isFailed ? (
-          <>
-            <h1 className="font-display text-4xl mb-3">Strategy generation didn't complete</h1>
-            <p className="text-muted-foreground mb-8">
-              Your Discovery answers are saved. Click below to try again.
-            </p>
-            <div className="flex gap-3 justify-center flex-wrap">
-              <Button
-                onClick={() => { autoRetryDoneRef.current = false; triggeredRef.current = false; triggerSynthesis(); }}
-                className="bg-accent text-accent-foreground hover:bg-accent/90 h-11 rounded-lg"
-              >
-                <Zap className="mr-2 h-4 w-4" /> Try again
-              </Button>
-              <Button asChild variant="outline" className="h-11 rounded-lg">
-                <Link to="/app/discovery">Review Discovery</Link>
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h1 className="font-display text-4xl mb-3">No strategy yet</h1>
-            <p className="text-muted-foreground mb-8">Run MOXIEMO Discovery to extract your positioning, voice, and content foundation.</p>
-            <Button asChild className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-lg">
-              <Link to="/app/discovery"><Sparkles className="mr-2 h-4 w-4 text-accent" /> Begin discovery</Link>
-            </Button>
-          </>
-        )}
-      </div>
-  ) : null;
+  const actionPlan = (planSection.actionPlan as any) ?? null;
+  const planColumns: { range: string; items: string[] }[] = actionPlan
+    ? [
+        { range: "Days 1–30", items: Array.isArray(actionPlan.week1?.tasks) ? actionPlan.week1.tasks.map((t: any) => t?.task ?? t).filter(Boolean) : [] },
+        { range: "Days 31–60", items: Array.isArray(actionPlan.week2?.tasks) ? actionPlan.week2.tasks.map((t: any) => t?.task ?? t).filter(Boolean) : [] },
+        { range: "Days 61–90", items: Array.isArray(actionPlan.week3?.tasks) ? actionPlan.week3.tasks.map((t: any) => t?.task ?? t).filter(Boolean) : [] },
+      ]
+    : [
+        { range: "Days 1–30", items: ["Define your content pillars", "Publish 2x per week on LinkedIn", "Build your content library"] },
+        { range: "Days 31–60", items: ["Increase posting cadence to 3x/week", "Engage with top-performing comments", "Start email list nurture sequence"] },
+        { range: "Days 61–90", items: ["Review analytics and double-down on best pillar", "Launch a lead magnet", "Plan next quarter campaign"] },
+      ];
 
   return (
-    <>
-      {strategy ? (
-        <StrategyEditorProvider initial={strategy} userId={user!.id}>
-          <StrategyContent reportData={reportData} />
-        </StrategyEditorProvider>
-      ) : (
-        emptyOrFailedState
-      )}
-      {showInterstitial && (
-        <StrategyEngineInterstitial
-          active
-          done={!!strategy}
-          mode={reentryMode ? "reentry" : "live"}
-          onFadedOut={() => setInterstitialDismissed(true)}
-        />
-      )}
-      {pendingNav && (
-        <div
-          className="fixed inset-0 z-[110] flex items-center justify-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
-          onClick={(e) => { if (e.target === e.currentTarget) setPendingNav(null); }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="moxie-leave-title"
-            style={{
-              backgroundColor: "#1A1C20",
-              borderRadius: 12,
-              padding: 28,
-              maxWidth: 400,
-              width: "100%",
-            }}
-          >
-            <h2
-              id="moxie-leave-title"
-              style={{ color: "#fff", fontSize: 18, fontWeight: 700, lineHeight: 1.3, margin: 0 }}
-            >
-              Your strategy is being built
-            </h2>
-            <p
+    <div style={{ background: C.paper, minHeight: "100vh", padding: "40px 48px" }}>
+      {/* Top bar */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 32 }}>
+        <div>
+          <h1 style={h1Style}>Your Marketing Strategy</h1>
+          {updatedAt && (
+            <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: C.muted, margin: 0 }}>
+              Updated {updatedAt}
+            </p>
+          )}
+        </div>
+        <button onClick={handleDownload} disabled={exporting} style={{ ...btnSm, opacity: exporting ? 0.6 : 1 }}>
+          <Download size={13} /> {exporting ? "Exporting…" : "Download PDF"}
+        </button>
+      </div>
+
+      {/* Layout */}
+      <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+        {/* Left rail */}
+        <div style={{ width: 200, flexShrink: 0, position: "sticky", top: 32 }}>
+          {RAIL_ITEMS.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => setActiveSection(item.key)}
               style={{
-                color: "rgba(255,255,255,0.65)",
-                fontSize: 14,
-                lineHeight: 1.6,
-                marginTop: 12,
-                marginBottom: 24,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "100%",
+                textAlign: "left",
+                padding: "10px 14px",
+                marginBottom: 4,
+                borderRadius: 10,
+                border: "none",
+                background: activeSection === item.key ? C.white : "transparent",
+                fontFamily: "'DM Sans Variable',sans-serif",
+                fontSize: 13,
+                fontWeight: activeSection === item.key ? 700 : 500,
+                color: activeSection === item.key ? C.navy : C.muted,
+                cursor: "pointer",
+                boxShadow: activeSection === item.key ? `0 0 0 1.5px ${C.border}` : "none",
               }}
             >
-              Processing continues in the background, but leaving now means you won't see live progress. You can return to this page at any time to check status.
-            </p>
-            <div className="flex items-center justify-end gap-4">
-              <button
-                type="button"
-                onClick={confirmLeave}
-                style={{
-                  background: "transparent",
-                  border: 0,
-                  color: "rgba(255,255,255,0.5)",
-                  fontSize: 14,
-                  cursor: "pointer",
-                  padding: "8px 4px",
-                }}
-              >
-                Leave anyway
-              </button>
-              <button
-                type="button"
-                autoFocus
-                onClick={() => setPendingNav(null)}
-                style={{
-                  backgroundColor: "#FF6B5C",
-                  color: "#fff",
-                  fontWeight: 600,
-                  fontSize: 14,
-                  border: 0,
-                  borderRadius: 8,
-                  padding: "10px 18px",
-                  cursor: "pointer",
-                }}
-              >
-                Stay here
-              </button>
-            </div>
-          </div>
+              {item.label}
+              {isSectionLocked(item.key) && <Lock size={11} style={{ opacity: 0.4 }} />}
+            </button>
+          ))}
         </div>
-      )}
-    </>
+
+        {/* Right content */}
+        <div style={{ flex: 1, maxWidth: 720, position: "relative" }}>
+
+          {/* Positioning */}
+          {activeSection === "positioning" && (
+            <div>
+              <EditableCard label="Positioning statement" value={normaliseToString(strategy.positioning_statement)} fieldName="positioning_statement" strategyId={strategy.id} onSaved={handleSaved} />
+              <EditableCard label="Who buys from you" value={normaliseToString(strategy.target_audience)} fieldName="target_audience" strategyId={strategy.id} onSaved={handleSaved} />
+              {(positioningSection.breakdown as any)?.painPoint && (
+                <div style={card}>
+                  <div style={sectionLabel}>The gap you fill</div>
+                  <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+                    {normaliseToString((positioningSection.breakdown as any).painPoint)}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Voice and tone */}
+          {activeSection === "voice" && (
+            <div style={{ position: "relative" }}>
+              {isSectionLocked("voice") && <PaywallOverlay onUpgrade={handleUpgrade} upgrading={upgrading} />}
+              <EditableCard label="Brand voice" value={normaliseToString(strategy.brand_voice)} fieldName="brand_voice" strategyId={strategy.id} onSaved={handleSaved} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                <div style={card}>
+                  <div style={sectionLabel}>Write like this</div>
+                  <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+                    {toneGuidelines || <span style={{ color: C.muted, fontStyle: "italic" }}>Not set</span>}
+                  </p>
+                </div>
+                <div style={card}>
+                  <div style={sectionLabel}>Never write like this</div>
+                  <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: C.ink, lineHeight: 1.6, margin: 0 }}>
+                    {avoidPhrases || <span style={{ color: C.muted, fontStyle: "italic" }}>Not set</span>}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Content pillars */}
+          {activeSection === "pillars" && (
+            <div style={{ position: "relative" }}>
+              {isSectionLocked("pillars") && <PaywallOverlay onUpgrade={handleUpgrade} upgrading={upgrading} />}
+              {pillars.length === 0 ? (
+                <div style={card}>
+                  <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: C.muted, fontStyle: "italic" }}>
+                    No content pillars defined yet.
+                  </p>
+                </div>
+              ) : pillars.map((pillar, i) => (
+                <div
+                  key={i}
+                  style={{
+                    ...card,
+                    borderTop: i === 0 ? `3px solid ${C.coral}` : undefined,
+                  }}
+                >
+                  <div style={sectionLabel}>Pillar {i + 1}</div>
+                  <p style={{ fontFamily: "'DM Sans Variable',sans-serif", fontSize: 16, fontWeight: 700, color: C.ink, margin: "0 0 6px" }}>
+                    {pillar.name}
+                  </p>
+                  {pillar.description && (
+                    <p style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: C.muted, lineHeight: 1.6, margin: 0 }}>
+                      {pillar.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Channel strategy */}
+          {activeSection === "channel" && (
+            <div style={{ position: "relative" }}>
+              {isSectionLocked("channel") && <PaywallOverlay onUpgrade={handleUpgrade} upgrading={upgrading} />}
+              <div style={card}>
+                <div style={sectionLabel}>Primary channel</div>
+                <p style={{ fontFamily: "'DM Sans Variable',sans-serif", fontSize: 20, fontWeight: 700, color: C.navy, marginBottom: 16 }}>
+                  {normaliseToString((channelSection.primary as string) ?? strategy.primary_channel) || "LinkedIn"}
+                </p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                  {[
+                    { label: "Cadence", value: normaliseToString((channelSection.frequency as string) ?? strategy.posting_frequency) || "3x per week" },
+                    { label: "Format mix", value: normaliseToString((channelSection.competitive as any)?.differentiators?.[0]) || "Content + engagement" },
+                    { label: "Distribution", value: normaliseToString((channelSection.distribution as any)?.doubleDownOn) || "Primary channel" },
+                  ].map((box) => (
+                    <div key={box.label} style={{ background: C.warmPaper, borderRadius: 10, padding: "14px 16px" }}>
+                      <div style={{ fontFamily: "'DM Sans Variable',sans-serif", fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase" as const, color: C.muted, marginBottom: 6 }}>
+                        {box.label}
+                      </div>
+                      <div style={{ fontFamily: "'DM Sans Variable',sans-serif", fontSize: 14, fontWeight: 600, color: C.ink }}>
+                        {box.value}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 90-day plan */}
+          {activeSection === "plan" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, position: "relative" }}>
+              {isSectionLocked("plan") && <PaywallOverlay onUpgrade={handleUpgrade} upgrading={upgrading} />}
+              {planColumns.map((col, i) => (
+                <div key={i} style={card}>
+                  <div style={{ ...sectionLabel, color: i === 0 ? C.coral : C.muted }}>{col.range}</div>
+                  <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+                    {col.items.map((item, j) => (
+                      <li key={j} style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: C.ink, lineHeight: 1.6, paddingBottom: 8, borderBottom: j < col.items.length - 1 ? `1px solid ${C.border}` : "none", marginBottom: 8 }}>
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+
+        </div>
+      </div>
+    </div>
   );
 }

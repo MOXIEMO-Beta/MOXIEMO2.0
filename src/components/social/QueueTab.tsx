@@ -233,7 +233,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
   function dismissSuggestion(angle: string) {
     setSuggestionDismissed((prev) => {
       const next = new Set(prev); next.add(angle);
-      try { sessionStorage.setItem("moxiemo_queue_suggest_dismiss", JSON.stringify(Array.from(next))); } catch {}
+      try { sessionStorage.setItem("moxiemo_queue_suggest_dismiss", JSON.stringify(Array.from(next))); } catch (_err) { /* sessionStorage blocked (private mode) */ }
       return next;
     });
   }
@@ -397,7 +397,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
         // try to read the response body for structured errors.
         const ctx: any = (error as any).context;
         let payload: any = null;
-        try { payload = await ctx?.json?.(); } catch {}
+        try { payload = await ctx?.json?.(); } catch (_err) { /* response body unreadable */ }
         if (payload?.error === "multiple_destinations_available" && payload.connections?.length) {
           setPickerFor({ post, options: payload.connections });
           return { ok: false, skipped: true };

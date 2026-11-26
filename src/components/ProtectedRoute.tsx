@@ -2,6 +2,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { PageLoader } from "@/components/ui/PageLoader";
 
 export function ProtectedRoute({
   children,
@@ -20,12 +21,19 @@ export function ProtectedRoute({
     if (!user) { setChecking(false); return; }
     let cancelled = false;
     (async () => {
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("onboarding_completed, created_at")
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
+
+      if (profileError) {
+        // profiles table missing (migrations not yet run) — send to onboarding to create profile
+        setNeedsOnboarding(true);
+        setChecking(false);
+        return;
+      }
 
       if (profile?.onboarding_completed) {
         setNeedsOnboarding(false);
@@ -54,7 +62,7 @@ export function ProtectedRoute({
     return () => { cancelled = true; };
   }, [user, requireOnboarding]);
 
-  if (loading || checking) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
+  if (loading || checking) return <PageLoader />;
   if (!user) return <Navigate to="/auth" state={{ from: location }} replace />;
   if (requireOnboarding && needsOnboarding) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;

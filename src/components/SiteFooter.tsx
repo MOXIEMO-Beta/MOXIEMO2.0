@@ -1,6 +1,6 @@
 import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { Link } from "react-router-dom";
-import logoLight from "@/assets/redesign/moxiemo-logo-light.png.asset.json";
+const logoLight = { url: "/moxiemo-logo-header.png" };
 import { Button } from "@/components/ui/button";
 import { MoxieAvatar } from "@/components/MoxieAvatar";
 import { openCookieSettings } from "@/lib/cookieConsent";
@@ -17,9 +17,9 @@ const C = {
   hairline: "rgba(244,239,229,0.1)",
 };
 
-const fontBody = { fontFamily: "'Hanken Grotesk', system-ui, sans-serif" } as const;
-const fontItalic = { fontFamily: "'Newsreader', Georgia, serif" } as const;
-const fontMono = { fontFamily: "'IBM Plex Mono', ui-monospace, monospace" } as const;
+const fontBody = { fontFamily: "'DM Sans Variable', system-ui, sans-serif" } as const;
+const fontItalic = { fontFamily: "'Fraunces Variable', Georgia, serif" } as const;
+const fontMono = { fontFamily: "'JetBrains Mono Variable', ui-monospace, monospace" } as const;
 
 const IconInstagram = () => (
   <svg width="15" height="15" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="16" height="16" rx="5"/><circle cx="11" cy="11" r="4"/><circle cx="16.2" cy="5.8" r="1" fill="currentColor" stroke="none"/></svg>
@@ -44,7 +44,7 @@ const resourceLinks: Array<[string, string, boolean?]> = [
   ["Compare MOXIEMO", "/compare"],
   ["Changelog", "/changelog"],
   ["Free growth assessment", "/brand-audit"],
-  ["Free Brand Kit", "/brand-kit", true],
+  ["Free Brand Kit", "/brand-kit"],
   ["Free prompt packs", "/resources"],
   ["Contact", "mailto:hello@buildwithmoxiemo.com"],
 ];
@@ -105,16 +105,18 @@ export function SiteFooter() {
 
       {/* 1. Wordmark block */}
       <div style={{ borderBottom: `1px solid ${C.hairline}`, paddingTop: 72 }}>
-        <div
-          style={{
-            ...fontBody, fontWeight: 700,
-            fontSize: "clamp(140px, 22vw, 320px)",
-            lineHeight: 0.9, letterSpacing: "0.04em", color: C.white,
-            whiteSpace: "nowrap", width: "100%",
-            display: "flex", justifyContent: "space-between", padding: "0 2px",
-          }}
-        >
-          {letters.map((l, i) => <span key={i}>{l}</span>)}
+        <div style={{ width: "100%", overflow: "hidden" }}>
+          <div
+            style={{
+              ...fontBody, fontWeight: 700,
+              fontSize: "clamp(40px, 14vw, 320px)",
+              lineHeight: 0.9, letterSpacing: "0.04em", color: C.white,
+              whiteSpace: "nowrap", width: "100%",
+              display: "flex", justifyContent: "space-between", padding: "0 8px",
+            }}
+          >
+            {letters.map((l, i) => <span key={i}>{l}</span>)}
+          </div>
         </div>
 
         <div style={{ padding: "32px 40px 56px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 32, flexWrap: "wrap" }}>

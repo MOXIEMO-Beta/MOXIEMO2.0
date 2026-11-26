@@ -14,9 +14,265 @@ export type Database = {
   }
   public: {
     Tables: {
+      discovery_snapshots: {
+        Row: {
+          id: string
+          session_id: string
+          user_id: string
+          brand_id: string | null
+          messages: unknown
+          transcript_hash: string | null
+          frozen_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          session_id: string
+          user_id: string
+          brand_id?: string | null
+          messages: unknown
+          transcript_hash?: string | null
+          frozen_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          session_id?: string
+          user_id?: string
+          brand_id?: string | null
+          messages?: unknown
+          transcript_hash?: string | null
+          frozen_at?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
+      generation_jobs: {
+        Row: {
+          id: string
+          idempotency_key: string
+          user_id: string
+          brand_id: string | null
+          job_type: string
+          status: string
+          lane: string | null
+          session_id: string | null
+          snapshot_id: string | null
+          model: string | null
+          prompt_chars: number | null
+          output_chars: number | null
+          duration_ms: number | null
+          error_detail: string | null
+          created_at: string
+          started_at: string | null
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          idempotency_key: string
+          user_id: string
+          brand_id?: string | null
+          job_type?: string
+          status?: string
+          lane?: string | null
+          session_id?: string | null
+          snapshot_id?: string | null
+          model?: string | null
+          prompt_chars?: number | null
+          output_chars?: number | null
+          duration_ms?: number | null
+          error_detail?: string | null
+          created_at?: string
+          started_at?: string | null
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          idempotency_key?: string
+          user_id?: string
+          brand_id?: string | null
+          job_type?: string
+          status?: string
+          lane?: string | null
+          session_id?: string | null
+          snapshot_id?: string | null
+          model?: string | null
+          prompt_chars?: number | null
+          output_chars?: number | null
+          duration_ms?: number | null
+          error_detail?: string | null
+          created_at?: string
+          started_at?: string | null
+          completed_at?: string | null
+        }
+        Relationships: []
+      }
+      strategy_sections: {
+        Row: {
+          id: string
+          strategy_id: string
+          user_id: string
+          brand_id: string | null
+          section_key: string
+          is_paid: boolean
+          content: Json
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          strategy_id: string
+          user_id: string
+          brand_id?: string | null
+          section_key: string
+          is_paid?: boolean
+          content?: Json
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          strategy_id?: string
+          user_id?: string
+          brand_id?: string | null
+          section_key?: string
+          is_paid?: boolean
+          content?: Json
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      accounts: {
+        Row: {
+          id: string
+          owner_id: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_status: string
+          current_period_end: string | null
+          plan: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          owner_id: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
+          current_period_end?: string | null
+          plan?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_status?: string
+          current_period_end?: string | null
+          plan?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      brands: {
+        Row: {
+          id: string
+          account_id: string
+          owner_id: string
+          name: string
+          slug: string | null
+          website_url: string | null
+          business_type: string | null
+          location: string | null
+          is_primary: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          account_id: string
+          owner_id: string
+          name?: string
+          slug?: string | null
+          website_url?: string | null
+          business_type?: string | null
+          location?: string | null
+          is_primary?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          account_id?: string
+          owner_id?: string
+          name?: string
+          slug?: string | null
+          website_url?: string | null
+          business_type?: string | null
+          location?: string | null
+          is_primary?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      cookie_consents: {
+        Row: {
+          id: string
+          anon_id: string | null
+          user_id: string | null
+          version: string
+          necessary: boolean
+          preferences: boolean
+          analytics: boolean
+          marketing: boolean
+          gpc: boolean
+          source: string | null
+          page_path: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          anon_id?: string | null
+          user_id?: string | null
+          version: string
+          necessary?: boolean
+          preferences: boolean
+          analytics: boolean
+          marketing: boolean
+          gpc: boolean
+          source?: string | null
+          page_path?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          anon_id?: string | null
+          user_id?: string | null
+          version?: string
+          necessary?: boolean
+          preferences?: boolean
+          analytics?: boolean
+          marketing?: boolean
+          gpc?: boolean
+          source?: string | null
+          page_path?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       assets: {
         Row: {
           asset_type: string
+          brand_id: string | null
           display_name: string | null
           file_size_kb: number | null
           file_type: string | null
@@ -34,6 +290,7 @@ export type Database = {
         }
         Insert: {
           asset_type?: string
+          brand_id?: string | null
           display_name?: string | null
           file_size_kb?: number | null
           file_type?: string | null
@@ -51,6 +308,7 @@ export type Database = {
         }
         Update: {
           asset_type?: string
+          brand_id?: string | null
           display_name?: string | null
           file_size_kb?: number | null
           file_type?: string | null
@@ -365,6 +623,7 @@ export type Database = {
       }
       calendar_ideas: {
         Row: {
+          brand_id: string | null
           channel: string | null
           converted: boolean
           dismissed: boolean
@@ -377,6 +636,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          brand_id?: string | null
           channel?: string | null
           converted?: boolean
           dismissed?: boolean
@@ -389,6 +649,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          brand_id?: string | null
           channel?: string | null
           converted?: boolean
           dismissed?: boolean
@@ -468,6 +729,7 @@ export type Database = {
       campaigns: {
         Row: {
           archived: boolean
+          brand_id: string | null
           campaign_type: string | null
           channels: string[] | null
           color: string
@@ -488,6 +750,7 @@ export type Database = {
         }
         Insert: {
           archived?: boolean
+          brand_id?: string | null
           campaign_type?: string | null
           channels?: string[] | null
           color?: string
@@ -508,6 +771,7 @@ export type Database = {
         }
         Update: {
           archived?: boolean
+          brand_id?: string | null
           campaign_type?: string | null
           channels?: string[] | null
           color?: string
@@ -666,6 +930,7 @@ export type Database = {
         Row: {
           answers: Json
           brand_data: Json | null
+          brand_id: string | null
           completed_at: string | null
           current_question: number
           current_section: number
@@ -684,6 +949,7 @@ export type Database = {
         Insert: {
           answers?: Json
           brand_data?: Json | null
+          brand_id?: string | null
           completed_at?: string | null
           current_question?: number
           current_section?: number
@@ -702,6 +968,7 @@ export type Database = {
         Update: {
           answers?: Json
           brand_data?: Json | null
+          brand_id?: string | null
           completed_at?: string | null
           current_question?: number
           current_section?: number
@@ -785,6 +1052,7 @@ export type Database = {
       email_sends: {
         Row: {
           body: string | null
+          brand_id: string | null
           campaign_id: string | null
           click_rate: number | null
           id: string
@@ -801,6 +1069,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          brand_id?: string | null
           campaign_id?: string | null
           click_rate?: number | null
           id?: string
@@ -817,6 +1086,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          brand_id?: string | null
           campaign_id?: string | null
           click_rate?: number | null
           id?: string
@@ -960,6 +1230,7 @@ export type Database = {
       }
       goal_entries: {
         Row: {
+          brand_id: string | null
           created_at: string
           discovery_calls: number | null
           email_opens: number | null
@@ -979,6 +1250,7 @@ export type Database = {
           week_of: string | null
         }
         Insert: {
+          brand_id?: string | null
           created_at?: string
           discovery_calls?: number | null
           email_opens?: number | null
@@ -998,6 +1270,7 @@ export type Database = {
           week_of?: string | null
         }
         Update: {
+          brand_id?: string | null
           created_at?: string
           discovery_calls?: number | null
           email_opens?: number | null
@@ -1333,6 +1606,7 @@ export type Database = {
       social_connections: {
         Row: {
           access_token: string | null
+          brand_id: string | null
           connected_at: string
           connection_type: string
           expires_at: string | null
@@ -1351,6 +1625,7 @@ export type Database = {
         }
         Insert: {
           access_token?: string | null
+          brand_id?: string | null
           connected_at?: string
           connection_type?: string
           expires_at?: string | null
@@ -1369,6 +1644,7 @@ export type Database = {
         }
         Update: {
           access_token?: string | null
+          brand_id?: string | null
           connected_at?: string
           connection_type?: string
           expires_at?: string | null
@@ -1419,6 +1695,7 @@ export type Database = {
       }
       social_posts: {
         Row: {
+          brand_id: string | null
           campaign_id: string | null
           canva_design_id: string | null
           content_by_platform: Json
@@ -1433,7 +1710,7 @@ export type Database = {
           platform_post_ids: Json
           platforms: string[]
           published_at: string | null
-          scheduled_for: string | null
+          scheduled_at: string | null
           sort_order: number
           status: string
           topic: string | null
@@ -1441,6 +1718,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          brand_id?: string | null
           campaign_id?: string | null
           canva_design_id?: string | null
           content_by_platform?: Json
@@ -1455,7 +1733,7 @@ export type Database = {
           platform_post_ids?: Json
           platforms?: string[]
           published_at?: string | null
-          scheduled_for?: string | null
+          scheduled_at?: string | null
           sort_order?: number
           status?: string
           topic?: string | null
@@ -1463,6 +1741,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          brand_id?: string | null
           campaign_id?: string | null
           canva_design_id?: string | null
           content_by_platform?: Json
@@ -1477,7 +1756,7 @@ export type Database = {
           platform_post_ids?: Json
           platforms?: string[]
           published_at?: string | null
-          scheduled_for?: string | null
+          scheduled_at?: string | null
           sort_order?: number
           status?: string
           topic?: string | null
@@ -1499,6 +1778,7 @@ export type Database = {
           anti_positioning: string | null
           archetype: Json | null
           brand_health: Json | null
+          brand_id: string | null
           business_goal: string | null
           calendar_entries: Json | null
           content_pillars: Json | null
@@ -1532,6 +1812,7 @@ export type Database = {
           anti_positioning?: string | null
           archetype?: Json | null
           brand_health?: Json | null
+          brand_id?: string | null
           business_goal?: string | null
           calendar_entries?: Json | null
           content_pillars?: Json | null
@@ -1565,6 +1846,7 @@ export type Database = {
           anti_positioning?: string | null
           archetype?: Json | null
           brand_health?: Json | null
+          brand_id?: string | null
           business_goal?: string | null
           calendar_entries?: Json | null
           content_pillars?: Json | null
@@ -1628,6 +1910,7 @@ export type Database = {
       }
       subscribers: {
         Row: {
+          brand_id: string | null
           email: string
           id: string
           name: string | null
@@ -1639,6 +1922,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          brand_id?: string | null
           email: string
           id?: string
           name?: string | null
@@ -1650,6 +1934,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          brand_id?: string | null
           email?: string
           id?: string
           name?: string | null
@@ -1688,6 +1973,7 @@ export type Database = {
       }
       usage_tracking: {
         Row: {
+          brand_id: string | null
           generations_used: number | null
           id: string
           last_reset: string | null
@@ -1696,6 +1982,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          brand_id?: string | null
           generations_used?: number | null
           id?: string
           last_reset?: string | null
@@ -1704,6 +1991,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          brand_id?: string | null
           generations_used?: number | null
           id?: string
           last_reset?: string | null

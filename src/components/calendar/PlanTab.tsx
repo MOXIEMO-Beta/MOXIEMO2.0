@@ -96,15 +96,15 @@ export default function PlanTab({ ctx }: { ctx: any }) {
       if (!iso) return;
       if (new Date(iso).toDateString() !== d.toDateString()) return;
       (p.platforms ?? []).forEach((pl: string) => {
-        if (pl === "linkedin") dots.push({ color: "bg-[#ff6b6b]", key: `li-${p.id}`, label: "LinkedIn" });
-        else if (pl === "instagram") dots.push({ color: "bg-[#ff6b6b]", key: `ig-${p.id}`, label: "Instagram" });
-        else if (pl === "facebook") dots.push({ color: "bg-[#ff6b6b]", key: `fb-${p.id}`, label: "Facebook" });
+        if (pl === "linkedin") dots.push({ color: "bg-[#FF6B5C]", key: `li-${p.id}`, label: "LinkedIn" });
+        else if (pl === "instagram") dots.push({ color: "bg-[#FF6B5C]", key: `ig-${p.id}`, label: "Instagram" });
+        else if (pl === "facebook") dots.push({ color: "bg-[#FF6B5C]", key: `fb-${p.id}`, label: "Facebook" });
       });
     });
     emailSends.forEach((e: any) => {
       const iso = e.scheduled_for ?? e.sent_at;
       if (!iso) return;
-      if (new Date(iso).toDateString() === d.toDateString()) dots.push({ color: "bg-[#ff6b6b]", key: `em-${e.id}`, label: "Email" });
+      if (new Date(iso).toDateString() === d.toDateString()) dots.push({ color: "bg-[#FF6B5C]", key: `em-${e.id}`, label: "Email" });
     });
     contentItems.forEach((c: any) => {
       if (c.status !== "draft") return;
@@ -122,10 +122,10 @@ export default function PlanTab({ ctx }: { ctx: any }) {
   counts.email = emailSends.filter((e: any) => isBetween(e.scheduled_for ?? e.sent_at, monthStart, monthEnd)).length;
   const total = Math.max(1, counts.linkedin + counts.instagram + counts.facebook + counts.email);
   const bal = [
-    { label: "LinkedIn", val: counts.linkedin, color: "bg-[#ff6b6b]" },
-    { label: "Email", val: counts.email, color: "bg-[#ff6b6b]" },
-    { label: "Instagram", val: counts.instagram, color: "bg-[#ff6b6b]" },
-    { label: "Facebook", val: counts.facebook, color: "bg-[#ff6b6b]" },
+    { label: "LinkedIn", val: counts.linkedin, color: "bg-[#FF6B5C]" },
+    { label: "Email", val: counts.email, color: "bg-[#FF6B5C]" },
+    { label: "Instagram", val: counts.instagram, color: "bg-[#FF6B5C]" },
+    { label: "Facebook", val: counts.facebook, color: "bg-[#FF6B5C]" },
   ];
 
   const activeCampaigns = campaigns.filter((c: any) => c.status === "active");
@@ -165,7 +165,7 @@ export default function PlanTab({ ctx }: { ctx: any }) {
         <div className="flex items-center justify-center gap-3 mb-3">
           <button
             onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() - 1, 1))}
-            className="w-6 h-6 inline-flex items-center justify-center text-foreground hover:text-[#ff6b6b] transition-colors"
+            className="w-6 h-6 inline-flex items-center justify-center text-foreground hover:text-[#FF6B5C] transition-colors"
             aria-label="Previous month"
           >
             <ChevronLeft className="w-5 h-5" />
@@ -175,7 +175,7 @@ export default function PlanTab({ ctx }: { ctx: any }) {
           </h2>
           <button
             onClick={() => setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 1))}
-            className="w-6 h-6 inline-flex items-center justify-center text-foreground hover:text-[#ff6b6b] transition-colors"
+            className="w-6 h-6 inline-flex items-center justify-center text-foreground hover:text-[#FF6B5C] transition-colors"
             aria-label="Next month"
           >
             <ChevronRight className="w-5 h-5" />
@@ -207,7 +207,7 @@ export default function PlanTab({ ctx }: { ctx: any }) {
                 >
                   <div className="mb-1">
                     {isToday ? (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#ff6b6b] text-white text-[11px] font-semibold">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#FF6B5C] text-white text-[11px] font-semibold">
                         {date.getDate()}
                       </span>
                     ) : (

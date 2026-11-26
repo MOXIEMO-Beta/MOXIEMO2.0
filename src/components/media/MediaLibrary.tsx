@@ -423,7 +423,7 @@ export default function MediaLibrary({ userId, mode = "page", onSelect, headerle
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-    } catch {}
+    } catch (_err) { /* download anchor creation failed — open Canva anyway */ }
     window.open("https://www.canva.com/create/", "_blank", "noopener,noreferrer");
     toast.info("Image downloaded. Upload it in Canva to start designing.");
   }
@@ -465,7 +465,7 @@ export default function MediaLibrary({ userId, mode = "page", onSelect, headerle
               </div>
               <h1
                 style={{
-                  fontFamily: '"Space Grotesk", system-ui, sans-serif',
+                  fontFamily: '"DM Sans Variable", system-ui, sans-serif',
                   fontSize: 34,
                   fontWeight: 700,
                   color: INK,
@@ -511,7 +511,7 @@ export default function MediaLibrary({ userId, mode = "page", onSelect, headerle
 
       {mode === "picker" && !headerless && (
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontFamily: '"Space Grotesk", system-ui, sans-serif', fontSize: 18, fontWeight: 700, color: INK }}>
+          <div style={{ fontFamily: '"DM Sans Variable", system-ui, sans-serif', fontSize: 18, fontWeight: 700, color: INK }}>
             Media Library
           </div>
           <Button

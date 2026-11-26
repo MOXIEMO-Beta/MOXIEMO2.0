@@ -13,6 +13,13 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans:    ['"DM Sans Variable"', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Fraunces Variable"', 'Georgia', 'serif'],
+        mono:    ['"JetBrains Mono Variable"', 'ui-monospace', 'monospace'],
+        heading: ['"Fraunces Variable"', 'Georgia', 'serif'],
+        body:    ['"DM Sans Variable"', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -43,9 +50,19 @@ export default {
         brand: {
           coral: "hsl(var(--brand-coral))",
           "coral-soft": "hsl(var(--brand-coral-soft))",
+          "coral-solid": "hsl(var(--brand-coral-solid))",
+          "coral-light": "hsl(var(--brand-coral-light))",
+          "coral-tint": "hsl(var(--brand-coral-tint))",
           ink: "hsl(var(--brand-ink))",
           "ink-light": "hsl(var(--brand-ink-light))",
           "ink-deep": "hsl(var(--brand-ink-deep))",
+          navy: "hsl(var(--brand-navy))",
+          "navy-muted": "hsl(var(--brand-navy-muted))",
+          sage: "hsl(var(--brand-sage))",
+          "sage-tint": "hsl(var(--brand-sage-tint))",
+          taupe: "hsl(var(--brand-taupe))",
+          "taupe-tint": "hsl(var(--brand-taupe-tint))",
+          paper: "hsl(var(--brand-paper))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",

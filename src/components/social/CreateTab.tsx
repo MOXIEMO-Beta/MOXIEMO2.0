@@ -234,7 +234,7 @@ export default function CreateTab({
 
   useEffect(() => {
     if (prefillPlatform) setPlatforms([prefillPlatform]);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [prefillPlatform]);
 
   useEffect(() => {

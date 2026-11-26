@@ -3,10 +3,10 @@ import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import heroAsset from "@/assets/karee-hero.png.asset.json";
-import bioAsset from "@/assets/karee-full-bio-new.png.asset.json";
-import tableAsset from "@/assets/karee-table-new.png.asset.json";
-import quoteAsset from "@/assets/karee-quote-new.png.asset.json";
+const heroAsset = { url: "/01-hero.png" };
+const bioAsset = { url: "/07-how-we-start.png" };
+const tableAsset = { url: "/10-why-different.png" };
+const quoteAsset = { url: "/08-guesswork.png" };
 
 const COLORS = {
   cream: "#f4efe5",
@@ -26,12 +26,11 @@ const GRAIN =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E\")";
 
 const GLOBAL_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 .mo-about, .mo-about * { box-sizing: border-box; }
-.mo-about { font-family: 'Hanken Grotesk', system-ui, sans-serif; color: ${COLORS.near}; }
-.mo-serif { font-family: 'Newsreader', Georgia, serif; }
-.mo-mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+.mo-about { font-family: 'DM Sans Variable', system-ui, sans-serif; color: ${COLORS.near}; }
+.mo-serif { font-family: 'Fraunces Variable', Georgia, serif; }
+.mo-mono { font-family: 'JetBrains Mono Variable', ui-monospace, monospace; }
 
 .mo-reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s ease, transform .8s ease; }
 .mo-reveal.in { opacity: 1; transform: translateY(0); }
@@ -116,19 +115,19 @@ export default function About() {
   };
 
   const eyebrow: React.CSSProperties = {
-    fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase",
+    fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 11, textTransform: "uppercase",
     letterSpacing: "0.22em", color: COLORS.coral,
   };
 
   const chipDark: React.CSSProperties = {
-    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em",
+    fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 9, letterSpacing: "0.2em",
     textTransform: "uppercase", padding: "5px 11px", borderRadius: 3,
     background: "rgba(15,15,12,0.82)", color: COLORS.cream,
     border: "0.5px solid rgba(244,239,229,0.3)", backdropFilter: "blur(8px)",
     position: "absolute" as const, pointerEvents: "none",
   };
   const chipCoral: React.CSSProperties = {
-    fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, letterSpacing: "0.2em",
+    fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 9, letterSpacing: "0.2em",
     textTransform: "uppercase", padding: "5px 11px", borderRadius: 3,
     background: COLORS.coral, color: "#fff",
     boxShadow: "0 6px 20px rgba(239,111,83,0.4)",
@@ -227,12 +226,12 @@ export default function About() {
               <div style={{ ...chipCoral, right: "28%", top: "58%", animation: "mo-chip-in .7s 1.8s ease both, mo-float-d 9s 2.5s ease-in-out infinite" }}>HBJ 40 Under 40</div>
 
               {/* Ghost measurement numbers */}
-              <div style={{ position: "absolute", fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "rgba(239,111,83,0.5)", right: "calc(11% + clamp(100px, 10vw, 145px) + 12px)", top: "calc(10% + clamp(100px, 10vw, 145px) - 14px)", animation: "mo-chip-in .7s 2s ease both" }}>332.11</div>
-              <div style={{ position: "absolute", fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, color: "rgba(239,111,83,0.5)", right: "calc(11% + clamp(100px, 10vw, 145px) - 60px)", top: "calc(10% + clamp(100px, 10vw, 145px) - 14px)", animation: "mo-chip-in .7s 2s ease both" }}>361.11</div>
+              <div style={{ position: "absolute", fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 9, color: "rgba(239,111,83,0.5)", right: "calc(11% + clamp(100px, 10vw, 145px) + 12px)", top: "calc(10% + clamp(100px, 10vw, 145px) - 14px)", animation: "mo-chip-in .7s 2s ease both" }}>332.11</div>
+              <div style={{ position: "absolute", fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 9, color: "rgba(239,111,83,0.5)", right: "calc(11% + clamp(100px, 10vw, 145px) - 60px)", top: "calc(10% + clamp(100px, 10vw, 145px) - 14px)", animation: "mo-chip-in .7s 2s ease both" }}>361.11</div>
             </div>
 
             {/* Photo caption */}
-            <div style={{ position: "absolute", bottom: 30, right: 40, fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, letterSpacing: "0.1em", color: "rgba(244,239,229,0.3)", zIndex: 4 }}>
+            <div style={{ position: "absolute", bottom: 30, right: 40, fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 10.5, letterSpacing: "0.1em", color: "rgba(244,239,229,0.3)", zIndex: 4 }}>
               Karee Laing · Founder, Brand Strategist, 4x Entrepreneur
             </div>
           </div>
@@ -241,7 +240,7 @@ export default function About() {
           <div className="mo-hero-left" style={{ position: "relative", zIndex: 10, width: "50%", padding: "0 40px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 32, animation: "mo-chip-in 0.9s 0.1s ease both" }}>
               <span style={{ width: 7, height: 7, background: COLORS.coral, display: "inline-block" }} />
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.24em", color: COLORS.coral }}>About</span>
+              <span style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 11.5, textTransform: "uppercase", letterSpacing: "0.24em", color: COLORS.coral }}>About</span>
             </div>
 
             <h1 className="mo-serif" style={{ fontWeight: 600, fontSize: "clamp(52px, 6.8vw, 98px)", lineHeight: 0.93, letterSpacing: "-0.026em", color: COLORS.cream, marginBottom: 30, maxWidth: 520, animation: "mo-chip-in 0.9s 0.25s ease both" }}>
@@ -255,14 +254,14 @@ export default function About() {
 
             <div style={{ display: "flex", alignItems: "center", gap: 16, animation: "mo-chip-in 0.9s 0.55s ease both" }}>
               <div style={{ width: 1, height: 52, background: "linear-gradient(to bottom, rgba(239,111,83,0.6), transparent)" }} />
-              <span style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(244,239,229,0.3)" }}>Scroll to explore</span>
+              <span style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.2em", color: "rgba(244,239,229,0.3)" }}>Scroll to explore</span>
             </div>
           </div>
         </section>
 
         {/* SECTION 2: MARQUEE */}
         <section style={{ background: COLORS.coral, padding: "14px 0", overflow: "hidden" }}>
-          <div style={{ display: "flex", animation: "mo-scroll 30s linear infinite", whiteSpace: "nowrap", fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.18em", color: "#fff" }}>
+          <div style={{ display: "flex", animation: "mo-scroll 30s linear infinite", whiteSpace: "nowrap", fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 12, textTransform: "uppercase", letterSpacing: "0.18em", color: "#fff" }}>
             {tickerSpan}{tickerSpan}
           </div>
         </section>
@@ -276,11 +275,11 @@ export default function About() {
                 <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: COLORS.coral }} />
               </div>
               <div style={{ marginTop: 22, paddingLeft: 4 }}>
-                <div style={{ fontFamily: "'Hanken Grotesk', sans-serif", fontWeight: 600, fontSize: 16, color: COLORS.near, marginBottom: 4 }}>Karee Laing</div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: COLORS.warmMuted, marginBottom: 18 }}>Founder, MOXIEMO</div>
+                <div style={{ fontFamily: "'DM Sans Variable', sans-serif", fontWeight: 600, fontSize: 16, color: COLORS.near, marginBottom: 4 }}>Karee Laing</div>
+                <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: COLORS.warmMuted, marginBottom: 18 }}>Founder, MOXIEMO</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                   {["Brand Strategist","JD/MBA","Goldman Sachs 10KSB Scholar","HBJ 40 Under 40"].map((c) => (
-                    <span key={c} style={{ background: "rgba(239,111,83,0.1)", color: COLORS.coralMuted, fontFamily: "'IBM Plex Mono', monospace", fontSize: 9.5, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 10px", borderRadius: 3 }}>{c}</span>
+                    <span key={c} style={{ background: "rgba(239,111,83,0.1)", color: COLORS.coralMuted, fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 9.5, letterSpacing: "0.14em", textTransform: "uppercase", padding: "5px 10px", borderRadius: 3 }}>{c}</span>
                   ))}
                 </div>
               </div>
@@ -318,7 +317,7 @@ export default function About() {
                 <div key={i} className="mo-reveal" style={{ borderRadius: 8, overflow: "hidden", position: "relative", height: 370, transitionDelay: `${i*100}ms` }}>
                   <img src={c.src} alt={c.alt} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top" }} />
                   <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(to top, rgba(15,15,12,0.85), transparent)" }} />
-                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "20px 18px", fontFamily: "'IBM Plex Mono', monospace", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(244,239,229,0.7)" }}>{c.caption}</div>
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "20px 18px", fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 10.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(244,239,229,0.7)" }}>{c.caption}</div>
                 </div>
               ))}
               <div className="mo-reveal" style={{ background: COLORS.near, borderRadius: 8, padding: "40px 34px", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 370, transitionDelay: "200ms" }}>
@@ -326,7 +325,7 @@ export default function About() {
                 <p className="mo-serif" style={{ fontWeight: 500, fontSize: "clamp(22px, 2.4vw, 30px)", lineHeight: 1.28, color: COLORS.cream, letterSpacing: "-0.01em", marginBottom: 24 }}>
                   The question is always the same: what do I do first?
                 </p>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "rgba(244,239,229,0.4)" }}>That's why MOXIEMO exists.</div>
+                <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "rgba(244,239,229,0.4)" }}>That's why MOXIEMO exists.</div>
               </div>
             </div>
           </div>
@@ -339,7 +338,7 @@ export default function About() {
             <div aria-hidden style={{ position: "absolute", right: -60, top: -60, width: 400, height: 400, borderRadius: "50%", border: "1px solid rgba(239,111,83,0.05)", pointerEvents: "none" }} />
             <div aria-hidden style={{ position: "absolute", left: -100, bottom: -80, width: 500, height: 500, borderRadius: "50%", border: "0.5px solid rgba(239,111,83,0.04)", pointerEvents: "none" }} />
 
-            <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.26em", color: COLORS.coral, marginBottom: 30, display: "inline-block", position: "relative" }}>OUR MISSION</div>
+            <div className="mo-reveal" style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.26em", color: COLORS.coral, marginBottom: 30, display: "inline-block", position: "relative" }}>OUR MISSION</div>
             <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(30px, 4.8vw, 64px)", lineHeight: 1.02, letterSpacing: "-0.024em", color: COLORS.cream, marginBottom: 34, textWrap: "balance", position: "relative", transitionDelay: "100ms" } as React.CSSProperties}>
               We help founders and growing businesses know what comes first, get it done and see what it moved.
             </h2>
@@ -362,8 +361,8 @@ export default function About() {
                   <h3 style={{ fontWeight: 700, fontSize: 18, color: COLORS.near, letterSpacing: "-0.01em", marginBottom: 14 }}>{r.t}</h3>
                   <p style={{ fontSize: 16, lineHeight: 1.65, color: COLORS.muted, marginBottom: 22 }}>{r.d}</p>
                   <div style={{ borderLeft: "3px solid rgba(19,19,15,0.10)", paddingLeft: 18 }}>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: COLORS.coral, marginBottom: 7 }}>DECISION FILTER</div>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: COLORS.lightMuted, lineHeight: 1.5 }}>"{r.f}"</div>
+                    <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: COLORS.coral, marginBottom: 7 }}>DECISION FILTER</div>
+                    <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 12.5, color: COLORS.lightMuted, lineHeight: 1.5 }}>"{r.f}"</div>
                   </div>
                 </div>
               ))}
@@ -373,8 +372,8 @@ export default function About() {
                   <h3 style={{ fontWeight: 700, fontSize: 18, color: COLORS.near, letterSpacing: "-0.01em", marginBottom: 14 }}>Fewer, better features.</h3>
                   <p style={{ fontSize: 16, lineHeight: 1.65, color: COLORS.muted, marginBottom: 22, maxWidth: 680 }}>Every feature should make the others more useful. Busy founders want fewer, better tools.</p>
                   <div style={{ borderLeft: "3px solid rgba(19,19,15,0.10)", paddingLeft: 18 }}>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: COLORS.coral, marginBottom: 7 }}>DECISION FILTER</div>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, color: COLORS.lightMuted, lineHeight: 1.5 }}>"Does this make the platform simpler or more complex?"</div>
+                    <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.2em", color: COLORS.coral, marginBottom: 7 }}>DECISION FILTER</div>
+                    <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 12.5, color: COLORS.lightMuted, lineHeight: 1.5 }}>"Does this make the platform simpler or more complex?"</div>
                   </div>
                 </div>
               </div>
@@ -387,7 +386,7 @@ export default function About() {
           <div style={{ maxWidth: 1060, margin: "0 auto" }}>
             <div style={{ textAlign: "center", marginBottom: 88 }}>
               <h2 className="mo-serif mo-reveal" style={{ fontWeight: 600, fontSize: "clamp(42px, 5.5vw, 74px)", lineHeight: 0.95, letterSpacing: "-0.026em", color: COLORS.cream, marginBottom: 20 }}>Where we're going.</h2>
-              <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12.5, letterSpacing: "0.12em", color: COLORS.coral, fontStyle: "italic", transitionDelay: "100ms" }}>
+              <div className="mo-reveal" style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 12.5, letterSpacing: "0.12em", color: COLORS.coral, fontStyle: "italic", transitionDelay: "100ms" }}>
                 Our goals. We measure success in progress you can prove.
               </div>
             </div>
@@ -407,7 +406,7 @@ export default function About() {
                 const isLeft = m.side === "left";
                 const content = (
                   <div className="mo-reveal" style={{ transitionDelay: `${i*100}ms` }}>
-                    <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.26em", color: COLORS.coral, marginBottom: 10 }}>{m.yr}</div>
+                    <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.26em", color: COLORS.coral, marginBottom: 10 }}>{m.yr}</div>
                     <div className="mo-serif" style={{ fontWeight: 600, fontSize: "clamp(60px, 7.5vw, 96px)", lineHeight: 0.88, letterSpacing: "-0.025em", color: COLORS.cream }}>{m.num}</div>
                     <div style={{ fontSize: 15, lineHeight: 1.65, color: "rgba(244,239,229,0.48)", marginTop: 14, maxWidth: 310, marginLeft: isLeft ? "auto" : 0 }}>{m.desc}</div>
                   </div>
@@ -445,7 +444,7 @@ export default function About() {
               <Link to="/brand-audit" className="mo-btn-primary">Get my free growth assessment →</Link>
               <Link to="/founding" onClick={trackCtaClick} className="mo-btn-outline whitespace-nowrap">{getCtaLabel()} →</Link>
             </div>
-            <div className="mo-reveal" style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: COLORS.warmMuted, transitionDelay: "300ms" }}>
+            <div className="mo-reveal" style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.12em", color: COLORS.warmMuted, transitionDelay: "300ms" }}>
               PLANS FROM $99 A MONTH · 50% OFF FOR LIFE FOR 100 FOUNDING MEMBERS
             </div>
           </div>

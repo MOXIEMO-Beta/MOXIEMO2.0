@@ -1,0 +1,21 @@
+/* MOXIEMO brand colors. Source: PRD 0, Rules for every screen. */
+:root {
+  --moxiemo-coral: #FF6B5C;       /* primary action, accents */
+  --moxiemo-ink: #15171C;         /* text */
+  --moxiemo-paper: #F7F5F1;       /* page background */
+  --moxiemo-navy: #14243D;        /* dark sections, MOXIE's outline */
+  --moxiemo-sage: #B8C5A6;
+  --moxiemo-taupe: #D8CEBD;
+  --moxiemo-warm-paper: #F4F2ED;
+
+  /* MOXIE the character. Taken from the art files in 03-moxie-character. */
+  --moxie-lilac: #D4C1EC;
+  --moxie-lilac-deep: #BCA3DF;
+  --moxie-cream: #FBF8F2;
+  --moxie-navy-soft: #22365A;
+  --moxie-coral-light: #FF7E70;
+
+  --font-heading: "Fraunces Variable", Georgia, serif;
+  --font-body: "DM Sans Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+}

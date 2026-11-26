@@ -745,8 +745,6 @@ export const StrategyDocument = ({ data }: { data: any }) => (
 );
 
 export async function downloadStrategyPdf(data: any, filename: string) {
-  // eslint-disable-next-line no-console
-  try { console.log('[strategyPdf] data', data); } catch {}
   const blob = await pdf(<StrategyDocument data={data} />).toBlob();
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

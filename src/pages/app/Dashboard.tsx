@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { formatDateUS } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -153,6 +154,7 @@ function getPostPreview(post: AnyRow, maxLen = 60): string {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const { brandId } = useBrand();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
@@ -193,16 +195,18 @@ export default function Dashboard() {
     setBestPost(null); setPageTopPost(null); setPageHasData(null);
     (async () => {
       try {
+        const strategyQ = supabase.from("strategies").select("positioning_statement, strength_score, success_definition, business_goal, content_pillars, primary_channel, posting_frequency, ideal_client, voice_attributes, enhanced_foundation, archetype, strategy_lane, created_at");
+        const discoveryQ = supabase.from("discovery_sessions").select("status, messages");
         const [profileRes, strategyRes, socialPostsRes, contentItemsRes, goalRes, emailSendsRes, socialConnectionsRes, discoveryRes, analyticsRes] = await Promise.all([
           supabase.from("profiles").select("full_name, business_name, role, plan, intended_use").eq("id", user.id).maybeSingle(),
-          supabase.from("strategies").select("positioning_statement, strength_score, success_definition, business_goal, content_pillars, primary_channel, posting_frequency, ideal_client, voice_attributes, enhanced_foundation, strategy_lane, created_at").eq("user_id", user.id).maybeSingle(),
+          (brandId ? strategyQ.eq("brand_id", brandId) : strategyQ.eq("user_id", user.id)).maybeSingle(),
           supabase.from("social_posts").select("id, status, platforms, pillar, scheduled_for, published_at, content_by_platform, topic, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
           supabase.from("content_items").select("id, status, platform, topic, body, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
           supabase.from("goal_entries").select("*").eq("user_id", user.id).order("week_of", { ascending: false }).limit(24),
           supabase.from("email_sends").select("id, subject, sent_at, recipient_count, status").eq("user_id", user.id).order("sent_at", { ascending: false }).limit(10),
           supabase.from("social_connections").select("platform, profile_name, connected_at").eq("user_id", user.id),
-          supabase.from("discovery_sessions").select("status, messages").eq("user_id", user.id).maybeSingle(),
-          supabase.from("social_analytics").select("impressions, engagement_rate, post_id, platform").eq("user_id", user.id).eq("platform", "linkedin").order("impressions", { ascending: false }).limit(1),
+          (brandId ? discoveryQ.eq("brand_id", brandId) : discoveryQ.eq("user_id", user.id)).maybeSingle(),
+          supabase.from("social_analytics").select("impressions, engagement_rate, post_id, platform, social_posts(content_by_platform, topic, pillar)").eq("user_id", user.id).eq("platform", "linkedin").order("impressions", { ascending: false }).limit(1),
         ]);
 
         setProfile(profileRes.data ?? null);
@@ -214,30 +218,28 @@ export default function Dashboard() {
         setDiscovery(discoveryRes.data ?? null);
         setGoalEntries(goalRes.data ?? []);
         const top = (analyticsRes.data ?? [])[0];
-        if (top && top.post_id) {
-          const { data: postData } = await supabase.from("social_posts").select("content_by_platform, topic, pillar").eq("id", top.post_id).maybeSingle();
+        if (top) {
+          const postData = (top as any).social_posts ?? null;
           setBestPost({
             impressions: top.impressions ?? 0,
             engagement: top.engagement_rate ?? 0,
             text: postData ? getPostPreview(postData, 90) : "",
             pillar: postData?.pillar ?? null,
           });
-        } else if (top) {
-          setBestPost({ impressions: top.impressions ?? 0, engagement: top.engagement_rate ?? 0, text: "", pillar: null });
         }
-      } catch (e) {
-        console.error("Dashboard data load failed:", e);
+      } catch {
+        // silent: empty state renders when data is unavailable
       } finally {
         setLoading(false);
       }
     })();
-  }, [user]);
+  }, [user, brandId]);
 
-  const { goals: goalDefs } = useGoalDefinitions({
-    autoGenerate: true,
-    hasStrategy: !!strategy?.positioning_statement,
-    debugSource: "Dashboard North Star",
-  });
+  const goalDefOpts = useMemo(
+    () => ({ autoGenerate: true, hasStrategy: !!strategy?.positioning_statement, debugSource: "Dashboard North Star" }),
+    [strategy?.positioning_statement],
+  );
+  const { goals: goalDefs } = useGoalDefinitions(goalDefOpts);
 
   // Live LinkedIn Page leaderboard — powers Best post + "Your marketing is landing".
   // No dependency on personal analytics; quiet state only if the Page genuinely has none.
@@ -596,7 +598,8 @@ export default function Dashboard() {
     );
   }
 
-  const archetype = strategy?.enhanced_foundation?.brandArchetype?.name || strategy?.enhanced_foundation?.brandArchetype?.icon || null;
+  const archetypeObj = strategy?.enhanced_foundation?.brandArchetype ?? (strategy as any)?.archetype ?? null;
+  const archetype = archetypeObj?.name || archetypeObj?.icon || null;
   const idealClient = strategy?.ideal_client || strategy?.enhanced_foundation?.idealClient?.title || null;
   const voiceAttrs: string[] = Array.isArray(strategy?.voice_attributes)
     ? strategy.voice_attributes
@@ -616,8 +619,7 @@ export default function Dashboard() {
   return (
     <>
     <div
-      className="w-full px-6 lg:px-10 py-10 space-y-10 dashboard-skin"
-      style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif", background: PAPER, minHeight: "100vh" }}
+      className="w-full px-6 lg:px-10 py-10 space-y-10 dashboard-skin bg-brand-paper min-h-screen"
     >
       <style>{`
         .dashboard-skin .stat-card { transition: transform 220ms ease, box-shadow 220ms ease; }
@@ -646,8 +648,8 @@ export default function Dashboard() {
       {/* 1. GREETING */}
       <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-3" style={{ color: CORAL }}>Home</div>
-          <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em] leading-[1] mb-3" style={{ color: INK }}>
+          <div className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-3 text-accent">Home</div>
+          <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em] leading-[1] mb-3 text-foreground">
             {greeting}, {firstName}.
           </h1>
           <p className="text-base text-muted-foreground max-w-2xl">{subtitle}</p>
@@ -655,8 +657,7 @@ export default function Dashboard() {
         {hasStrategy && (
           <Link
             to="/app/strategy"
-            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold self-start lg:self-end"
-            style={{ background: CORAL_TINT, color: CORAL }}
+            className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold self-start lg:self-end bg-brand-coral-tint text-brand-coral-solid"
           >
             <Compass className="h-4 w-4" /> Strategy {strengthScore} / 100
           </Link>
@@ -768,34 +769,34 @@ export default function Dashboard() {
         <>
           {/* 3. NORTH STAR BAND */}
           <section
-            className="relative overflow-hidden rounded-2xl p-8 md:p-10"
-            style={{ background: GRAD_NAVY, boxShadow: "0 18px 40px -18px rgba(20,36,61,0.55)" }}
+            className="relative overflow-hidden rounded-2xl p-8 md:p-10 shadow-[0_18px_40px_-18px_rgba(20,36,61,0.55)]"
+            style={{ background: GRAD_NAVY }}
           >
             <div className="flex flex-wrap items-center gap-2 mb-4">
-              <span className="text-[11px] uppercase tracking-[0.25em] font-bold" style={{ color: CORAL_LIGHT }}>★ North star</span>
-              <span className="text-[11px] uppercase tracking-wider font-semibold rounded-full px-2.5 py-1" style={{ background: "rgba(255,255,255,0.12)", color: NAVY_TINT }}>
+              <span className="text-[11px] uppercase tracking-[0.25em] font-bold text-brand-coral-light">★ North star</span>
+              <span className="text-[11px] uppercase tracking-wider font-semibold rounded-full px-2.5 py-1 bg-white/[0.12] text-white/70">
                 Week {weekNum} of 52
               </span>
             </div>
             <h2 className="font-display font-bold text-[26px] md:text-[32px] leading-tight text-white">
               {ns?.title || "Your North Star, forming"}
             </h2>
-            <p className="mt-2 text-sm md:text-base font-medium" style={{ color: NAVY_TINT }}>
+            <p className="mt-2 text-sm md:text-base font-medium text-brand-coral-tint">
               {ns ? [ns.target_value, formatDateUS(ns.deadline, "long")].filter(Boolean).join(" · ") : "Personalized from your strategy"}
             </p>
             <div className="mt-6">
-              <div className="relative h-3 rounded-full" style={{ background: "rgba(255,255,255,0.14)" }}>
-                <div className="h-full rounded-full transition-all" style={{ width: `${payingPct}%`, background: CORAL }} />
+              <div className="relative h-3 rounded-full bg-white/[0.14]">
+                <div className="h-full rounded-full transition-all bg-accent" style={{ width: `${payingPct}%` }} />
                 {[25, 50, 75].map((t) => (
-                  <div key={t} className="absolute top-0 bottom-0 w-px" style={{ left: `${t}%`, background: "rgba(255,255,255,0.4)" }} />
+                  <div key={t} className="absolute top-0 bottom-0 w-px bg-white/40" style={{ left: `${t}%` }} />
                 ))}
                 <div className="ns-node" style={{ left: `${Math.max(2, Math.min(98, payingPct))}%` }} />
               </div>
-              <div className="mt-2 flex justify-between text-[11px] font-semibold" style={{ color: NAVY_MUTED }}>
+              <div className="mt-2 flex justify-between text-[11px] font-semibold text-brand-navy-muted">
                 <span>0</span><span>25%</span><span>50%</span><span>75%</span><span>{ns?.target_value || "Target"}</span>
               </div>
             </div>
-            <div className="mt-4 text-xs" style={{ color: NAVY_MUTED }}>
+            <div className="mt-4 text-xs text-brand-navy-muted">
               {ns?.lever || "Your personal goals appear as soon as your strategy is set."}
             </div>
           </section>
@@ -803,7 +804,7 @@ export default function Dashboard() {
           {/* 4. SMART GOALS AT A GLANCE */}
           <section>
             <div className="flex items-end justify-between mb-4">
-              <h2 className="font-display text-xl tracking-tight" style={{ color: INK }}>Your goals, at a glance</h2>
+              <h2 className="font-display text-xl tracking-tight text-foreground">Your goals, at a glance</h2>
               <Link to="/app/goals" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
                 Open Goals <ArrowRight className="h-3.5 w-3.5" />
               </Link>
@@ -814,24 +815,24 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground truncate min-w-0">{g.category}</span>
                     {g.tracked ? (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0" style={{ background: "#E4F3E9", color: "#1F9254" }}>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0 bg-[#E4F3E9] text-[#1F9254]">
                         <CheckCircle className="h-3 w-3" /> Tracked
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0" style={{ background: "#FBEFD9", color: "#B5791C" }}>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0 bg-[#FBEFD9] text-[#B5791C]">
                         <UserIcon className="h-3 w-3" /> Reported
                       </span>
                     )}
                   </div>
-                  <div className="font-display font-semibold text-sm mb-3" style={{ color: INK }}>{g.title}</div>
+                  <div className="font-display font-semibold text-sm mb-3 text-foreground">{g.title}</div>
                   <div className="flex items-baseline justify-between">
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Now</div>
-                      <div className="font-display text-lg font-semibold" style={{ color: INK }}>{g.now}</div>
+                      <div className="font-display text-lg font-semibold text-foreground">{g.now}</div>
                     </div>
                     <div className="text-right">
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Target</div>
-                      <div className="font-display text-lg font-semibold" style={{ color: CORAL }}>{g.target}</div>
+                      <div className="font-display text-lg font-semibold text-accent">{g.target}</div>
                     </div>
                   </div>
                 </Link>
@@ -842,7 +843,7 @@ export default function Dashboard() {
           {/* 5. ENGINE PERFORMANCE */}
           <section>
             <div className="flex items-end justify-between mb-4">
-              <h2 className="font-display text-xl tracking-tight" style={{ color: INK }}>Engine performance</h2>
+              <h2 className="font-display text-xl tracking-tight text-foreground">Engine performance</h2>
               <Link to="/app/analytics" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
                 Full analytics <ArrowRight className="h-3.5 w-3.5" />
               </Link>
@@ -856,7 +857,7 @@ export default function Dashboard() {
                       <s.icon className="h-4 w-4" style={{ color: s.color }} />
                     </div>
                   </div>
-                  <div className="font-display text-3xl tracking-tight mb-1" style={{ color: INK }}>{s.value}</div>
+                  <div className="font-display text-3xl tracking-tight mb-1 text-foreground">{s.value}</div>
                   <div className="text-xs text-muted-foreground">{s.delta}</div>
                 </div>
               ))}
@@ -866,13 +867,13 @@ export default function Dashboard() {
           {/* 6. STRATEGY RECAP */}
           <section className="rounded-2xl border border-border bg-card p-6 md:p-8">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-xl tracking-tight" style={{ color: INK }}>Strategy recap</h2>
-              <Link to="/app/strategy" className="text-sm font-medium hover:underline flex items-center gap-1" style={{ color: CORAL }}>
+              <h2 className="font-display text-xl tracking-tight text-foreground">Strategy recap</h2>
+              <Link to="/app/strategy" className="text-sm font-medium hover:underline flex items-center gap-1 text-accent">
                 Open strategy <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-            <p className="text-base leading-relaxed mb-5" style={{ color: INK }}>
-              {strategy.positioning_statement}
+            <p className="text-base leading-relaxed mb-5 text-foreground">
+              {strategy?.positioning_statement}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-5">
               <RecapItem label="Archetype" value={archetype || "Not set"} />
@@ -884,8 +885,7 @@ export default function Dashboard() {
                     {voiceAttrs.map((v) => (
                       <span
                         key={v}
-                        className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                        style={{ background: CORAL_TINT, color: "#C24B38", border: "1px solid #F6D4CC" }}
+                        className="rounded-full px-2.5 py-0.5 text-xs font-medium bg-brand-coral-tint text-[#C24B38] border border-[#F6D4CC]"
                       >
                         {v}
                       </span>
@@ -901,7 +901,7 @@ export default function Dashboard() {
                 <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-2">Content pillars</div>
                 <div className="flex flex-wrap gap-2">
                   {pillars.slice(0, 5).map((p) => (
-                    <span key={p} className="rounded-full px-3 py-1 text-xs font-medium" style={{ background: CORAL_TINT, color: CORAL }}>{p}</span>
+                    <span key={p} className="rounded-full px-3 py-1 text-xs font-medium bg-brand-coral-tint text-accent">{p}</span>
                   ))}
                 </div>
               </div>
@@ -913,8 +913,8 @@ export default function Dashboard() {
             <Card className="p-7 border-border shadow-soft">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: CORAL_TINT }}>
-                    <Flame className="h-4 w-4" style={{ color: CORAL }} />
+                  <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-brand-coral-tint">
+                    <Flame className="h-4 w-4 text-accent" />
                   </div>
                   <h3 className="font-semibold text-base">Today's focus</h3>
                 </div>
@@ -925,7 +925,7 @@ export default function Dashboard() {
                     key={i}
                     onClick={() => (f.onClick ? f.onClick() : navigate(f.route))}
                     className="w-full text-left group flex items-center gap-4 p-4 rounded-xl border border-border hover:border-foreground/30 hover:shadow-soft transition"
-                    style={f.urgent ? { borderLeft: `4px solid ${CORAL}` } : undefined}
+                    style={f.urgent ? { borderLeft: "4px solid hsl(var(--accent))" } : undefined}
                   >
                     <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 text-muted-foreground">
                       <f.icon className="h-4 w-4" />
@@ -934,7 +934,7 @@ export default function Dashboard() {
                       <div className="text-sm font-semibold truncate mb-1">{f.label}</div>
                       <div className="text-xs text-muted-foreground truncate">{f.detail}</div>
                     </div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full flex-shrink-0" style={{ background: CORAL_TINT, color: CORAL }}>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full flex-shrink-0 bg-brand-coral-tint text-accent">
                       {f.action}
                     </span>
                     <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition" />
@@ -946,37 +946,37 @@ export default function Dashboard() {
             <Card className="p-7 border-border shadow-soft">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: "#EFF3F8" }}>
-                    <BarChart3 className="h-4 w-4" style={{ color: NAVY }} />
+                  <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-[#EFF3F8]">
+                    <BarChart3 className="h-4 w-4 text-brand-navy" />
                   </div>
                   <h3 className="font-semibold text-base">Your marketing is landing</h3>
                 </div>
                 {pageTopPost && (
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5" style={{ background: "#E4F3E9", color: "#1F9254" }}>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 bg-[#E4F3E9] text-[#1F9254]">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 live-dot" /> Live
                   </span>
                 )}
               </div>
               {pageTopPost ? (
                 <div className="space-y-4">
-                  <div className="text-sm leading-relaxed" style={{ color: INK }}>
+                  <div className="text-sm leading-relaxed text-foreground">
                     {pageTopPost.text ? (pageTopPost.text.length > 140 ? pageTopPost.text.slice(0, 140) + "..." : pageTopPost.text) : "Top LinkedIn Page post"}
                   </div>
                   <div className="flex items-center gap-6">
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Impressions</div>
-                      <div className="font-display text-2xl font-semibold" style={{ color: INK }}>{pageTopPost.impressions}</div>
+                      <div className="font-display text-2xl font-semibold text-foreground">{pageTopPost.impressions}</div>
                     </div>
                     <div>
                       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Engagement</div>
-                      <div className="font-display text-2xl font-semibold" style={{ color: INK }}>
+                      <div className="font-display text-2xl font-semibold text-foreground">
                         {pageTopPost.engagementPct != null
                           ? `${(pageTopPost.engagementPct * 100).toFixed(1)}%`
                           : `${pageTopPost.reactions + pageTopPost.comments}`}
                       </div>
                     </div>
                   </div>
-                  <Link to="/app/analytics" className="inline-flex items-center gap-1 text-sm font-medium hover:underline" style={{ color: CORAL }}>
+                  <Link to="/app/analytics" className="inline-flex items-center gap-1 text-sm font-medium hover:underline text-accent">
                     See full analytics <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </div>
@@ -998,8 +998,8 @@ export default function Dashboard() {
         <Card className="p-7 border-border shadow-soft">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ background: SAGE_TINT }}>
-                <CalendarIcon className="h-4 w-4" style={{ color: SAGE_LABEL }} />
+              <div className="h-8 w-8 rounded-lg flex items-center justify-center bg-brand-sage-tint">
+                <CalendarIcon className="h-4 w-4 text-[#4F5A3E]" />
               </div>
               <div>
                 <h3 className="font-semibold text-base">This week from your strategy</h3>
@@ -1149,8 +1149,7 @@ function FirstMoveModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center px-4"
-      style={{ background: "rgba(14,15,16,0.55)" }}
+      className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/55"
       onClick={onClose}
     >
       <div
@@ -1176,8 +1175,7 @@ function FirstMoveModal({
           <div className="mb-4">
             <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Message</div>
             <div
-              className="text-sm whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-4 leading-relaxed"
-              style={{ maxHeight: 320, overflowY: "auto" }}
+              className="text-sm whitespace-pre-wrap rounded-lg border border-border bg-muted/40 p-4 leading-relaxed max-h-80 overflow-y-auto"
             >
               {copy}
             </div>
@@ -1191,7 +1189,7 @@ function FirstMoveModal({
         ) : null}
         <div className="flex items-center justify-end gap-2">
           <Button variant="outline" size="sm" onClick={doCopy}>{copied ? "Copied" : "Copy message"}</Button>
-          <Button size="sm" onClick={onDone} style={{ background: "#E85A46" }}>Mark as sent</Button>
+          <Button size="sm" onClick={onDone} className="bg-accent text-white hover:bg-accent/90">Mark as sent</Button>
         </div>
       </div>
     </div>

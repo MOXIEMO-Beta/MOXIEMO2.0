@@ -17,7 +17,7 @@ const corsHeaders = {
 }
 
 const EMAIL_SUBJECTS: Record<string, string> = {
-  signup: 'Confirm your email',
+  signup: 'Confirm your MOXIEMO account',
   invite: "You've been Invited! Here's your MOXIEMO access!",
   magiclink: 'Your login link',
   recovery: 'Reset your password',
@@ -36,8 +36,8 @@ const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
 }
 
 // Configuration
-const SITE_NAME = "moxiemo-platform"
-const SENDER_DOMAIN = "notify.buildwithmoxiemo.com"
+const SITE_NAME = "MOXIEMO"
+const SENDER_DOMAIN = "mail.buildwithmoxiemo.com"
 const ROOT_DOMAIN = "buildwithmoxiemo.com"
 
 // Sample data for preview mode ONLY (not used in actual email sending).

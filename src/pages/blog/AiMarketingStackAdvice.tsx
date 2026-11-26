@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { BlogArticle, P, H2 } from "@/components/BlogArticle";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
-import heroAsset from "@/assets/blog/ai-marketing-stack.png.asset.json";
+const heroAsset = { url: "/05-how-it-works.png" };
 
 const TITLE = "The AI Marketing Stack Advice Nobody Gives Solo Founders";
 const EXCERPT =

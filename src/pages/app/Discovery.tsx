@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { MoxieLogo } from "@/components/MoxieLogo";
@@ -133,6 +134,7 @@ function extractOptionalAnswers(history: Msg[]): { revenueRange?: string; bigges
 
 export default function Discovery() {
   const { user } = useAuth();
+  const { brandId } = useBrand();
   const userId = user?.id;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -149,6 +151,7 @@ export default function Discovery() {
   const [uploadStage, setUploadStage] = useState<"gate" | "summary" | "chat">("chat");
   const [prefillResult, setPrefillResult] = useState<PrefillResult | null>(null);
   const [lane, setLane] = useState<Lane | null>(null);
+  const [suggestedLane, setSuggestedLane] = useState<Lane | null>(null);
   const [otherDetectorText, setOtherDetectorText] = useState("");
   const [showOtherDetector, setShowOtherDetector] = useState(false);
   const laneRef = useRef<Lane | null>(null);
@@ -173,6 +176,7 @@ export default function Discovery() {
   const [cooldown, setCooldown] = useState(false);
   const autoRetryRef = useRef<number | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const streamAbortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -237,12 +241,17 @@ export default function Discovery() {
   useEffect(() => {
     if (!userId) return;
     (async () => {
-      // Fetch profile first so the system prompt is personalized.
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role, full_name, business_name")
-        .eq("id", user.id)
-        .maybeSingle();
+      // Fire profile + session queries in parallel — neither depends on the other.
+      const sessQ = supabase.from("discovery_sessions").select("*");
+      const [{ data: profile }, { data }] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("role, full_name, business_name, onboarding_goal, onboarding_business_type")
+          .eq("id", user.id)
+          .maybeSingle(),
+        (brandId ? sessQ.eq("brand_id", brandId) : sessQ.eq("user_id", user.id)).maybeSingle(),
+      ]);
+
       const ctx: UserContext = {
         firstName: (profile?.full_name || "").split(" ")[0] || "there",
         role: profile?.role || undefined,
@@ -251,7 +260,16 @@ export default function Discovery() {
       setUserContext(ctx);
       userContextRef.current = ctx;
 
-      const { data } = await supabase.from("discovery_sessions").select("*").eq("user_id", user.id).maybeSingle();
+      // Derive a lane suggestion from onboarding answers so the member does
+      // not have to re-declare what they already told us in M1.
+      // E → lane1 (expertise), G/R → lane2 (team/service), launch_offer → offer_gtm.
+      // Only used when the session has no saved lane yet.
+      const obGoal = (profile as any)?.onboarding_goal as string | null | undefined;
+      const obBiz  = (profile as any)?.onboarding_business_type as string | null | undefined;
+      let derived: Lane | null = null;
+      if (obGoal === "launch_offer") derived = "offer_gtm";
+      else if (obBiz === "E") derived = "lane1";
+      else if (obBiz === "G" || obBiz === "R") derived = "lane2";
       if (data) {
         setSessionId(data.id);
         setMessages((data.messages as Msg[]) || []);
@@ -260,6 +278,9 @@ export default function Discovery() {
         if (savedLane === "lane1" || savedLane === "lane2" || savedLane === "offer_gtm") {
           setLane(savedLane);
           laneRef.current = savedLane;
+        } else if (derived) {
+          // Session exists but lane was never saved — pre-select from onboarding.
+          setSuggestedLane(derived);
         }
         // Rehydrate offer-lane intake + gate from answers jsonb so a returning
         // Lane 3 user does not lose their worksheet or gate progress.
@@ -301,14 +322,16 @@ export default function Discovery() {
           setUploadStage("chat");
         }
       } else {
-        const { data: created, error } = await supabase.from("discovery_sessions").insert({ user_id: user.id }).select().single();
-        if (error) return toast.error(error.message);
+        const { data: created, error } = await supabase.from("discovery_sessions").insert({ user_id: user.id, ...(brandId ? { brand_id: brandId } : {}) }).select().single();
+        if (error || !created) return toast.error(error?.message ?? "Failed to create session");
         setSessionId(created.id);
+        if (derived) setSuggestedLane(derived);
         setUploadStage("gate");
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+    return () => { streamAbortRef.current?.abort(); };
+  }, [userId, brandId]);
 
   // When chat begins, prefill the input with the matching extracted answer
   // whenever MOXIEMO asks a question we have a prefill for. The assistant's
@@ -344,9 +367,7 @@ export default function Discovery() {
         .from("discovery_sessions")
         .update({ brand_data: result.brand_data as any })
         .eq("id", sessionId)
-        .then(({ error }) => {
-          if (error) console.warn("brand_data persist failed:", error.message);
-        });
+        .then(() => { /* silent: brand_data is a perf optimisation, not critical path */ });
     }
     setPrefillResult(result);
     setUploadStage("summary");
@@ -444,6 +465,11 @@ export default function Discovery() {
   }
 
   async function streamReply(history: Msg[], sid: string) {
+    // Abort any in-flight stream before starting a new one
+    streamAbortRef.current?.abort();
+    const controller = new AbortController();
+    streamAbortRef.current = controller;
+
     setLoading(true);
     setInlineError(null);
     lastHistoryRef.current = history;
@@ -466,11 +492,12 @@ export default function Discovery() {
             ? "discovery-chat-lane2"
             : "discovery-chat";
       const callUrl = `${supabaseUrl}/functions/v1/${endpoint}`;
-      const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token ?? supabaseKey;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const authToken = sessionData?.session?.access_token ?? supabaseKey;
 
       const resp = await fetch(callUrl, {
         method: "POST",
+        signal: controller.signal,
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${authToken}`,
@@ -569,7 +596,8 @@ export default function Discovery() {
       }
       lastHistoryRef.current = null;
     } catch (e: any) {
-      console.error("streamReply error:", e);
+      // Silently ignore aborted fetches — user navigated away or sent a new message
+      if (e?.name === "AbortError") return;
       // Roll back the empty assistant placeholder so the UI doesn't show a blank bubble.
       if (placeholderAdded) {
         setMessages((prev) => {
@@ -651,37 +679,71 @@ export default function Discovery() {
       const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
         ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
       if (!supabaseUrl || !supabaseKey) throw new Error("Missing Supabase environment variables");
-      const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token ?? supabaseKey;
+      const { data: sessionData2 } = await supabase.auth.getSession();
+      const authToken = sessionData2?.session?.access_token ?? supabaseKey;
 
-      // Fire-and-forget. The Strategy page polls discovery_sessions.synthesis_status
-      // and renders progress / retry without the user having to stay on this page.
-      fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json",
-          "Authorization": `Bearer ${authToken}`,
-          "apikey": supabaseKey,
-        },
-        body: JSON.stringify({
-          transcript,
-          sessionId: sessionId ?? undefined,
-          responseMode: "json",
-          revenueRange: optional.revenueRange,
-          biggestChallenge: optional.biggestChallenge,
-          lane: laneRef.current ?? "lane1",
-          brandContext: brandDataRef.current
-            ? {
-                mission_or_values: brandDataRef.current.mission_or_values ?? null,
-                founder_background: brandDataRef.current.founder_background ?? null,
-                pricing_signals: brandDataRef.current.pricing_signals ?? null,
-                social_proof: brandDataRef.current.social_proof ?? null,
-              }
-            : undefined,
-        }),
-        keepalive: true,
-      }).catch((err) => console.warn("background synth dispatch failed:", err));
+      // Enqueue via the job queue (pg_cron picks it up within 10s).
+      // Falls back to direct fire-and-forget if the enqueue RPC fails —
+      // synthesize-strategy handles its own idempotency_key so a double-run
+      // is safe.
+      const { data: sessionData3 } = await supabase.auth.getSession();
+      const userId = sessionData3?.session?.user?.id;
+      const epochHour = Math.floor(Date.now() / 3_600_000);
+      const idempotencyKey = `${userId}:${sessionId ?? "nosession"}:${epochHour}`;
+
+      let enqueued = false;
+      if (userId && sessionId) {
+        try {
+          const { error: rpcError } = await supabase.rpc("enqueue_generation_job" as any, {
+            p_idempotency_key: idempotencyKey,
+            p_user_id:         userId,
+            p_session_id:      sessionId,
+            p_snapshot_id:     null,
+            p_brand_id:        null,
+            p_job_type:        "strategy",
+            p_lane:            laneRef.current ?? "lane1",
+            p_stage:           "synthesis",
+            p_checkpoint:      {},
+          });
+          if (!rpcError) {
+            enqueued = true;
+          }
+        } catch {
+          // fall through to direct dispatch
+        }
+      }
+
+      // Fallback: direct fire-and-forget (same behaviour as before the queue).
+      // This path runs if: RLS blocks the RPC, migrations not yet deployed, or
+      // the user has no session ID (edge case).
+      if (!enqueued) {
+        fetch(`${supabaseUrl}/functions/v1/synthesize-strategy`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Authorization": `Bearer ${authToken}`,
+            "apikey": supabaseKey,
+          },
+          body: JSON.stringify({
+            transcript,
+            sessionId: sessionId ?? undefined,
+            responseMode: "json",
+            revenueRange: optional.revenueRange,
+            biggestChallenge: optional.biggestChallenge,
+            lane: laneRef.current ?? "lane1",
+            brandContext: brandDataRef.current
+              ? {
+                  mission_or_values: brandDataRef.current.mission_or_values ?? null,
+                  founder_background: brandDataRef.current.founder_background ?? null,
+                  pricing_signals: brandDataRef.current.pricing_signals ?? null,
+                  social_proof: brandDataRef.current.social_proof ?? null,
+                }
+              : undefined,
+          }),
+          keepalive: true,
+        }).catch(() => { /* silent: strategy page will retry via polling */ });
+      }
 
       // Briefly show the interstitial then route to Strategy where polling continues.
       setStrategyReady(true);
@@ -751,64 +813,98 @@ export default function Discovery() {
               </div>
               <h2 className="text-xl font-semibold mb-1">How would you describe your business model?</h2>
               <p className="text-sm text-muted-foreground mb-5">This helps MOXIEMO tailor the discovery to your business.</p>
-              {!showOtherDetector ? (
-                <div className="grid gap-2">
-                  <button
-                    onClick={() => chooseLane("lane1")}
-                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
-                  >
-                    <div className="font-medium text-sm">I sell my expertise directly</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Coaching, consulting, advisory, or fractional services</div>
-                  </button>
-                  <button
-                    onClick={() => chooseLane("lane2")}
-                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
-                  >
-                    <div className="font-medium text-sm">I run a service-based business</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Services delivered through a team or providers</div>
-                  </button>
-                  <button
-                    onClick={() => chooseLane("lane2")}
-                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
-                  >
-                    <div className="font-medium text-sm">I operate a platform or marketplace</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Connecting customers with service providers</div>
-                  </button>
-                  <button
-                    onClick={() => chooseLane("offer_gtm")}
-                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
-                  >
-                    <div className="font-medium text-sm">I have an offer to launch</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">You built the offer. Now we build the go to market that sells it.</div>
-                  </button>
-                  <button
-                    onClick={() => setShowOtherDetector(true)}
-                    className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
-                  >
-                    <div className="font-medium text-sm">Other</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Tell us a bit more about how your business works</div>
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">Tell us a little more about how your business works</label>
-                  <Textarea
-                    value={otherDetectorText}
-                    onChange={(e) => setOtherDetectorText(e.target.value)}
-                    placeholder="e.g. We're a 10-person agency delivering branding for retail clients…"
-                    className="min-h-[110px]"
-                  />
+
+              {/* Pre-selection from onboarding — show confirm card, member can still change */}
+              {suggestedLane && !showOtherDetector && (
+                <div className="mb-4 rounded-xl border border-accent bg-accent/5 px-4 py-4">
+                  <p className="text-sm font-medium mb-0.5">
+                    Based on your onboarding answers, we have pre-selected:
+                  </p>
+                  <p className="text-base font-semibold text-accent mb-3">
+                    {suggestedLane === "lane1" && "I sell my expertise directly"}
+                    {suggestedLane === "lane2" && "I run a service-based business"}
+                    {suggestedLane === "offer_gtm" && "I have an offer to launch"}
+                  </p>
                   <div className="flex items-center gap-2">
                     <Button
-                      onClick={() => chooseLane(classifyOtherText(otherDetectorText))}
-                      disabled={otherDetectorText.trim().length < 4}
-                      className="bg-foreground text-background hover:bg-foreground/90"
+                      size="sm"
+                      className="bg-accent text-accent-foreground hover:bg-accent/90"
+                      onClick={() => chooseLane(suggestedLane)}
                     >
-                      Continue
+                      Yes, that is right
                     </Button>
-                    <Button variant="ghost" onClick={() => setShowOtherDetector(false)}>Back</Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setSuggestedLane(null)}
+                    >
+                      Change it
+                    </Button>
                   </div>
                 </div>
+              )}
+
+              {/* Full picker — shown either when no suggestion or member clicked Change it */}
+              {(!suggestedLane || showOtherDetector) && (
+                !showOtherDetector ? (
+                  <div className="grid gap-2">
+                    <button
+                      onClick={() => chooseLane("lane1")}
+                      className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                    >
+                      <div className="font-medium text-sm">I sell my expertise directly</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">Coaching, consulting, advisory, or fractional services</div>
+                    </button>
+                    <button
+                      onClick={() => chooseLane("lane2")}
+                      className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                    >
+                      <div className="font-medium text-sm">I run a service-based business</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">Services delivered through a team or providers</div>
+                    </button>
+                    <button
+                      onClick={() => chooseLane("lane2")}
+                      className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                    >
+                      <div className="font-medium text-sm">I operate a platform or marketplace</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">Connecting customers with service providers</div>
+                    </button>
+                    <button
+                      onClick={() => chooseLane("offer_gtm")}
+                      className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                    >
+                      <div className="font-medium text-sm">I have an offer to launch</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">You built the offer. Now we build the go to market that sells it.</div>
+                    </button>
+                    <button
+                      onClick={() => setShowOtherDetector(true)}
+                      className="text-left rounded-xl border border-border hover:border-accent hover:bg-accent/5 px-4 py-3 transition"
+                    >
+                      <div className="font-medium text-sm">Other</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">Tell us a bit more about how your business works</div>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium">Tell us a little more about how your business works</label>
+                    <Textarea
+                      value={otherDetectorText}
+                      onChange={(e) => setOtherDetectorText(e.target.value)}
+                      placeholder="e.g. We're a 10-person agency delivering branding for retail clients…"
+                      className="min-h-[110px]"
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => chooseLane(classifyOtherText(otherDetectorText))}
+                        disabled={otherDetectorText.trim().length < 4}
+                        className="bg-foreground text-background hover:bg-foreground/90"
+                      >
+                        Continue
+                      </Button>
+                      <Button variant="ghost" onClick={() => setShowOtherDetector(false)}>Back</Button>
+                    </div>
+                  </div>
+                )
               )}
             </div>
           </div>
@@ -1001,13 +1097,6 @@ export default function Discovery() {
                 </span>
               </span>
             </div>
-          )}
-          {completed && !synthesizing && (
-            <></>
-          )}
-          {/* keep original completed button below */}
-          {false && (
-            <div className="hidden" />
           )}
           {completed && !synthesizing && (
             <div className="flex items-center justify-center pt-4">

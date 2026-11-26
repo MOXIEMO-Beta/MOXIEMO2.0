@@ -10,13 +10,15 @@ import {
   Target,
   ShieldCheck,
   Images,
+  ShieldAlert,
   type LucideIcon,
 } from "lucide-react";
 import { NavLink, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { usePlan } from "@/hooks/usePlan";
 import { GENERATION_LIMIT, PLAN_LABEL } from "@/lib/planConfig";
-import logoAsset from "@/assets/moxiemo-logo-sage.png.asset.json";
+const LOGO_HEADER = "/moxiemo-logo-header.png";
 import { FeedbackButton } from "./FeedbackButton";
 
 export type AppNavItem = {
@@ -55,9 +57,9 @@ const GROUPS: { label: string; items: AppNavItem[] }[] = [
 
 export const APP_NAV_ITEMS: AppNavItem[] = GROUPS.flatMap((g) => g.items);
 
-const SIDEBAR_BG = "#B8C5A6";
-const CORAL = "#E85A46";
-const INK = "#0E0F10";
+const SIDEBAR_BG = "#F7F5F1";   /* brand paper */
+const CORAL = "#FF6B5C";         /* brand coral */
+const INK = "#15171C";           /* brand ink */
 
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
@@ -106,10 +108,10 @@ function PlanCard() {
       </div>
       <div style={{ fontSize: 12, color: "rgba(0,0,0,0.7)", lineHeight: 1.35 }}>
         {unlimited ? (
-          <>Unlimited generations</>
+          <>Unlimited AI generations</>
         ) : (
           <>
-            <span style={{ color: INK, fontWeight: 600 }}>{remaining}</span> generations left
+            <span style={{ color: INK, fontWeight: 600 }}>{remaining}</span> AI generation{remaining === 1 ? "" : "s"} left this month
           </>
         )}
       </div>
@@ -118,23 +120,26 @@ function PlanCard() {
           {resetLabel(usage?.reset_date)}
         </div>
       )}
-      <Link
-        to="/pricing"
-        style={{
-          marginTop: 8,
-          display: "inline-block",
-          fontSize: 11,
-          fontWeight: 600,
-          color: CORAL,
-        }}
-      >
-        Upgrade your plan →
-      </Link>
+      {!unlimited && (
+        <Link
+          to="/pricing"
+          style={{
+            marginTop: 8,
+            display: "inline-block",
+            fontSize: 11,
+            fontWeight: 600,
+            color: CORAL,
+          }}
+        >
+          Upgrade your plan →
+        </Link>
+      )}
     </div>
   );
 }
 
 export function AppSidebar() {
+  const { isAdmin } = useAuth();
   return (
     <aside
       style={{
@@ -151,11 +156,12 @@ export function AppSidebar() {
       }}
     >
       {/* Logo */}
-      <div style={{ padding: "18px 16px 14px" }}>
+      <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(21,23,28,0.07)" }}>
         <img
-          src={logoAsset.url}
-          alt="MOXIEMO — One Platform. Confident Marketing."
-          style={{ width: "100%", height: "auto", display: "block" }}
+          src={LOGO_HEADER}
+          alt="MOXIEMO"
+          style={{ width: "80%", height: "auto", display: "block" }}
+          draggable={false}
         />
       </div>
 
@@ -197,8 +203,8 @@ export function AppSidebar() {
                           : "2px solid transparent",
                         fontSize: 13,
                         fontWeight: isActive ? 600 : 400,
-                        color: isActive ? "#1A2010" : "rgba(0,0,0,0.52)",
-                        background: isActive ? "rgba(255,255,255,0.38)" : "transparent",
+                        color: isActive ? INK : "rgba(21,23,28,0.52)",
+                        background: isActive ? "rgba(255,107,92,0.09)" : "transparent",
                         textDecoration: "none",
                         transition: "background 120ms ease, color 120ms ease",
                       })}
@@ -213,6 +219,28 @@ export function AppSidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Admin link — only visible to admins */}
+      {isAdmin && (
+        <div style={{ padding: "0 10px 8px" }}>
+          <NavLink
+            to="/app/admin"
+            className="moxie-app-nav-item"
+            style={({ isActive }) => ({
+              display: "flex", alignItems: "center", gap: 10, height: 34,
+              padding: "0 10px", borderRadius: 6,
+              borderLeft: isActive ? `2px solid ${CORAL}` : "2px solid transparent",
+              fontSize: 13, fontWeight: isActive ? 600 : 400,
+              color: isActive ? "#1A2010" : "rgba(0,0,0,0.52)",
+              background: isActive ? "rgba(255,255,255,0.38)" : "transparent",
+              textDecoration: "none",
+            })}
+          >
+            <ShieldAlert className="h-[16px] w-[16px]" />
+            <span>Admin</span>
+          </NavLink>
+        </div>
+      )}
 
       {/* Plan card */}
       <div style={{ padding: "0 14px 10px" }}>

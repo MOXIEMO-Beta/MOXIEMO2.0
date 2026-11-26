@@ -2,7 +2,7 @@ import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
-import heroMaskAsset from "@/assets/redesign/platform-hero-mask.png.asset.json";
+const heroMaskAsset = { url: "/13-phone-full.png" };
 
 /* ============================================================
    Design tokens (scoped to this page)
@@ -19,9 +19,9 @@ const C = {
   darkBorder: "#ddd8cb",
 };
 
-const fontDisplay = { fontFamily: "'Newsreader', serif" };
-const fontBody = { fontFamily: "'Hanken Grotesk', sans-serif" };
-const fontMono = { fontFamily: "'IBM Plex Mono', monospace" };
+const fontDisplay = { fontFamily: "'Fraunces Variable', serif" };
+const fontBody = { fontFamily: "'DM Sans Variable', sans-serif" };
+const fontMono = { fontFamily: "'JetBrains Mono Variable', monospace" };
 
 const GRAIN_URL =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E\")";

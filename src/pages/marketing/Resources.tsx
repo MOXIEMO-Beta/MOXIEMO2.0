@@ -4,11 +4,11 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { RouteMetadata } from "@/components/RouteMetadata";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import collage1 from "@/assets/redesign/collage-1.jpg.asset.json";
-import collage2 from "@/assets/redesign/collage-2.jpg.asset.json";
-import collage3 from "@/assets/redesign/collage-3.jpg.asset.json";
-import collage4 from "@/assets/redesign/collage-4.jpg.asset.json";
-import collage5 from "@/assets/redesign/collage-5.jpg.asset.json";
+const collage1 = { url: "/01-hero.png" };
+const collage2 = { url: "/05-how-it-works.png" };
+const collage3 = { url: "/07-how-we-start.png" };
+const collage4 = { url: "/11-meet-moxie.png" };
+const collage5 = { url: "/13-phone-full.png" };
 
 /* ───────────── design tokens ───────────── */
 const CREAM = "#f4efe5";
@@ -25,9 +25,9 @@ const BORDER = "#e6e0d2";
 const CARD_BORDER = "#ddd8cb";
 const CARD_BORDER_HOVER = "#d8cdb8";
 
-const serif: CSSProperties = { fontFamily: "'Newsreader', Georgia, serif" };
-const sans: CSSProperties = { fontFamily: "'Hanken Grotesk', system-ui, sans-serif" };
-const mono: CSSProperties = { fontFamily: "'IBM Plex Mono', ui-monospace, monospace" };
+const serif: CSSProperties = { fontFamily: "'Fraunces Variable', Georgia, serif" };
+const sans: CSSProperties = { fontFamily: "'DM Sans Variable', system-ui, sans-serif" };
+const mono: CSSProperties = { fontFamily: "'JetBrains Mono Variable', ui-monospace, monospace" };
 
 /* ───────────── shared bits ───────────── */
 function Eyebrow({

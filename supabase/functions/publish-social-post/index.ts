@@ -69,20 +69,59 @@ Deno.serve(async (req) => {
     }
     if (!content) return json({ error: "post_has_no_content" }, 400);
 
-    if (platform !== "linkedin") {
-      if (platform === "facebook" || platform === "instagram") {
-        return await publishViaPostForMe({
+    // All platforms now route through Zernio's unified POST /v1/posts endpoint.
+    // Legacy direct-LinkedIn path is preserved as a fallback when the connection
+    // has an access_token stored (pre-Zernio connections).
+    const ZERNIO_SUPPORTED = new Set(["linkedin", "instagram", "facebook", "x", "twitter"]);
+
+    if (ZERNIO_SUPPORTED.has(platform)) {
+      // Resolve the connection to get the Zernio account ID.
+      let connection: any = null;
+      if (connection_id) {
+        const { data, error } = await supabase
+          .from("social_connections")
+          .select("*")
+          .eq("id", connection_id)
+          .eq("user_id", user_id)
+          .maybeSingle();
+        if (error || !data) return json({ error: "connection_not_found" }, 404);
+        connection = data;
+      } else {
+        const { data: connections, error: connsErr } = await supabase
+          .from("social_connections")
+          .select("*")
+          .eq("user_id", user_id)
+          .eq("platform", platform);
+        if (connsErr) return json({ error: connsErr.message }, 500);
+        if (!connections || connections.length === 0) {
+          const label = platform.charAt(0).toUpperCase() + platform.slice(1);
+          return json({ error: `${label} is not connected. Connect it in Settings.` }, 400);
+        }
+        connection = connections[0];
+      }
+
+      // If this is a legacy connection with a stored access_token (direct LinkedIn),
+      // fall through to the LinkedIn direct path below.
+      if (platform === "linkedin" && connection?.access_token && connection?.external_provider !== "zernio") {
+        // Fall through to legacy LinkedIn block
+      } else {
+        return await publishViaZernio({
           supabase,
           user_id,
           post,
+          post_id,
           platform,
           content,
+          connection,
         });
       }
-      return json({ error: `Direct publishing not yet supported for ${platform}` }, 400);
     }
 
-    // Resolve destination connection.
+    if (platform !== "linkedin") {
+      return json({ error: `Platform ${platform} requires a Zernio connection. Connect it in Settings.` }, 400);
+    }
+
+    // ── Legacy direct-LinkedIn path (pre-Zernio connections) ──────────────────
     let connection: any = null;
     if (connection_id) {
       const { data, error } = await supabase
@@ -121,7 +160,6 @@ Deno.serve(async (req) => {
       return json({ error: "LinkedIn auth missing — reconnect your account" }, 401);
     }
 
-    // Build author URN based on connection type.
     let authorUrn: string;
     if (connection.connection_type === "company" && connection.organization_id) {
       authorUrn = `urn:li:organization:${connection.organization_id}`;
@@ -164,7 +202,6 @@ Deno.serve(async (req) => {
       return json({ error: result?.message ?? `LinkedIn publish failed (${postRes.status})` }, 500);
     }
 
-    // Merge platform_post_ids so we don't clobber prior successful destinations.
     const { data: existing } = await supabase
       .from("social_posts")
       .select("platform_post_ids")
@@ -333,5 +370,103 @@ async function publishViaPostForMe(args: {
     pfm_post_id: pfmPostId,
     connection_id: conn.id,
     destination: conn.profile_name ?? platform,
+  });
+}
+
+// ── Zernio unified publish ─────────────────────────────────────────────────────
+// Routes LinkedIn, Instagram, Facebook, and X through Zernio's POST /v1/posts.
+// Media URLs must be publicly reachable (Zernio fetches them server-side).
+const ZERNIO_BASE = "https://zernio.com/api/v1";
+
+function toPublicUrlZernio(entry: unknown): string | null {
+  if (typeof entry !== "string" || !entry) return null;
+  if (/^https?:\/\//i.test(entry)) return entry;
+  const base = Deno.env.get("SUPABASE_URL")!.replace(/\/$/, "");
+  return `${base}/storage/v1/object/public/social-assets/${entry.replace(/^\/+/, "")}`;
+}
+
+async function publishViaZernio(args: {
+  supabase: any;
+  user_id: string;
+  post: any;
+  post_id: string;
+  platform: string;
+  content: string;
+  connection: any;
+}) {
+  const { supabase, user_id, post, post_id, platform, content, connection } = args;
+
+  const apiKey = Deno.env.get("ZERNIO_API_KEY");
+  if (!apiKey) return json({ error: "ZERNIO_API_KEY not configured" }, 500);
+
+  const externalAccountId = connection?.external_account_id;
+  if (!externalAccountId) {
+    const label = platform.charAt(0).toUpperCase() + platform.slice(1);
+    return json({ error: `${label} is not connected via Zernio. Reconnect in Settings.` }, 400);
+  }
+
+  // Build media array from post.media_urls
+  const mediaArr = Array.isArray(post.media_urls) ? post.media_urls : [];
+  const media = mediaArr
+    .map(toPublicUrlZernio)
+    .filter((v: string | null): v is string => Boolean(v))
+    .map((url: string) => ({ url }));
+
+  // Zernio platform slug (twitter for X)
+  const zernioPlatform = platform === "x" ? "twitter" : platform;
+
+  const payload = {
+    content,
+    platforms: [{ platform: zernioPlatform, accountId: externalAccountId }],
+    ...(media.length ? { media } : {}),
+  };
+
+  const r = await fetch(`${ZERNIO_BASE}/posts`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const text = await r.text();
+  let parsed: any = {};
+  try { parsed = JSON.parse(text); } catch { /* ignore */ }
+
+  if (!r.ok) {
+    console.error("[publish-social-post] Zernio error", r.status, text);
+    const msg =
+      parsed?.error?.message ?? parsed?.message ?? parsed?.error ??
+      `Zernio rejected the publish (HTTP ${r.status}).`;
+    return json({ error: String(msg) }, 400);
+  }
+
+  const zernioPostId: string | undefined = parsed?.id ?? parsed?.data?.id;
+
+  // Store zernio_post_id; final published/failed state comes via webhook
+  const { data: existing } = await supabase
+    .from("social_posts")
+    .select("platform_post_ids")
+    .eq("id", post_id)
+    .maybeSingle();
+  const prevIds = (existing?.platform_post_ids ?? {}) as Record<string, unknown>;
+  const nextIds = {
+    ...prevIds,
+    zernio_post_id: zernioPostId,
+    zernio_accepted_at: new Date().toISOString(),
+  };
+
+  await supabase
+    .from("social_posts")
+    .update({ status: "publishing", platform_post_ids: nextIds })
+    .eq("id", post_id);
+
+  return json({
+    success: true,
+    pending: true,
+    zernio_post_id: zernioPostId,
+    connection_id: connection.id,
+    destination: connection.profile_name ?? platform,
   });
 }

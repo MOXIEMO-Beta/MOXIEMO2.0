@@ -1,12 +1,12 @@
 import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
 import { Link } from "react-router-dom";
 import type { CSSProperties } from "react";
-import logoDark from "@/assets/redesign/moxiemo-logo.png.asset.json";
+const logoDark = { url: "/moxiemo-logo-header.png" };
 import { useLocation } from "react-router-dom";
 
 const CREAM = "#f4efe5";
 const INK = "#13130f";
-const mono: CSSProperties = { fontFamily: "'IBM Plex Mono', ui-monospace, monospace" };
+const mono: CSSProperties = { fontFamily: "'JetBrains Mono Variable', ui-monospace, monospace" };
 
 type SiteHeaderProps = {
   /** Kept for backwards compatibility with prior API; unused in new design. */

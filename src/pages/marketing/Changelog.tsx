@@ -184,7 +184,7 @@ const entries: Entry[] = [
 
 function TagPill({ tag }: { tag: TagKind }) {
   const styles: Record<TagKind, string> = {
-    "New Feature": "bg-[#ff6b6b] text-white border border-transparent",
+    "New Feature": "bg-[#FF6B5C] text-white border border-transparent",
     "Improvement": "bg-[#101116] text-white border border-transparent",
     "Bug Fix": "bg-[#c9a84c] text-white border border-transparent",
     "Coming Soon": "bg-muted text-foreground border border-dashed border-muted-foreground/50",
@@ -227,7 +227,7 @@ export default function Changelog() {
             href={DISCORD_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block mt-4 text-[#ff6b6b] font-semibold hover:underline"
+            className="inline-block mt-4 text-[#FF6B5C] font-semibold hover:underline"
           >
             Get updates in real time → Join the Discord
           </a>
@@ -238,7 +238,7 @@ export default function Changelog() {
         <div className="max-w-[740px] mx-auto px-6 pt-[60px] pb-20">
           <div className="space-y-12">
             {entries.map((e, i) => (
-              <article key={i} className="pl-6 border-l-[3px] border-[#ff6b6b]">
+              <article key={i} className="pl-6 border-l-[3px] border-[#FF6B5C]">
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="flex flex-col gap-1">
                     <span className="text-[13px] uppercase tracking-wider text-muted-foreground font-medium">
@@ -278,7 +278,7 @@ export default function Changelog() {
                   }
                   if (b.type === "quote") {
                     return (
-                      <blockquote key={idx} className="my-5 pl-5 border-l-[3px] border-[#ff6b6b] bg-[#ff6b6b]/5 py-3 pr-4 rounded-r-md text-[17px] italic text-foreground leading-relaxed">
+                      <blockquote key={idx} className="my-5 pl-5 border-l-[3px] border-[#FF6B5C] bg-[#FF6B5C]/5 py-3 pr-4 rounded-r-md text-[17px] italic text-foreground leading-relaxed">
                         "{b.text}"
                       </blockquote>
                     );
@@ -338,7 +338,7 @@ export default function Changelog() {
               href={DISCORD_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-[#ff6b6b] hover:bg-[#ff6b6b]/90 text-white font-semibold px-6 py-3 rounded-full transition-colors"
+              className="inline-flex items-center justify-center bg-[#FF6B5C] hover:bg-[#FF6B5C]/90 text-white font-semibold px-6 py-3 rounded-full transition-colors"
             >
               Join the Discord →
             </a>

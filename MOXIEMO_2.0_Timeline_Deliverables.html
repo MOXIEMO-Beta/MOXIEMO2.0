@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOXIEMO 2.0 — Timeline, Deliverables & Dependency List</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Georgia', serif;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #1a1a1a;
+      background: #f5f4f0;
+      padding: 40px 20px;
+    }
+
+    .page {
+      max-width: 860px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 4px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    /* Header */
+    .doc-header {
+      background: #1a1a1a;
+      color: #ffffff;
+      padding: 48px 56px 40px;
+    }
+
+    .doc-header h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      margin-bottom: 24px;
+      line-height: 1.3;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 40px;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .meta-label {
+      font-size: 10px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #999;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .meta-value {
+      font-size: 14px;
+      color: #fff;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .meta-value.highlight {
+      color: #f0c060;
+      font-weight: 600;
+    }
+
+    /* Body */
+    .doc-body {
+      padding: 48px 56px;
+    }
+
+    /* Section headings */
+    h2 {
+      font-size: 11px;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: #888;
+      font-family: 'Arial', sans-serif;
+      font-weight: 700;
+      margin-bottom: 20px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    /* Timeline section */
+    .timeline-block {
+      background: #f9f9f7;
+      border-left: 3px solid #1a1a1a;
+      padding: 20px 24px;
+      margin-bottom: 12px;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .timeline-block p {
+      font-size: 15px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .timeline-block p:last-child { margin-bottom: 0; }
+
+    .timeline-block strong { color: #1a1a1a; }
+
+    .dev-note {
+      background: #fff8e8;
+      border-left: 3px solid #f0c060;
+      padding: 16px 20px;
+      border-radius: 0 4px 4px 0;
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 32px;
+      font-family: 'Arial', sans-serif;
+    }
+
+    .dev-note strong { color: #333; }
+
+    /* Milestone timeline visual */
+    .milestone-timeline {
+      margin-bottom: 40px;
+    }
+
+    .milestone-row {
+      display: flex;
+      align-items: stretch;
+      margin-bottom: 4px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .ms-label {
+      width: 100px;
+      min-width: 100px;
+      background: #1a1a1a;
+      color: #fff;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+    }
+
+    .ms-label.phase0 { background: #444; }
+    .ms-label.m1 { background: #2d5a8e; }
+    .ms-label.m2 { background: #3a7abd; }
+    .ms-label.m3 { background: #1a7a4a; }
+    .ms-label.m4 { background: #c05a00; }
+    .ms-label.m5 { background: #7a2d8e; }
+    .ms-label.m6 { background: #8e1a1a; }
+
+    .ms-dates {
+      width: 160px;
+      min-width: 160px;
+      background: #f0f0ee;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #555;
+      display: flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-right: 1px solid #e0e0e0;
+    }
+
+    .ms-desc {
+      flex: 1;
+      background: #fafaf8;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #333;
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+    }
+
+    /* Section separator */
+    .section {
+      margin-bottom: 44px;
+    }
+
+    /* Milestone detail cards */
+    .milestone-card {
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .milestone-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+
+    .milestone-card-header.phase0 { background: #444; }
+    .milestone-card-header.m1 { background: #2d5a8e; }
+    .milestone-card-header.m2 { background: #3a7abd; }
+    .milestone-card-header.m3 { background: #1a7a4a; }
+    .milestone-card-header.m4 { background: #c05a00; }
+    .milestone-card-header.m5 { background: #7a2d8e; }
+    .milestone-card-header.m6 { background: #8e1a1a; }
+
+    .milestone-card-header h3 {
+      font-family: 'Arial', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .milestone-card-header .prd-tag {
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      color: rgba(255,255,255,0.65);
+    }
+
+    .milestone-card-body {
+      padding: 16px 20px;
+      background: #fff;
+    }
+
+    .milestone-card-body ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .milestone-card-body ul li {
+      font-family: 'Arial', sans-serif;
+      font-size: 13px;
+      color: #333;
+      padding: 5px 0 5px 16px;
+      position: relative;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .milestone-card-body ul li:last-child { border-bottom: none; }
+
+    .milestone-card-body ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: #aaa;
+      font-size: 11px;
+      top: 6px;
+    }
+
+    .milestone-card-body ul li ul {
+      margin-top: 4px;
+    }
+
+    .milestone-card-body ul li ul li {
+      font-size: 12px;
+      color: #555;
+      padding-left: 16px;
+      border-bottom: none;
+    }
+
+    .milestone-card-body ul li ul li::before {
+      content: '·';
+      font-size: 14px;
+      top: 4px;
+    }
+
+    .dep-note {
+      background: #fff8e8;
+      border-top: 1px solid #f0e0a0;
+      padding: 12px 20px;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .dep-note strong { color: #333; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Arial', sans-serif;
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    thead th {
+      background: #1a1a1a;
+      color: #fff;
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    tbody tr:nth-child(even) { background: #f9f9f7; }
+    tbody tr:nth-child(odd) { background: #fff; }
+
+    tbody td {
+      padding: 10px 14px;
+      color: #333;
+      border-bottom: 1px solid #eee;
+      vertical-align: top;
+    }
+
+    tbody td:first-child {
+      font-weight: 600;
+      color: #1a1a1a;
+      white-space: nowrap;
+    }
+
+    /* Pricing table */
+    .price-tag {
+      display: inline-block;
+      background: #1a7a4a;
+      color: #fff;
+      font-size: 11px;
+      font-family: 'Arial', sans-serif;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-weight: 600;
+    }
+
+    /* What I need sections */
+    .need-block {
+      margin-bottom: 24px;
+    }
+
+    .need-block h3 {
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      background: #555;
+      padding: 8px 14px;
+      border-radius: 3px 3px 0 0;
+      letter-spacing: 0.3px;
+    }
+
+    .need-block table {
+      margin-bottom: 0;
+    }
+
+    .need-block table thead th {
+      background: #333;
+    }
+
+    /* LinkedIn cards */
+    .linkedin-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+
+    .linkedin-card {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .linkedin-card-header {
+      background: #0077b5;
+      color: #fff;
+      padding: 10px 16px;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .linkedin-card-body {
+      padding: 12px 16px;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #333;
+    }
+
+    .linkedin-card-body p { margin-bottom: 8px; color: #555; }
+
+    .scope-pill {
+      display: inline-block;
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      color: #333;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      margin: 2px 2px 2px 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* Secrets */
+    .secrets-block {
+      background: #f5f5f5;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+    }
+
+    .secrets-block h3 {
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .secret-pill {
+      display: inline-block;
+      background: #1a1a1a;
+      color: #a0d080;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 3px;
+      margin: 2px 2px 2px 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    .stripe-steps {
+      list-style: none;
+      counter-reset: step;
+      padding: 0;
+    }
+
+    .stripe-steps li {
+      counter-increment: step;
+      font-family: 'Arial', sans-serif;
+      font-size: 13px;
+      color: #333;
+      padding: 8px 0 8px 36px;
+      position: relative;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    .stripe-steps li:last-child { border-bottom: none; }
+
+    .stripe-steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 8px;
+      width: 24px;
+      height: 24px;
+      background: #c05a00;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Arial', sans-serif;
+    }
+
+    code {
+      background: #f0f0f0;
+      border: 1px solid #ddd;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #c05a00;
+    }
+
+    /* Post-launch */
+    .postlaunch-row td:first-child { color: #666; font-weight: 400; }
+
+    /* Footer */
+    .doc-footer {
+      background: #f5f4f0;
+      border-top: 1px solid #e0e0e0;
+      padding: 20px 56px;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #888;
+      text-align: center;
+    }
+
+    /* Bullet list outside cards */
+    .bullet-list {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 8px;
+    }
+
+    .bullet-list li {
+      font-family: 'Arial', sans-serif;
+      font-size: 13px;
+      color: #333;
+      padding: 5px 0 5px 20px;
+      position: relative;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .bullet-list li:last-child { border-bottom: none; }
+
+    .bullet-list li::before {
+      content: '•';
+      position: absolute;
+      left: 6px;
+      color: #aaa;
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; }
+      .page { box-shadow: none; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="doc-header">
+    <h1>MOXIEMO 2.0<br>Timeline, Deliverables & Dependency List</h1>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">Prepared</span>
+        <span class="meta-value">November 13, 2026</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Launch target</span>
+        <span class="meta-value highlight">Sunday, December 20, 2026</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Developer</span>
+        <span class="meta-value">Santosh Nagargoje</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Build done by</span>
+        <span class="meta-value highlight">December 18, 2026</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Product owner</span>
+        <span class="meta-value">Karee Laing</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Final checks</span>
+        <span class="meta-value">Dec 19–20 (2 days on live app)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="doc-body">
+
+    <!-- TIMELINE -->
+    <div class="section">
+      <h2>Timeline</h2>
+      <div class="timeline-block">
+        <p>December 20 is the target. Build done December 18, then 2 days to run everything on the live app before doors open. If any launch must-have needs more time, the date moves. The must-haves do not get cut.</p>
+        <p><strong>What changed on November 12:</strong> Launch scope grew. M6 (LinkedIn connect + publish + growth reporting) is now a launch must-have, not Phase 3. Every other post-launch feature stays post-launch.</p>
+        <p><strong>Note on original date:</strong> Karee's answers doc (Nov 12) set build-done as Dec 11 and doors Dec 15. The date has been moved to Dec 18 / Dec 20 because M4 (Stripe + PDF + email + admin dashboard) had only 3 days in the original schedule — not enough for safe delivery. Per Karee's own words: "If the must-haves need longer, the date moves."</p>
+      </div>
+      <div class="dev-note">
+        <strong>Development note:</strong> I am committed to delivering by December 18. However, as development progresses, real-world issues may arise — technical blockers, integration complexities, or scope clarifications from the PRDs — that require adjustments. If any such changes arise during development, I will flag them immediately with a clear impact on the timeline and what options exist. The timeline may be extended based on project requirements, and any extension will be communicated as early as possible — not at the deadline.
+      </div>
+
+      <!-- Timeline visual -->
+      <div class="milestone-timeline">
+        <div class="milestone-row">
+          <div class="ms-label phase0">Phase 0</div>
+          <div class="ms-dates">Nov 9 – Nov 16</div>
+          <div class="ms-desc">Repo, DB, security, design system, job queue, admin shell</div>
+        </div>
+        <div class="milestone-row">
+          <div class="ms-label m1">M1</div>
+          <div class="ms-dates">Nov 17 – Nov 23</div>
+          <div class="ms-desc">Goals, readiness gate, business type, first move, playbook rules</div>
+        </div>
+        <div class="milestone-row">
+          <div class="ms-label m2">M2</div>
+          <div class="ms-dates">Nov 24 – Nov 30</div>
+          <div class="ms-desc">Discovery: question bank, one per screen, snapshot on Build my strategy</div>
+        </div>
+        <div class="milestone-row">
+          <div class="ms-label m3">M3</div>
+          <div class="ms-dates">Dec 1 – Dec 7</div>
+          <div class="ms-desc">Strategy engine (7 stages), reveal, strategy screen, platform layout, MOXIE</div>
+        </div>
+        <div class="milestone-row">
+          <div class="ms-label m4">M4</div>
+          <div class="ms-dates">Dec 8 – Dec 13</div>
+          <div class="ms-desc">Paywall, Stripe checkout, PDF, recap email, Brand Hub, admin dashboard</div>
+        </div>
+        <div class="milestone-row">
+          <div class="ms-label m5">M5</div>
+          <div class="ms-dates">Dec 14 – Dec 16</div>
+          <div class="ms-desc">First 30 days of content, approval, tracked links, first session, Home</div>
+        </div>
+        <div class="milestone-row">
+          <div class="ms-label m6">M6</div>
+          <div class="ms-dates">Dec 17 – Dec 18</div>
+          <div class="ms-desc">LinkedIn connect + publish + growth reporting — launch must-have</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MILESTONE DETAILS -->
+    <div class="section">
+      <h2>Milestone Detail</h2>
+
+      <!-- Phase 0 -->
+      <div class="milestone-card">
+        <div class="milestone-card-header phase0">
+          <h3>Phase 0 — Nov 9 to 16</h3>
+          <span class="prd-tag">PRD 20</span>
+        </div>
+        <div class="milestone-card-body">
+          <ul>
+            <li>Repo, staging and live databases built from migrations</li>
+            <li>Full data model with brand_id on every table</li>
+            <li>Security rules — RLS deny-by-default, FORCE RLS on all tables</li>
+            <li>Closed sign-up with password reset</li>
+            <li>Design system (Tailwind, shadcn/ui, MOXIE avatar component with design tokens)</li>
+            <li>Background job queue</li>
+            <li>Admin shell</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- M1 -->
+      <div class="milestone-card">
+        <div class="milestone-card-header m1">
+          <h3>M1 — Nov 17 to 23</h3>
+          <span class="prd-tag">PRDs: 2, 4, 20</span>
+        </div>
+        <div class="milestone-card-body">
+          <ul>
+            <li>Goals screen with timeframe picker
+              <ul>
+                <li>First 100: 90 days / 120 days / 6 months / 12 months / Pick a date</li>
+                <li>Launch an offer: 30 days / 60 days / 90 days / Pick a date</li>
+              </ul>
+            </li>
+            <li>Three-question readiness gate with hard block — all three must be Yes</li>
+            <li>"Not yet" coaching when blocked (MOXIE's voice, one gap action, how to come back)</li>
+            <li>Business type picker — three types at launch: Expertise-based founder (E), Growing business (G), Restaurant and hospitality (R)</li>
+            <li>Your first move — one AI-generated action for the week, based on goal + business type</li>
+            <li>Playbook rules loaded as data rows with admin editor — ten seed rules, conflict order: safety → feasibility → primary goal → evidence → specificity</li>
+          </ul>
+        </div>
+        <div class="dep-note">
+          <strong>Dependency:</strong> M1 needs Phase 0's admin shell to load the ten seed playbook rules on day one. Without Phase 0 complete, the admin editor has nowhere to write to and the rules table is empty.
+        </div>
+      </div>
+
+      <!-- M2 -->
+      <div class="milestone-card">
+        <div class="milestone-card-header m2">
+          <h3>M2 — Nov 24 to Nov 30</h3>
+          <span class="prd-tag">PRDs: 3, contract</span>
+        </div>
+        <div class="milestone-card-body">
+          <ul>
+            <li>Full question bank as database rows (not hardcoded):
+              <ul>
+                <li>Part 1: A1–A11 (brand-core, everyone)</li>
+                <li>Part 2: Set E, G, or R (business type)</li>
+                <li>Part 3: C1–C6 (shared), then goal module F (First 100) or L (Launch an offer)</li>
+                <li>Conditional: DX1–DX5 (up to 2 per session), Sharpen (0–4 follow-ups per question)</li>
+              </ul>
+            </li>
+            <li>One question per screen, saved as the member goes</li>
+            <li>Show me an example — one per question per business type, hidden if no approved example exists</li>
+            <li>Help me answer — Claude draft from confirmed answers only; stored as inferred + pending; falls back to simpler version if nothing to draw on</li>
+            <li>Sharpen — quotes member's own answer; both versions kept; latest confirmed goes to snapshot; no AI-written text enters snapshot as member's answer</li>
+            <li>Review screen listing anything missing</li>
+            <li>Build my strategy — freezes everything into the discovery snapshot (immutable, hashed)</li>
+          </ul>
+        </div>
+        <div class="dep-note">
+          <strong>Dependency:</strong> M2 needs M1's goal and business type in the DB to know which question set to load (E, G, or R) and which goal module to run (F or L). Discovery cannot start without a confirmed goal and business type written by M1.
+        </div>
+      </div>
+
+      <!-- M3 -->
+      <div class="milestone-card">
+        <div class="milestone-card-header m3">
+          <h3>M3 — Dec 1 to 7</h3>
+          <span class="prd-tag">PRDs: 4, 12, 16, contract</span>
+        </div>
+        <div class="milestone-card-body">
+          <ul>
+            <li>Strategy engine — 7-stage background job:
+              <ul>
+                <li>1. Extract facts and evidence</li>
+                <li>2. Reconcile and check sufficiency</li>
+                <li>3. Diagnose</li>
+                <li>4. Select strategy decisions</li>
+                <li>5. Compose strategy sections</li>
+                <li>6. Validate</li>
+                <li>7. Save free and paid sections (server never sends paid content until payment confirmed)</li>
+              </ul>
+            </li>
+            <li>Saved checkpoints and retries per stage</li>
+            <li>Reveal screen: "Where you stand" and positioning statement free; every other section locked with one line on what it holds; first 30 days as locked month grid; week 1 as locked post cards</li>
+            <li>Full strategy screen in four groups: Where you stand, Who you are, How you sound, How you grow</li>
+            <li>Lane pages for the lead goal</li>
+            <li>PDF download (paid strategy, same order and words as strategy screen, in MOXIEMO's look)</li>
+            <li>90-day plan with 30/60/90-day targets, first month's two tests, test ideas, Why this line on every item</li>
+            <li>Platform layout: full-width, fixed 224px sidebar, MOXIE's round button</li>
+            <li>MOXIE companion in the product</li>
+          </ul>
+        </div>
+        <div class="dep-note">
+          <strong>Dependency:</strong> M3 builds the gate (locked rows, server never sends paid sections until payment confirmed). M4 builds the key (Stripe checkout, unlock flow). The full member path — reveal → paywall → unlock → full strategy — only works end-to-end once both milestones are done. M3's demo is on staging for Karee only; no real member hits the reveal until M4 is live.
+        </div>
+      </div>
+
+      <!-- M4 -->
+      <div class="milestone-card">
+        <div class="milestone-card-header m4">
+          <h3>M4 — Dec 8 to 13</h3>
+          <span class="prd-tag">PRDs: 13, 5, 20</span>
+        </div>
+        <div class="milestone-card-body">
+          <ul>
+            <li>Paywall: seat counter — "Seat X of 100, 50% off for life" (counted from active founding subscriptions, not a running total; repeated webhook cannot double-count)</li>
+            <li>Stripe checkout with founding coupon (Clarity $49.50/mo, Momentum $74.50/mo)</li>
+            <li>1.0 member transition codes — email-locked: code only activates if account's verified email matches Karee's 1.0 list, checked server-side; no screen/receipt/invoice says "trial"</li>
+            <li>Refunds — 30-day money-back on first payment</li>
+            <li>PDF and recap email — fires when Stripe confirms payment; three parts: What I heard, Your strategy in five lines, Your 30/60/90-day targets</li>
+            <li>Simple Brand Hub: strategy + PDF download + recap</li>
+            <li>Admin dashboard in full</li>
+          </ul>
+        </div>
+        <div class="dep-note">
+          <strong>Dependency:</strong> M5 needs M4's Stripe payment confirmed before the full strategy screen, PDF, recap email, and Brand Hub are accessible. The first session (Home → approve four weeks) only makes sense after the member has paid and unlocked their strategy. M5 cannot be fully tested end-to-end until M4's checkout is live on staging.
+        </div>
+      </div>
+
+      <!-- M5 -->
+      <div class="milestone-card">
+        <div class="milestone-card-header m5">
+          <h3>M5 — Dec 14 to 16</h3>
+          <span class="prd-tag">PRDs: 6, 8, 12, contract</span>
+        </div>
+        <div class="milestone-card-body">
+          <ul>
+            <li>Month setup — Your month on one page: this month's number, what is on track, what is still to find, moves with impact/effort tags and Why this line</li>
+            <li>Two tests per month (test 1 in weeks 1–2, test 2 in weeks 3–4), test ideas</li>
+            <li>Posts a week ahead, each tied to a pillar, week theme, platform, and test</li>
+            <li>Review and approval panel (post by post or a week at a time; both versions of a test approved together)</li>
+            <li>Copy and Mark as posted — records the time each post went out</li>
+            <li>Tracked short links with UTM tags on every post that has a link</li>
+            <li>Activation event — triggered when four weeks of content are approved</li>
+            <li>The first session (four steps on Home): read strategy and recap → set up brand kit (skippable) → set up first month and its tests → approve first four weeks</li>
+            <li>Home, This week, Start here card</li>
+            <li>Execution brief behind every post</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- M6 -->
+      <div class="milestone-card">
+        <div class="milestone-card-header m6">
+          <h3>M6 — Dec 17 to 18 &nbsp;·&nbsp; Launch must-have</h3>
+          <span class="prd-tag">PRDs: 11, 14</span>
+        </div>
+        <div class="milestone-card-body">
+          <ul>
+            <li>LinkedIn connect: personal profiles via MOXIEMO's own LinkedIn developer app (Sign In with LinkedIn, OpenID Connect, w_member_social scope)</li>
+            <li>LinkedIn connect: company pages via separate MOXIEMO LinkedIn developer app (Community Management API)</li>
+            <li>LinkedIn publishing queue — post counts as published only when LinkedIn's webhook confirms it</li>
+            <li>Lapsed connection banner and email, "Reconnect to keep publishing" prompt; posts continue writing while disconnected (member can copy by hand)</li>
+            <li>Growth reporting:
+              <ul>
+                <li>Goal progress — target and progress, by month on one page</li>
+                <li>What moved — results by channel and by post, tracked link clicks</li>
+                <li>What we learned — every test with day-7 early read and day-14 final read, answer in plain words, what changed</li>
+                <li>Scheduled job runs reads each morning automatically</li>
+                <li>Run read now button in admin as backup</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+        <div class="dep-note">
+          <strong>Dependency:</strong> M6 needs M5's posts and tests in the DB to have anything to publish or read. LinkedIn publishing only counts a post as published when the webhook confirms it — M5's "Copy and Mark as posted" is the fallback if the LinkedIn connection is not yet set up. Both must be live before doors open on Dec 20.
+        </div>
+      </div>
+    </div>
+
+    <!-- POST-LAUNCH -->
+    <div class="section">
+      <h2>Post-launch — not in launch scope</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>What ships</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="postlaunch-row">
+            <td>Phase 3 — weekly loop</td>
+            <td>Test reads day 7 and day 14 (automated), What we learned, next month built from results, learning records</td>
+          </tr>
+          <tr class="postlaunch-row">
+            <td>Phase 4 — reach</td>
+            <td>Instagram and Facebook through Zernio, three plans with real limits and $6 add-on, email builder (HTML export, Klaviyo/Mailchimp/Kit), photo library, product cards, uploads, edit and rebuild</td>
+          </tr>
+          <tr class="postlaunch-row">
+            <td>Phase 5 — companion</td>
+            <td>Text MOXIE, month-end retro, shareable monthly update, stories, Ask MOXIE drafted changes, voice and attachments</td>
+          </tr>
+          <tr class="postlaunch-row">
+            <td>Phase 6 — scale</td>
+            <td>Brand switcher, team seats, blog and SEO/AEO content, Google Analytics and Search Console, MCP server</td>
+          </tr>
+          <tr class="postlaunch-row">
+            <td>Later</td>
+            <td>Agency workspaces, client share links, attribution, websites</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PRICING -->
+    <div class="section">
+      <h2>Pricing — for Stripe setup in M4</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Regular</th>
+            <th>Founding (50% off for life)</th>
+            <th>Includes at launch</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Clarity</td>
+            <td>$99/mo</td>
+            <td><span class="price-tag">$49.50/mo</span></td>
+            <td>1 brand, 3 social accounts, 2 tests/month</td>
+          </tr>
+          <tr>
+            <td>Momentum</td>
+            <td>$149/mo</td>
+            <td><span class="price-tag">$74.50/mo</span></td>
+            <td>2 brands, up to 6 social accounts, 4 tests/month</td>
+          </tr>
+          <tr>
+            <td>Multiply</td>
+            <td>$249/mo</td>
+            <td>Phase 4 only</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+      <ul class="bullet-list" style="margin-top:12px;">
+        <li>100 shared founding seats across both plans</li>
+        <li>30-day money-back guarantee on first payment only</li>
+        <li>1.0 members: email-locked coupon (30 days free + 50% off for life), outside the 100 founding seats</li>
+        <li>1.0 app closes March 31, 2027</li>
+      </ul>
+    </div>
+
+    <!-- WHAT KAREE NEEDS FROM ME -->
+    <div class="section">
+      <h2>What Karee needs from me — this week</h2>
+      <table>
+        <thead>
+          <tr><th>Item</th><th>Detail</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Estimate for M1–M6</td>
+            <td>Confirming whether all milestones fit by Dec 18. If not, what date does?</td>
+          </tr>
+          <tr>
+            <td>1.0 coupon proposal</td>
+            <td>My proposal: Stripe coupon activates server-side only if the account's verified email is on Karee's 1.0 list. No screen/receipt/invoice says "trial." Awaiting Karee's confirmation or a better suggestion.</td>
+          </tr>
+          <tr>
+            <td>Problem 1</td>
+            <td>The dependency notes file I received starts at Problem 2. Need Karee to resend Problem 1.</td>
+          </tr>
+          <tr>
+            <td>Full Non-Lovable Build Plan</td>
+            <td>Need PRD 4 specifically for the ten seed playbook rules with their why lines — required before M1 starts Nov 17.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- WHAT I NEED FROM KAREE -->
+    <div class="section">
+      <h2>What I need from Karee — full running list</h2>
+
+      <div class="need-block">
+        <h3>By November 16</h3>
+        <table>
+          <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Final founding promise wording</td>
+              <td>Draft: "Founding members get MOXIEMO at 50 percent off for life, for as long as you keep your founding membership. Choose Clarity at $49.50 a month or Momentum at $74.50 a month. Only 100 founding seats, with a 30-day money-back guarantee on your first payment."</td>
+            </tr>
+            <tr>
+              <td>Launch an offer gate — final wording</td>
+              <td>Three questions and pass rule (all three Yes). Questions are in PRD 2's goal card table.</td>
+            </tr>
+            <tr>
+              <td>Not yet coaching copy</td>
+              <td>For both goals (First 100 and Launch an offer), in MOXIE's voice. Shape: say what is missing, give one thing to do this week, say how to come back.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="need-block">
+        <h3>By November 20</h3>
+        <table>
+          <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Signed-off question wording</td>
+              <td>For all discovery questions — A1–A11, sets E, G and R, C1–C6, goal modules, DX and Sharpen. A late sign-off changes words only, never a screen or table — it is a data edit in admin, not a rebuild.</td>
+            </tr>
+            <tr>
+              <td>Example answers</td>
+              <td>One per question per business type for Show me an example. If no approved example exists for a question, the link hides. No placeholders.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="need-block">
+        <h3>By November 25</h3>
+        <table>
+          <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Mockups</td>
+              <td>Reveal screen, full strategy screen, paywall</td>
+            </tr>
+            <tr>
+              <td>PDF layout</td>
+              <td>In MOXIEMO's look, same order and words as the strategy screen</td>
+            </tr>
+            <tr>
+              <td>MOXIE's build lines</td>
+              <td>Six lines, one per pipeline stage, fixed copy, final. Draft: "I am reading everything you told me." / "I am working out what is most likely holding your growth back." / "I am shaping where you stand in your market." / "I am writing your strategy, one section at a time." / "I am planning your 90 days and your first two tests." / "I am drafting your first week."</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="need-block">
+        <h3>By November 30</h3>
+        <table>
+          <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Real test businesses</td>
+              <td>Four to six businesses (with their permission) for the "would I sign this strategy" test</td>
+            </tr>
+            <tr>
+              <td>Test case discovery answers</td>
+              <td>Made-up but realistic answers that trigger each of the five pipeline scenarios</td>
+            </tr>
+            <tr>
+              <td>Strategy-1.1 frozen</td>
+              <td>The prompt version that ships with M3</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="need-block">
+        <h3>Before December 14</h3>
+        <table>
+          <thead><tr><th>Item</th><th>Detail</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Resend API key</td>
+              <td>In the password vault</td>
+            </tr>
+            <tr>
+              <td>Alicia Smith access</td>
+              <td>Confirmed access to Supabase, Stripe, and Resend before launch readiness</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- LINKEDIN -->
+    <div class="section">
+      <h2>LinkedIn Setup — two developer apps required</h2>
+      <div class="linkedin-cards">
+        <div class="linkedin-card">
+          <div class="linkedin-card-header">App 1 — MOXIEMO (Sign In)</div>
+          <div class="linkedin-card-body">
+            <p>Personal profile connect and member posting</p>
+            <span class="scope-pill">openid</span>
+            <span class="scope-pill">profile</span>
+            <span class="scope-pill">email</span>
+            <span class="scope-pill">w_member_social</span>
+            <span class="scope-pill">r_member_postAnalytics</span>
+            <span class="scope-pill">r_member_profileAnalytics</span>
+          </div>
+        </div>
+        <div class="linkedin-card">
+          <div class="linkedin-card-header">App 2 — MOXIEMO Pages</div>
+          <div class="linkedin-card-body">
+            <p>Company page connect and page posting</p>
+            <span class="scope-pill">r_organization_admin</span>
+            <span class="scope-pill">w_organization_social</span>
+            <span class="scope-pill">r_organization_social</span>
+            <span class="scope-pill">rw_organization_admin</span>
+          </div>
+        </div>
+      </div>
+      <p style="font-family:Arial,sans-serif;font-size:12px;color:#666;margin-top:8px;">Both apps are built in the codebase. Secrets must be added to Supabase Edge Function environment before the M6 demo.</p>
+    </div>
+
+    <!-- OPS SECRETS -->
+    <div class="section">
+      <h2>Ops Secrets — environment setup before go-live</h2>
+
+      <div class="secrets-block">
+        <h3>Supabase Edge Function secrets</h3>
+        <span class="secret-pill">ANTHROPIC_API_KEY</span>
+        <span class="secret-pill">STRIPE_SECRET_KEY</span>
+        <span class="secret-pill">STRIPE_WEBHOOK_SECRET</span>
+        <span class="secret-pill">RESEND_API_KEY</span>
+        <span class="secret-pill">LINKEDIN_CLIENT_ID</span>
+        <span class="secret-pill">LINKEDIN_CLIENT_SECRET</span>
+        <span class="secret-pill">LINKEDIN_PAGES_CLIENT_ID</span>
+        <span class="secret-pill">LINKEDIN_PAGES_CLIENT_SECRET</span>
+        <span class="secret-pill">APP_URL</span>
+        <span class="secret-pill">SUPABASE_URL</span>
+        <span class="secret-pill">SUPABASE_SERVICE_ROLE_KEY</span>
+        <span class="secret-pill">SUPABASE_ANON_KEY</span>
+      </div>
+
+      <div class="secrets-block">
+        <h3>Stripe setup — before M4</h3>
+        <ol class="stripe-steps">
+          <li>Set <code>STRIPE_SECRET_KEY</code> and <code>STRIPE_WEBHOOK_SECRET</code> in Supabase secrets</li>
+          <li>Register webhook endpoint pointing to the <code>stripe-webhook</code> edge function</li>
+          <li>Enable four event types: <code>checkout.session.completed</code>, <code>customer.subscription.updated</code>, <code>customer.subscription.deleted</code>, <code>invoice.payment_failed</code></li>
+          <li>Create founding coupon (50% off, duration: forever) and set the coupon ID in environment</li>
+        </ol>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="doc-footer">
+    Source of truth: MOXIEMO 2.0 Non-Lovable Build Plan (PRDs 0–20) and Karee's answers doc dated Nov 12, 2026. Where this document and a PRD differ, the PRD wins.
+  </div>
+
+</div>
+</body>
+</html>

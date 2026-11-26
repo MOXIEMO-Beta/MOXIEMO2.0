@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { friendlyAuthError } from "@/lib/authErrors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,17 +23,12 @@ export default function ForgotPassword() {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
       if (error) {
-        const msg = error.message?.toLowerCase() ?? "";
-        if (msg.includes("not found") || msg.includes("no user")) {
-          setError("No account found with that email address.");
-        } else {
-          setError("Something went wrong — please try again.");
-        }
+        setError(friendlyAuthError("forgot_password", error));
         return;
       }
       setSent(true);
-    } catch {
-      setError("Something went wrong — please try again.");
+    } catch (err: unknown) {
+      setError(friendlyAuthError("forgot_password", err));
     } finally {
       setLoading(false);
     }

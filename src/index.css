@@ -1,3 +1,40 @@
+/* ── Self-hosted brand fonts (Fraunces · DM Sans · JetBrains Mono) ── */
+@font-face {
+  font-family: 'Fraunces Variable';
+  src: url('/src/assets/fonts/fraunces/fraunces-latin-wght-normal.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Fraunces Variable';
+  src: url('/src/assets/fonts/fraunces/fraunces-latin-wght-italic.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans Variable';
+  src: url('/src/assets/fonts/dm-sans/dm-sans-latin-wght-normal.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'DM Sans Variable';
+  src: url('/src/assets/fonts/dm-sans/dm-sans-latin-wght-italic.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'JetBrains Mono Variable';
+  src: url('/src/assets/fonts/jetbrains-mono/jetbrains-mono-latin-wght-normal.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,11 +53,11 @@
   --cookie-soft: #dce3d2;
   --cookie-shadow: 0 12px 40px rgba(19, 19, 15, 0.2);
 }
-.legal-page-shell { background: var(--legal-paper); color: var(--legal-ink); min-height: 100vh; font-family: 'Hanken Grotesk', system-ui, sans-serif; letter-spacing: 0; }
+.legal-page-shell { background: var(--legal-paper); color: var(--legal-ink); min-height: 100vh; font-family: 'DM Sans Variable', system-ui, sans-serif; letter-spacing: 0; }
 .legal-main { width: 100%; max-width: 1104px; margin: 0 auto; padding: 64px 24px 100px; }
 .legal-header { max-width: 720px; margin: 0 auto 48px; }
-.legal-header h1 { font-family: 'Newsreader', Georgia, serif; font-size: 56px; font-weight: 600; line-height: 1.08; margin-bottom: 20px; overflow-wrap: anywhere; }
-.legal-mono, .legal-date { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; line-height: 1.7; text-transform: uppercase; letter-spacing: 0; }
+.legal-header h1 { font-family: 'Fraunces Variable', Georgia, serif; font-size: 56px; font-weight: 600; line-height: 1.08; margin-bottom: 20px; overflow-wrap: anywhere; }
+.legal-mono, .legal-date { font-family: 'JetBrains Mono Variable', ui-monospace, monospace; font-size: 11px; line-height: 1.7; text-transform: uppercase; letter-spacing: 0; }
 .legal-date { white-space: pre-line; margin-bottom: 24px; }
 .legal-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 32px; }
 .legal-page-shell .legal-pill { border-radius: 999px; border-color: var(--legal-border); background: transparent; color: var(--legal-ink); font-size: 13px; padding: 8px 14px; height: auto; }
@@ -36,7 +73,7 @@
 .legal-prose ol { list-style-type: decimal; }
 .legal-prose li { margin-bottom: 8px; }
 .legal-prose a:not(.legal-anchor) { color: var(--legal-ink); text-decoration: underline; text-underline-offset: 3px; }
-.legal-prose .legal-heading { scroll-margin-top: 112px; position: relative; font-family: 'Newsreader', Georgia, serif; font-size: 28px; line-height: 1.25; font-weight: 600; margin: 44px 0 20px; padding-right: 36px; }
+.legal-prose .legal-heading { scroll-margin-top: 112px; position: relative; font-family: 'Fraunces Variable', Georgia, serif; font-size: 28px; line-height: 1.25; font-weight: 600; margin: 44px 0 20px; padding-right: 36px; }
 .legal-prose section:first-child .legal-heading, .legal-summary .legal-heading { margin-top: 0; }
 .legal-prose h3, .legal-prose h4 { font-weight: 700; margin: 28px 0 16px; }
 .legal-page-shell .legal-anchor { position: absolute; right: 0; top: 0; width: 28px; height: 28px; opacity: 0; background: transparent; color: var(--legal-ink); }
@@ -47,7 +84,7 @@
 .legal-prose th, .legal-prose td { padding: 12px; border-bottom: 1px solid var(--legal-border); text-align: left; vertical-align: top; }
 .legal-prose td, .legal-prose th { overflow-wrap: break-word; word-break: normal; }
 
-.legal-prose th { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; text-transform: uppercase; color: var(--legal-ink); letter-spacing: 0; }
+.legal-prose th { font-family: 'JetBrains Mono Variable', ui-monospace, monospace; font-size: 11px; text-transform: uppercase; color: var(--legal-ink); letter-spacing: 0; }
 .legal-prose [class*="text-[15px]"] { font-size: 17px; }
 .legal-mobile-contents nav, .legal-sidebar nav { font-size: 13px; line-height: 1.5; }
 .legal-mobile-contents ul, .legal-sidebar ul { list-style: none; margin: 12px 0 0; padding: 0; }
@@ -67,7 +104,7 @@ html:has(.legal-page-shell) { scroll-behavior: smooth; }
 @media (max-width: 1023px) { .legal-header h1 { font-size: 40px; } .legal-main { padding-top: 40px; } }
 @media (prefers-reduced-motion: reduce) { html:has(.legal-page-shell) { scroll-behavior: auto; } }
 .cookie-surface {
-  font-family: 'Hanken Grotesk', system-ui, sans-serif;
+  font-family: 'DM Sans Variable', system-ui, sans-serif;
   color: var(--cookie-ink);
   background: var(--cookie-surface);
   border: 1px solid var(--cookie-border);
@@ -77,11 +114,11 @@ html:has(.legal-page-shell) { scroll-behavior: smooth; }
 .cookie-banner { position: fixed; z-index: 10001; left: 24px; bottom: 24px; width: min(460px, calc(100vw - 48px)); padding: 24px; border-radius: 8px; max-height: calc(100dvh - 48px); overflow-y: auto; }
 .cookie-panel { z-index: 10003; width: calc(100% - 32px); max-width: 600px; max-height: calc(100dvh - 48px); overflow-y: auto; border-radius: 8px; padding: 28px; }
 body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 10002; }
-.cookie-surface .cookie-title { font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 600; line-height: 1.2; letter-spacing: 0; margin-bottom: 12px; color: var(--cookie-ink); }
+.cookie-surface .cookie-title { font-family: 'Fraunces Variable', Georgia, serif; font-size: 28px; font-weight: 600; line-height: 1.2; letter-spacing: 0; margin-bottom: 12px; color: var(--cookie-ink); }
 .cookie-copy { font-size: 14px; line-height: 1.6; color: var(--cookie-copy); letter-spacing: 0; }
 .cookie-link { color: var(--cookie-ink); text-decoration: underline; text-underline-offset: 3px; }
 .cookie-link:focus-visible { outline: 2px solid var(--cookie-ink); outline-offset: 4px; }
-.cookie-surface .cookie-button { border-radius: 999px; height: 44px; padding: 10px 18px; font-size: 14px; font-weight: 600; letter-spacing: 0; font-family: 'Hanken Grotesk', system-ui, sans-serif; }
+.cookie-surface .cookie-button { border-radius: 999px; height: 44px; padding: 10px 18px; font-size: 14px; font-weight: 600; letter-spacing: 0; font-family: 'DM Sans Variable', system-ui, sans-serif; }
 .cookie-button-solid { background: var(--cookie-ink); color: var(--cookie-surface); border: 1px solid var(--cookie-ink); }
 .cookie-button-solid:hover { background: var(--cookie-hover); }
 .cookie-button-outline { background: transparent; color: var(--cookie-ink); border: 1px solid var(--cookie-ink); }
@@ -102,15 +139,12 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 
 /* MOXIEMO Design System — warm cream + ink + coral. Inspired by monday.com cleanness. */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
-
 /* App shell (post-redesign) — scoped font + tokens for /app pages only. */
 .moxie-app-shell,
 .moxie-app-shell *,
 .moxie-app-shell *::before,
 .moxie-app-shell *::after {
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: 'DM Sans Variable', system-ui, sans-serif !important;
 }
 .moxie-app-shell { color: #0E0F10; }
 .moxie-app-shell p,
@@ -262,7 +296,7 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 /* "Brands / Values / Content approach" big display numbers and similar
    font-display headings inside the strategy page — bring down to spec. */
 .moxie-strategy-page .font-display {
-  font-family: 'Space Grotesk', system-ui, sans-serif !important;
+  font-family: 'DM Sans Variable', system-ui, sans-serif !important;
   letter-spacing: -0.2px !important;
 }
 .moxie-strategy-page .font-display.text-5xl,
@@ -312,72 +346,81 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 
 @layer base {
   :root {
-    /* Brand: white canvas, ink text */
-    --background: 0 0% 100%;           /* #ffffff */
-    --foreground: 231 15% 17%;         /* #262833 ink */
+    /* Brand: paper background, ink text */
+    --background: 40 18% 96%;          /* #F7F5F1 paper */
+    --foreground: 228 14% 10%;         /* #15171C ink */
 
     --card: 0 0% 100%;
-    --card-foreground: 231 15% 17%;
+    --card-foreground: 228 14% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 231 15% 17%;
+    --popover-foreground: 228 14% 10%;
 
-    /* Brand ink as primary CTA */
-    --primary: 231 15% 17%;            /* #262833 */
+    /* Navy as primary */
+    --primary: 219 51% 16%;            /* #14243D navy */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 231 15% 96%;
-    --secondary-foreground: 231 15% 17%;
+    --secondary: 40 16% 94%;           /* #F4F2ED warm-paper */
+    --secondary-foreground: 228 14% 10%;
 
-    --muted: 231 15% 97%;
-    --muted-foreground: 231 10% 45%;
+    --muted: 40 16% 92%;
+    --muted-foreground: 228 10% 45%;
 
     /* Brand coral accent */
-    --accent: 0 100% 71%;              /* #ff6b6b */
+    --accent: 5 100% 68%;              /* #FF6B5C coral */
     --accent-foreground: 0 0% 100%;
-    --accent-soft: 0 100% 96%;
+    --accent-soft: 5 100% 95%;
 
     --destructive: 0 72% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 231 15% 92%;
-    --input: 231 15% 92%;
-    --ring: 0 100% 71%;
+    --border: 36 24% 88%;
+    --input: 36 24% 88%;
+    --ring: 5 100% 68%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 231 15% 98%;
-    --sidebar-foreground: 231 15% 25%;
-    --sidebar-primary: 231 15% 17%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 228 14% 20%;
+    --sidebar-primary: 219 51% 16%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 100% 71%;
+    --sidebar-accent: 5 100% 68%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 231 15% 92%;
-    --sidebar-ring: 0 100% 71%;
+    --sidebar-border: 36 24% 90%;
+    --sidebar-ring: 5 100% 68%;
 
-    /* Brand tokens */
-    --brand-coral: 0 100% 71%;         /* #ff6b6b */
-    --brand-coral-soft: 0 100% 81%;    /* #ff9e9e */
-    --brand-ink: 231 15% 17%;          /* #262833 */
-    --brand-ink-light: 231 15% 27%;    /* #3c3f50 */
-    --brand-ink-deep: 231 15% 7%;      /* #101116 */
-    --brand-navy: 219 51% 16%;         /* #14243D */
-    --brand-coral-light: 12 100% 71%;  /* #FF8A6B */
-    --brand-coral-solid: 8 78% 59%;    /* #E85A46 */
-    --brand-sage: 79 20% 71%;          /* #B8C5A6 */
-    --brand-taupe: 42 26% 79%;         /* #D8CEBD */
-    --brand-coral-tint: 14 79% 93%;    /* #FBE4DD */
-    --brand-sage-tint: 78 22% 89%;     /* #E7EBDF */
-    --brand-taupe-tint: 40 32% 89%;    /* #EDE7DB */
-    --gradient-warm: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(231 15% 98%) 100%);
-    --gradient-coral: linear-gradient(135deg, hsl(0 100% 71%) 0%, hsl(0 100% 81%) 100%);
+    /* Brand tokens — source: Brand Kit 05-colors/tokens.css */
+    --brand-coral: 5 100% 68%;          /* #FF6B5C */
+    --brand-coral-soft: 5 100% 78%;     /* #FF9589 */
+    --brand-coral-solid: 5 100% 68%;    /* #FF6B5C */
+    --brand-coral-light: 5 100% 72%;    /* #FF7E70 */
+    --brand-coral-tint: 5 100% 95%;     /* #FFE9E7 */
+    --brand-ink: 228 14% 10%;           /* #15171C */
+    --brand-ink-light: 228 14% 22%;     /* #2E3140 */
+    --brand-ink-deep: 228 14% 6%;       /* #0C0D10 */
+    --brand-navy: 219 51% 16%;          /* #14243D */
+    --brand-navy-muted: 220 20% 72%;    /* #AEB9C9 */
+    --brand-sage: 92 19% 70%;           /* #B8C5A6 */
+    --brand-sage-tint: 92 20% 90%;      /* #E3EAD9 */
+    --brand-taupe: 36 24% 79%;          /* #D8CEBD */
+    --brand-taupe-tint: 36 26% 91%;     /* #EDE8DF */
+    --brand-paper: 40 18% 96%;          /* #F7F5F1 */
+    --brand-warm-paper: 40 16% 94%;     /* #F4F2ED */
+    /* MOXIE character tokens */
+    --moxie-lilac: 272 50% 83%;         /* #D4C1EC */
+    --moxie-lilac-deep: 272 46% 75%;    /* #BCA3DF */
+    --moxie-cream: 40 60% 97%;          /* #FBF8F2 */
+
+    --gradient-warm: linear-gradient(180deg, hsl(40 18% 96%) 0%, hsl(40 16% 92%) 100%);
+    --gradient-coral: linear-gradient(135deg, #FF6B5C 0%, #FF9589 100%);
     --shadow-soft: 0 1px 2px 0 hsl(0 0% 0% / 0.04), 0 1px 3px 0 hsl(0 0% 0% / 0.06);
     --shadow-card: 0 4px 16px -4px hsl(0 0% 0% / 0.06), 0 2px 6px -2px hsl(0 0% 0% / 0.04);
     --shadow-lift: 0 12px 32px -8px hsl(0 0% 0% / 0.10);
 
-    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-    --font-display: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-sans: 'DM Sans Variable', system-ui, -apple-system, sans-serif;
+    --font-display: 'Fraunces Variable', Georgia, serif;
+    --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
   }
 
   .dark {
@@ -420,7 +463,7 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
   body {
     @apply bg-background text-foreground antialiased;
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
+    font-feature-settings: "ss01";
   }
 
   .font-display {
@@ -466,7 +509,7 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 .moxie-nav-link,
 .moxie-footer-link,
 .moxie-footer-heading {
-  font-family: 'Inter', sans-serif;
+  font-family: 'DM Sans Variable', sans-serif;
 }
 
 .moxie-nav-link {
@@ -484,13 +527,13 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
   right: 14px;
   bottom: 2px;
   height: 2px;
-  background: #ff6b6b;
+  background: #FF6B5C;
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 180ms ease;
 }
 .moxie-nav-link:hover {
-  color: #ff6b6b;
+  color: #FF6B5C;
 }
 .moxie-nav-link:hover::after {
   transform: scaleX(1);
@@ -500,7 +543,7 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
   transition: color 80ms ease;
 }
 .moxie-nav-link-active {
-  color: #ff6b6b;
+  color: #FF6B5C;
   font-weight: 600;
 }
 .moxie-nav-link-active::after {
@@ -524,7 +567,7 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
   transition: color 200ms ease, transform 200ms ease, opacity 200ms ease;
 }
 .moxie-footer-link:hover {
-  color: #ff6b6b;
+  color: #FF6B5C;
   opacity: 1;
   transform: translateX(3px);
 }
@@ -539,7 +582,7 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
   transition: color 200ms ease, transform 200ms ease;
 }
 .moxie-footer-social:hover {
-  color: #ff6b6b;
+  color: #FF6B5C;
   transform: translateY(-2px);
 }
 .moxie-footer-social:active {
@@ -630,7 +673,7 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 .pricing-comparison, .pricing-moxie { background: var(--pricing-surface); color: var(--pricing-ink); padding: 80px 40px; }
 .pricing-moxie { background: var(--pricing-soft); }
 .pricing-section-inner { max-width: 1200px; margin: 0 auto; }
-.pricing-section-heading { font-family: 'Newsreader', Georgia, serif; font-size: 52px; font-weight: 600; line-height: 1.1; letter-spacing: 0; margin: 0 0 32px; }
+.pricing-section-heading { font-family: 'Fraunces Variable', Georgia, serif; font-size: 52px; font-weight: 600; line-height: 1.1; letter-spacing: 0; margin: 0 0 32px; }
 .pricing-section-body { max-width: 840px; font-size: 17px; line-height: 1.75; color: var(--pricing-copy); margin: 0; }
 .pricing-moxie-row { display: flex; align-items: center; gap: 40px; }
 .pricing-moxie-avatar { flex: none; }
@@ -647,9 +690,9 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
 .pricing-table tbody th { font-weight: 500; }
 .pricing-table td { color: var(--pricing-copy); }
 .pricing-card-price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-bottom: 10px; color: var(--pricing-ink); }
-.pricing-card-price > s { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--pricing-muted); }
+.pricing-card-price > s { font-family: 'JetBrains Mono Variable', monospace; font-size: 12px; color: var(--pricing-muted); }
 .pricing-card-price > div { display: flex; align-items: baseline; gap: 5px; }
-.pricing-card-price strong { font-family: 'Newsreader', Georgia, serif; font-size: 48px; font-weight: 700; line-height: 1; }
+.pricing-card-price strong { font-family: 'Fraunces Variable', Georgia, serif; font-size: 48px; font-weight: 700; line-height: 1; }
 .pricing-card-price span { font-size: 14px; color: var(--pricing-copy); }
 .pricing-card-price-dark { color: var(--pricing-surface); }
 .pricing-card-price-dark > s, .pricing-card-price-dark span { color: var(--pricing-dark-muted); }
@@ -663,18 +706,18 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
   --home-border: rgba(19, 19, 15, 0.12);
   --home-phone-shadow: 0 30px 80px rgba(19, 19, 15, 0.18);
 }
-.home-moxie { background: var(--home-surface); color: var(--home-ink); font-family: 'Hanken Grotesk', sans-serif; }
+.home-moxie { background: var(--home-surface); color: var(--home-ink); font-family: 'DM Sans Variable', sans-serif; }
 .home-moxie-inner { max-width: 1200px; margin: 0 auto; padding: 118px 40px; }
 .home-moxie-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 72px; align-items: center; }
-.home-moxie-eyebrow, .home-operator-label, .home-sample-label { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 0; color: var(--home-copy); }
+.home-moxie-eyebrow, .home-operator-label, .home-sample-label { font-family: 'JetBrains Mono Variable', monospace; font-size: 12px; letter-spacing: 0; color: var(--home-copy); }
 .home-moxie-eyebrow::before { content: ''; display: inline-block; width: 7px; height: 7px; background: var(--home-coral); margin-right: 8px; }
-.home-moxie h2 { font-family: 'Newsreader', Georgia, serif; font-size: 60px; font-weight: 600; line-height: 1.02; letter-spacing: 0; margin-top: 24px; }
+.home-moxie h2 { font-family: 'Fraunces Variable', Georgia, serif; font-size: 60px; font-weight: 600; line-height: 1.02; letter-spacing: 0; margin-top: 24px; }
 .home-moxie h2 em { color: var(--home-emphasis); font-weight: 340; }
 .home-moxie-body { font-size: 17px; line-height: 1.65; color: var(--home-copy); margin-top: 28px; }
 .home-moxie-release { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--home-border); border-radius: 999px; padding: 8px 14px; margin-top: 20px; font-size: 13px; line-height: 1.5; color: var(--home-copy); }
 .home-moxie-release > span { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--home-coral); }
 .home-moxie-preview { position: relative; max-width: 380px; margin: 0 auto; }
-.home-moxie-preview-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0; color: var(--home-copy); text-align: center; margin-bottom: 16px; }
+.home-moxie-preview-label { font-family: 'JetBrains Mono Variable', monospace; font-size: 11px; line-height: 1.5; letter-spacing: 0; color: var(--home-copy); text-align: center; margin-bottom: 16px; }
 .home-moxie-character { position: absolute; bottom: 0; left: -180px; width: 220px; z-index: 1; pointer-events: none; animation: home-moxie-float 4.5s ease-in-out infinite; }
 @keyframes home-moxie-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @media (prefers-reduced-motion: reduce) { .home-moxie-character { animation: none; } }
@@ -682,15 +725,15 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
   .home-moxie-character { position: static; width: 160px; margin: 0 auto 20px; }
   .home-moxie-character > img { width: 160px !important; }
 }
-.home-moxie h3 { font-family: 'Newsreader', Georgia, serif; font-size: 28px; font-weight: 600; letter-spacing: 0; margin: 32px 0 18px; }
+.home-moxie h3 { font-family: 'Fraunces Variable', Georgia, serif; font-size: 28px; font-weight: 600; letter-spacing: 0; margin: 32px 0 18px; }
 .home-moxie-paces { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .home-moxie-paces > div { border: 1px solid var(--home-border); border-radius: 6px; padding: 16px 12px; }
-.home-moxie-paces h4 { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--home-coral); letter-spacing: 0; font-weight: 500; }
+.home-moxie-paces h4 { font-family: 'JetBrains Mono Variable', monospace; font-size: 11px; color: var(--home-coral); letter-spacing: 0; font-weight: 500; }
 .home-moxie-paces p { font-size: 14px; line-height: 1.5; margin-top: 8px; }
 .home-moxie-phone { max-width: 380px; margin: 0 auto; border: 6px solid var(--home-ink); border-radius: 28px; padding: 24px 18px; background: var(--home-soft); box-shadow: var(--home-phone-shadow); }
-.home-moxie-phone-header { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 14px; border-bottom: 1px solid var(--home-border); padding: 4px 0 18px; margin-bottom: 20px; }
+.home-moxie-phone-header { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; font-family: 'JetBrains Mono Variable', monospace; font-size: 14px; border-bottom: 1px solid var(--home-border); padding: 4px 0 18px; margin-bottom: 20px; }
 .home-moxie-message { max-width: 90%; background: var(--home-surface); border-radius: 8px; padding: 14px; margin-bottom: 16px; font-size: 14px; line-height: 1.6; }
-.home-moxie-message span { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; margin-bottom: 6px; }
+.home-moxie-message span { display: block; font-family: 'JetBrains Mono Variable', monospace; font-size: 10px; margin-bottom: 6px; }
 .home-moxie-reply { width: fit-content; margin-left: auto; background: var(--home-ink); color: var(--home-surface); min-width: 90px; }
 .home-moxie-pills { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 24px; }
 .home-moxie-pills span { border: 1px solid var(--home-border); border-radius: 999px; font-size: 11px; padding: 7px 12px; }

@@ -4,9 +4,9 @@ import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { MoxieAvatar } from "@/components/MoxieAvatar";
-import expertiseImg from "@/assets/redesign/expertise-founders.jpg.asset.json";
-import serviceImg from "@/assets/redesign/service-businesses.jpg.asset.json";
-import growingImg from "@/assets/redesign/growing-businesses.jpg.asset.json";
+const expertiseImg = { url: "/07-how-we-start.png" };
+const serviceImg = { url: "/09-free-assessment.png" };
+const growingImg = { url: "/10-why-different.png" };
 
 const CREAM = "#f4efe5";
 const SAGE = "#dce3d2";
@@ -20,14 +20,13 @@ const SAGE_BODY = "#48533c";
 const LIGHT_MUTED = "#8a887e";
 const BORDER = "#e6e0d2";
 
-const display: CSSProperties = { fontFamily: "'Newsreader', Georgia, serif" };
-const body: CSSProperties = { fontFamily: "'Hanken Grotesk', system-ui, sans-serif" };
-const mono: CSSProperties = { fontFamily: "'IBM Plex Mono', ui-monospace, monospace" };
+const display: CSSProperties = { fontFamily: "'Fraunces Variable', Georgia, serif" };
+const body: CSSProperties = { fontFamily: "'DM Sans Variable', system-ui, sans-serif" };
+const mono: CSSProperties = { fontFamily: "'JetBrains Mono Variable', ui-monospace, monospace" };
 
 const PAGE_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,340;1,400;1,500;1,600&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 .sol-loop-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;}
-.sol-page { background:${CREAM}; color:${INK}; font-family:'Hanken Grotesk', system-ui, sans-serif; }
+.sol-page { background:${CREAM}; color:${INK}; font-family:'DM Sans Variable', system-ui, sans-serif; }
 .sol-grain { position:fixed; inset:0; pointer-events:none; z-index:9999; opacity:.45; mix-blend-mode:multiply; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E"); background-size:200px; }
 .reveal{opacity:0;transform:translateY(40px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);}
 .reveal-l{opacity:0;transform:translateX(-44px);transition:opacity .95s cubic-bezier(.16,1,.3,1),transform .95s cubic-bezier(.16,1,.3,1);}
@@ -41,7 +40,7 @@ const PAGE_CSS = `
 .prob-row:hover .prob-hd{color:${CORAL} !important;}
 .faq-item{cursor:pointer;transition:background .18s;padding:22px 0;border-bottom:1px solid rgba(19,19,15,0.09);}
 .faq-moxie{float:left;margin:0 12px 4px 0;}
-.persona-chip{padding:11px 24px;background:transparent;border:1.5px solid rgba(19,19,15,0.18);border-radius:999px;font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:${MUTED};cursor:pointer;transition:all .22s ease;white-space:nowrap;}
+.persona-chip{padding:11px 24px;background:transparent;border:1.5px solid rgba(19,19,15,0.18);border-radius:999px;font-family:'JetBrains Mono Variable',monospace;font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;color:${MUTED};cursor:pointer;transition:all .22s ease;white-space:nowrap;}
 .persona-chip:hover{border-color:${INK};color:${INK};}
 .persona-chip.active{background:${INK};border-color:${INK};color:#f7f3ea;}
 .sol-cta-primary{background:${CORAL};color:#fff;font-weight:700;font-size:15px;padding:16px 28px;border-radius:999px;display:inline-block;text-decoration:none;transition:background .2s;}

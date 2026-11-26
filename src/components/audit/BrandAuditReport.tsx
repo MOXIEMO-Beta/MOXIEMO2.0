@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { getCtaLabel, trackCtaClick } from "@/lib/ctaVariant";
-import { downloadAuditPdf } from "@/lib/brandAuditPdf";
 import { useMemo, useState } from "react";
 import {
   Radar,
@@ -74,7 +73,7 @@ export type AuditResponse = {
 // ─── Design tokens (matches Strategy + Kit PDFs) ─────────────────────
 // Fonts: Space Grotesk (headings), Inter (body).
 // Coral #FF6B5C, ink #15171C, paper #F7F5F1.
-const HEADING = "'Space Grotesk', 'Inter', sans-serif";
+const HEADING = "'DM Sans Variable', 'Inter', sans-serif";
 const BODY = "'Inter', system-ui, sans-serif";
 const CORAL = "#FF6B5C";
 const INK = "#15171C";
@@ -520,21 +519,14 @@ export function BrandAuditReport({ data, publicAssessment = false }: { data: Aud
   const [downloading, setDownloading] = useState(false);
 
   const report = data?.report;
-  if (!report) return null;
 
-  const foundation = pickSections(report.sections || [], FOUNDATION_ORDER);
-  const showup = pickSections(report.sections || [], SHOWUP_ORDER);
-  const allSections = [...foundation, ...showup];
-
-  const gap = report.gap_hero && report.gap_hero.gap_verdict
-    ? report.gap_hero
-    : fallbackGapHero(report, data.brand_audit_score);
-
-  const sortedByScore = [...allSections].sort((a, b) => b.score - a.score);
-  const strongest = sortedByScore[0] ?? null;
-  const weakest = sortedByScore.length > 1 ? sortedByScore[sortedByScore.length - 1] : null;
+  // Derived section lists — computed unconditionally so hooks are never conditional.
+  const foundation = useMemo(() => pickSections(report?.sections || [], FOUNDATION_ORDER), [report?.sections]);
+  const showup     = useMemo(() => pickSections(report?.sections || [], SHOWUP_ORDER),     [report?.sections]);
+  const allSections = useMemo(() => [...foundation, ...showup], [foundation, showup]);
 
   const derivedPriorities = useMemo(() => {
+    if (!report) return [];
     const real = (report.priority_fixes ?? [])
       .map((p) => ({ rank: p.rank, move: (p.move ?? "").trim(), section: p.section, agent: p.agent }))
       .filter((p) => p.move.length > 0);
@@ -544,11 +536,22 @@ export function BrandAuditReport({ data, publicAssessment = false }: { data: Aud
       .sort((a, b) => a.score - b.score)
       .slice(0, 5)
       .map((s, i) => ({ rank: i + 1, move: s.fix_first.trim(), section: s.label, agent: s.agent }));
-  }, [report.priority_fixes, allSections]);
+  }, [report, allSections]);
+
+  if (!report) return null;
+
+  const gap = report.gap_hero && report.gap_hero.gap_verdict
+    ? report.gap_hero
+    : fallbackGapHero(report, data.brand_audit_score);
+
+  const sortedByScore = [...allSections].sort((a, b) => b.score - a.score);
+  const strongest = sortedByScore[0] ?? null;
+  const weakest = sortedByScore.length > 1 ? sortedByScore[sortedByScore.length - 1] : null;
 
   async function handleDownload() {
     setDownloading(true);
     try {
+      const { downloadAuditPdf } = await import("@/lib/brandAuditPdf");
       await downloadAuditPdf(data);
     } finally {
       setDownloading(false);

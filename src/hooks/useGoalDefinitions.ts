@@ -98,6 +98,7 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
 
   const autoGenerate = opts.autoGenerate ?? true;
 
+  const debugSource = opts.debugSource;
   const generate = useCallback(async (force = false) => {
     setGenerating(true);
     setError(null);
@@ -110,7 +111,7 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
       if (data?.goals) {
         const original = data.goals as GoalDefinitions;
         const resolved = resolveGoalDefinitions(original);
-        logResolution(opts.debugSource, original, resolved);
+        logResolution(debugSource, original, resolved);
         setGoals(resolved);
         void persistResolved(original, resolved);
         return resolved;
@@ -122,7 +123,8 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
     } finally {
       setGenerating(false);
     }
-  }, [opts.debugSource]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     // Reset when user changes so a prior user's cache never bleeds through.
@@ -142,7 +144,7 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
       if (data) {
         const original = data as unknown as GoalDefinitions;
         const resolved = resolveGoalDefinitions(original);
-        logResolution(opts.debugSource, original, resolved);
+        logResolution(debugSource, original, resolved);
         setGoals(resolved);
         void persistResolved(original, resolved);
         setLoading(false);
@@ -154,7 +156,9 @@ export function useGoalDefinitions(opts: { autoGenerate?: boolean; hasStrategy?:
       }
     })();
     return () => { cancelled = true; };
-  }, [user, autoGenerate, opts.hasStrategy, opts.debugSource, generate]);
+  // debugSource is logging-only; excluding it prevents spurious re-fetches when parent re-renders
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, autoGenerate, opts.hasStrategy, generate]);
 
   return { goals, loading, generating, error, generate, hasGoals: !!goals?.north_star?.title };
 }

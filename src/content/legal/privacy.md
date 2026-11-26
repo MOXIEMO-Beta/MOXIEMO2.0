@@ -201,3 +201,23 @@ KLMG US Ltd, LLC, doing business as MOXIE, Build With MOXIE and MOXIEMO
 hello@buildwithmoxiemo.com
 
 We answer privacy questions within 30 days. For deletion requests or any right in Section 11, put "Privacy Request" in the subject line.
+
+## 18. Text messaging (MOXIE texts)
+
+**18.1 What MOXIE texts you.** If you opt in to MOXIE texts, you may receive messages about your content schedule, post approval requests, weekly performance summaries, and reminders to review or approve content. Message frequency depends on your settings and your activity in the app — typically one to five messages per week.
+
+**18.2 How you give consent.** We ask for your consent before sending any texts. We collect consent through an opt-in form in your account settings or at buildwithmoxiemo.com/text. The opt-in checkbox is never pre-ticked. You enter your phone number and tick the box yourself. We confirm consent with a six-digit code sent to that number.
+
+**18.3 Commands you can send.** Reply to any MOXIE text with these keywords:
+- **HELP** — we send you a brief description and a link to reach support
+- **STOP** — we immediately stop all texts to your number and record your opt-out
+
+**18.4 Cost.** Standard message and data rates from your carrier may apply. MOXIEMO does not charge you for texts.
+
+**18.5 Opting out.** You can stop texts at any time by replying STOP to any MOXIE text, or by turning off MOXIE texts in your account settings. We honour opt-out requests immediately. You will not receive any further marketing texts after opting out.
+
+**18.6 Opting in is not required.** Receiving MOXIE texts is entirely optional. You can use MOXIEMO in full without opting in to texts.
+
+**18.7 Your number stays private.** We do not sell, rent, share or disclose your mobile phone number to any third party for their marketing purposes. Your number is used only to send you the texts described in Section 18.1.
+
+**18.8 Carriers.** Mobile carriers are not liable for delayed or undelivered messages. For questions, contact us at hello@buildwithmoxiemo.com or reply HELP.

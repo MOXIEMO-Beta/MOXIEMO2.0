@@ -9,6 +9,15 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
+    pool: "vmForks",
+    poolOptions: {
+      vmForks: {
+        execArgv: ["--max-old-space-size=8192"],
+      },
+      forks: {
+        execArgv: ["--max-old-space-size=8192"],
+      },
+    },
   },
   resolve: {
     alias: { "@": path.resolve(__dirname, "./src") },

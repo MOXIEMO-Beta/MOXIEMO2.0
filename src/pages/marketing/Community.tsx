@@ -2,8 +2,7 @@ import { Link } from "react-router-dom";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { ArrowRight, Send } from "lucide-react";
-import kareeHeadshotAsset from "@/assets/karee-hero.png.asset.json";
-const kareeHeadshot = kareeHeadshotAsset.url;
+const kareeHeadshot = "/MOXIEMO_Logo_No_background.png";
 import radicaHeadshot from "@/assets/radica-headshot.jpeg";
 import moxieDevelopers from "@/assets/moxie-developers.jpg";
 
@@ -21,9 +20,9 @@ const MUTED = "#56544c";
 const LIGHT_MUTED = "#6c6a60";
 const MUTED_WARM = "#9a9789";
 
-const display = { fontFamily: "'Newsreader', serif" };
-const body = { fontFamily: "'Hanken Grotesk', sans-serif" };
-const mono = { fontFamily: "'IBM Plex Mono', monospace" };
+const display = { fontFamily: "'Fraunces Variable', serif" };
+const body = { fontFamily: "'DM Sans Variable', sans-serif" };
+const mono = { fontFamily: "'JetBrains Mono Variable', monospace" };
 
 function Eyebrow({ children, onDark = false }: { children: React.ReactNode; onDark?: boolean }) {
   return (

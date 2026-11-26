@@ -1,4 +1,4 @@
-project_id = "mqhipuvkdsvapbhrrzjd"
+project_id = "gnvehgdbgcsozaawzgtc"
 
 [functions]
   [functions.auth-email-hook]
@@ -27,3 +27,7 @@ project_id = "mqhipuvkdsvapbhrrzjd"
     verify_jwt = true
   [functions.postforme-webhook]
     verify_jwt = false
+  [functions.execute-generation-job]
+    verify_jwt = false
+  [functions.generate-first-move]
+    verify_jwt = true

@@ -12,8 +12,8 @@ const CORAL = "#ef6f53";
 const SAGE = "#dce3d2";
 const PEACH = "#fdf0eb";
 
-const serif: CSSProperties = { fontFamily: "'Newsreader', Georgia, serif" };
-const mono: CSSProperties = { fontFamily: "'IBM Plex Mono', ui-monospace, monospace" };
+const serif: CSSProperties = { fontFamily: "'Fraunces Variable', Georgia, serif" };
+const mono: CSSProperties = { fontFamily: "'JetBrains Mono Variable', ui-monospace, monospace" };
 
 const Check = ({ color = CORAL }: { color?: string }) => (
   <svg width="17" height="17" viewBox="0 0 17 17" fill="none" style={{ flex: "none", marginTop: 2 }}>
@@ -43,7 +43,7 @@ function Eyebrow({ children, color = "#8a877a", squareColor = CORAL }: { childre
 const faqsData = pricingFaqs;
 
 const tabBase: CSSProperties = {
-  fontFamily: "'Hanken Grotesk', sans-serif",
+  fontFamily: "'DM Sans Variable', sans-serif",
   fontSize: 14,
   padding: "9px 22px",
   borderRadius: 999,
@@ -61,7 +61,7 @@ export default function Pricing() {
   const billingLabel = isAnnual ? "/year" : "/month";
 
   return (
-    <div style={{ background: CREAM, color: INK, fontFamily: "'Hanken Grotesk', sans-serif", WebkitFontSmoothing: "antialiased", overflowX: "hidden", position: "relative" }}>
+    <div style={{ background: CREAM, color: INK, fontFamily: "'DM Sans Variable', sans-serif", WebkitFontSmoothing: "antialiased", overflowX: "hidden", position: "relative" }}>
       <SiteHeader />
 
       {/* GRAIN */}

@@ -273,6 +273,8 @@ Deno.serve(async (req) => {
     let transcript: string = incomingTranscript || "";
     let resolvedSessionId: string | null = sessionId ?? null;
     let resolvedUserId: string | null = null;
+    let resolvedBrandId: string | null = null;
+    let resolvedSnapshotId: string | null = null;
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -308,8 +310,8 @@ Deno.serve(async (req) => {
             resolvedUserId = userId;
             // Find the most recent session (or the one passed in)
             const query = sessionId
-              ? `id=eq.${sessionId}&select=id,messages,status,lane,user_id`
-              : `user_id=eq.${userId}&order=updated_at.desc&limit=1&select=id,messages,status,lane,user_id`;
+              ? `id=eq.${sessionId}&select=id,messages,status,lane,user_id,brand_id`
+              : `user_id=eq.${userId}&order=updated_at.desc&limit=1&select=id,messages,status,lane,user_id,brand_id`;
             const sessRes = await fetch(`${supabaseUrl}/rest/v1/discovery_sessions?${query}`, {
               headers: {
                 apikey: serviceKey,
@@ -329,6 +331,7 @@ Deno.serve(async (req) => {
                 effectiveLane = session.lane;
               }
               if (session?.user_id) resolvedUserId = session.user_id;
+              if (session?.brand_id) resolvedBrandId = session.brand_id;
               // Mark session completed if not already
               const sid = session?.id ?? sessionId;
               if (sid) resolvedSessionId = sid;
@@ -354,6 +357,108 @@ Deno.serve(async (req) => {
 
     if (!transcript) throw new Error("No discovery transcript available");
 
+    // ── IDEMPOTENCY CHECK ──────────────────────────────────────────────────────
+    // Key = "{user_id}:{session_id}:{epoch_hour}" — same user+session in the same
+    // clock-hour will find the existing job and return its result instead of
+    // generating twice. This prevents double-generation on network retries and
+    // double-taps. The epoch_hour window is intentional: a retry 2 hours later
+    // should be allowed (the user likely hit a genuine error the first time).
+    if (supabaseUrl && serviceKey && resolvedUserId) {
+      const epochHour = Math.floor(Date.now() / 3_600_000);
+      const idempotencyKey = `${resolvedUserId}:${resolvedSessionId ?? "nosession"}:${epochHour}`;
+      try {
+        const jobInsert = await fetch(`${supabaseUrl}/rest/v1/generation_jobs`, {
+          method: "POST",
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=ignore-duplicates,return=representation",
+          },
+          body: JSON.stringify({
+            idempotency_key: idempotencyKey,
+            user_id: resolvedUserId,
+            brand_id: resolvedBrandId ?? null,
+            job_type: "strategy",
+            lane: effectiveLane ?? "lane1",
+            session_id: resolvedSessionId ?? null,
+            status: "pending",
+          }),
+        });
+        if (jobInsert.status === 200 || jobInsert.status === 201) {
+          const rows = await jobInsert.json().catch(() => []);
+          const job = Array.isArray(rows) ? rows[0] : rows;
+          // If the row already existed (Prefer:ignore-duplicates returns empty on conflict),
+          // the rows array will be empty — means a duplicate request is in flight.
+          if (!job?.id) {
+            console.log(`[synthesize-strategy] duplicate request blocked by idempotency_key=${idempotencyKey}`);
+            return new Response(JSON.stringify({ error: "DUPLICATE_IN_FLIGHT" }), {
+              status: 409,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          // Store job ID for status updates later (best-effort, non-blocking).
+          (globalThis as Record<string, unknown>).__currentJobId = job.id;
+        }
+      } catch (e) {
+        // Idempotency check failing must NOT block strategy generation.
+        console.warn("[synthesize-strategy] idempotency check failed (non-blocking):", e);
+      }
+    }
+
+    // ── DISCOVERY SNAPSHOT ─────────────────────────────────────────────────────
+    // Freeze the current state of discovery_sessions.messages before the
+    // pipeline starts. All stages read from this snapshot — if the user sends
+    // another discovery message during generation, it cannot contaminate the run.
+    if (supabaseUrl && serviceKey && resolvedUserId && resolvedSessionId) {
+      try {
+        const encoder = new TextEncoder();
+        const hashBuf = await crypto.subtle.digest("SHA-256", encoder.encode(transcript));
+        const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, "0")).join("");
+
+        // Load the raw messages array for the snapshot
+        let snapshotMessages: unknown[] = [];
+        const sessRaw = await fetch(
+          `${supabaseUrl}/rest/v1/discovery_sessions?id=eq.${resolvedSessionId}&select=messages,answers`,
+          { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+        );
+        if (sessRaw.ok) {
+          const rows = await sessRaw.json().catch(() => []);
+          const s = Array.isArray(rows) ? rows[0] : rows;
+          snapshotMessages = s?.messages ?? [];
+        }
+
+        const snapRes = await fetch(`${supabaseUrl}/rest/v1/discovery_snapshots`, {
+          method: "POST",
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+            Prefer: "return=representation",
+          },
+          body: JSON.stringify({
+            session_id: resolvedSessionId,
+            user_id: resolvedUserId,
+            brand_id: resolvedBrandId ?? null,
+            lane: effectiveLane ?? "lane1",
+            messages: snapshotMessages,
+            transcript_hash: hashHex,
+          }),
+        });
+        if (snapRes.ok) {
+          const snapRows = await snapRes.json().catch(() => []);
+          const snap = Array.isArray(snapRows) ? snapRows[0] : snapRows;
+          if (snap?.id) {
+            resolvedSnapshotId = snap.id;
+            console.log(`[synthesize-strategy] snapshot created id=${snap.id} hash=${hashHex.slice(0, 16)}`);
+          }
+        }
+      } catch (e) {
+        // Snapshot creation failing must NOT block strategy generation.
+        console.warn("[synthesize-strategy] snapshot creation failed (non-blocking):", e);
+      }
+    }
+
     async function saveStrategyForUser(strategy: any, opts: { revenueRange?: string; biggestChallenge?: string }) {
       if (!supabaseUrl || !serviceKey || !resolvedUserId) return;
       const rawFoundation = {
@@ -362,7 +467,74 @@ Deno.serve(async (req) => {
         biggestChallenge: opts.biggestChallenge,
       };
       try {
+        // 1. Upsert the strategies row (existing path, unchanged)
         const res = await fetch(`${supabaseUrl}/rest/v1/strategies?on_conflict=user_id`, {
+          method: "POST",
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates,return=representation",
+          },
+          body: JSON.stringify({
+            user_id: resolvedUserId,
+            brand_id: resolvedBrandId ?? null,
+            ...strategy,
+            // Promote brandArchetype to the dedicated strategies.archetype column so Dashboard can read it
+            archetype: strategy.enhanced_foundation?.brandArchetype ?? strategy.archetype ?? null,
+            raw_foundation: rawFoundation,
+          }),
+        });
+        if (!res.ok) {
+          console.warn("strategy upsert failed:", res.status, await res.text().catch(() => ""));
+          return;
+        }
+
+        // 2. Write strategy_sections for the paid content gate.
+        // Free sections: positioning. Paid sections: voice, pillars, channel, plan.
+        // This mirrors the LOCKED_SECTIONS constant in Strategy.tsx.
+        const rows = await res.json().catch(() => []);
+        const strategyRow = Array.isArray(rows) ? rows[0] : rows;
+        if (!strategyRow?.id) return;
+
+        const ef = strategy.enhanced_foundation ?? {};
+        const sectionDefs = [
+          { section_key: "positioning", sort_order: 1, is_paid: false, content: {
+            statement: strategy.positioning_statement,
+            breakdown: ef.positioningBreakdown,
+            variations: ef.positioningVariations,
+          }},
+          { section_key: "voice", sort_order: 2, is_paid: true, content: {
+            attributes: strategy.voice_attributes,
+            guidelines: ef.voiceGuidelines,
+            archetype: ef.brandArchetype,
+            coreValues: ef.coreValues,
+          }},
+          { section_key: "pillars", sort_order: 3, is_paid: true, content: {
+            pillars: strategy.content_pillars,
+            messaging: ef.messagingFormats,
+          }},
+          { section_key: "channel", sort_order: 4, is_paid: true, content: {
+            primary: strategy.primary_channel,
+            frequency: strategy.posting_frequency,
+            distribution: ef.distribution,
+            competitive: ef.competitivePositioning,
+          }},
+          { section_key: "plan", sort_order: 5, is_paid: true, content: {
+            successDefinition: strategy.success_definition,
+            businessGoal: strategy.business_goal,
+            actionPlan: ef.action_plan,
+          }},
+        ];
+
+        const sectionRows = sectionDefs.map((s) => ({
+          ...s,
+          strategy_id: strategyRow.id,
+          user_id: resolvedUserId,
+          brand_id: resolvedBrandId ?? null,
+        }));
+
+        const sectRes = await fetch(`${supabaseUrl}/rest/v1/strategy_sections?on_conflict=strategy_id,section_key`, {
           method: "POST",
           headers: {
             apikey: serviceKey,
@@ -370,11 +542,30 @@ Deno.serve(async (req) => {
             "Content-Type": "application/json",
             Prefer: "resolution=merge-duplicates,return=minimal",
           },
-          body: JSON.stringify({ user_id: resolvedUserId, ...strategy, raw_foundation: rawFoundation }),
+          body: JSON.stringify(sectionRows),
         });
-        if (!res.ok) console.warn("strategy upsert failed:", res.status, await res.text().catch(() => ""));
+        if (!sectRes.ok) console.warn("strategy_sections upsert failed:", sectRes.status, await sectRes.text().catch(() => ""));
       } catch (e) {
         console.warn("strategy upsert threw:", e);
+      }
+
+      // Update the generation_jobs row to completed
+      const jobId = (globalThis as Record<string, unknown>).__currentJobId as string | undefined;
+      if (jobId && supabaseUrl && serviceKey) {
+        fetch(`${supabaseUrl}/rest/v1/generation_jobs?id=eq.${jobId}`, {
+          method: "PATCH",
+          headers: {
+            apikey: serviceKey,
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            status: "completed",
+            snapshot_id: resolvedSnapshotId,
+            completed_at: new Date().toISOString(),
+          }),
+        }).catch((e) => console.warn("job completion patch failed:", e));
       }
     }
 
@@ -417,8 +608,19 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Wall-clock start for total 145s budget (Supabase hard-limit is 150s, 5s buffer for infra).
+    // Claude API takes 8–30s per call depending on output length. Budget breakdown:
+    //   compression (if needed): ≤20s
+    //   main synthesis attempt 1: ≤100s
+    //   retry if attempt 1 fails: ≤100s (shares remaining wall time via remainingMs())
+    //   DB writes after synthesis: ≥5s reserved
+    const wallStart = Date.now();
+    const WALL_BUDGET_MS = 145_000;
+    const remainingMs = () => Math.max(5_000, WALL_BUDGET_MS - (Date.now() - wallStart));
+
     // Optional compression pass: if the transcript is large, summarise it to a
     // structured JSON first so synthesis runs against a much smaller prompt.
+    // Capped at 20s (down from 35s) so the main synthesis call always has ≥120s of wall time.
     let compressedJson: string | null = null;
     let compressionRan = false;
     // Lane 3 uses the structured intake as source of truth; the chat only sharpens
@@ -428,7 +630,7 @@ Deno.serve(async (req) => {
       const originalChars = transcript.length;
       try {
         const compressController = new AbortController();
-        const compressTimer = setTimeout(() => compressController.abort(), 90_000);
+        const compressTimer = setTimeout(() => compressController.abort(), Math.min(20_000, remainingMs() - 120_000));
         const cRes = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: {
@@ -923,13 +1125,14 @@ ${transcript}`,
 
     // Single attempt: open the Anthropic streaming call, drain it (forwarding
     // progress events to the client), and return the accumulated tool JSON.
-    // Uses a dynamic AbortController: 180s normally, 300s when compression ran
-    // (since that adds another sequential Anthropic call upstream).
+    // Abort timeout is capped to the remaining wall-clock budget so the total
+    // function runtime never exceeds Supabase's 150s hard limit.
     async function callAnthropicOnce(opts: {
       onProgress: (bytes: number) => void;
     }): Promise<{ ok: true; toolJson: string } | { ok: false; status: number; detail: string }> {
       const controller = new AbortController();
-      const abortMs = compressionRan ? 300_000 : 180_000;
+      // Leave 5s buffer for DB writes after the call completes.
+      const abortMs = Math.min(remainingMs() - 5_000, 100_000);
       const timer = setTimeout(() => controller.abort(), abortMs);
       const startedAt = Date.now();
       try {

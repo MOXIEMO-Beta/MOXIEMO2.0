@@ -17,7 +17,7 @@ import article7 from "@/assets/blog/article-7-optimism.jpg";
 import article8 from "@/assets/blog/article-8-ai-everywhere.jpg";
 import article9 from "@/assets/blog/article-9-real-founder.jpg";
 import article10 from "@/assets/blog/article-10-second-job.jpg";
-import article11Asset from "@/assets/blog/ai-marketing-stack.png.asset.json";
+const article11Asset = { url: "/05-how-it-works.png" };
 import { MoxieBlogImage } from "@/components/MoxieBlogImage";
 import { MOXIE_POST_TITLE, MOXIE_POST_DESCRIPTION } from "@/pages/blog/MyWebsiteCouldNotExplainMoxie";
 

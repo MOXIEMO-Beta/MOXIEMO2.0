@@ -776,7 +776,7 @@ function TaskGenerationModal({
                   outline: "none",
                   background: "transparent",
                   resize: "none",
-                  fontFamily: '"Space Grotesk", system-ui, sans-serif',
+                  fontFamily: '"DM Sans Variable", system-ui, sans-serif',
                   cursor: "text",
                   display: "block",
                   boxSizing: "border-box",

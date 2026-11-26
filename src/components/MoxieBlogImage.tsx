@@ -1,4 +1,4 @@
-import postImage from "@/assets/blog/moxie-founder-story.jpg.asset.json";
+const postImage = { url: "/11-meet-moxie.png" };
 
 export function MoxieBlogImage({ className = "" }: { className?: string }) {
   return (

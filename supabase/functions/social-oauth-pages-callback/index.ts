@@ -15,6 +15,8 @@ function appRedirect(path: string): string {
   return `${base}${path}`;
 }
 
+const LI_VERSION = "202606";
+
 async function fetchOrgName(accessToken: string, orgUrn: string): Promise<string | null> {
   // orgUrn looks like urn:li:organization:12345678
   const id = orgUrn.split(":").pop();
@@ -26,7 +28,7 @@ async function fetchOrgName(accessToken: string, orgUrn: string): Promise<string
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "X-Restli-Protocol-Version": "2.0.0",
-          "LinkedIn-Version": "202405",
+          "LinkedIn-Version": LI_VERSION,
         },
       },
     );
@@ -201,7 +203,7 @@ Deno.serve(async (req) => {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "X-Restli-Protocol-Version": "2.0.0",
-          "LinkedIn-Version": "202405",
+          "LinkedIn-Version": LI_VERSION,
         },
       },
     );
@@ -244,12 +246,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    const orgs: { organization_id: string; organization_name: string; urn: string }[] = [];
-    for (const urn of orgUrns) {
-      const id = urn.split(":").pop() ?? "";
-      const name = (await fetchOrgName(accessToken, urn)) ?? `Organization ${id}`;
-      orgs.push({ organization_id: id, organization_name: name, urn });
-    }
+    // Fetch all org names in parallel — one API call per URN fired concurrently.
+    const orgs: { organization_id: string; organization_name: string; urn: string }[] =
+      await Promise.all(
+        orgUrns.map(async (urn) => {
+          const id = urn.split(":").pop() ?? "";
+          const name = (await fetchOrgName(accessToken, urn)) ?? `Organization ${id}`;
+          return { organization_id: id, organization_name: name, urn };
+        }),
+      );
 
     if (orgs.length === 0) {
       if (personalSaved) {

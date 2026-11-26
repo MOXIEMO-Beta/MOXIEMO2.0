@@ -120,11 +120,11 @@ export function CompetitiveAndMessagingSections() {
 
   // TEMP debug: confirm which fields the strategy actually exposes for messaging cards.
   // Remove once verified.
-  // eslint-disable-next-line no-console
+   
   console.log('[Messaging] Full strategy object:', strategy);
-  // eslint-disable-next-line no-console
+   
   console.log('[Messaging] raw_foundation:', strategy?.raw_foundation);
-  // eslint-disable-next-line no-console
+   
   console.log('[Messaging] enhanced_foundation:', strategy?.enhanced_foundation);
 
   // Support both new shape (messagingVariations) and the shape produced by

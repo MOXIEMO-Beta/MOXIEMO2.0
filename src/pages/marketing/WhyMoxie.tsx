@@ -15,12 +15,11 @@ const SAGE_MUTED = "#5f6a52";
 const NUMBER_MUTED = "#c9c5b6";
 const GREEN = "#5f7740";
 
-const mono: CSSProperties = { fontFamily: "'IBM Plex Mono', ui-monospace, monospace" };
-const display: CSSProperties = { fontFamily: "'Newsreader', Georgia, serif" };
+const mono: CSSProperties = { fontFamily: "'JetBrains Mono Variable', ui-monospace, monospace" };
+const display: CSSProperties = { fontFamily: "'Fraunces Variable', Georgia, serif" };
 
 const PAGE_CSS = `
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-.wm-page{background:${CREAM};color:${INK};font-family:'Hanken Grotesk',system-ui,sans-serif;}
+.wm-page{background:${CREAM};color:${INK};font-family:'DM Sans Variable',system-ui,sans-serif;}
 .wm-grain{position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.45;mix-blend-mode:multiply;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");background-size:200px;}
 .rv{opacity:0;transform:translateY(32px);transition:opacity .85s cubic-bezier(.16,1,.3,1),transform .85s cubic-bezier(.16,1,.3,1);}
 .rvl{opacity:0;transform:translateX(-32px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);}

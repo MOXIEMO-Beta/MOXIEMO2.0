@@ -67,7 +67,7 @@ export function useFileDrop({ onFile, onFiles, accept, disabled, multiple }: Opt
     if (disabled) return;
     e.preventDefault();
     e.stopPropagation();
-    try { e.dataTransfer.dropEffect = "copy"; } catch {}
+    try { e.dataTransfer.dropEffect = "copy"; } catch (_err) { /* read-only in some browsers */ }
     if (!isOver && Array.from(e.dataTransfer?.types || []).includes("Files")) setIsOver(true);
   }, [disabled, isOver]);
 
@@ -84,13 +84,9 @@ export function useFileDrop({ onFile, onFiles, accept, disabled, multiple }: Opt
     e.stopPropagation();
     setIsOver(false);
     const files = Array.from(e.dataTransfer?.files || []);
-    console.log("[useFileDrop] drop fired — files:", files.map((f) => ({ name: f.name, type: f.type, size: f.size })));
     if (!files.length) return;
     const accepted = files.filter((f) => matchesAccept(f, accept));
-    if (!accepted.length) {
-      console.warn("[useFileDrop] no files matched accept =", accept);
-      return;
-    }
+    if (!accepted.length) return;
     if (onFiles) onFiles(multiple ? accepted : accepted.slice(0, 1));
     if (onFile) onFile(accepted[0]);
   }, [accept, disabled, multiple, onFile, onFiles]);

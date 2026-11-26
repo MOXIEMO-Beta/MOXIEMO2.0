@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Plus, Trash2, Upload, ArrowRight, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { generateBrandKitPdf, blobToBase64, type BrandKitData } from "@/lib/brandKitPdf";
+import type { BrandKitData } from "@/lib/brandKitPdf";
 
 type Step = "input" | "loading" | "review" | "capture" | "done";
 
@@ -459,6 +459,7 @@ export default function BrandKit() {
 
       // 2. Generate the PDF
       console.log("[brand-kit] generating PDF");
+      const { generateBrandKitPdf, blobToBase64 } = await import("@/lib/brandKitPdf");
       const blob = await generateBrandKitPdf(data);
       console.log("[brand-kit] PDF generated, size:", blob.size);
       generatedPdfRef.current = blob;

@@ -1,116 +1,193 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { friendlyAuthError } from "@/lib/authErrors";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { MoxieLogo } from "@/components/MoxieLogo";
-import { Loader2, ArrowLeft, ArrowRight, Check, Sparkles, Rocket } from "lucide-react";
+import { Loader2, ArrowLeft, ArrowRight, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 6;
 
-const ROLES = [
-  { id: "founder", emoji: "🧑‍💼", label: "Founder" },
-  { id: "solopreneur", emoji: "💼", label: "Solopreneur" },
-  { id: "business_owner", emoji: "🏢", label: "Business Owner" },
-  { id: "consultant", emoji: "🎯", label: "Consultant" },
-  { id: "fractional", emoji: "⚡", label: "Fractional Executive" },
-  { id: "agency_owner", emoji: "🏗", label: "Agency Owner" },
-  { id: "marketer", emoji: "📊", label: "Marketer" },
-  { id: "marketing_team", emoji: "👥", label: "Marketing Team" },
-];
+type GoalKey = "first_100" | "launch_offer";
+type BusinessType = "E" | "G" | "R";
+type GateAnswer = "yes" | "not_yet";
 
-const USES = [
-  { id: "strategy", emoji: "📋", label: "Build my marketing strategy" },
-  { id: "social", emoji: "✍️", label: "Create social media content" },
-  { id: "email", emoji: "📧", label: "Send email newsletters" },
-  { id: "schedule", emoji: "📅", label: "Plan and schedule posts" },
-  { id: "track", emoji: "📊", label: "Track performance" },
-  { id: "align", emoji: "🎯", label: "Align my team on messaging" },
-  { id: "replace", emoji: "🤖", label: "Replace multiple marketing tools" },
-];
+interface GateState {
+  q1: GateAnswer | null;
+  q2: GateAnswer | null;
+  q3: GateAnswer | null;
+}
 
-const REFERRALS = ["LinkedIn", "Instagram", "A friend or colleague", "Podcast", "Google search", "An event or conference", "Other"];
-
-const INDUSTRIES = ["Coaching", "Consulting", "Agency", "Fractional Services", "Professional Services", "Technology", "Healthcare", "Hospitality", "Real Estate", "Legal", "Finance", "Education", "Creative Services", "E-commerce", "Other"];
-
-const TEAM_SIZES = [
-  { id: "just_me", emoji: "👤", label: "Just me" },
-  { id: "2_5", emoji: "👥", label: "2–5 people" },
-  { id: "6_15", emoji: "👥", label: "6–15 people" },
-  { id: "16_50", emoji: "👥", label: "16–50 people" },
-  { id: "50_plus", emoji: "🏢", label: "50+ people", full: true },
-];
-
-type StepData = Record<string, any>;
+const GATE_QUESTIONS: Record<GoalKey, Array<{ question: string; helper: string }>> = {
+  first_100: [
+    {
+      question: "Do you have a clear description of who you help?",
+      helper: "Could you write one sentence right now describing exactly who your best customer is?",
+    },
+    {
+      question: "Do you have something to offer them today?",
+      helper: "A product, service, or program someone could buy from you this week.",
+    },
+    {
+      question: "Do you have a way to reach potential customers?",
+      helper: "An audience, a network, a platform, or a channel where your buyers already gather.",
+    },
+  ],
+  launch_offer: [
+    {
+      question: "Can you deliver this offer right now?",
+      helper:
+        "If someone paid you today, could you fulfill it this week without building something new first?",
+    },
+    {
+      question: "Has someone already paid for it, or told you they would?",
+      helper:
+        "Real demand, not polite interest. A past sale, a waitlist, or a direct expression of intent.",
+    },
+    {
+      question: "Is it priced?",
+      helper: "One clear price or price range. It depends is not a price yet.",
+    },
+  ],
+};
 
 export default function Onboarding() {
   const { user, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
-  const [step, setStep] = useState(1);
-  const [hydrated, setHydrated] = useState(false);
+  const [step, setStep] = useState(0); // 0 = resuming, 1–6 = active steps
   const [saving, setSaving] = useState(false);
 
-  // Step states
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [role, setRole] = useState<string>("");
-  const [uses, setUses] = useState<string[]>([]);
-  const [referral, setReferral] = useState<string>("");
-  const [referralOther, setReferralOther] = useState("");
-  const [website, setWebsite] = useState("");
-  const [brandLoading, setBrandLoading] = useState(false);
-  const [brandAssets, setBrandAssets] = useState<any | null>(null);
-  const [brandError, setBrandError] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState("");
-  const [industry, setIndustry] = useState<string>("");
-  const [teamSize, setTeamSize] = useState<string>("");
-  const [betaCode, setBetaCode] = useState("");
-  const [codeChecking, setCodeChecking] = useState(false);
-  const [codeError, setCodeError] = useState<string | null>(null);
-  const [codeData, setCodeData] = useState<any | null>(null);
+  // Step 1
+  const [goal, setGoal] = useState<GoalKey | null>(null);
+
+  // Step 2
+  const [timeframeDays, setTimeframeDays] = useState<number | null>(null);
+  const [customDate, setCustomDate] = useState<string>("");
+  const [pickingDate, setPickingDate] = useState(false);
+
+  // Step 3
+  const [gateAnswers, setGateAnswers] = useState<GateState>({ q1: null, q2: null, q3: null });
+  const [resolvedQuestions, setResolvedQuestions] = useState<Record<number, boolean>>({});
+
+  // Step 4
+  const [businessType, setBusinessType] = useState<BusinessType | null>(null);
+
+  // Step 5
+  const [firstMoveText, setFirstMoveText] = useState<string | null>(null);
+  const [firstMoveLoading, setFirstMoveLoading] = useState(false);
+  const [generationCount, setGenerationCount] = useState(0);
+
+  // Step 6
   const [finalizing, setFinalizing] = useState(false);
 
-  // Hydrate from existing responses & profile
   useEffect(() => {
     if (!user) return;
-    (async () => {
-      const [{ data: profile }, { data: responses }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-        supabase.from("onboarding_responses").select("step, response").eq("user_id", user.id).order("step", { ascending: true }),
-      ]);
-      if (profile?.full_name) {
-        const parts = profile.full_name.split(" ");
-        setFirstName(parts[0] ?? "");
-        setLastName(parts.slice(1).join(" "));
-      }
-      if (profile?.role) setRole(profile.role);
-      if (profile?.intended_use && Array.isArray(profile.intended_use)) setUses(profile.intended_use as string[]);
-      if (profile?.referral_source) {
-        if (REFERRALS.includes(profile.referral_source)) setReferral(profile.referral_source);
-        else { setReferral("Other"); setReferralOther(profile.referral_source); }
-      }
-      if (profile?.website_url) setWebsite(profile.website_url);
-      if (profile?.brand_assets && Object.keys(profile.brand_assets as any).length) setBrandAssets(profile.brand_assets);
-      if (profile?.business_name) setCompanyName(profile.business_name);
-      if (profile?.industry) setIndustry(profile.industry);
-      if (profile?.team_size) setTeamSize(profile.team_size);
 
-      // Resume step
-      const highest = responses?.length ? Math.max(...responses.map((r) => r.step)) : 0;
-      setStep(Math.min(TOTAL_STEPS, Math.max(1, highest + 1)));
-      setHydrated(true);
-    })();
+    async function resume() {
+      const { data, error } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
+        .select(
+          "onboarding_goal,onboarding_timeframe_days,onboarding_timeframe_custom_date,onboarding_business_type,onboarding_gate_passed,onboarding_gate_answers,onboarding_first_move",
+        )
+        .eq("id", user!.id)
+        .maybeSingle();
+
+      if (error || !data) { setStep(1); return; }
+
+      const d = data as Record<string, unknown>;
+      const hasGoal         = !!d.onboarding_goal;
+      const hasTimeframe    = !!(d.onboarding_timeframe_days);
+      const gatePassed      = !!(d.onboarding_gate_passed);
+      const hasBusinessType = !!d.onboarding_business_type;
+      const hasFirstMove    = !!d.onboarding_first_move;
+
+      if (hasGoal)         setGoal(d.onboarding_goal as GoalKey);
+      if (hasTimeframe)    setTimeframeDays(d.onboarding_timeframe_days as number);
+      if (d.onboarding_timeframe_custom_date)
+                           setCustomDate(d.onboarding_timeframe_custom_date as string);
+      if (hasBusinessType) setBusinessType(d.onboarding_business_type as BusinessType);
+      if (hasFirstMove)    setFirstMoveText(d.onboarding_first_move as string);
+
+      // Restore gate answers and coaching state from gate_answers table
+      if (hasGoal && d.onboarding_gate_answers) {
+        const saved = d.onboarding_gate_answers as Record<string, string>;
+        if (saved.q1_answer || saved.q2_answer || saved.q3_answer) {
+          setGateAnswers({
+            q1: (saved.q1_answer as GateAnswer) ?? null,
+            q2: (saved.q2_answer as GateAnswer) ?? null,
+            q3: (saved.q3_answer as GateAnswer) ?? null,
+          });
+          // If gate was passed, all three were resolved — mark all as resolved
+          if (gatePassed) {
+            setResolvedQuestions({ 0: true, 1: true, 2: true });
+          }
+        }
+      }
+
+      // Resume to the furthest step the user reached
+      // Restore generation count from DB so the 3-call limit survives refresh.
+      if (hasGoal) {
+        const { count } = await (supabase.from("first_moves") as ReturnType<typeof supabase.from>)
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user!.id);
+        if (typeof count === "number") setGenerationCount(count);
+      }
+
+      if (hasFirstMove)         setStep(5);
+      else if (hasBusinessType) setStep(5); // go to 5 so first move generates
+      else if (gatePassed)      setStep(4);
+      else if (hasTimeframe)    setStep(3);
+      else if (hasGoal)         setStep(2);
+      else                      setStep(1);
+    }
+
+    void resume();
   }, [user]);
 
-  if (authLoading || !hydrated) {
+  async function generateFirstMove() {
+    if (!user || !goal || !businessType) return;
+    if (generationCount >= 3) return;
+    setFirstMoveLoading(true);
+    const timeout = setTimeout(() => {
+      setFirstMoveLoading(false);
+      toast.error("MOXIE is taking longer than usual. Use 'Skip for now' to continue — your first move will be ready on the next screen.");
+    }, 60_000);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-first-move", {
+        body: { goal_key: goal, business_type: businessType },
+      });
+      clearTimeout(timeout);
+      if (data?.error === "generation_limit_reached") {
+        toast.error("You have reached the generation limit for your first move.");
+        setGenerationCount(3);
+        return;
+      }
+      if (error || !data?.text) throw error ?? new Error("No text returned");
+      setFirstMoveText(data.text as string);
+      setGenerationCount((c) => c + 1);
+      const profileWriteErr = (await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
+        .update({ onboarding_first_move: data.text } as Record<string, unknown>)
+        .eq("id", user.id)).error;
+      if (profileWriteErr) console.error("[generateFirstMove] profile cache write failed", profileWriteErr);
+    } catch {
+      clearTimeout(timeout);
+      toast.error(friendlyAuthError("generate_first_move"));
+    } finally {
+      setFirstMoveLoading(false);
+    }
+  }
+
+  // Auto-generate when entering step 5 — must be before any early return
+  useEffect(() => {
+    if (step !== 5) return;
+    if (firstMoveText || firstMoveLoading) return;
+    if (!user || !goal || !businessType) return;
+    void generateFirstMove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, businessType]);
+
+  if (authLoading || step === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
@@ -118,198 +195,132 @@ export default function Onboarding() {
     );
   }
 
-  const progress = Math.round(((step - 1) / TOTAL_STEPS) * 100);
+  const progress = Math.round((step / TOTAL_STEPS) * 100);
 
-  async function saveStep(stepNum: number, data: StepData, profileUpdate?: Record<string, any>) {
-    if (!user) return;
+  function back() {
+    if (step > 1) setStep(step - 1);
+  }
+
+  function computeDaysFromDate(isoDate: string): number {
+    const target = new Date(isoDate);
+    const now = new Date();
+    const diffMs = target.getTime() - now.getTime();
+    return Math.max(1, Math.round(diffMs / (1000 * 60 * 60 * 24)));
+  }
+
+  async function goToStep2() {
+    if (!goal || saving) return;
     setSaving(true);
     try {
-      await supabase.from("onboarding_responses").upsert(
-        { user_id: user.id, step: stepNum, response: data },
-        { onConflict: "user_id,step" },
-      );
-      if (profileUpdate && Object.keys(profileUpdate).length) {
-        await supabase.from("profiles").update(profileUpdate as any).eq("id", user.id);
-      }
+      const { error } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>).update({ onboarding_goal: goal } as Record<string, unknown>).eq("id", user!.id);
+      if (error) console.warn("[onboarding] save goal failed (migrations not run?)", error);
+      setStep(2);
     } finally {
       setSaving(false);
     }
   }
 
-  function back() { if (step > 1) setStep(step - 1); }
-
-  async function nextFromStep(s: number) {
-    if (s === 1) {
-      await saveStep(1, { firstName, lastName }, { full_name: `${firstName.trim()} ${lastName.trim()}`.trim() });
-    } else if (s === 2) {
-      await saveStep(2, { role }, { role });
-    } else if (s === 3) {
-      await saveStep(3, { uses }, { intended_use: uses });
-    } else if (s === 4) {
-      const value = referral === "Other" ? (referralOther.trim() || "Other") : referral;
-      await saveStep(4, { referral: value }, { referral_source: value });
-    } else if (s === 5) {
-      const update: any = {};
-      if (website.trim()) update.website_url = normalizeUrl(website.trim());
-      if (brandAssets) update.brand_assets = brandAssets;
-      await saveStep(5, { website: update.website_url ?? null, brandAssets }, update);
-    } else if (s === 6) {
-      await saveStep(6, { companyName, industry }, { business_name: companyName.trim(), industry: industry || null });
-    } else if (s === 7) {
-      await saveStep(7, { teamSize }, { team_size: teamSize });
-    }
-    setStep(s + 1);
-  }
-
-  function normalizeUrl(u: string) {
-    if (/^https?:\/\//i.test(u)) return u;
-    return `https://${u}`;
-  }
-
-  async function fetchBrand() {
-    const url = website.trim();
-    if (!url) return;
-    const normalized = normalizeUrl(url);
-    setWebsite(normalized);
-    setBrandLoading(true);
-    setBrandError(null);
-    setBrandAssets(null);
+  async function goToStep3() {
+    if (!timeframeDays || saving) return;
+    setSaving(true);
     try {
-      const { data, error } = await supabase.functions.invoke("fetch-brand-assets", { body: { url: normalized } });
-      if (error) throw error;
-      if (!data || (!data.siteName && !data.logo && !(data.colors?.length))) {
-        setBrandError("We couldn't extract brand assets automatically. You can add them later in Settings.");
-      } else {
-        setBrandAssets(data);
-      }
-    } catch {
-      setBrandError("We couldn't extract brand assets automatically. You can add them later in Settings.");
+      const update: Record<string, unknown> = { onboarding_timeframe_days: timeframeDays };
+      if (customDate) update.onboarding_timeframe_custom_date = customDate;
+      const { error } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>).update(update).eq("id", user!.id);
+      if (error) console.warn("[onboarding] save timeframe failed (migrations not run?)", error);
+      setStep(3);
     } finally {
-      setBrandLoading(false);
+      setSaving(false);
     }
   }
 
-  async function applyBetaCode() {
-    const code = betaCode.toUpperCase().trim();
-    if (!code) return;
-    setCodeChecking(true);
-    setCodeError(null);
-    setCodeData(null);
+  async function goToStep4() {
+    if (!user || !goal || saving) return;
+    const q1 = gateAnswers.q1;
+    const q2 = gateAnswers.q2;
+    const q3 = gateAnswers.q3;
+    if (q1 !== "yes" || q2 !== "yes" || q3 !== "yes") return;
+
+    setSaving(true);
     try {
-      const { data, error } = await supabase.functions.invoke("validate-beta-code", {
-        body: { code, action: "validate" },
+      // Single RPC — gate_answers + profiles written atomically in one transaction.
+      const { error } = await supabase.rpc("complete_gate" as any, {
+        p_goal_key:       goal,
+        p_q1:             q1,
+        p_q2:             q2,
+        p_q3:             q3,
+        p_coaching_shown: Object.keys(resolvedQuestions).length > 0,
       });
-      if (error) { setCodeError("Couldn't validate code. Please try again."); return; }
-      if (!data?.valid) {
-        const msg = data?.error === "max_uses_reached"
-          ? "This code has reached its maximum uses"
-          : data?.error === "expired"
-          ? "This code has expired"
-          : "Invalid or expired code";
-        setCodeError(msg);
-        return;
-      }
-      setCodeData({ code });
+      if (error) console.warn("[onboarding] complete_gate rpc failed (migrations not run?)", error);
+      setStep(4);
     } finally {
-      setCodeChecking(false);
+      setSaving(false);
     }
   }
 
-  async function joinFoundingMember() {
-    if (!user || !codeData) return;
+  async function goToStep5() {
+    if (!businessType || saving) return;
+    setSaving(true);
+    try {
+      const { error } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>).update({ onboarding_business_type: businessType } as Record<string, unknown>).eq("id", user!.id);
+      if (error) console.warn("[onboarding] save business type failed (migrations not run?)", error);
+      // Clear existing first move so the useEffect on step 5 regenerates with the new business type.
+      // Do NOT reset generationCount here — the server enforces 3 calls; resetting the client counter
+      // to 0 would let the user see extra regen attempts that the server then 429s.
+      setFirstMoveText(null);
+      setStep(5);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function finalize() {
+    if (!user || !goal || !timeframeDays || !businessType) return;
     setFinalizing(true);
     try {
-      const code = betaCode.toUpperCase().trim();
-      // Consume the code server-side (non-blocking failure ok)
-      await supabase.functions.invoke("validate-beta-code", {
-        body: { code, action: "consume" },
-      });
+      const update: Record<string, unknown> = {
+        onboarding_goal: goal,
+        onboarding_timeframe_days: timeframeDays,
+        onboarding_business_type: businessType,
+        onboarding_gate_passed: true,
+        onboarding_completed: true,
+      };
+      if (customDate) update.onboarding_timeframe_custom_date = customDate;
+      if (firstMoveText) update.onboarding_first_move = firstMoveText;
 
-      // Upsert profile (handles case where profile row doesn't yet exist)
-      const { data: upserted, error: upsertError } = await supabase
-        .from("profiles")
+      const { error } = await (supabase.from("profiles") as ReturnType<typeof supabase.from>)
         .upsert(
-          {
-            id: user.id,
-            email: user.email,
-            plan: "founding_member",
-            beta_code_used: code,
-            onboarding_completed: true,
-          },
+          { id: user.id, email: user.email, ...update },
           { onConflict: "id" }
-        )
-        .select("onboarding_completed");
+        );
 
-      if (upsertError) throw upsertError;
-      if (!upserted?.[0]?.onboarding_completed) {
-        throw new Error("Profile update did not persist. Please try again.");
-      }
+      if (error) console.warn("[onboarding] finalize upsert failed", error);
 
-      // Confirm via a fresh read so ProtectedRoute (which re-fetches on mount) sees the new value
-      const { data: confirmed } = await supabase
-        .from("profiles")
-        .select("onboarding_completed")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (!confirmed?.onboarding_completed) {
-        throw new Error("Couldn't confirm onboarding completion. Please try again.");
-      }
-
-      // Hard navigation forces ProtectedRoute to remount and re-check the profile cleanly
       window.location.assign("/app/discovery?welcome=true");
-    } catch (e: any) {
-      console.error("Founding member error:", e);
-      const msg = typeof e?.message === "string" && e.message
-        ? e.message
-        : "We couldn't finalize your founding member access. Please try again.";
-      toast.error(msg);
+    } catch (e: unknown) {
+      toast.error(friendlyAuthError("complete_onboarding", e));
       setFinalizing(false);
     }
   }
 
-  async function startTrial() {
-    if (!user) return;
-    setFinalizing(true);
-    try {
-      const { data: updated, error: updateError } = await supabase
-        .from("profiles")
-        .update({ plan: "growth_trial", onboarding_completed: true })
-        .eq("id", user.id)
-        .select("onboarding_completed")
-        .single();
+  const allGateYes =
+    gateAnswers.q1 === "yes" && gateAnswers.q2 === "yes" && gateAnswers.q3 === "yes";
 
-      if (updateError) throw updateError;
-      if (!updated?.onboarding_completed) {
-        throw new Error("Profile update did not persist. Please try again.");
-      }
-
-      const { data: confirmed } = await supabase
-        .from("profiles")
-        .select("onboarding_completed")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (!confirmed?.onboarding_completed) {
-        throw new Error("Couldn't confirm onboarding completion. Please try again.");
-      }
-
-      window.location.assign("/app/discovery?welcome=true");
-    } catch (e: any) {
-      console.error("Growth trial error:", e);
-      toast.error(e.message || "Couldn't finalize");
-      setFinalizing(false);
-    }
-  }
-
-  // Validation per step
   const canContinue =
-    step === 1 ? firstName.trim().length > 0 && lastName.trim().length > 0
-    : step === 2 ? !!role
-    : step === 3 ? uses.length > 0
-    : step === 4 ? referral === "Other" ? referralOther.trim().length > 0 : !!referral
-    : step === 5 ? true
-    : step === 6 ? companyName.trim().length > 0
-    : step === 7 ? !!teamSize
+    step === 1 ? !!goal
+    : step === 2 ? !!timeframeDays
+    : step === 3 ? allGateYes
+    : step === 4 ? !!businessType
+    : step === 5 ? !firstMoveLoading && (firstMoveText?.trim().length ?? 0) > 0
     : false;
+
+  function handleContinue() {
+    if (step === 1) goToStep2();
+    else if (step === 2) goToStep3();
+    else if (step === 3) goToStep4();
+    else if (step === 4) goToStep5();
+    else if (step === 5) setStep(6);
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -325,84 +336,125 @@ export default function Onboarding() {
 
       <main className="flex-1 flex flex-col px-6 lg:px-10 py-10">
         <div className="max-w-2xl w-full mx-auto flex-1">
-          {step === 1 && <Step1 firstName={firstName} lastName={lastName} setFirstName={setFirstName} setLastName={setLastName} />}
-          {step === 2 && <Step2 role={role} setRole={setRole} />}
-          {step === 3 && <Step3 uses={uses} setUses={setUses} />}
-          {step === 4 && <Step4 referral={referral} setReferral={setReferral} referralOther={referralOther} setReferralOther={setReferralOther} />}
-          {step === 5 && <Step5 website={website} setWebsite={setWebsite} brandLoading={brandLoading} brandAssets={brandAssets} brandError={brandError} fetchBrand={fetchBrand} skip={() => { setBrandAssets(null); setStep(6); }} />}
-          {step === 6 && <Step6 companyName={companyName} setCompanyName={setCompanyName} industry={industry} setIndustry={setIndustry} />}
-          {step === 7 && <Step7 teamSize={teamSize} setTeamSize={setTeamSize} />}
-          {step === 8 && (
-            <Step8
-              betaCode={betaCode} setBetaCode={setBetaCode}
-              applyBetaCode={applyBetaCode} codeChecking={codeChecking}
-              codeError={codeError} codeValid={!!codeData}
-              joinFoundingMember={joinFoundingMember} startTrial={startTrial}
+          {step === 1 && <StepGoal goal={goal} setGoal={setGoal} />}
+          {step === 2 && (
+            <StepTimeframe
+              timeframeDays={timeframeDays}
+              setTimeframeDays={setTimeframeDays}
+              customDate={customDate}
+              setCustomDate={setCustomDate}
+              pickingDate={pickingDate}
+              setPickingDate={setPickingDate}
+              computeDaysFromDate={computeDaysFromDate}
+            />
+          )}
+          {step === 3 && goal && (
+            <StepGate
+              goalKey={goal}
+              gateAnswers={gateAnswers}
+              setGateAnswers={setGateAnswers}
+              resolvedQuestions={resolvedQuestions}
+              setResolvedQuestions={setResolvedQuestions}
+            />
+          )}
+          {step === 4 && (
+            <StepBusinessType businessType={businessType} setBusinessType={setBusinessType} />
+          )}
+          {step === 5 && (
+            <StepFirstMove
+              text={firstMoveText}
+              loading={firstMoveLoading}
+              generationCount={generationCount}
+              onRegenerate={generateFirstMove}
+              onSkip={() => setStep(6)}
+            />
+          )}
+          {step === 6 && (
+            <StepComplete
+              goal={goal}
+              timeframeDays={timeframeDays}
+              businessType={businessType}
               finalizing={finalizing}
+              onFinalize={finalize}
             />
           )}
         </div>
 
         <div className="max-w-2xl w-full mx-auto mt-10 flex items-center justify-between">
-          {step > 1 ? (
-            <Button variant="ghost" onClick={back} disabled={saving || finalizing}>
+          {step > 1 && step < 6 ? (
+            <Button variant="ghost" onClick={back} disabled={saving || finalizing || firstMoveLoading}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Back
             </Button>
-          ) : <span />}
-          {step < TOTAL_STEPS ? (
+          ) : (
+            <span />
+          )}
+          {step < 6 ? (
             <Button
-              onClick={() => nextFromStep(step)}
-              disabled={!canContinue || saving || brandLoading}
+              onClick={handleContinue}
+              disabled={!canContinue || saving || firstMoveLoading}
               className="bg-accent text-accent-foreground hover:bg-accent/90"
             >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Continue <ArrowRight className="h-4 w-4 ml-1" /></>}
+              {saving || firstMoveLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                  {firstMoveLoading ? "Generating…" : "Saving…"}
+                </>
+              ) : (
+                <>
+                  Continue <ArrowRight className="h-4 w-4 ml-1" />
+                </>
+              )}
             </Button>
-          ) : <span />}
+          ) : (
+            <span />
+          )}
         </div>
       </main>
     </div>
   );
 }
 
-/* ----- Step components ----- */
+/* ─── Step 1: Goal picker ─────────────────────────────────────────────────── */
 
-function Step1({ firstName, lastName, setFirstName, setLastName }: any) {
+function StepGoal({
+  goal,
+  setGoal,
+}: {
+  goal: GoalKey | null;
+  setGoal: (g: GoalKey) => void;
+}) {
+  const goals: Array<{ key: GoalKey; title: string; subtitle: string }> = [
+    {
+      key: "first_100",
+      title: "Get my first 100 customers",
+      subtitle: "Build the foundation that turns strangers into buyers.",
+    },
+    {
+      key: "launch_offer",
+      title: "Launch a specific offer",
+      subtitle: "Build a go-to-market plan for one offer you are ready to sell.",
+    },
+  ];
+
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Welcome to MOXIEMO. 👋</h1>
-      <p className="text-muted-foreground mt-2">Let's get your account set up. This takes about 2 minutes.</p>
-      <h2 className="text-lg font-medium mt-10 mb-4">What's your name?</h2>
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="fn">First name</Label>
-          <Input id="fn" autoFocus value={firstName} onChange={(e) => setFirstName(e.target.value)} className="mt-1.5" />
-        </div>
-        <div>
-          <Label htmlFor="ln">Last name</Label>
-          <Input id="ln" value={lastName} onChange={(e) => setLastName(e.target.value)} className="mt-1.5" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Step2({ role, setRole }: any) {
-  return (
-    <div>
-      <h1 className="text-3xl font-semibold tracking-tight">What best describes you?</h1>
-      <div className="grid sm:grid-cols-2 gap-3 mt-8">
-        {ROLES.map((r) => (
+      <h1 className="text-3xl font-semibold tracking-tight">What is your primary goal?</h1>
+      <p className="text-muted-foreground mt-2">Pick one. You can build your next goal after you hit this one.</p>
+      <div className="flex flex-col gap-4 mt-8">
+        {goals.map((g) => (
           <button
-            key={r.id}
+            key={g.key}
             type="button"
-            onClick={() => setRole(r.id)}
+            onClick={() => setGoal(g.key)}
             className={cn(
-              "flex items-center gap-3 px-4 py-4 rounded-xl border-2 transition text-left",
-              role === r.id ? "border-accent bg-accent/5" : "border-border hover:border-foreground/20"
+              "w-full text-left rounded-2xl border-2 px-6 py-6 transition",
+              goal === g.key
+                ? "border-accent bg-accent/5"
+                : "border-border hover:border-foreground/20",
             )}
           >
-            <span className="text-2xl">{r.emoji}</span>
-            <span className="font-medium">{r.label}</span>
+            <div className="text-lg font-semibold">{g.title}</div>
+            <div className="text-sm text-muted-foreground mt-1">{g.subtitle}</div>
           </button>
         ))}
       </div>
@@ -410,33 +462,245 @@ function Step2({ role, setRole }: any) {
   );
 }
 
-function Step3({ uses, setUses }: any) {
-  const toggle = (id: string) => setUses(uses.includes(id) ? uses.filter((u: string) => u !== id) : [...uses, id]);
+/* ─── Step 2: Timeframe picker ────────────────────────────────────────────── */
+
+const PRESET_DAYS = [90, 120, 180, 365] as const;
+
+function StepTimeframe({
+  timeframeDays,
+  setTimeframeDays,
+  customDate,
+  setCustomDate,
+  pickingDate,
+  setPickingDate,
+  computeDaysFromDate,
+}: {
+  timeframeDays: number | null;
+  setTimeframeDays: (d: number) => void;
+  customDate: string;
+  setCustomDate: (d: string) => void;
+  pickingDate: boolean;
+  setPickingDate: (v: boolean) => void;
+  computeDaysFromDate: (iso: string) => number;
+}) {
+  const today = new Date().toISOString().split("T")[0];
+  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().split("T")[0];
+
+  function handleCustomDate(value: string) {
+    setCustomDate(value);
+    if (value && value > today) {
+      setTimeframeDays(computeDaysFromDate(value));
+    } else {
+      setTimeframeDays(null);
+    }
+  }
+
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">How do you plan to use MOXIEMO?</h1>
-      <p className="text-muted-foreground mt-2">Select all that apply.</p>
-      <div className="space-y-2.5 mt-8">
-        {USES.map((u) => {
-          const selected = uses.includes(u.id);
+      <h1 className="text-3xl font-semibold tracking-tight">When do you want to hit that goal?</h1>
+      <p className="text-muted-foreground mt-2">Pick a window that feels achievable but not comfortable.</p>
+      <div className="flex flex-wrap gap-3 mt-8">
+        {PRESET_DAYS.map((d) => (
+          <button
+            key={d}
+            type="button"
+            onClick={() => {
+              setTimeframeDays(d);
+              setPickingDate(false);
+              setCustomDate("");
+            }}
+            className={cn(
+              "px-6 py-3 rounded-full border-2 font-medium transition text-sm",
+              !pickingDate && timeframeDays === d
+                ? "border-accent bg-accent/5 text-accent"
+                : "border-border hover:border-foreground/20",
+            )}
+          >
+            {d} days
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => {
+            setPickingDate(true);
+            setTimeframeDays(null);
+            setCustomDate("");
+          }}
+          className={cn(
+            "px-6 py-3 rounded-full border-2 font-medium transition text-sm",
+            pickingDate
+              ? "border-accent bg-accent/5 text-accent"
+              : "border-border hover:border-foreground/20",
+          )}
+        >
+          Pick a date
+        </button>
+      </div>
+
+      {pickingDate && (
+        <div className="mt-5">
+          <input
+            type="date"
+            min={tomorrow}
+            value={customDate}
+            onChange={(e) => handleCustomDate(e.target.value)}
+            className="border border-border rounded-lg px-4 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+          {customDate && customDate < tomorrow && (
+            <p className="mt-2 text-sm text-destructive">Please pick a date in the future.</p>
+          )}
+          {customDate && customDate > today && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              That is {computeDaysFromDate(customDate)} days from today.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Step 3: Readiness gate ──────────────────────────────────────────────── */
+
+type GateAnswerKey = "q1" | "q2" | "q3";
+
+type GateCoachingRow = {
+  goal_key: string;
+  question_number: number;
+  heading: string;
+  body: string;
+  action_line: string;
+  return_line: string;
+};
+
+function StepGate({
+  goalKey,
+  gateAnswers,
+  setGateAnswers,
+  resolvedQuestions,
+  setResolvedQuestions,
+}: {
+  goalKey: GoalKey;
+  gateAnswers: GateState;
+  setGateAnswers: (s: GateState) => void;
+  resolvedQuestions: Record<number, boolean>;
+  setResolvedQuestions: (r: Record<number, boolean>) => void;
+}) {
+  const questions = GATE_QUESTIONS[goalKey];
+  const keys: GateAnswerKey[] = ["q1", "q2", "q3"];
+  const [coaching, setCoaching] = useState<GateCoachingRow[]>([]);
+
+  useEffect(() => {
+    (supabase.from("gate_coaching") as ReturnType<typeof supabase.from>)
+      .select("goal_key,question_number,heading,body,action_line,return_line")
+      .eq("goal_key", goalKey)
+      .order("question_number")
+      .then(({ data }) => { if (data) setCoaching(data as GateCoachingRow[]); });
+  }, [goalKey]);
+
+  function setAnswer(key: GateAnswerKey, value: GateAnswer) {
+    setGateAnswers({ ...gateAnswers, [key]: value });
+  }
+
+  function markResolved(index: number) {
+    setAnswer(keys[index], "yes");
+    setResolvedQuestions({ ...resolvedQuestions, [index]: true });
+  }
+
+  return (
+    <div>
+      <h1 className="text-3xl font-semibold tracking-tight">
+        Before we build your strategy, let us check three things.
+      </h1>
+      <p className="text-muted-foreground mt-2">
+        All three must be true before we can build you a useful plan.
+      </p>
+
+      <div className="mt-8 flex flex-col gap-6">
+        {questions.map((q, i) => {
+          const key = keys[i];
+          const answer = gateAnswers[key];
+          const showCoaching = answer === "not_yet" && !resolvedQuestions[i];
+
           return (
-            <button
-              key={u.id}
-              type="button"
-              onClick={() => toggle(u.id)}
+            <div
+              key={i}
               className={cn(
-                "w-full flex items-center justify-between gap-3 px-4 py-4 rounded-xl border-2 transition text-left",
-                selected ? "border-accent bg-accent/5 border-l-[6px]" : "border-border hover:border-foreground/20"
+                "rounded-2xl border-2 px-6 py-5 transition",
+                answer === "yes"
+                  ? "border-accent bg-accent/5"
+                  : answer === "not_yet"
+                  ? "border-destructive/50 bg-destructive/5"
+                  : "border-border",
               )}
             >
-              <span className="flex items-center gap-3">
-                <span className="text-xl">{u.emoji}</span>
-                <span className="font-medium">{u.label}</span>
-              </span>
-              <span className={cn("h-5 w-5 rounded border-2 flex items-center justify-center", selected ? "bg-accent border-accent text-accent-foreground" : "border-border")}>
-                {selected && <Check className="h-3.5 w-3.5" />}
-              </span>
-            </button>
+              <p className="font-semibold text-base">{q.question}</p>
+              <p className="text-sm text-muted-foreground mt-1">{q.helper}</p>
+
+              <div className="flex gap-3 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setAnswer(key, "yes")}
+                  className={cn(
+                    "px-5 py-2 rounded-full border-2 text-sm font-medium transition",
+                    answer === "yes"
+                      ? "border-accent bg-accent text-accent-foreground"
+                      : "border-border hover:border-foreground/20",
+                  )}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAnswer(key, "not_yet")}
+                  className={cn(
+                    "px-5 py-2 rounded-full border-2 text-sm font-medium transition",
+                    answer === "not_yet"
+                      ? "border-destructive bg-destructive/10 text-destructive"
+                      : "border-border hover:border-foreground/20",
+                  )}
+                >
+                  Not yet
+                </button>
+              </div>
+
+              {showCoaching && (() => {
+                const c = coaching.find((r) => r.question_number === i + 1);
+                const hasBody = c?.body?.trim();
+                return (
+                  <div className="mt-4 rounded-xl bg-muted/50 border border-border px-5 py-4">
+                    {hasBody ? (
+                      <div className="flex flex-col gap-1.5">
+                        {c!.heading && (
+                          <p className="text-sm font-semibold text-foreground">{c!.heading}</p>
+                        )}
+                        <p className="text-sm text-muted-foreground whitespace-pre-wrap">{c!.body}</p>
+                        {c!.action_line && (
+                          <p className="text-sm text-foreground font-medium mt-1">
+                            This week: {c!.action_line}
+                          </p>
+                        )}
+                        {c!.return_line && (
+                          <p className="text-xs text-muted-foreground italic mt-0.5">{c!.return_line}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        More guidance coming soon. Take your time and come back when you are ready.
+                      </p>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => markResolved(i)}
+                    >
+                      I have resolved this
+                    </Button>
+                  </div>
+                );
+              })()}
+            </div>
           );
         })}
       </div>
@@ -444,106 +708,55 @@ function Step3({ uses, setUses }: any) {
   );
 }
 
-function Step4({ referral, setReferral, referralOther, setReferralOther }: any) {
-  return (
-    <div>
-      <h1 className="text-3xl font-semibold tracking-tight">How did you hear about MOXIEMO?</h1>
-      <div className="space-y-2 mt-8">
-        {REFERRALS.map((r) => (
-          <label key={r} className={cn("flex items-center gap-3 px-4 py-3 rounded-lg border cursor-pointer transition", referral === r ? "border-accent bg-accent/5" : "border-border hover:border-foreground/20")}>
-            <input type="radio" name="referral" checked={referral === r} onChange={() => setReferral(r)} className="h-4 w-4 accent-[hsl(var(--accent))]" />
-            <span>{r}</span>
-          </label>
-        ))}
-        {referral === "Other" && (
-          <Input placeholder="Tell us where..." value={referralOther} onChange={(e) => setReferralOther(e.target.value)} className="mt-2" autoFocus />
-        )}
-      </div>
-    </div>
-  );
-}
+/* ─── Step 4: Business type selector ─────────────────────────────────────── */
 
-function Step5({ website, setWebsite, brandLoading, brandAssets, brandError, fetchBrand, skip }: any) {
-  return (
-    <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Share your website <span className="text-muted-foreground text-xl">(optional)</span></h1>
-      <p className="text-muted-foreground mt-2">MOXIEMO will try to pull your logo and brand colors automatically.</p>
-      <div className="mt-8 flex gap-2">
-        <Input placeholder="https://yourwebsite.com" value={website} onChange={(e) => setWebsite(e.target.value)} />
-        <Button onClick={fetchBrand} disabled={!website.trim() || brandLoading} variant="outline">
-          {brandLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Fetch"}
-        </Button>
-      </div>
-      {brandLoading && (
-        <div className="mt-6 flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Fetching your brand assets...
-        </div>
-      )}
-      {brandError && <p className="mt-6 text-sm text-muted-foreground">{brandError}</p>}
-      {brandAssets && (
-        <div className="mt-6 rounded-xl border border-border bg-card p-5">
-          <p className="font-medium flex items-center gap-2"><Check className="h-4 w-4 text-accent" /> We found these brand elements</p>
-          {brandAssets.logo && (
-            <div className="mt-4 flex items-center gap-3">
-              <img src={brandAssets.logo} alt="Logo" className="h-12 w-12 rounded object-contain border border-border bg-background" onError={(e) => ((e.target as HTMLImageElement).style.display = "none")} />
-            </div>
-          )}
-          {brandAssets.colors?.length > 0 && (
-            <div className="mt-3 flex gap-2">
-              {brandAssets.colors.slice(0, 5).map((c: string) => (
-                <div key={c} className="h-8 w-8 rounded border border-border" style={{ background: c }} title={c} />
-              ))}
-            </div>
-          )}
-          {brandAssets.siteName && <p className="mt-3 text-sm">Company name: <span className="font-medium">{brandAssets.siteName}</span></p>}
-        </div>
-      )}
-      <button type="button" onClick={skip} className="mt-6 text-sm text-muted-foreground hover:text-foreground underline">
-        Skip for now →
-      </button>
-    </div>
-  );
-}
+function StepBusinessType({
+  businessType,
+  setBusinessType,
+}: {
+  businessType: BusinessType | null;
+  setBusinessType: (t: BusinessType) => void;
+}) {
+  const types: Array<{ key: BusinessType; label: string; description: string }> = [
+    {
+      key: "E",
+      label: "Expertise Business",
+      description:
+        "You sell knowledge, advice, coaching, consulting, or a methodology. Your name is part of the brand.",
+    },
+    {
+      key: "G",
+      label: "Growing Business",
+      description:
+        "You run a team-based service or product business. The brand is bigger than one person.",
+    },
+    {
+      key: "R",
+      label: "Restaurant or Hospitality",
+      description:
+        "You run a physical location where customers come to you.",
+    },
+  ];
 
-function Step6({ companyName, setCompanyName, industry, setIndustry }: any) {
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">Tell us about your business</h1>
-      <div className="mt-8 space-y-5">
-        <div>
-          <Label>Company or brand name</Label>
-          <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="mt-1.5" autoFocus />
-        </div>
-        <div>
-          <Label>What industry are you in?</Label>
-          <Select value={industry} onValueChange={setIndustry}>
-            <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select an industry" /></SelectTrigger>
-            <SelectContent>{INDUSTRIES.map((i) => <SelectItem key={i} value={i}>{i}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Step7({ teamSize, setTeamSize }: any) {
-  return (
-    <div>
-      <h1 className="text-3xl font-semibold tracking-tight">How large is your team?</h1>
-      <div className="grid sm:grid-cols-2 gap-3 mt-8">
-        {TEAM_SIZES.map((t) => (
+      <h1 className="text-3xl font-semibold tracking-tight">What best describes your business?</h1>
+      <p className="text-muted-foreground mt-2">This shapes every recommendation we make.</p>
+      <div className="flex flex-col gap-4 mt-8">
+        {types.map((t) => (
           <button
-            key={t.id}
+            key={t.key}
             type="button"
-            onClick={() => setTeamSize(t.id)}
+            onClick={() => setBusinessType(t.key)}
             className={cn(
-              "flex items-center gap-3 px-4 py-4 rounded-xl border-2 transition text-left",
-              t.full ? "sm:col-span-2" : "",
-              teamSize === t.id ? "border-accent bg-accent/5" : "border-border hover:border-foreground/20"
+              "w-full text-left rounded-2xl border-2 px-6 py-5 transition",
+              businessType === t.key
+                ? "border-accent bg-accent/5"
+                : "border-border hover:border-foreground/20",
             )}
           >
-            <span className="text-2xl">{t.emoji}</span>
-            <span className="font-medium">{t.label}</span>
+            <div className="font-semibold">{t.label}</div>
+            <div className="text-sm text-muted-foreground mt-1">{t.description}</div>
           </button>
         ))}
       </div>
@@ -551,71 +764,186 @@ function Step7({ teamSize, setTeamSize }: any) {
   );
 }
 
-function Step8({ betaCode, setBetaCode, applyBetaCode, codeChecking, codeError, codeValid, joinFoundingMember, startTrial, finalizing }: any) {
+/* ─── Step 5: First move generation ─────────────────────────────────────── */
+
+function StepFirstMove({
+  text,
+  loading,
+  generationCount,
+  onRegenerate,
+  onSkip,
+}: {
+  text: string | null;
+  loading: boolean;
+  generationCount: number;
+  onRegenerate: () => void;
+  onSkip: () => void;
+}) {
   return (
     <div>
-      <h1 className="text-3xl font-semibold tracking-tight">You're almost in.</h1>
-      <p className="text-muted-foreground mt-2">Choose how you'd like to access MOXIEMO.</p>
-      <div className="grid md:grid-cols-2 gap-4 mt-8">
-        {/* Beta */}
-        <div className={cn(
-          "rounded-2xl border-2 p-6 flex flex-col transition",
-          codeValid ? "border-accent bg-accent/5" : "border-border"
-        )}>
-          <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-accent">
-            <Sparkles className="h-4 w-4" /> Beta Founding Member
-          </div>
-          <div className="mt-3 text-2xl font-semibold">Free, forever.</div>
-          <ul className="mt-4 space-y-2 text-sm flex-1">
-            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> LinkedIn publishing included</li>
-            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> 25 content generations per month</li>
-            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> Personal 1:1 kickoff call with Karee</li>
-            <li className="flex gap-2"><Check className="h-4 w-4 text-accent flex-shrink-0 mt-0.5" /> Free forever, no card required</li>
-          </ul>
-          {codeValid ? (
-            <>
-              <p className="mt-4 text-sm text-accent flex items-center gap-2"><Check className="h-4 w-4" /> Code accepted — founding access unlocked!</p>
-              <Button onClick={joinFoundingMember} disabled={finalizing} className="mt-3 bg-accent text-accent-foreground hover:bg-accent/90">
-                {finalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Join as Founding Member <ArrowRight className="h-4 w-4 ml-1" /></>}
-              </Button>
-            </>
-          ) : (
-            <p className="mt-4 text-xs text-muted-foreground">Requires beta code (enter below)</p>
-          )}
-        </div>
+      <h1 className="text-3xl font-semibold tracking-tight">Here is your first move.</h1>
+      <p className="text-muted-foreground mt-2">
+        One action. This week. That is how momentum starts.
+      </p>
 
-        {/* Growth */}
-        <div className={cn("rounded-2xl border-2 p-6 flex flex-col transition", codeValid ? "border-border opacity-60" : "border-border")}>
-          <div className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-foreground/70">
-            <Rocket className="h-4 w-4" /> Growth
+      <div className="mt-8">
+        {loading && (
+          <div className="rounded-2xl border border-border bg-muted/30 px-6 py-8 flex items-center gap-3 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin flex-shrink-0" />
+            <span className="text-sm">MOXIEMO is thinking about your first move...</span>
           </div>
-          <div className="mt-3 text-2xl font-semibold">$79<span className="text-base font-normal text-muted-foreground">/month</span></div>
-          <p className="text-xs text-muted-foreground">Cancel anytime</p>
-          <ul className="mt-4 space-y-2 text-sm flex-1">
-            <li className="flex gap-2"><Check className="h-4 w-4 text-foreground/60 flex-shrink-0 mt-0.5" /> Full platform access</li>
-            <li className="flex gap-2"><Check className="h-4 w-4 text-foreground/60 flex-shrink-0 mt-0.5" /> Priority support</li>
-            <li className="flex gap-2"><Check className="h-4 w-4 text-foreground/60 flex-shrink-0 mt-0.5" /> Early Beta 2 access</li>
-          </ul>
-          <Button onClick={startTrial} disabled={finalizing} variant="outline" className="mt-4">
-            {finalizing ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start free trial"}
-          </Button>
+        )}
+
+        {!loading && text && (
+          <div className="rounded-2xl border-2 border-accent bg-accent/5 px-6 py-6">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="h-6 w-6 rounded-full bg-accent flex items-center justify-center">
+                <span className="text-accent-foreground text-xs font-bold">M</span>
+              </div>
+              <span className="text-xs font-semibold uppercase tracking-wider text-accent">
+                MOXIEMO
+              </span>
+            </div>
+            <p className="text-base leading-relaxed">{text}</p>
+          </div>
+        )}
+
+        {!loading && text && (
+          <div className="mt-4 flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onRegenerate}
+              disabled={generationCount >= 3}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              {generationCount >= 3 ? "No more regenerations" : "Regenerate"}
+            </Button>
+            {generationCount >= 3 && (
+              <span className="text-xs text-muted-foreground">
+                3 of 3 used — this is your first move.
+              </span>
+            )}
+          </div>
+        )}
+
+        {!loading && !text && (
+          <div className="mt-4 flex flex-col gap-2">
+            <Button variant="outline" size="sm" onClick={onRegenerate}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Try again
+            </Button>
+            <button
+              type="button"
+              onClick={onSkip}
+              className="text-xs text-muted-foreground underline underline-offset-2 text-left"
+            >
+              Skip for now — I will come back to this
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Step 6: Complete & enter ───────────────────────────────────────────── */
+
+const GOAL_LABELS: Record<GoalKey, string> = {
+  first_100: "Get my first 100 customers",
+  launch_offer: "Launch a specific offer",
+};
+
+const BUSINESS_LABELS: Record<BusinessType, string> = {
+  E: "Expertise Business",
+  G: "Growing Business",
+  R: "Restaurant or Hospitality",
+};
+
+function StepComplete({
+  goal,
+  timeframeDays,
+  businessType,
+  finalizing,
+  onFinalize,
+}: {
+  goal: GoalKey | null;
+  timeframeDays: number | null;
+  businessType: BusinessType | null;
+  finalizing: boolean;
+  onFinalize: () => void;
+}) {
+  const [confirmed, setConfirmed] = useState(false);
+
+  return (
+    <div>
+      <h1 className="text-3xl font-semibold tracking-tight">You are ready to build.</h1>
+      <p className="text-muted-foreground mt-2">
+        Here is what MOXIEMO will build your strategy around.
+      </p>
+
+      <div className="mt-8 rounded-2xl border border-border bg-card px-6 py-6 space-y-4">
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            Goal
+          </div>
+          <div className="font-medium">{goal ? GOAL_LABELS[goal] : "—"}</div>
+        </div>
+        <div className="border-t border-border" />
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            Timeframe
+          </div>
+          <div className="font-medium">{timeframeDays ? `${timeframeDays} days` : "—"}</div>
+        </div>
+        <div className="border-t border-border" />
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+            Business type
+          </div>
+          <div className="font-medium">{businessType ? BUSINESS_LABELS[businessType] : "—"}</div>
         </div>
       </div>
 
-      <div className="mt-8 rounded-xl border border-border p-5">
-        <p className="text-sm font-medium">Have a beta code?</p>
-        <label className="mt-3 block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Beta access code
-        </label>
-        <div className="mt-1.5 flex gap-2">
-          <Input value={betaCode} onChange={(e) => { setBetaCode(e.target.value); }} placeholder="Type your beta code here" className="uppercase" />
-          <Button onClick={applyBetaCode} disabled={!betaCode.trim() || codeChecking} variant="outline">
-            {codeChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Apply code <ArrowRight className="h-4 w-4 ml-1" /></>}
+      {!confirmed ? (
+        <div className="mt-8 space-y-3">
+          <Button
+            onClick={() => setConfirmed(true)}
+            className="bg-accent text-accent-foreground hover:bg-accent/90 text-base px-8 py-5"
+          >
+            Build my strategy <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
+          <p className="text-xs text-muted-foreground">
+            This locks your goal, timeframe, and business type. You will not be able to change them without contacting support.
+          </p>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">Your founding member code is MOXIE2026</p>
-        {codeError && <p className="mt-2 text-sm text-destructive">{codeError}</p>}
-      </div>
+      ) : (
+        <div className="mt-8 rounded-2xl border-2 border-accent bg-accent/5 px-6 py-5 space-y-4">
+          <p className="font-semibold text-base">Ready to lock this in?</p>
+          <p className="text-sm text-muted-foreground">
+            Once you confirm, MOXIEMO will start building your strategy. This cannot be undone.
+          </p>
+          <div className="flex gap-3">
+            <Button
+              onClick={onFinalize}
+              disabled={finalizing}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              {finalizing ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-1" /> Building…</>
+              ) : (
+                <>Yes, build my strategy</>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmed(false)}
+              disabled={finalizing}
+            >
+              Go back
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

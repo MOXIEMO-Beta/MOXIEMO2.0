@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useBrand } from "@/hooks/useBrand";
 import { usePlan } from "@/hooks/usePlan";
 import { aiErrorMessage } from "@/lib/aiErrors";
 import { supabase } from "@/integrations/supabase/client";
@@ -237,6 +238,7 @@ function PillarChips({
 
 export default function Content() {
   const { user } = useAuth();
+  const { brandId } = useBrand();
   const { checkGenerationLimit, incrementUsage, handleGenerationResponse } = usePlan();
   const [searchParams, setSearchParams] = useSearchParams();
   const [strategy, setStrategy] = useState<any>(null);
@@ -368,19 +370,13 @@ export default function Content() {
     let cancelled = false;
     (async () => {
       setLoading(true);
+      const stratQ = supabase
+        .from("strategies")
+        .select("positioning_statement, ideal_client, pain_point, transformation, voice_attributes, anti_positioning, methodology, primary_channel, content_pillars, enhanced_foundation");
+      const itemsQ = supabase.from("content_items").select("*");
       const [stratRes, itemsRes, profileRes] = await Promise.all([
-        supabase
-          .from("strategies")
-          .select(
-            "positioning_statement, ideal_client, pain_point, transformation, voice_attributes, anti_positioning, methodology, primary_channel, content_pillars, enhanced_foundation",
-          )
-          .eq("user_id", user.id)
-          .maybeSingle(),
-        supabase
-          .from("content_items")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false }),
+        (brandId ? stratQ.eq("brand_id", brandId) : stratQ.eq("user_id", user.id)).maybeSingle(),
+        (brandId ? itemsQ.eq("brand_id", brandId) : itemsQ.eq("user_id", user.id)).order("created_at", { ascending: false }),
         supabase
           .from("profiles")
           .select("full_name, business_name, email")
@@ -399,7 +395,7 @@ export default function Content() {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, brandId]);
 
   const queued = useMemo(
     () => items.filter((i) => i.status === "queued" || i.status === "scheduled"),
@@ -623,10 +619,8 @@ export default function Content() {
       ? "twitter"
       : rawPlatform;
 
-    const { data: conns } = await supabase
-      .from("social_connections")
-      .select("platform")
-      .eq("user_id", user.id);
+    const connsQ = supabase.from("social_connections").select("platform");
+    const { data: conns } = await (brandId ? connsQ.eq("brand_id", brandId) : connsQ.eq("user_id", user.id));
     const isConnected = (conns ?? []).some(
       (c) => (c.platform ?? "").toLowerCase() === targetPlatform,
     );

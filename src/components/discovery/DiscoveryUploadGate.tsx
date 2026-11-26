@@ -99,7 +99,7 @@ export function DiscoveryUploadGate({ onSkip, onComplete }: Props) {
     }
     setProcessing(true);
     try {
-      let payload: { text?: string; url?: string } = {};
+      const payload: { text?: string; url?: string } = {};
       if (file) {
         setStage("Reading your document...");
         const text = await extractText(file);
@@ -381,7 +381,7 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
 
       {/* Sticky bottom banner */}
       <div className="fixed bottom-0 left-0 right-0 z-40 px-4 py-3 shadow-lg"
-        style={{ backgroundColor: filled.length > 0 ? "#ff6b6b" : "#15171C" }}>
+        style={{ backgroundColor: filled.length > 0 ? "#FF6B5C" : "#15171C" }}>
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row sm:items-center gap-3">
           {filled.length > 0 ? (
             <>
@@ -404,7 +404,7 @@ export function DiscoveryPrefillSummary({ result, onContinue, onSkip }: SummaryP
                   }, 300);
                 }}
                 className="h-10 px-4 rounded-lg font-semibold whitespace-nowrap"
-                style={{ backgroundColor: "white", color: "#ff6b6b", fontSize: 14 }}
+                style={{ backgroundColor: "white", color: "#FF6B5C", fontSize: 14 }}
               >
                 Review and continue →
               </button>

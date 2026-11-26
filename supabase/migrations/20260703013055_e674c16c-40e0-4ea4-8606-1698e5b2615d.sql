@@ -1,8 +1,16 @@
 create schema if not exists private;
 
 -- Move both functions to private schema. Triggers reference by OID so they follow automatically.
-alter function public.email_queue_wake() set schema private;
-alter function public.email_queue_dispatch() set schema private;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = 'email_queue_wake') THEN
+    ALTER FUNCTION public.email_queue_wake() SET SCHEMA private;
+  END IF;
+  IF EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public' AND p.proname = 'email_queue_dispatch') THEN
+    ALTER FUNCTION public.email_queue_dispatch() SET SCHEMA private;
+  END IF;
+END;
+$$;
 
 -- Rewrite email_queue_wake so the cron job body references the new schema.
 create or replace function private.email_queue_wake()
@@ -23,7 +31,7 @@ BEGIN
 
   BEGIN
     PERFORM net.http_post(
-      url := 'https://mqhipuvkdsvapbhrrzjd.supabase.co/functions/v1/process-email-queue',
+      url := 'https://gnvehgdbgcsozaawzgtc.supabase.co/functions/v1/process-email-queue',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
         'Lovable-Context', 'cron',

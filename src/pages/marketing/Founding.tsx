@@ -9,8 +9,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 
-const fontsHref =
-  "https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -18,7 +16,7 @@ const inputStyle: React.CSSProperties = {
   background: "#fafaf6",
   border: "1px solid rgba(19,19,15,0.12)",
   borderRadius: 10,
-  fontFamily: "'Hanken Grotesk', sans-serif",
+  fontFamily: "'DM Sans Variable', sans-serif",
   fontSize: 15,
   color: "#13130f",
   outline: "none",
@@ -27,7 +25,7 @@ const inputStyle: React.CSSProperties = {
 
 const labelStyle: React.CSSProperties = {
   display: "block",
-  fontFamily: "'IBM Plex Mono', monospace",
+  fontFamily: "'JetBrains Mono Variable', monospace",
   fontSize: 10.5,
   letterSpacing: "0.16em",
   textTransform: "uppercase",
@@ -113,9 +111,6 @@ export default function Founding() {
 
   return (
     <div style={{ background: "#f4efe5", minHeight: "100vh" }}>
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-      <link rel="stylesheet" href={fontsHref} />
       <style>{`
         .fm-input:focus { border-color: #ef6f53 !important; background: #fff !important; }
         .fm-cta:hover { background: #d45e44 !important; }
@@ -124,7 +119,7 @@ export default function Founding() {
 
       <SiteHeader />
 
-      <div style={{ position: "relative", fontFamily: "'Hanken Grotesk', sans-serif", WebkitFontSmoothing: "antialiased" as any }}>
+      <div style={{ position: "relative", fontFamily: "'DM Sans Variable', sans-serif", WebkitFontSmoothing: "antialiased" as any }}>
         {/* GRAIN */}
         <div
           aria-hidden
@@ -157,7 +152,7 @@ export default function Founding() {
               display: "inline-flex",
               alignItems: "center",
               gap: 9,
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'JetBrains Mono Variable', monospace",
               fontSize: 11.5,
               letterSpacing: "0.22em",
               textTransform: "uppercase",
@@ -176,7 +171,7 @@ export default function Founding() {
           {/* Headline */}
           <h1
             style={{
-              fontFamily: "'Newsreader', serif",
+              fontFamily: "'Fraunces Variable', serif",
               fontWeight: 600,
               fontSize: "clamp(42px,6vw,72px)",
               lineHeight: 1.0,
@@ -222,7 +217,7 @@ export default function Founding() {
             <div style={{ background: "#ef6f53", padding: "26px 32px" }}>
               <div
                 style={{
-                  fontFamily: "'IBM Plex Mono', monospace",
+                  fontFamily: "'JetBrains Mono Variable', monospace",
                   fontSize: 10,
                   letterSpacing: "0.24em",
                   textTransform: "uppercase",
@@ -233,13 +228,13 @@ export default function Founding() {
                 FOUNDING SEAT
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                <div style={{ fontFamily: "'Newsreader', serif", fontSize: 30, fontWeight: 600, color: "#fff", lineHeight: 1.15 }}>
+                <div style={{ fontFamily: "'Fraunces Variable', serif", fontSize: 30, fontWeight: 600, color: "#fff", lineHeight: 1.15 }}>
                   50% off any plan, for life.
                 </div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 12, color: "#fff", letterSpacing: "0.04em", lineHeight: 1.6 }}>
+                <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 12, color: "#fff", letterSpacing: "0.04em", lineHeight: 1.6 }}>
                   Clarity $49.50/month · Momentum $74.50/month · Multiply $124.50/month
                 </div>
-                <div style={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 11, color: "rgba(255,255,255,0.75)", letterSpacing: "0.06em", lineHeight: 1.6 }}>
+                <div style={{ fontFamily: "'JetBrains Mono Variable', monospace", fontSize: 11, color: "rgba(255,255,255,0.75)", letterSpacing: "0.06em", lineHeight: 1.6 }}>
                   Standard pricing is $99, $149 and $249 a month. Pay annually and save 17%.
                 </div>
               </div>
@@ -401,7 +396,7 @@ export default function Founding() {
                       width: "100%",
                       background: "#ef6f53",
                       color: "#fff",
-                      fontFamily: "'Hanken Grotesk', sans-serif",
+                      fontFamily: "'DM Sans Variable', sans-serif",
                       fontWeight: 700,
                       fontSize: 16,
                       padding: "16px 24px",
@@ -424,7 +419,7 @@ export default function Founding() {
                   <div
                     style={{
                       textAlign: "center",
-                      fontFamily: "'IBM Plex Mono', monospace",
+                      fontFamily: "'JetBrains Mono Variable', monospace",
                       fontSize: 11,
                       letterSpacing: "0.08em",
                       color: "#9a9789",
@@ -476,7 +471,7 @@ export default function Founding() {
                 </div>
                 <h2
                   style={{
-                    fontFamily: "'Newsreader', serif",
+                    fontFamily: "'Fraunces Variable', serif",
                     fontWeight: 600,
                     fontSize: 32,
                     lineHeight: 1.15,
@@ -498,7 +493,7 @@ export default function Founding() {
           <p
             style={{
               marginTop: 28,
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'JetBrains Mono Variable', monospace",
               fontSize: 11,
               letterSpacing: "0.08em",
               color: "#9a9789",

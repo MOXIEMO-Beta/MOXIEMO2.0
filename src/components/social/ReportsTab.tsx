@@ -89,7 +89,7 @@ type Props = {
   onCreateWithPillar?: (pillar: string) => void;
 };
 
-const PILLAR_COLORS = ["#ff6b6b", "#1e3a5f", "#3cb87a", "#f5a623", "#a855f7"];
+const PILLAR_COLORS = ["#FF6B5C", "#1e3a5f", "#3cb87a", "#f5a623", "#a855f7"];
 
 function asArray(v: unknown): string[] {
   if (!Array.isArray(v)) return [];
@@ -765,9 +765,9 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
                     <YAxis allowDecimals={false} stroke="hsl(var(--muted-foreground))" fontSize={12} domain={[0, Math.max(targetFreq + 1, 6)]} />
                     <ReferenceLine
                       y={targetFreq}
-                      stroke="#ff6b6b"
+                      stroke="#FF6B5C"
                       strokeDasharray="4 4"
-                      label={{ value: `Your target: ${targetFreq}/wk`, position: "insideTopRight", fill: "#ff6b6b", fontSize: 11 }}
+                      label={{ value: `Your target: ${targetFreq}/wk`, position: "insideTopRight", fill: "#FF6B5C", fontSize: 11 }}
                     />
                     <Bar
                       dataKey="placeholder"
@@ -811,7 +811,7 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
                     strokeDasharray="4 4"
                     label={{ value: `Your target: ${targetFreq} posts/week`, position: "insideTopRight", fill: "#1e3a5f", fontSize: 11 }}
                   />
-                  <Bar dataKey="posts" fill="#ff6b6b" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="posts" fill="#FF6B5C" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -7,7 +7,7 @@ export function buildReportData(strategy: any = {}, profile: any = {}) {
 
   const data = {
     meta:            buildMeta(profile, strategy),
-    positioning:     buildPositioning(strategy, ef, raw, get),
+    positioning:     buildPositioning(strategy, ef, raw),
     archetype:       buildArchetype(strategy, ef, raw),
     coreValues:      buildCoreValues(strategy, ef),
     voice:           buildVoice(strategy, ef, raw),
@@ -19,8 +19,7 @@ export function buildReportData(strategy: any = {}, profile: any = {}) {
     competitive:     buildCompetitive(strategy, ef),
     messagingFormats: buildMessagingFormats(strategy, ef),
   };
-  // eslint-disable-next-line no-console
-  try { console.log('[reportData]', data, '[raw strategy]', strategy); } catch {}
+   
   return data;
 }
 
@@ -39,7 +38,7 @@ function buildMeta(profile: any, strategy: any) {
 }
 
 // ─── POSITIONING ────────────────────────────────────────────────
-function buildPositioning(s: any, ef: any, raw: any, get: Function) {
+function buildPositioning(s: any, ef: any, raw: any) {
   const statement =
     s.positioning_statement ??
     ef.positioningStatement ??
@@ -225,14 +224,14 @@ function buildContentStrategy(s: any, ef: any, raw: any) {
 function buildDefaultQuarters(s: any) {
   const method = s.methodology ?? 'The Framework';
   return [
-    { label: 'Q2 2026', theme: `${method}: Architecting Your Message`,  weeks: 12, arc: 'Problem, solution, authority',   color: '#ff6b6b', cta: 'Book a Discovery Call',          metric: s.success_definition ?? 'Qualified discovery calls' },
+    { label: 'Q2 2026', theme: `${method}: Architecting Your Message`,  weeks: 12, arc: 'Problem, solution, authority',   color: '#FF6B5C', cta: 'Book a Discovery Call',          metric: s.success_definition ?? 'Qualified discovery calls' },
     { label: 'Q3 2026', theme: "The Confident Founder's Mindset",        weeks: 12, arc: 'Mindset, confidence, execution', color: '#f5a623', cta: 'Book a Clarity Call',            metric: 'Increase engagement rate by 20%' },
     { label: 'Q4 2026', theme: 'Building a Personal Brand That Sells',   weeks: 12, arc: 'Visibility, leads, revenue',     color: '#3cb87a', cta: 'Apply for Private Consultation', metric: 'Sign 3 new clients per month' },
   ];
 }
 
 function buildQuartersFromThemes(themes: any[], s: any) {
-  const colors = ['#ff6b6b', '#f5a623', '#3cb87a', '#3b82f6'];
+  const colors = ['#FF6B5C', '#f5a623', '#3cb87a', '#3b82f6'];
   return themes.slice(0, 4).map((t: any, i: number) => ({
     label:  `Q${i + 2} 2026`,
     theme:  typeof t === 'string' ? t : t.name,
@@ -370,7 +369,7 @@ function buildChannels(s: any, ef: any, raw: any) {
 
   const defaults = {
     primary:   {
-      name: ch, label: 'Primary', color: '#ff6b6b', icon: '💼',
+      name: ch, label: 'Primary', color: '#FF6B5C', icon: '💼',
       freq, hrs: `${Math.round(hrs * 0.65)} hrs/week`,
       cta: 'Book a Discovery Call',
       bullets: [`${freq} — all content formats`, 'Mon–Fri: Framework & Education', 'Sat–Sun: Mindset & Reflection', 'Posting window: 8–11 AM local'],
@@ -453,7 +452,7 @@ function buildActionPlan(s: any, ef: any, raw: any) {
 
   if (apEf.week1 || apEf.week2 || apEf.week3 || apEf.week4) {
     const weeks = [
-      { week: 'Week 1', color: '#ff6b6b', theme: 'Set the Foundation', tasks: [apEf.week1].filter(Boolean) },
+      { week: 'Week 1', color: '#FF6B5C', theme: 'Set the Foundation', tasks: [apEf.week1].filter(Boolean) },
       { week: 'Week 2', color: '#f59e0b', theme: 'Launch',              tasks: [apEf.week2].filter(Boolean) },
       { week: 'Week 3', color: '#3b82f6', theme: 'Activate Engagement', tasks: [apEf.week3].filter(Boolean) },
       { week: 'Week 4', color: '#3cb87a', theme: 'Optimize',            tasks: [apEf.week4].filter(Boolean) },
@@ -478,7 +477,7 @@ function buildActionPlan(s: any, ef: any, raw: any) {
 
   return {
     weeks: [
-      { week: 'Week 1', color: '#ff6b6b', theme: 'Set the Foundation',
+      { week: 'Week 1', color: '#FF6B5C', theme: 'Set the Foundation',
         tasks: [`Optimize ${ch} profile with new positioning statement`, `Write and schedule first 7 posts (${method} intro)`, 'Send welcome newsletter to existing list', 'Research 5 target podcasts to pitch'] },
       { week: 'Week 2', color: '#f59e0b', theme: 'Build Momentum',
         tasks: ['Start daily 30-min proactive engagement', 'Batch-write Week 3 content', 'Send weekly newsletter — deeper dive', 'Send 3 podcast pitch emails'] },
