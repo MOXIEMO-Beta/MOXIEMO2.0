@@ -38,18 +38,17 @@ export default function AuthCallback() {
         const params = new URLSearchParams(hash);
         const type = params.get("type");
 
-        // Give Supabase a tick to process the hash and establish the session
-        await new Promise((r) => setTimeout(r, 50));
+        // Wait for Supabase to process the hash/PKCE exchange and establish the session
+        await new Promise((r) => setTimeout(r, 500));
         const { data: { session } } = await supabase.auth.getSession();
 
         if (!session?.user) {
-          // No session and no usable token — send them home.
-          navigate("/", { replace: true });
+          navigate("/auth?mode=signin", { replace: true });
           return;
         }
 
         // Ensure profile exists with founding_member plan.
-        await supabase
+        const { error: upsertError } = await supabase
           .from("profiles")
           .upsert(
             {
@@ -59,10 +58,15 @@ export default function AuthCallback() {
             },
             { onConflict: "id" }
           );
+        if (upsertError) {
+          setErrorMsg("We had trouble setting up your account. Please try again.");
+          setStatus("error");
+          return;
+        }
 
-        // Google/Apple OAuth users never need a password — skip this screen for them.
+        // Google OAuth users never need a password — skip this screen for them.
         const provider = session.user.app_metadata?.provider;
-        const isOAuthUser = provider === "google" || provider === "apple";
+        const isOAuthUser = provider === "google";
         if (isOAuthUser) {
           navigate("/app", { replace: true });
           return;

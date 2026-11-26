@@ -13,30 +13,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((evt, s) => {
-      setSession(s);
-      setLoading(false);
-      if (evt === "SIGNED_OUT" || evt === "USER_UPDATED") {
-        queryClient.clear();
-        setIsAdmin(false);
-      }
-      if (s?.user) {
-        // Read app_role claim from JWT app_metadata (set by custom_jwt_claims hook)
-        // Falls back to false if the token predates the hook being wired up.
-        const appRole = s.user.app_metadata?.app_role;
-        setIsAdmin(appRole === 'admin');
-      }
-    });
+    // getSession bootstraps state before the listener fires
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
-      setLoading(false);
       if (data.session?.user) {
-        // Read app_role claim from JWT app_metadata (set by custom_jwt_claims hook)
-        // Falls back to false if the token predates the hook being wired up.
-        const appRole = data.session.user.app_metadata?.app_role;
-        setIsAdmin(appRole === 'admin');
+        setIsAdmin(data.session.user.app_metadata?.app_role === "admin");
       }
+      setLoading(false);
     });
+
+    const { data: sub } = supabase.auth.onAuthStateChange((evt, s) => {
+      setSession(s);
+      if (evt === "SIGNED_OUT") {
+        queryClient.clear();
+        setIsAdmin(false);
+      } else if (s?.user) {
+        setIsAdmin(s.user.app_metadata?.app_role === "admin");
+      }
+      setLoading(false);
+    });
+
     return () => sub.subscription.unsubscribe();
   }, [queryClient]);
 
