@@ -6,6 +6,15 @@ import { useQueryClient } from "@tanstack/react-query";
 type Ctx = { user: User | null; session: Session | null; loading: boolean; isAdmin: boolean };
 const AuthContext = createContext<Ctx>({ user: null, session: null, loading: true, isAdmin: false });
 
+async function fetchIsAdmin(userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", userId)
+    .maybeSingle();
+  return data?.is_admin === true;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
@@ -13,22 +22,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    // getSession bootstraps state before the listener fires
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(async ({ data }) => {
       setSession(data.session);
       if (data.session?.user) {
-        setIsAdmin(data.session.user.app_metadata?.app_role === "admin");
+        setIsAdmin(await fetchIsAdmin(data.session.user.id));
       }
       setLoading(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((evt, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (evt, s) => {
       setSession(s);
       if (evt === "SIGNED_OUT") {
         queryClient.clear();
         setIsAdmin(false);
       } else if (s?.user) {
-        setIsAdmin(s.user.app_metadata?.app_role === "admin");
+        setIsAdmin(await fetchIsAdmin(s.user.id));
       }
       setLoading(false);
     });
