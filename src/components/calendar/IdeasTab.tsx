@@ -80,7 +80,7 @@ export default function IdeasTab({ ctx }: { ctx: any }) {
     asArray<string>(strategy?.content_pillars).forEach((pillarRaw: any) => {
       const pillar = typeof pillarRaw === "string" ? pillarRaw : (pillarRaw?.name ?? pillarRaw?.title ?? "");
       if (!pillar) return;
-      const has = socialPosts.some((p: any) => p.pillar === pillar && isThisMonth(p.published_at ?? p.scheduled_for));
+      const has = socialPosts.some((p: any) => p.pillar === pillar && isThisMonth(p.published_at ?? p.scheduled_at));
       if (!has) g.push({ type: "pillar_gap", title: `"${pillar}" hasn't been covered this month`, action: "Create post", channel: "linkedin" });
     });
     if (!emailSends.some((e: any) => isThisWeek(e.sent_at))) {
@@ -89,7 +89,7 @@ export default function IdeasTab({ ctx }: { ctx: any }) {
     const next7 = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(); d.setDate(d.getDate() + i + 1); return d.toISOString().slice(0, 10);
     });
-    const scheduled = new Set(socialPosts.filter((p: any) => p.status === "scheduled" && p.scheduled_for).map((p: any) => p.scheduled_for.slice(0, 10)));
+    const scheduled = new Set(socialPosts.filter((p: any) => p.status === "scheduled" && p.scheduled_at).map((p: any) => p.scheduled_at.slice(0, 10)));
     const empty = next7.filter(d => !scheduled.has(d));
     if (empty.length > 3) {
       g.push({ type: "schedule_gap", title: `${empty.length} empty days next week`, action: "Fill schedule", channel: "linkedin" });

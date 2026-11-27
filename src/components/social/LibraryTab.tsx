@@ -50,7 +50,7 @@ type SocialPost = {
   pillar: string | null;
   topic: string | null;
   status: string;
-  scheduled_for: string | null;
+  scheduled_at: string | null;
   published_at: string | null;
   created_at: string;
   is_template: boolean;
@@ -814,8 +814,8 @@ function PostCard({
   const img = post.image_urls?.[0];
   const dateLabel = post.published_at
     ? `Published ${formatDate(post.published_at)}`
-    : post.scheduled_for
-    ? `Scheduled ${formatDate(post.scheduled_for)}`
+    : post.scheduled_at
+    ? `Scheduled ${formatDate(post.scheduled_at)}`
     : `Created ${formatDate(post.created_at)}`;
 
   return (
@@ -1124,7 +1124,7 @@ function PostsListView({
             const body = getPostBody(p);
             const img = p.image_urls?.[0];
             const platforms = (p.platforms ?? []) as Platform[];
-            const date = p.published_at ?? p.scheduled_for ?? p.created_at;
+            const date = p.published_at ?? p.scheduled_at ?? p.created_at;
             return (
               <tr
                 key={p.id}

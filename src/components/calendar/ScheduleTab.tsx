@@ -118,20 +118,20 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
   function itemsForCell(channel: ChannelKey, day: Date): any[] {
     if (channel === "email") {
       const real = emailSends.filter((e: any) => {
-        const iso = e.scheduled_for ?? e.sent_at;
+        const iso = e.scheduled_at ?? e.sent_at;
         return iso && sameDay(new Date(iso), day);
       }).map((e: any) => ({ ...e, _kind: "email", _text: e.subject ?? e.body?.slice(0, 60) ?? "Email" }));
       return real;
     }
     if (channel === "content") {
       return contentItems.filter((c: any) => {
-        const iso = c.scheduled_for ?? c.published_at ?? c.created_at;
+        const iso = c.scheduled_at ?? c.published_at ?? c.created_at;
         return iso && sameDay(new Date(iso), day);
       }).map((c: any) => ({ ...c, _kind: "content", _text: c.topic ?? c.body?.slice(0, 60) ?? "Content draft" }));
     }
     const real = socialPosts.filter((p: any) => {
       if (!(p.platforms ?? []).includes(channel)) return false;
-      const iso = p.scheduled_for ?? p.published_at;
+      const iso = p.scheduled_at ?? p.published_at;
       return iso && sameDay(new Date(iso), day);
     }).map((p: any) => ({ ...p, _kind: "social", _text: (p.content_by_platform?.[channel] ?? p.topic ?? "Post").slice(0, 60) }));
     return real;
@@ -140,10 +140,10 @@ export default function ScheduleTab({ ctx }: { ctx: any }) {
   // Sidebar metrics — this week
   const weekEnd = addDays(weekStart, 7);
   const inWeek = (iso: string | null | undefined) => iso && new Date(iso) >= weekStart && new Date(iso) < weekEnd;
-  const weekScheduled = socialPosts.filter((p: any) => inWeek(p.scheduled_for ?? p.published_at)).length;
-  const weekLI = socialPosts.filter((p: any) => (p.platforms ?? []).includes("linkedin") && inWeek(p.scheduled_for ?? p.published_at)).length;
-  const weekIG = socialPosts.filter((p: any) => (p.platforms ?? []).includes("instagram") && inWeek(p.scheduled_for ?? p.published_at)).length;
-  const weekEmail = emailSends.filter((e: any) => inWeek(e.scheduled_for ?? e.sent_at)).length;
+  const weekScheduled = socialPosts.filter((p: any) => inWeek(p.scheduled_at ?? p.published_at)).length;
+  const weekLI = socialPosts.filter((p: any) => (p.platforms ?? []).includes("linkedin") && inWeek(p.scheduled_at ?? p.published_at)).length;
+  const weekIG = socialPosts.filter((p: any) => (p.platforms ?? []).includes("instagram") && inWeek(p.scheduled_at ?? p.published_at)).length;
+  const weekEmail = emailSends.filter((e: any) => inWeek(e.scheduled_at ?? e.sent_at)).length;
 
   // Month view cells
   const monthStart = new Date(anchor.getFullYear(), anchor.getMonth(), 1);

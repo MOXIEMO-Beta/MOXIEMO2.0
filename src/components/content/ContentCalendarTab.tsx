@@ -567,7 +567,7 @@ function GenerateModal({
       topic: title,
       body,
       status,
-      scheduled_for: status === "scheduled" ? effectiveDate : null,
+      scheduled_at: status === "scheduled" ? effectiveDate : null,
     });
     if (error) {
       toast.error("Couldn't save", { description: error.message });

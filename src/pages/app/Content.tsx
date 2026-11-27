@@ -70,7 +70,7 @@ type ContentItem = {
   topic: string | null;
   body: string | null;
   status: "draft" | "queued" | "scheduled" | "published";
-  scheduled_for: string | null;
+  scheduled_at: string | null;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -1760,10 +1760,10 @@ function QueueCardActions({
       <div className="flex items-center gap-3 flex-wrap">
         <Input
           type="datetime-local"
-          value={toLocalInputValue(item.scheduled_for)}
+          value={toLocalInputValue(item.scheduled_at)}
           onChange={(e) =>
             onPatch(item.id, {
-              scheduled_for: e.target.value ? new Date(e.target.value).toISOString() : null,
+              scheduled_at: e.target.value ? new Date(e.target.value).toISOString() : null,
               status: e.target.value ? "scheduled" : "queued",
             })
           }
@@ -1833,7 +1833,7 @@ function DraftActions({
             onClick={() => {
               if (!when) return;
               onPatch(item.id, {
-                scheduled_for: new Date(when).toISOString(),
+                scheduled_at: new Date(when).toISOString(),
                 status: "scheduled",
               });
               setScheduling(false);

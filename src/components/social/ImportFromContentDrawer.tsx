@@ -180,7 +180,7 @@ export default function ImportFromContentDrawer({ open, onOpenChange, userId, pi
       pillar: matchedPillar,
       topic: item.topic,
       status: "scheduled",
-      scheduled_for: iso,
+      scheduled_at: iso,
       media_urls: media,
       image_urls: media,
     });
@@ -188,7 +188,7 @@ export default function ImportFromContentDrawer({ open, onOpenChange, userId, pi
       // Mark the draft as scheduled (don't delete it).
       await supabase
         .from("content_items")
-        .update({ status: "scheduled", scheduled_for: iso, body: finalBody })
+        .update({ status: "scheduled", scheduled_at: iso, body: finalBody })
         .eq("id", item.id);
     }
     setSaving(false);

@@ -51,8 +51,8 @@ export default function PlanTab({ ctx }: { ctx: any }) {
     } else {
       const themeRaw = themes[i] as any;
       themeText = typeof themeRaw === "string" ? themeRaw : (themeRaw?.theme ?? themeRaw?.title ?? themeRaw?.name ?? `Quarter ${Q.q} focus`);
-      postsCount = socialPosts.filter((p: any) => isBetween(p.scheduled_for ?? p.published_at, start, end)).length;
-      emailsCount = emailSends.filter((e: any) => isBetween(e.scheduled_for ?? e.sent_at, start, end)).length;
+      postsCount = socialPosts.filter((p: any) => isBetween(p.scheduled_at ?? p.published_at, start, end)).length;
+      emailsCount = emailSends.filter((e: any) => isBetween(e.scheduled_at ?? e.sent_at, start, end)).length;
       const total = end.getTime() - start.getTime();
       const elapsed = Math.max(0, Math.min(total, now.getTime() - start.getTime()));
       pct = isCurrent ? Math.round((elapsed / total) * 100) : (now > end ? 100 : 0);
@@ -92,7 +92,7 @@ export default function PlanTab({ ctx }: { ctx: any }) {
   function dayDots(d: Date) {
     const dots: { color: string; key: string; label: string }[] = [];
     socialPosts.forEach((p: any) => {
-      const iso = p.scheduled_for ?? p.published_at;
+      const iso = p.scheduled_at ?? p.published_at;
       if (!iso) return;
       if (new Date(iso).toDateString() !== d.toDateString()) return;
       (p.platforms ?? []).forEach((pl: string) => {
@@ -102,7 +102,7 @@ export default function PlanTab({ ctx }: { ctx: any }) {
       });
     });
     emailSends.forEach((e: any) => {
-      const iso = e.scheduled_for ?? e.sent_at;
+      const iso = e.scheduled_at ?? e.sent_at;
       if (!iso) return;
       if (new Date(iso).toDateString() === d.toDateString()) dots.push({ color: "bg-[#FF6B5C]", key: `em-${e.id}`, label: "Email" });
     });
@@ -116,10 +116,10 @@ export default function PlanTab({ ctx }: { ctx: any }) {
   // Channel balance bar
   const counts = { linkedin: 0, instagram: 0, facebook: 0, email: 0 };
   socialPosts.forEach((p: any) => {
-    if (!isBetween(p.scheduled_for ?? p.published_at, monthStart, monthEnd)) return;
+    if (!isBetween(p.scheduled_at ?? p.published_at, monthStart, monthEnd)) return;
     (p.platforms ?? []).forEach((pl: string) => { if ((counts as any)[pl] !== undefined) (counts as any)[pl]++; });
   });
-  counts.email = emailSends.filter((e: any) => isBetween(e.scheduled_for ?? e.sent_at, monthStart, monthEnd)).length;
+  counts.email = emailSends.filter((e: any) => isBetween(e.scheduled_at ?? e.sent_at, monthStart, monthEnd)).length;
   const total = Math.max(1, counts.linkedin + counts.instagram + counts.facebook + counts.email);
   const bal = [
     { label: "LinkedIn", val: counts.linkedin, color: "bg-[#FF6B5C]" },

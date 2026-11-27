@@ -54,7 +54,7 @@ type SocialPost = {
   image_urls: unknown;
   pillar: string | null;
   status: string;
-  scheduled_for: string | null;
+  scheduled_at: string | null;
   published_at: string | null;
   created_at: string;
   platform_post_ids: Record<string, string> | null;
@@ -203,7 +203,7 @@ export default function ReportsTab({ userId, onSwitchTab, onRepurposePost, onCre
       const [postsRes, analyticsRes, stratRes] = await Promise.all([
         supabase
           .from("social_posts")
-          .select("id, platforms, content_by_platform, media_urls, image_urls, pillar, status, scheduled_for, published_at, created_at, platform_post_ids")
+          .select("id, platforms, content_by_platform, media_urls, image_urls, pillar, status, scheduled_at, published_at, created_at, platform_post_ids")
           .eq("user_id", userId)
           .order("published_at", { ascending: false }),
         supabase.from("social_analytics").select("*").eq("user_id", userId),

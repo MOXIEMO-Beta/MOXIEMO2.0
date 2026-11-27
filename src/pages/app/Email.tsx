@@ -150,7 +150,7 @@ type EmailSend = {
   click_rate: number | null;
   segment: string | null;
   status: string | null;
-  scheduled_for: string | null;
+  scheduled_at: string | null;
   body: string | null;
   recipient_ids: unknown;
 };
@@ -523,7 +523,7 @@ export default function Email() {
       subject,
       body: bodyWithCta(),
       status: "scheduled",
-      scheduled_for: dt.toISOString(),
+      scheduled_at: dt.toISOString(),
       segment: segmentValue,
       recipient_ids: sendRecipientIds,
       recipient_count: sendRecipientIds.length,
@@ -634,9 +634,9 @@ export default function Email() {
   }
 
   async function rescheduleSend(item: EmailSend) {
-    const dateStr = window.prompt("New date (YYYY-MM-DD)", item.scheduled_for?.slice(0, 10) || minScheduleDate);
+    const dateStr = window.prompt("New date (YYYY-MM-DD)", item.scheduled_at?.slice(0, 10) || minScheduleDate);
     if (!dateStr) return;
-    const timeStr = window.prompt("New time (HH:MM, 24h)", item.scheduled_for?.slice(11, 16) || "09:00");
+    const timeStr = window.prompt("New time (HH:MM, 24h)", item.scheduled_at?.slice(11, 16) || "09:00");
     if (!timeStr) return;
     const dt = new Date(`${dateStr}T${timeStr}:00`);
     if (isNaN(dt.getTime()) || dt.getTime() <= Date.now()) {
@@ -645,7 +645,7 @@ export default function Email() {
     }
     const { error } = await supabase
       .from("email_sends")
-      .update({ scheduled_for: dt.toISOString(), status: "scheduled" })
+      .update({ scheduled_at: dt.toISOString(), status: "scheduled" })
       .eq("id", item.id);
     if (error) {
       toast.error(error.message);
@@ -1887,10 +1887,10 @@ export default function Email() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {status === "scheduled" && s.scheduled_for ? (
+                        {status === "scheduled" && s.scheduled_at ? (
                           <div className="flex flex-col">
-                            <span>{new Date(s.scheduled_for).toLocaleString()}</span>
-                            <span className="text-xs text-muted-foreground">{countdownLabel(s.scheduled_for)}</span>
+                            <span>{new Date(s.scheduled_at).toLocaleString()}</span>
+                            <span className="text-xs text-muted-foreground">{countdownLabel(s.scheduled_at)}</span>
                           </div>
                         ) : status === "queued" ? (
                           <span className="text-muted-foreground">—</span>

@@ -40,7 +40,7 @@ type SocialPost = {
   content_by_platform: Record<string, string> | null;
   pillar: string | null;
   status: string;
-  scheduled_for: string | null;
+  scheduled_at: string | null;
   published_at: string | null;
   created_at: string;
 };
@@ -130,7 +130,7 @@ function fmtDateLong(d: Date) {
 }
 
 function postDate(p: SocialPost): Date | null {
-  const iso = p.scheduled_for ?? p.published_at ?? null;
+  const iso = p.scheduled_at ?? p.published_at ?? null;
   return iso ? new Date(iso) : null;
 }
 function firstCopy(p: SocialPost, max = 30): string {
@@ -259,7 +259,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     if (!userId) return;
     const { data, error } = await supabase
       .from("social_posts")
-      .select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, created_at")
+      .select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_at, published_at, created_at")
       .eq("user_id", userId);
     if (error) {
       console.error(error);
@@ -397,7 +397,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     if (!id) return;
     const post = posts.find((p) => p.id === id);
     if (!post) return;
-    const prevIso = post.scheduled_for;
+    const prevIso = post.scheduled_at;
     const prev = prevIso ? new Date(prevIso) : new Date();
     const next = new Date(day);
     next.setHours(prev.getHours(), prev.getMinutes(), 0, 0);
@@ -405,14 +405,14 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     if (prevIso === nextIso) return;
     undoRef.current = { id, prev: prevIso };
     // optimistic
-    setPosts((arr) => arr.map((p) => (p.id === id ? { ...p, scheduled_for: nextIso, status: "scheduled" } : p)));
+    setPosts((arr) => arr.map((p) => (p.id === id ? { ...p, scheduled_at: nextIso, status: "scheduled" } : p)));
     const { error } = await supabase
       .from("social_posts")
-      .update({ scheduled_for: nextIso, status: "scheduled" })
+      .update({ scheduled_at: nextIso, status: "scheduled" })
       .eq("id", id);
     if (error) {
       toast.error("Couldn't reschedule");
-      setPosts((arr) => arr.map((p) => (p.id === id ? { ...p, scheduled_for: prevIso } : p)));
+      setPosts((arr) => arr.map((p) => (p.id === id ? { ...p, scheduled_at: prevIso } : p)));
       return;
     }
     toast.success(`Rescheduled to ${fmtDateLong(next)}`, {
@@ -421,8 +421,8 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
         onClick: async () => {
           const u = undoRef.current;
           if (!u || u.id !== id) return;
-          await supabase.from("social_posts").update({ scheduled_for: u.prev }).eq("id", id);
-          setPosts((arr) => arr.map((p) => (p.id === id ? { ...p, scheduled_for: u.prev } : p)));
+          await supabase.from("social_posts").update({ scheduled_at: u.prev }).eq("id", id);
+          setPosts((arr) => arr.map((p) => (p.id === id ? { ...p, scheduled_at: u.prev } : p)));
         },
       },
     });
@@ -508,7 +508,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
           platforms: [platform],
           content_by_platform: { [platform]: body } as any,
           status: "scheduled",
-          scheduled_for: when.toISOString(),
+          scheduled_at: when.toISOString(),
           pillar: pillar || null,
           sort_order: 0,
         });
@@ -587,7 +587,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     setActionLoading("reschedule");
     const { error } = await supabase
       .from("social_posts")
-      .update({ scheduled_for: iso, status: "scheduled" })
+      .update({ scheduled_at: iso, status: "scheduled" })
       .eq("id", rescheduleForId);
     setActionLoading(null);
     if (error) {
@@ -616,7 +616,7 @@ export default function CalendarTab({ userId, onEditPost, onCreateAtDate, onImpo
     const key = ymd(selectedDate);
     return posts
       .filter((p) => {
-        const sk = p.scheduled_for ? ymd(new Date(p.scheduled_for)) : null;
+        const sk = p.scheduled_at ? ymd(new Date(p.scheduled_at)) : null;
         const pk = p.published_at ? ymd(new Date(p.published_at)) : null;
         return sk === key || pk === key;
       })
@@ -1419,7 +1419,7 @@ function WeekView({
     return pd ? sameDay(pd, d) : false;
   };
   const unscheduled = posts.filter(
-    (p) => !p.scheduled_for && !p.published_at && (statusOf(p) === "draft" || statusOf(p) === "queued"),
+    (p) => !p.scheduled_at && !p.published_at && (statusOf(p) === "draft" || statusOf(p) === "queued"),
   );
 
   return (

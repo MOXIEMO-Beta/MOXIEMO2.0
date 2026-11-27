@@ -200,7 +200,7 @@ export default function Dashboard() {
         const [profileRes, strategyRes, socialPostsRes, contentItemsRes, goalRes, emailSendsRes, socialConnectionsRes, discoveryRes, analyticsRes] = await Promise.all([
           supabase.from("profiles").select("full_name, business_name, role, plan, intended_use").eq("id", user.id).maybeSingle(),
           (brandId ? strategyQ.eq("brand_id", brandId) : strategyQ.eq("user_id", user.id)).maybeSingle(),
-          supabase.from("social_posts").select("id, status, platforms, pillar, scheduled_for, published_at, content_by_platform, topic, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
+          supabase.from("social_posts").select("id, status, platforms, pillar, scheduled_at, published_at, content_by_platform, topic, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
           supabase.from("content_items").select("id, status, platform, topic, body, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
           supabase.from("goal_entries").select("*").eq("user_id", user.id).order("week_of", { ascending: false }).limit(24),
           supabase.from("email_sends").select("id, subject, sent_at, recipient_count, status").eq("user_id", user.id).order("sent_at", { ascending: false }).limit(10),
@@ -287,7 +287,7 @@ export default function Dashboard() {
   const discoveryStarted = !!discovery && Array.isArray(discovery.messages) && discovery.messages.length > 0;
   const discoveryComplete = discovery?.status === "completed";
 
-  const postsScheduledToday = socialPosts.filter((p) => p.status === "scheduled" && isToday(p.scheduled_for));
+  const postsScheduledToday = socialPosts.filter((p) => p.status === "scheduled" && isToday(p.scheduled_at));
   const draftPosts = socialPosts.filter((p) => p.status === "draft");
   const draftContentItems = contentItems.filter((c) => c.status === "draft");
   const totalDrafts = draftPosts.length + draftContentItems.length;
@@ -308,7 +308,7 @@ export default function Dashboard() {
   const publishedCount = socialPosts.filter((p) => p.published_at).length;
   const hoursSaved = totalGenerated * 0.5 + publishedCount * 1.5;
 
-  const scheduledNext7 = socialPosts.filter((p) => p.status === "scheduled" && isNext7Days(p.scheduled_for));
+  const scheduledNext7 = socialPosts.filter((p) => p.status === "scheduled" && isNext7Days(p.scheduled_at));
 
   const alignment = strategy?.strength_score ?? 0;
   const pillars: string[] = useMemo(() => {

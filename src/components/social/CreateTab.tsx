@@ -386,7 +386,7 @@ export default function CreateTab({
           ? surprisePick
           : null,
       status,
-      scheduled_for: scheduledFor,
+      scheduled_at: scheduledFor,
       media_urls: mediaUrls,
     };
   }

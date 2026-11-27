@@ -57,7 +57,7 @@ type SocialPost = {
   content_by_platform: Record<string, string> | null;
   pillar: string | null;
   status: string;
-  scheduled_for: string | null;
+  scheduled_at: string | null;
   published_at: string | null;
   media_urls: any;
   sort_order: number | null;
@@ -182,10 +182,10 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       const [{ data: rows }, { data: conns }] = await Promise.all([
         supabase
           .from("social_posts")
-          .select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at")
+          .select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_at, published_at, media_urls, sort_order, created_at")
           .eq("user_id", userId)
           .order("sort_order", { ascending: true })
-          .order("scheduled_for", { ascending: true, nullsFirst: false })
+          .order("scheduled_at", { ascending: true, nullsFirst: false })
           .order("created_at", { ascending: false }),
         supabase.from("social_connections").select("id, platform, connection_type, organization_name, profile_name").eq("user_id", userId),
       ]);
@@ -250,7 +250,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       status: "draft",
       pillar: suggestion.pillar,
       sort_order: 0,
-    }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
+    }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_at, published_at, media_urls, sort_order, created_at").single();
     if (error) { toast.error(error.message); return; }
     setPosts((arr) => [data as any, ...arr]);
     dismissSuggestion(suggestion.angle);
@@ -298,7 +298,7 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
       status: "draft",
       pillar: suggestion.pillar,
       sort_order: 0,
-    }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
+    }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_at, published_at, media_urls, sort_order, created_at").single();
     if (error) { toast.error(error.message); return; }
     setPosts((arr) => [data as any, ...arr]);
     dismissSuggestion(suggestion.angle);
@@ -368,10 +368,10 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
     if (!value) return;
     const iso = new Date(value).toISOString();
     const nextStatus = post.status === "draft" ? "scheduled" : post.status;
-    setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, scheduled_for: iso, status: nextStatus } : p)));
+    setPosts((arr) => arr.map((p) => (p.id === post.id ? { ...p, scheduled_at: iso, status: nextStatus } : p)));
     const { error } = await supabase
       .from("social_posts")
-      .update({ scheduled_for: iso, status: nextStatus })
+      .update({ scheduled_at: iso, status: nextStatus })
       .eq("id", post.id);
     if (error) toast.error(error.message);
     else toast.success("Schedule updated");
@@ -739,8 +739,8 @@ export default function QueueTab({ userId, onChangeTab }: { userId: string | nul
                     </button>
                   )}
                   <label className="text-[12px] whitespace-nowrap cursor-pointer" style={{ color: "#6B6860" }}>
-                    {fmtDate(post.scheduled_for)}
-                    <input type="datetime-local" defaultValue={toLocalInputValue(post.scheduled_for)}
+                    {fmtDate(post.scheduled_at)}
+                    <input type="datetime-local" defaultValue={toLocalInputValue(post.scheduled_at)}
                       className="sr-only" onChange={(e) => handleDateChange(post, e.target.value)} />
                   </label>
                   <span className="text-[10px] font-semibold whitespace-nowrap"
@@ -1516,7 +1516,7 @@ function ComposeBlock({
         status: "draft",
         pillar: pillarUsed,
         sort_order: 0,
-      }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at").single();
+      }).select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_at, published_at, media_urls, sort_order, created_at").single();
       if (error) throw error;
       onSaved(data as any);
       setText("");
@@ -1832,7 +1832,7 @@ function EditPostPanel({
         content_by_platform: cbp,
         media_urls: mediaPath ? [mediaPath] : [],
       }).eq("id", post.id)
-        .select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_for, published_at, media_urls, sort_order, created_at")
+        .select("id, user_id, platforms, content_by_platform, pillar, status, scheduled_at, published_at, media_urls, sort_order, created_at")
         .single();
       if (error) throw error;
       onSaved(data as any);
