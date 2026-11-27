@@ -22,23 +22,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
+    supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
+      setLoading(false); // unblock UI immediately — don't wait for admin check
       if (data.session?.user) {
-        setIsAdmin(await fetchIsAdmin(data.session.user.id));
+        fetchIsAdmin(data.session.user.id).then(setIsAdmin);
       }
-      setLoading(false);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange(async (evt, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((evt, s) => {
       setSession(s);
+      setLoading(false);
       if (evt === "SIGNED_OUT") {
         queryClient.clear();
         setIsAdmin(false);
       } else if (s?.user) {
-        setIsAdmin(await fetchIsAdmin(s.user.id));
+        // Fetch admin status async without blocking loading state
+        fetchIsAdmin(s.user.id).then(setIsAdmin);
       }
-      setLoading(false);
     });
 
     return () => sub.subscription.unsubscribe();

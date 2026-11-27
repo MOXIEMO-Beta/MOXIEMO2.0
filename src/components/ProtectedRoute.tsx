@@ -20,46 +20,52 @@ export function ProtectedRoute({
     if (!requireOnboarding) { setChecking(false); return; }
     if (!user) { setChecking(false); return; }
     let cancelled = false;
+
+    // Hard timeout — never hang forever
+    const timeout = setTimeout(() => {
+      if (!cancelled) { setChecking(false); }
+    }, 5000);
+
     (async () => {
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("onboarding_completed, created_at")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (cancelled) return;
+      try {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("onboarding_completed, created_at")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (cancelled) return;
 
-      if (profileError) {
-        // profiles table missing (migrations not yet run) — send to onboarding to create profile
-        setNeedsOnboarding(true);
-        setChecking(false);
-        return;
-      }
+        if (profileError || !profile) {
+          setNeedsOnboarding(true);
+          setChecking(false);
+          return;
+        }
 
-      if (profile?.onboarding_completed) {
-        setNeedsOnboarding(false);
-        setChecking(false);
-        return;
-      }
-
-      // Existing-user bypass: pre-today account with a strategy already
-      const created = profile?.created_at ? new Date(profile.created_at) : null;
-      const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
-      if (created && created < startOfToday) {
-        const { data: strategy } = await supabase
-          .from("strategies").select("id").eq("user_id", user.id).maybeSingle();
-        if (strategy) {
-          await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
-          if (cancelled) return;
+        if (profile.onboarding_completed) {
           setNeedsOnboarding(false);
           setChecking(false);
           return;
         }
-      }
 
-      setNeedsOnboarding(true);
-      setChecking(false);
+        // Existing-user bypass: pre-today account with a strategy already
+        const created = profile.created_at ? new Date(profile.created_at) : null;
+        const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
+        if (created && created < startOfToday) {
+          const { data: strategy } = await supabase
+            .from("strategies").select("id").eq("user_id", user.id).maybeSingle();
+          if (!cancelled && strategy) {
+            await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
+            if (!cancelled) { setNeedsOnboarding(false); setChecking(false); return; }
+          }
+        }
+
+        if (!cancelled) { setNeedsOnboarding(true); setChecking(false); }
+      } catch {
+        if (!cancelled) { setChecking(false); }
+      }
     })();
-    return () => { cancelled = true; };
+
+    return () => { cancelled = true; clearTimeout(timeout); };
   }, [user, requireOnboarding]);
 
   if (loading || checking) return <PageLoader />;
