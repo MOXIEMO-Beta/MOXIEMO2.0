@@ -619,7 +619,7 @@ export default function Dashboard() {
   return (
     <>
     <div
-      className="w-full px-6 lg:px-10 py-10 space-y-10 dashboard-skin bg-brand-paper min-h-dvh"
+      className="w-full px-6 lg:px-10 pt-6 pb-10 space-y-8 dashboard-skin bg-brand-paper min-h-dvh"
     >
       <style>{`
         .dashboard-skin .stat-card { transition: transform 220ms ease, box-shadow 220ms ease; }
@@ -648,7 +648,6 @@ export default function Dashboard() {
       {/* 1. GREETING */}
       <header className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.25em] font-semibold mb-3 text-accent">Home</div>
           <h1 className="font-display text-4xl md:text-5xl tracking-[-0.03em] leading-[1] mb-3 text-foreground">
             {greeting}, {firstName}.
           </h1>

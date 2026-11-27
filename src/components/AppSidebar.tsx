@@ -207,13 +207,32 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
   );
 }
 
+// Sidebar is visible (desktop mode) when viewport width >= SIDEBAR_BREAKPOINT.
+const SIDEBAR_BREAKPOINT = 900;
+
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(() => window.innerWidth >= SIDEBAR_BREAKPOINT);
+  useEffect(() => {
+    const mq = window.matchMedia(`(min-width: ${SIDEBAR_BREAKPOINT}px)`);
+    const handler = (e: MediaQueryListEvent) => setDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return desktop;
+}
+
 export function AppSidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isDesktop = useIsDesktop();
 
-  // Close on route change
+  // Close mobile menu when switching to desktop
+  useEffect(() => { if (isDesktop) setMobileOpen(false); }, [isDesktop]);
+
+  // Sync CSS vars so AppLayout can offset content without Tailwind breakpoints
   useEffect(() => {
-    setMobileOpen(false);
-  }, []);
+    document.documentElement.style.setProperty("--sidebar-offset", isDesktop ? "220px" : "0px");
+    document.documentElement.style.setProperty("--hamburger-offset", isDesktop ? "0px" : "44px");
+  }, [isDesktop]);
 
   // Lock body scroll when mobile menu open
   useEffect(() => {
@@ -223,46 +242,46 @@ export function AppSidebar() {
 
   return (
     <>
-      {/* Desktop sidebar — hidden on mobile, fixed to the right */}
-      <aside
-        className="hidden lg:flex"
-        style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 220, background: SIDEBAR_BG, boxShadow: "-2px 0 8px rgba(0,0,0,0.06)", flexDirection: "column", zIndex: 40 }}
-      >
-        <SidebarContent />
-      </aside>
+      {/* Desktop sidebar — fixed right, only when wide enough */}
+      {isDesktop && (
+        <aside style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 220, background: SIDEBAR_BG, boxShadow: "-2px 0 8px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column", zIndex: 40 }}>
+          <SidebarContent />
+        </aside>
+      )}
 
-      {/* Mobile hamburger button — top right on mobile */}
-      <button
-        className="lg:hidden"
-        onClick={() => setMobileOpen(true)}
-        aria-label="Open menu"
-        style={{ position: "fixed", top: 10, right: 12, zIndex: 50, background: SIDEBAR_BG, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "6px 8px", cursor: "pointer", display: "flex", alignItems: "center" }}
-      >
-        <Menu size={20} color={INK} />
-      </button>
+      {/* Mobile hamburger — only when sidebar is hidden */}
+      {!isDesktop && (
+        <button
+          onClick={() => setMobileOpen(true)}
+          aria-label="Open menu"
+          style={{ position: "fixed", top: 10, right: 12, zIndex: 50, background: SIDEBAR_BG, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "6px 8px", cursor: "pointer", display: "flex", alignItems: "center" }}
+        >
+          <Menu size={20} color={INK} />
+        </button>
+      )}
 
-      {/* Mobile overlay backdrop */}
-      {mobileOpen && (
+      {/* Mobile overlay */}
+      {!isDesktop && mobileOpen && (
         <div
-          className="lg:hidden"
           onClick={() => setMobileOpen(false)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 45 }}
         />
       )}
 
       {/* Mobile slide-in sidebar — from the right */}
-      <aside
-        className="lg:hidden"
-        style={{
-          position: "fixed", top: 0, right: 0, bottom: 0, width: 260,
-          background: SIDEBAR_BG, boxShadow: "-4px 0 20px rgba(0,0,0,0.15)",
-          display: "flex", flexDirection: "column", zIndex: 50,
-          transform: mobileOpen ? "translateX(0)" : "translateX(100%)",
-          transition: "transform 250ms ease",
-        }}
-      >
-        <SidebarContent onClose={() => setMobileOpen(false)} />
-      </aside>
+      {!isDesktop && (
+        <aside
+          style={{
+            position: "fixed", top: 0, right: 0, bottom: 0, width: 260,
+            background: SIDEBAR_BG, boxShadow: "-4px 0 20px rgba(0,0,0,0.15)",
+            display: "flex", flexDirection: "column", zIndex: 50,
+            transform: mobileOpen ? "translateX(0)" : "translateX(100%)",
+            transition: "transform 250ms ease",
+          }}
+        >
+          <SidebarContent onClose={() => setMobileOpen(false)} />
+        </aside>
+      )}
     </>
   );
 }
