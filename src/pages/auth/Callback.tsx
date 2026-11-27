@@ -9,10 +9,7 @@ import { MoxieLogo } from "@/components/MoxieLogo";
 import { PageLoader } from "@/components/ui/PageLoader";
 import { toast } from "sonner";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
-
-function setOnboardingCache(userId: string) {
-  try { localStorage.setItem(`moxie_ob_done_${userId}`, "1"); } catch { /* ignore */ }
-}
+import { markOnboardingDone } from "@/components/ProtectedRoute";
 
 export default function AuthCallback() {
   const navigate = useNavigate();
@@ -79,7 +76,7 @@ export default function AuthCallback() {
         const onboardingDone = Boolean((profile as { onboarding_completed?: boolean } | null)?.onboarding_completed);
 
         // Pre-warm the ProtectedRoute cache so the spinner is instant on the next page.
-        if (onboardingDone) setOnboardingCache(session.user.id);
+        if (onboardingDone) markOnboardingDone(session.user.id);
 
         // Google OAuth users never need a password — skip straight to the app.
         const provider = session.user.app_metadata?.provider;

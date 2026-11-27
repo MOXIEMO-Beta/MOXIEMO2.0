@@ -1,17 +1,15 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLoader } from "@/components/ui/PageLoader";
 
-function onboardingCacheKey(userId: string) {
-  return `moxie_ob_done_${userId}`;
+// --- Onboarding cache (localStorage, keyed by user ID) ---
+export function markOnboardingDone(userId: string) {
+  try { localStorage.setItem(`moxie_ob_${userId}`, "1"); } catch { /* ignore */ }
 }
-function isCachedDone(userId: string): boolean {
-  try { return localStorage.getItem(onboardingCacheKey(userId)) === "1"; } catch { return false; }
-}
-function setCachedDone(userId: string) {
-  try { localStorage.setItem(onboardingCacheKey(userId), "1"); } catch { /* ignore */ }
+function isOnboardingDone(userId: string): boolean {
+  try { return localStorage.getItem(`moxie_ob_${userId}`) === "1"; } catch { return false; }
 }
 
 export function ProtectedRoute({
@@ -23,75 +21,40 @@ export function ProtectedRoute({
 }) {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const checkedRef = useRef(false);
 
-  // If this user already completed onboarding (cached in localStorage), skip DB check entirely.
-  const alreadyDone = requireOnboarding && user ? isCachedDone(user.id) : false;
-  const [checking, setChecking] = useState(requireOnboarding && !alreadyDone);
-  const [needsOnboarding, setNeedsOnboarding] = useState(false);
-
+  // Fire-and-forget: when a logged-in user doesn't have the cache set yet,
+  // fetch once from DB and write the cache. Never blocks rendering.
   useEffect(() => {
-    if (!requireOnboarding) { setChecking(false); return; }
-    if (!user) { setChecking(false); return; }
-    // Cache hit — skip the DB round-trip entirely.
-    if (isCachedDone(user.id)) { setChecking(false); return; }
-
-    let cancelled = false;
-
-    // Hard timeout — never hang longer than 3s regardless of DB latency.
-    const timeout = setTimeout(() => {
-      if (!cancelled) { setChecking(false); }
-    }, 3000);
-
-    (async () => {
-      try {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("onboarding_completed, created_at")
-          .eq("id", user.id)
-          .maybeSingle();
-        if (cancelled) return;
-
-        if (profileError || !profile) {
-          setNeedsOnboarding(true);
-          setChecking(false);
-          return;
-        }
-
-        if (profile.onboarding_completed) {
-          setCachedDone(user.id);
-          setNeedsOnboarding(false);
-          setChecking(false);
-          return;
-        }
-
-        // Existing-user bypass: pre-today account with a strategy already.
-        const created = profile.created_at ? new Date(profile.created_at) : null;
+    if (!requireOnboarding || !user || isOnboardingDone(user.id) || checkedRef.current) return;
+    checkedRef.current = true;
+    supabase
+      .from("profiles")
+      .select("onboarding_completed, created_at")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data) return;
+        if (data.onboarding_completed) { markOnboardingDone(user.id); return; }
+        // Existing-user bypass: account pre-dates today and has a strategy.
+        const created = data.created_at ? new Date(data.created_at) : null;
         const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
         if (created && created < startOfToday) {
-          const { data: strategy } = await supabase
-            .from("strategies").select("id").eq("user_id", user.id).maybeSingle();
-          if (!cancelled && strategy) {
-            await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
-            if (!cancelled) {
-              setCachedDone(user.id);
-              setNeedsOnboarding(false);
-              setChecking(false);
-              return;
-            }
-          }
+          supabase.from("strategies").select("id").eq("user_id", user.id).maybeSingle()
+            .then(({ data: s }) => {
+              if (s) {
+                supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id).then(() => {
+                  markOnboardingDone(user.id);
+                });
+              }
+            });
         }
-
-        if (!cancelled) { setNeedsOnboarding(true); setChecking(false); }
-      } catch {
-        if (!cancelled) { setChecking(false); }
-      }
-    })();
-
-    return () => { cancelled = true; clearTimeout(timeout); };
+      });
   }, [user, requireOnboarding]);
 
-  if (loading || checking) return <PageLoader />;
+  // --- Render decision (synchronous — zero DB wait) ---
+  if (loading) return <PageLoader />;
   if (!user) return <Navigate to="/auth" state={{ from: location }} replace />;
-  if (requireOnboarding && needsOnboarding) return <Navigate to="/onboarding" replace />;
+  if (requireOnboarding && !isOnboardingDone(user.id)) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 }

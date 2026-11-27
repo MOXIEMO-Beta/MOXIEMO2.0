@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { markOnboardingDone } from "@/components/ProtectedRoute";
 import { friendlyAuthError } from "@/lib/authErrors";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -296,6 +297,8 @@ export default function Onboarding() {
 
       if (error) console.warn("[onboarding] finalize upsert failed", error);
 
+      // Set cache BEFORE navigating so ProtectedRoute never redirects back here.
+      markOnboardingDone(user.id);
       window.location.assign("/app/discovery?welcome=true");
     } catch (e: unknown) {
       toast.error(friendlyAuthError("complete_onboarding", e));
