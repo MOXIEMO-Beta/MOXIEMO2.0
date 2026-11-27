@@ -10,6 +10,10 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { toast } from "sonner";
 import { ArrowRight, Eye, EyeOff } from "lucide-react";
 
+function setOnboardingCache(userId: string) {
+  try { localStorage.setItem(`moxie_ob_done_${userId}`, "1"); } catch { /* ignore */ }
+}
+
 export default function AuthCallback() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<"loading" | "set_password" | "error">("loading");
@@ -64,22 +68,26 @@ export default function AuthCallback() {
           return;
         }
 
-        // Google OAuth users never need a password — skip this screen for them.
+        // Check whether this user has already completed password setup + onboarding.
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("password_set, onboarding_completed")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        const passwordSet = Boolean((profile as { password_set?: boolean } | null)?.password_set);
+        const onboardingDone = Boolean((profile as { onboarding_completed?: boolean } | null)?.onboarding_completed);
+
+        // Pre-warm the ProtectedRoute cache so the spinner is instant on the next page.
+        if (onboardingDone) setOnboardingCache(session.user.id);
+
+        // Google OAuth users never need a password — skip straight to the app.
         const provider = session.user.app_metadata?.provider;
         const isOAuthUser = provider === "google";
         if (isOAuthUser) {
           navigate("/app", { replace: true });
           return;
         }
-
-        // Check whether this user has already completed password setup.
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("password_set")
-          .eq("id", session.user.id)
-          .maybeSingle();
-
-        const passwordSet = Boolean((profile as { password_set?: boolean } | null)?.password_set);
 
         // Show password screen only for invite/recovery/signup flows, not for returning users.
         if (type === "invite" || type === "recovery" || type === "signup" || (!passwordSet && type)) {

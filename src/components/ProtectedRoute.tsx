@@ -4,6 +4,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { PageLoader } from "@/components/ui/PageLoader";
 
+function onboardingCacheKey(userId: string) {
+  return `moxie_ob_done_${userId}`;
+}
+function isCachedDone(userId: string): boolean {
+  try { return localStorage.getItem(onboardingCacheKey(userId)) === "1"; } catch { return false; }
+}
+function setCachedDone(userId: string) {
+  try { localStorage.setItem(onboardingCacheKey(userId), "1"); } catch { /* ignore */ }
+}
+
 export function ProtectedRoute({
   children,
   requireOnboarding = true,
@@ -13,18 +23,24 @@ export function ProtectedRoute({
 }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [checking, setChecking] = useState(requireOnboarding);
+
+  // If this user already completed onboarding (cached in localStorage), skip DB check entirely.
+  const alreadyDone = requireOnboarding && user ? isCachedDone(user.id) : false;
+  const [checking, setChecking] = useState(requireOnboarding && !alreadyDone);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
   useEffect(() => {
     if (!requireOnboarding) { setChecking(false); return; }
     if (!user) { setChecking(false); return; }
+    // Cache hit — skip the DB round-trip entirely.
+    if (isCachedDone(user.id)) { setChecking(false); return; }
+
     let cancelled = false;
 
-    // Hard timeout — never hang forever
+    // Hard timeout — never hang longer than 3s regardless of DB latency.
     const timeout = setTimeout(() => {
       if (!cancelled) { setChecking(false); }
-    }, 5000);
+    }, 3000);
 
     (async () => {
       try {
@@ -42,12 +58,13 @@ export function ProtectedRoute({
         }
 
         if (profile.onboarding_completed) {
+          setCachedDone(user.id);
           setNeedsOnboarding(false);
           setChecking(false);
           return;
         }
 
-        // Existing-user bypass: pre-today account with a strategy already
+        // Existing-user bypass: pre-today account with a strategy already.
         const created = profile.created_at ? new Date(profile.created_at) : null;
         const startOfToday = new Date(); startOfToday.setHours(0, 0, 0, 0);
         if (created && created < startOfToday) {
@@ -55,7 +72,12 @@ export function ProtectedRoute({
             .from("strategies").select("id").eq("user_id", user.id).maybeSingle();
           if (!cancelled && strategy) {
             await supabase.from("profiles").update({ onboarding_completed: true }).eq("id", user.id);
-            if (!cancelled) { setNeedsOnboarding(false); setChecking(false); return; }
+            if (!cancelled) {
+              setCachedDone(user.id);
+              setNeedsOnboarding(false);
+              setChecking(false);
+              return;
+            }
           }
         }
 
