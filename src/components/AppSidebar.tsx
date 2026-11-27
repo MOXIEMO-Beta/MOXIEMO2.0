@@ -223,20 +223,20 @@ export function AppSidebar() {
 
   return (
     <>
-      {/* Desktop sidebar — hidden on mobile */}
+      {/* Desktop sidebar — hidden on mobile, fixed to the right */}
       <aside
         className="hidden lg:flex"
-        style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: SIDEBAR_BG, boxShadow: "2px 0 8px rgba(0,0,0,0.06)", flexDirection: "column", zIndex: 40 }}
+        style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 220, background: SIDEBAR_BG, boxShadow: "-2px 0 8px rgba(0,0,0,0.06)", flexDirection: "column", zIndex: 40 }}
       >
         <SidebarContent />
       </aside>
 
-      {/* Mobile hamburger button */}
+      {/* Mobile hamburger button — top right on mobile */}
       <button
         className="lg:hidden"
         onClick={() => setMobileOpen(true)}
         aria-label="Open menu"
-        style={{ position: "fixed", top: 10, left: 12, zIndex: 50, background: SIDEBAR_BG, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "6px 8px", cursor: "pointer", display: "flex", alignItems: "center" }}
+        style={{ position: "fixed", top: 10, right: 12, zIndex: 50, background: SIDEBAR_BG, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "6px 8px", cursor: "pointer", display: "flex", alignItems: "center" }}
       >
         <Menu size={20} color={INK} />
       </button>
@@ -250,14 +250,14 @@ export function AppSidebar() {
         />
       )}
 
-      {/* Mobile slide-in sidebar */}
+      {/* Mobile slide-in sidebar — from the right */}
       <aside
         className="lg:hidden"
         style={{
-          position: "fixed", top: 0, left: 0, bottom: 0, width: 260,
-          background: SIDEBAR_BG, boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
+          position: "fixed", top: 0, right: 0, bottom: 0, width: 260,
+          background: SIDEBAR_BG, boxShadow: "-4px 0 20px rgba(0,0,0,0.15)",
           display: "flex", flexDirection: "column", zIndex: 50,
-          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+          transform: mobileOpen ? "translateX(0)" : "translateX(100%)",
           transition: "transform 250ms ease",
         }}
       >

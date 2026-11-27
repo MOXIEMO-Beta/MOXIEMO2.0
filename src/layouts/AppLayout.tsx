@@ -26,9 +26,9 @@ export default function AppLayout() {
   const initials = initialsFromUser(fullName, user?.email ?? null);
 
   return (
-    <div className="moxie-app-shell min-h-dvh flex w-full" style={{ background: "#F7F5F1" }}>
+    <div className="moxie-app-shell min-h-dvh w-full" style={{ background: "#F7F5F1" }}>
       <AppSidebar />
-      <div className="flex-1 flex flex-col min-w-0 lg:ml-[220px]">
+      <div className="flex flex-col min-h-dvh lg:mr-[220px]">
         <header
           className="flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30"
           style={{
@@ -37,13 +37,13 @@ export default function AppLayout() {
             borderBottom: "1px solid #ECEAE5",
           }}
         >
-          <div className="flex items-center gap-2.5 pl-10 lg:pl-0" style={{ color: "#0E0F10" }}>
+          <div className="flex items-center gap-2.5" style={{ color: "#0E0F10" }}>
             <Icon className="h-4 w-4" />
             <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.3px", color: "#0E0F10" }}>
               {current.title}
             </span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 pr-10 lg:pr-0">
             <button
               aria-label="Notifications"
               className="rounded-full p-1.5 transition-colors hover:bg-[#F2F0EB]"
