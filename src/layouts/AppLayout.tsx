@@ -29,9 +29,9 @@ export default function AppLayout() {
   return (
     <div className="moxie-app-shell min-h-dvh w-full" style={{ background: "#F7F5F1" }}>
       <AppSidebar />
-      <div className="flex flex-col min-h-dvh lg:mr-[220px]">
+      <div className="flex flex-col min-h-dvh md:mr-[220px]">
         <header
-          className="flex items-center justify-between px-4 lg:px-6 sticky top-0 z-30"
+          className="flex items-center justify-between px-4 md:px-6 sticky top-0 z-30"
           style={{
             height: 52,
             background: "#FFFFFF",
@@ -44,7 +44,7 @@ export default function AppLayout() {
               {current.title}
             </span>
           </div>
-          <div className="flex items-center gap-4 pr-10 lg:pr-0">
+          <div className="flex items-center gap-4 pr-10 md:pr-0">
             <button
               aria-label="Notifications"
               className="rounded-full p-1.5 transition-colors hover:bg-[#F2F0EB]"

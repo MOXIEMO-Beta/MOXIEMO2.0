@@ -225,7 +225,7 @@ export function AppSidebar() {
     <>
       {/* Desktop sidebar — hidden on mobile, fixed to the right */}
       <aside
-        className="hidden lg:flex"
+        className="hidden md:flex"
         style={{ position: "fixed", top: 0, right: 0, bottom: 0, width: 220, background: SIDEBAR_BG, boxShadow: "-2px 0 8px rgba(0,0,0,0.06)", flexDirection: "column", zIndex: 40 }}
       >
         <SidebarContent />
@@ -233,7 +233,7 @@ export function AppSidebar() {
 
       {/* Mobile hamburger button — top right on mobile */}
       <button
-        className="lg:hidden"
+        className="md:hidden"
         onClick={() => setMobileOpen(true)}
         aria-label="Open menu"
         style={{ position: "fixed", top: 10, right: 12, zIndex: 50, background: SIDEBAR_BG, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "6px 8px", cursor: "pointer", display: "flex", alignItems: "center" }}
@@ -244,7 +244,7 @@ export function AppSidebar() {
       {/* Mobile overlay backdrop */}
       {mobileOpen && (
         <div
-          className="lg:hidden"
+          className="md:hidden"
           onClick={() => setMobileOpen(false)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 45 }}
         />
@@ -252,7 +252,7 @@ export function AppSidebar() {
 
       {/* Mobile slide-in sidebar — from the right */}
       <aside
-        className="lg:hidden"
+        className="md:hidden"
         style={{
           position: "fixed", top: 0, right: 0, bottom: 0, width: 260,
           background: SIDEBAR_BG, boxShadow: "-4px 0 20px rgba(0,0,0,0.15)",
