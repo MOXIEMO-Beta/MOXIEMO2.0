@@ -619,7 +619,7 @@ export default function Dashboard() {
   return (
     <>
     <div
-      className="w-full px-6 lg:px-10 py-10 space-y-10 dashboard-skin bg-brand-paper min-h-screen"
+      className="w-full px-6 lg:px-10 py-10 space-y-10 dashboard-skin bg-brand-paper min-h-dvh"
     >
       <style>{`
         .dashboard-skin .stat-card { transition: transform 220ms ease, box-shadow 220ms ease; }

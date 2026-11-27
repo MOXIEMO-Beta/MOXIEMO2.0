@@ -222,7 +222,7 @@ export default function Settings() {
   const xConn = connections.find((c) => c.platform === "x" || c.platform === "twitter");
 
   return (
-    <div className="min-h-screen bg-brand-paper p-10">
+    <div className="min-h-dvh bg-brand-paper p-10">
       <div className="max-w-[680px] mx-auto">
         <h1 className="font-display text-[28px] font-bold text-foreground mb-1">Settings</h1>
         <p className="text-sm text-muted-foreground mb-8">Manage your account and connected channels.</p>

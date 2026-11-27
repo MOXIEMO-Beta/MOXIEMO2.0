@@ -11,9 +11,12 @@ import {
   ShieldCheck,
   Images,
   ShieldAlert,
+  X,
+  Menu,
   type LucideIcon,
 } from "lucide-react";
 import { NavLink, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { usePlan } from "@/hooks/usePlan";
@@ -57,9 +60,9 @@ const GROUPS: { label: string; items: AppNavItem[] }[] = [
 
 export const APP_NAV_ITEMS: AppNavItem[] = GROUPS.flatMap((g) => g.items);
 
-const SIDEBAR_BG = "#F7F5F1";   /* brand paper */
-const CORAL = "#FF6B5C";         /* brand coral */
-const INK = "#15171C";           /* brand ink */
+const SIDEBAR_BG = "#F7F5F1";
+const CORAL = "#FF6B5C";
+const INK = "#15171C";
 
 function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
@@ -84,24 +87,9 @@ function PlanCard() {
   const unlimited = limit === null;
   const remaining = unlimited ? null : Math.max(0, (limit ?? 0) - used);
   return (
-    <div
-      style={{
-        background: "rgba(0,0,0,0.08)",
-        borderRadius: 8,
-        padding: 12,
-        color: INK,
-      }}
-    >
+    <div style={{ background: "rgba(0,0,0,0.08)", borderRadius: 8, padding: 12, color: INK }}>
       <div className="flex items-center justify-between" style={{ marginBottom: 6 }}>
-        <span
-          style={{
-            fontSize: 9.5,
-            textTransform: "uppercase",
-            letterSpacing: "0.1em",
-            color: "rgba(0,0,0,0.5)",
-            fontWeight: 600,
-          }}
-        >
+        <span style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(0,0,0,0.5)", fontWeight: 600 }}>
           Plan
         </span>
         <span style={{ fontSize: 11, fontWeight: 600, color: CORAL }}>{PLAN_LABEL[plan]}</span>
@@ -121,16 +109,7 @@ function PlanCard() {
         </div>
       )}
       {!unlimited && (
-        <Link
-          to="/pricing"
-          style={{
-            marginTop: 8,
-            display: "inline-block",
-            fontSize: 11,
-            fontWeight: 600,
-            color: CORAL,
-          }}
-        >
+        <Link to="/pricing" style={{ marginTop: 8, display: "inline-block", fontSize: 11, fontWeight: 600, color: CORAL }}>
           Upgrade your plan →
         </Link>
       )}
@@ -138,47 +117,25 @@ function PlanCard() {
   );
 }
 
-export function AppSidebar() {
+function SidebarContent({ onClose }: { onClose?: () => void }) {
   const { isAdmin } = useAuth();
   return (
-    <aside
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        bottom: 0,
-        width: 220,
-        background: SIDEBAR_BG,
-        boxShadow: "2px 0 8px rgba(0,0,0,0.06)",
-        display: "flex",
-        flexDirection: "column",
-        zIndex: 40,
-      }}
-    >
+    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* Logo */}
-      <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(21,23,28,0.07)" }}>
-        <img
-          src={LOGO_HEADER}
-          alt="MOXIEMO"
-          style={{ width: "80%", height: "auto", display: "block" }}
-          draggable={false}
-        />
+      <div style={{ padding: "20px 16px 14px", borderBottom: "1px solid rgba(21,23,28,0.07)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <img src={LOGO_HEADER} alt="MOXIEMO" style={{ width: "80%", height: "auto", display: "block" }} draggable={false} />
+        {onClose && (
+          <button onClick={onClose} aria-label="Close menu" style={{ background: "transparent", border: "none", cursor: "pointer", color: INK, padding: 4, display: "flex", alignItems: "center" }}>
+            <X size={20} />
+          </button>
+        )}
       </div>
 
       {/* Nav */}
       <nav style={{ flex: 1, overflowY: "auto", padding: "8px 10px 12px" }}>
         {GROUPS.map((group) => (
           <div key={group.label} style={{ marginTop: 14 }}>
-            <div
-              style={{
-                fontSize: 9.5,
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                color: "rgba(0,0,0,0.38)",
-                fontWeight: 700,
-                padding: "0 10px 6px",
-              }}
-            >
+            <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(0,0,0,0.38)", fontWeight: 700, padding: "0 10px 6px" }}>
               {group.label}
             </div>
             <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
@@ -189,24 +146,16 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.end}
+                      onClick={onClose}
                       className="moxie-app-nav-item"
                       style={({ isActive }) => ({
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 10,
-                        height: 34,
-                        padding: "0 10px",
-                        margin: "2px 0",
-                        borderRadius: 6,
-                        borderLeft: isActive
-                          ? `2px solid ${CORAL}`
-                          : "2px solid transparent",
-                        fontSize: 13,
-                        fontWeight: isActive ? 600 : 400,
+                        display: "flex", alignItems: "center", gap: 10,
+                        height: 44, padding: "0 10px", margin: "2px 0", borderRadius: 6,
+                        borderLeft: isActive ? `2px solid ${CORAL}` : "2px solid transparent",
+                        fontSize: 13, fontWeight: isActive ? 600 : 400,
                         color: isActive ? INK : "rgba(21,23,28,0.52)",
                         background: isActive ? "rgba(255,107,92,0.09)" : "transparent",
-                        textDecoration: "none",
-                        transition: "background 120ms ease, color 120ms ease",
+                        textDecoration: "none", transition: "background 120ms ease, color 120ms ease",
                       })}
                     >
                       <Icon className="h-[16px] w-[16px]" />
@@ -220,14 +169,14 @@ export function AppSidebar() {
         ))}
       </nav>
 
-      {/* Admin link — only visible to admins */}
       {isAdmin && (
         <div style={{ padding: "0 10px 8px" }}>
           <NavLink
             to="/app/admin"
+            onClick={onClose}
             className="moxie-app-nav-item"
             style={({ isActive }) => ({
-              display: "flex", alignItems: "center", gap: 10, height: 34,
+              display: "flex", alignItems: "center", gap: 10, height: 44,
               padding: "0 10px", borderRadius: 6,
               borderLeft: isActive ? `2px solid ${CORAL}` : "2px solid transparent",
               fontSize: 13, fontWeight: isActive ? 600 : 400,
@@ -242,68 +191,89 @@ export function AppSidebar() {
         </div>
       )}
 
-      {/* Plan card */}
-      <div style={{ padding: "0 14px 10px" }}>
-        <PlanCard />
-      </div>
+      <div style={{ padding: "0 14px 10px" }}><PlanCard /></div>
 
-      {/* Footer links */}
-      <div
-        style={{
-          padding: "10px 14px 16px",
-          borderTop: "1px solid rgba(0,0,0,0.08)",
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-        }}
-      >
-        <div className="moxie-app-feedback-slot">
-          <FeedbackButton />
-        </div>
+      <div style={{ padding: "10px 14px 16px", borderTop: "1px solid rgba(0,0,0,0.08)", display: "flex", flexDirection: "column", gap: 6 }}>
+        <div className="moxie-app-feedback-slot"><FeedbackButton /></div>
         <button
           type="button"
           onClick={() => supabase.auth.signOut()}
-          style={{
-            background: "transparent",
-            border: "none",
-            padding: "6px 4px",
-            textAlign: "left",
-            fontSize: 12,
-            color: "rgba(0,0,0,0.45)",
-            cursor: "pointer",
-          }}
+          style={{ background: "transparent", border: "none", padding: "6px 4px", textAlign: "left", fontSize: 12, color: "rgba(0,0,0,0.45)", cursor: "pointer" }}
         >
           Sign out
         </button>
       </div>
-    </aside>
+    </div>
   );
 }
 
-/* Hover override — applied via global selector since NavLink style prop can't express hover. */
+export function AppSidebar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, []);
+
+  // Lock body scroll when mobile menu open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  return (
+    <>
+      {/* Desktop sidebar — hidden on mobile */}
+      <aside
+        className="hidden lg:flex"
+        style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 220, background: SIDEBAR_BG, boxShadow: "2px 0 8px rgba(0,0,0,0.06)", flexDirection: "column", zIndex: 40 }}
+      >
+        <SidebarContent />
+      </aside>
+
+      {/* Mobile hamburger button */}
+      <button
+        className="lg:hidden"
+        onClick={() => setMobileOpen(true)}
+        aria-label="Open menu"
+        style={{ position: "fixed", top: 10, left: 12, zIndex: 50, background: SIDEBAR_BG, border: "1px solid rgba(0,0,0,0.1)", borderRadius: 8, padding: "6px 8px", cursor: "pointer", display: "flex", alignItems: "center" }}
+      >
+        <Menu size={20} color={INK} />
+      </button>
+
+      {/* Mobile overlay backdrop */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 45 }}
+        />
+      )}
+
+      {/* Mobile slide-in sidebar */}
+      <aside
+        className="lg:hidden"
+        style={{
+          position: "fixed", top: 0, left: 0, bottom: 0, width: 260,
+          background: SIDEBAR_BG, boxShadow: "4px 0 20px rgba(0,0,0,0.15)",
+          display: "flex", flexDirection: "column", zIndex: 50,
+          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 250ms ease",
+        }}
+      >
+        <SidebarContent onClose={() => setMobileOpen(false)} />
+      </aside>
+    </>
+  );
+}
+
 if (typeof document !== "undefined" && !document.getElementById("moxie-app-nav-hover")) {
   const s = document.createElement("style");
   s.id = "moxie-app-nav-hover";
   s.textContent = `
-    .moxie-app-nav-item:hover {
-      background: rgba(255,255,255,0.38) !important;
-      color: #1A2010 !important;
-    }
-    .moxie-app-feedback-slot button {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      padding: 6px 4px !important;
-      height: auto !important;
-      width: auto !important;
-      justify-content: flex-start !important;
-      font-size: 12px !important;
-      color: rgba(0,0,0,0.45) !important;
-      font-weight: 400 !important;
-    }
-    .moxie-app-feedback-slot button:hover {
-      color: #1A2010 !important;
-    }
+    .moxie-app-nav-item:hover { background: rgba(255,255,255,0.38) !important; color: #1A2010 !important; }
+    .moxie-app-feedback-slot button { background: transparent !important; border: none !important; box-shadow: none !important; padding: 6px 4px !important; height: auto !important; width: auto !important; justify-content: flex-start !important; font-size: 12px !important; color: rgba(0,0,0,0.45) !important; font-weight: 400 !important; }
+    .moxie-app-feedback-slot button:hover { color: #1A2010 !important; }
     .moxie-app-feedback-slot button svg { display: none !important; }
     .moxie-app-feedback-slot button span { font-size: 12px !important; }
   `;

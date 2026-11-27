@@ -536,7 +536,7 @@ export default function BrandKit() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#F7F5F1", color: "#15171C" }}>
+    <div className="min-h-dvh flex flex-col" style={{ backgroundColor: "#F7F5F1", color: "#15171C" }}>
       <SiteHeader />
 
       <main className="flex-1">

@@ -165,7 +165,7 @@ export default function About() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: COLORS.cream }}>
+    <div className="min-h-dvh flex flex-col" style={{ background: COLORS.cream }}>
       <style>{GLOBAL_CSS}</style>
       <div style={grainStyle} aria-hidden="true" />
       <SiteHeader />

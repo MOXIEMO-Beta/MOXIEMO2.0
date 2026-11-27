@@ -26,3 +26,10 @@ dist-ssr
 .env*
 .env
 .env.local
+supabase/.temp/
+MOXIEMO_2.0_Timeline_Deliverables.docx
+MOXIEMO_2.0_Timeline_Deliverables.html
+MOXIEMO_2.0_Timeline_Deliverables.md
+NEW_PROJECT_MIGRATION.md
+Brand Kit Files/
+.lovable/

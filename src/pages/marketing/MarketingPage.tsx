@@ -25,7 +25,7 @@ export function MarketingPage({
   heroSubtitleClassName,
 }: MarketingPageProps) {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <SiteHeader />
       <section className="border-b border-border">
         <div className={`mx-auto px-6 py-24 text-center ${heroContainerClassName ?? "max-w-5xl"}`}>

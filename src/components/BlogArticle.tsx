@@ -20,7 +20,7 @@ export interface BlogArticleProps {
 
 export function BlogArticle({ heroImage, heroContent, heroAlt, byline = "By Karee Laing", closingCta, category, readTime, date, headline, children }: BlogArticleProps) {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <SiteHeader />
 
       <div className="w-full pt-20">

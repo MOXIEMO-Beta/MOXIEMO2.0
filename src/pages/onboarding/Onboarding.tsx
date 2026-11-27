@@ -189,7 +189,7 @@ export default function Onboarding() {
 
   if (authLoading || step === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+      <div className="min-h-dvh flex items-center justify-center text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
       </div>
     );
@@ -323,7 +323,7 @@ export default function Onboarding() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <header className="px-6 lg:px-10 py-5 border-b border-border">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
           <MoxieLogo />

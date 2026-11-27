@@ -171,7 +171,7 @@ export default function Blog() {
   const filtered = activeCat === "All" ? ARTICLES : ARTICLES.filter((a) => a.category === activeCat);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <SiteHeader />
 
       {/* Hero */}

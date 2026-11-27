@@ -26,7 +26,7 @@ export function PageLoader({ variant = "fullscreen", label, className }: PageLoa
   }
 
   return (
-    <div className={cn("min-h-screen flex items-center justify-center", className)}>
+    <div className={cn("min-h-dvh flex items-center justify-center", className)}>
       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
     </div>
   );

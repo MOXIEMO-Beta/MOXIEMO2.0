@@ -189,7 +189,7 @@ export default function BrandAudit() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F5F1] flex flex-col" style={{ fontFamily: "Inter, sans-serif" }}>
+    <div className="min-h-dvh bg-[#F7F5F1] flex flex-col" style={{ fontFamily: "Inter, sans-serif" }}>
       <SiteHeader />
 
       {step === 1 ? (

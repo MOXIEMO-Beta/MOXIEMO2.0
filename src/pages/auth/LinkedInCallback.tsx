@@ -81,7 +81,7 @@ export default function LinkedInCallback() {
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-6">
+    <div className="min-h-dvh flex items-center justify-center bg-background px-6">
       <div className="flex flex-col items-center text-center max-w-sm">
         <MoxieLogo className="mb-8" />
         {status === "loading" ? (

@@ -754,3 +754,26 @@ body:has(.cookie-panel) [data-state="open"][class*="fixed inset-0"] { z-index: 1
   .pricing-comparison, .pricing-moxie { padding: 64px 24px; }
   .pricing-section-heading { font-size: 34px; }
 }
+
+/* ── Mobile global fixes ─────────────────────────────────────────── */
+/* Prevent iOS Safari auto-zoom on input focus (requires font-size ≥ 16px) */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Prevent horizontal overflow on all pages */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Large screen content constraint — prevent text stretching on 4K */
+@media (min-width: 1920px) {
+  .site-content-wrap {
+    max-width: 1440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}

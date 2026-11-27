@@ -85,7 +85,7 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-background">
+    <div className="min-h-dvh grid lg:grid-cols-2 bg-background">
       <div className="hidden lg:flex flex-col p-12 bg-foreground text-background relative overflow-hidden">
         <div className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute -left-20 bottom-0 h-72 w-72 rounded-full bg-accent/10 blur-3xl" />

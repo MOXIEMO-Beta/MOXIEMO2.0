@@ -84,7 +84,7 @@ export function ArticlePage({
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-dvh bg-background flex flex-col">
       <RouteMetadata title={metaTitle} description={metaDescription} canonicalPath={canonicalPath} articleHeadline={title} />
       <SiteHeader />
 
