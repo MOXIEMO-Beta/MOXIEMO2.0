@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from "react-router-dom";
 import { Bell } from "lucide-react";
 import { AppSidebar, APP_NAV_ITEMS } from "@/components/AppSidebar";
+import { MoxieFloatButton } from "@/components/MoxieFloatButton";
 import { useAuth } from "@/hooks/useAuth";
 
 function initialsFromUser(name?: string | null, email?: string | null): string {
@@ -73,6 +74,7 @@ export default function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <MoxieFloatButton />
     </div>
   );
 }
